@@ -1,0 +1,815 @@
+fileFormatVersion: 2
+guid: 0a4dc6477e5a16d4db2bcff80f6492ac
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4105148029333300273
+    second: Demolition_man_Stop_V2_0
+  - first:
+      213: -1388850971113647387
+    second: Demolition_man_Stop_V2_1
+  - first:
+      213: -876935231969511568
+    second: Demolition_man_Stop_V2_2
+  - first:
+      213: 766857453253942883
+    second: Demolition_man_Stop_V2_3
+  - first:
+      213: -7360728083649182256
+    second: Demolition_man_Stop_V2_4
+  - first:
+      213: 5872372667884012369
+    second: Demolition_man_Stop_V2_5
+  - first:
+      213: 4879151589268119649
+    second: Demolition_man_Stop_V2_6
+  - first:
+      213: 5307439924002741892
+    second: Demolition_man_Stop_V2_7
+  - first:
+      213: -5904706673699169522
+    second: Demolition_man_Stop_V2_8
+  - first:
+      213: -1955831250469790516
+    second: Demolition_man_Stop_V2_9
+  - first:
+      213: 2070576214343455495
+    second: Demolition_man_Stop_V2_10
+  - first:
+      213: -7114348004421357288
+    second: Demolition_man_Stop_V2_11
+  - first:
+      213: -5774399691970123652
+    second: Demolition_man_Stop_V2_12
+  - first:
+      213: -4114143805205604802
+    second: Demolition_man_Stop_V2_13
+  - first:
+      213: 3668449441002338106
+    second: Demolition_man_Stop_V2_14
+  - first:
+      213: -3723420931356167622
+    second: Demolition_man_Stop_V2_15
+  - first:
+      213: 2022705154248313042
+    second: Demolition_man_Stop_V2_16
+  - first:
+      213: -4207518127209669906
+    second: Demolition_man_Stop_V2_17
+  - first:
+      213: 5658800431314979581
+    second: Demolition_man_Stop_V2_18
+  - first:
+      213: 7408078698992555160
+    second: Demolition_man_Stop_V2_19
+  - first:
+      213: -7581671257191447884
+    second: Demolition_man_Stop_V2_20
+  - first:
+      213: -7993768544737523663
+    second: Demolition_man_Stop_V2_21
+  - first:
+      213: 75307864232309325
+    second: Demolition_man_Stop_V2_22
+  - first:
+      213: -825124941996625355
+    second: Demolition_man_Stop_V2_23
+  - first:
+      213: 2735510014040277393
+    second: Demolition_man_Stop_V2_24
+  - first:
+      213: -3215732103371576706
+    second: Demolition_man_Stop_V2_25
+  - first:
+      213: -4813137613756693724
+    second: Demolition_man_Stop_V2_26
+  - first:
+      213: 8336223138262193648
+    second: Demolition_man_Stop_V2_27
+  - first:
+      213: 3617899141296012854
+    second: Demolition_man_Stop_V2_28
+  - first:
+      213: -7185237765616802933
+    second: Demolition_man_Stop_V2_29
+  - first:
+      213: 3494762361090111191
+    second: Demolition_man_Stop_V2_30
+  - first:
+      213: -3186751506493328681
+    second: Demolition_man_Stop_V2_31
+  - first:
+      213: -5547462985890707271
+    second: Demolition_man_Stop_V2_32
+  - first:
+      213: -522658467793338477
+    second: Demolition_man_Stop_V2_33
+  - first:
+      213: -6535693492086739854
+    second: Demolition_man_Stop_V2_34
+  - first:
+      213: 6982477198346610391
+    second: Demolition_man_Stop_V2_35
+  - first:
+      213: -2814717895580916206
+    second: Demolition_man_Stop_V2_36
+  - first:
+      213: 4238963352976094775
+    second: Demolition_man_Stop_V2_37
+  - first:
+      213: 5771335009680973748
+    second: Demolition_man_Stop_V2_38
+  - first:
+      213: -984341459270532455
+    second: Demolition_man_Stop_V2_39
+  - first:
+      213: -7725391926999634970
+    second: Demolition_man_Stop_V2_40
+  - first:
+      213: 7022180011488807630
+    second: Demolition_man_Stop_V2_0
+  - first:
+      213: -2546948546497923188
+    second: Demolition_man_Stop_V2_1
+  - first:
+      213: -7791030699622775504
+    second: Demolition_man_Stop_V2_2
+  - first:
+      213: -7811007804292672602
+    second: Demolition_man_Stop_V2_3
+  - first:
+      213: -4343731083717522146
+    second: Demolition_man_Stop_V2_4
+  - first:
+      213: 5961835636132550803
+    second: Demolition_man_Stop_V2_5
+  - first:
+      213: 5136969063155111194
+    second: Demolition_man_Stop_V2_6
+  - first:
+      213: -7866134955808334562
+    second: Demolition_man_Stop_V2_7
+  - first:
+      213: -8632908262534709097
+    second: Demolition_man_Stop_V2_8
+  - first:
+      213: 1317463009930020710
+    second: Demolition_man_Stop_V2_9
+  - first:
+      213: 1629996164569355500
+    second: Demolition_man_Stop_V2_10
+  - first:
+      213: 1774286417528556993
+    second: Demolition_man_Stop_V2_11
+  - first:
+      213: 7980951247021919659
+    second: Demolition_man_Stop_V2_12
+  - first:
+      213: -6437608672960860777
+    second: Demolition_man_Stop_V2_13
+  - first:
+      213: -5616540699576493048
+    second: Demolition_man_Stop_V2_14
+  - first:
+      213: -8258743910303575839
+    second: Demolition_man_Stop_V2_15
+  - first:
+      213: 4160086691534302911
+    second: Demolition_man_Stop_V2_16
+  - first:
+      213: 1776346397638286706
+    second: Demolition_man_Stop_V2_17
+  - first:
+      213: -537728537291133271
+    second: Demolition_man_Stop_V2_18
+  - first:
+      213: -5597563318694828947
+    second: Demolition_man_Stop_V2_19
+  - first:
+      213: 2874184500011728647
+    second: Demolition_man_Stop_V2_20
+  - first:
+      213: 962557112273324919
+    second: Demolition_man_Stop_V2_21
+  - first:
+      213: 1815702645114006385
+    second: Demolition_man_Stop_V2_22
+  - first:
+      213: 7276430778314278938
+    second: Demolition_man_Stop_V2_23
+  externalObjects: {}
+  serializedVersion: 11
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: -1
+    mipBias: -100
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 0
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  applyGammaDecoding: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 320
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eca83ade38bc37160800000000000000
+      internalID: 7022180011488807630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_1
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 320
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c873bc09acb67acd0800000000000000
+      internalID: -2546948546497923188
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_2
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 320
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 03542da7bd2b0e390800000000000000
+      internalID: -7791030699622775504
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_3
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 320
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6a3d45759c9b99390800000000000000
+      internalID: -7811007804292672602
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 256
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e1dc13be797f7b3c0800000000000000
+      internalID: -4343731083717522146
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_5
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 256
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 39812f48ce1bcb250800000000000000
+      internalID: 5961835636132550803
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_6
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 256
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a151887652e2a4740800000000000000
+      internalID: 5136969063155111194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_7
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 256
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e1dd2cb2fefd5d290800000000000000
+      internalID: -7866134955808334562
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_8
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7908511acafb13880800000000000000
+      internalID: -8632908262534709097
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_9
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 192
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 667889790a1984210800000000000000
+      internalID: 1317463009930020710
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_10
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 192
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ce4d76620e8ee9610800000000000000
+      internalID: 1629996164569355500
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_11
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 192
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1cd079e98188f9810800000000000000
+      internalID: 1774286417528556993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_12
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 128
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: badc370dfd802ce60800000000000000
+      internalID: 7980951247021919659
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_13
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 128
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 79da135150509a6a0800000000000000
+      internalID: -6437608672960860777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_14
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 128
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 80c183fcdf90e02b0800000000000000
+      internalID: -5616540699576493048
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_15
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 128
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1e05f679b2c036d80800000000000000
+      internalID: -8258743910303575839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_16
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 64
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fbe6bbb0ec89bb930800000000000000
+      internalID: 4160086691534302911
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_17
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 64
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 27d564d13a9d6a810800000000000000
+      internalID: 1776346397638286706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_18
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 64
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9aeeb2d8eba9988f0800000000000000
+      internalID: -537728537291133271
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_19
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d64207d91d57152b0800000000000000
+      internalID: -5597563318694828947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_20
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 70ff12e139723e720800000000000000
+      internalID: 2874184500011728647
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_21
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 0
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 77bc3110890bb5d00800000000000000
+      internalID: 962557112273324919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_22
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 17be1cb8feba23910800000000000000
+      internalID: 1815702645114006385
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Demolition_man_Stop_V2_23
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 128
+        height: 64
+      alignment: 9
+      pivot: {x: 0.25, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a18442e9d331bf460800000000000000
+      internalID: 7276430778314278938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+  spritePackingTag: 
+  pSDRemoveMatte: 0
+  pSDShowRemoveMatteOption: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

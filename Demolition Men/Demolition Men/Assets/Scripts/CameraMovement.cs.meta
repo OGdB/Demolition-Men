@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 6c29be3d0243b72428cb7d728065cd30
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - deadCollider: {instanceID: 0}
+  - target1: {fileID: 266007781972832833, guid: 82f2e6cba9da17f4ab8144776a06d6f3,
+      type: 3}
+  - target2: {fileID: 266007781972832833, guid: 82f2e6cba9da17f4ab8144776a06d6f3,
+      type: 3}
+  - cam: {fileID: 8139280650448620090, guid: 32d08bf8a1630b846b13e6493a21b7d4, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
