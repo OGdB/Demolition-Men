@@ -1,0 +1,140 @@
+using System.Collections.Generic;
+using Demolition.Core;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace Demolition.Tests
+{
+    /// <summary>
+    /// Headless unit tests for the Option C support-graph. These run in the Unity Test
+    /// Runner (EditMode) with no scene, physics, or play loop — they exercise the pure
+    /// connectivity logic that decides what collapses.
+    /// </summary>
+    public class BuildingStructureTests
+    {
+        private static BuildingStructure Column(int height, int x = 0)
+        {
+            // Anchor at the bottom, then a vertical stack above it.
+            var s = new BuildingStructure();
+            s.AddCell(new Vector2Int(x, 0), isAnchor: true);
+            for (int y = 1; y < height; y++)
+                s.AddCell(new Vector2Int(x, y));
+            return s;
+        }
+
+        [Test]
+        public void RemoveMidColumn_DetachesEverythingAbove()
+        {
+            var s = Column(4); // (0,0)a (0,1) (0,2) (0,3)
+
+            List<Vector2Int> detached = s.RemoveCell(new Vector2Int(0, 1));
+
+            CollectionAssert.AreEquivalent(
+                new[] { new Vector2Int(0, 2), new Vector2Int(0, 3) }, detached);
+            // Detached cells leave the structure; only the anchor remains.
+            Assert.IsTrue(s.HasCell(new Vector2Int(0, 0)));
+            Assert.IsFalse(s.HasCell(new Vector2Int(0, 2)));
+            Assert.IsFalse(s.HasCell(new Vector2Int(0, 3)));
+            Assert.AreEqual(1, s.CellCount);
+        }
+
+        [Test]
+        public void RemoveTopBlock_DetachesNothing()
+        {
+            var s = Column(4);
+
+            List<Vector2Int> detached = s.RemoveCell(new Vector2Int(0, 3));
+
+            Assert.AreEqual(0, detached.Count);
+            Assert.AreEqual(3, s.CellCount); // (0,0),(0,1),(0,2) still standing
+        }
+
+        [Test]
+        public void RemoveAnchor_DetachesWholeColumn()
+        {
+            var s = Column(3); // (0,0)a (0,1) (0,2)
+
+            List<Vector2Int> detached = s.RemoveCell(new Vector2Int(0, 0));
+
+            CollectionAssert.AreEquivalent(
+                new[] { new Vector2Int(0, 1), new Vector2Int(0, 2) }, detached);
+            Assert.AreEqual(0, s.CellCount);
+        }
+
+        [Test]
+        public void SecondPathToGround_HoldsUpTheSpan()
+        {
+            // Two legs joined by a top span => a bridge/portal frame.
+            //  y2: (0,2)(1,2)(2,2)
+            //  y1: (0,1)      (2,1)
+            //  y0: (0,0)a     (2,0)a
+            var s = new BuildingStructure();
+            s.AddCell(new Vector2Int(0, 0), true);
+            s.AddCell(new Vector2Int(0, 1));
+            s.AddCell(new Vector2Int(0, 2));
+            s.AddCell(new Vector2Int(1, 2));
+            s.AddCell(new Vector2Int(2, 2));
+            s.AddCell(new Vector2Int(2, 1));
+            s.AddCell(new Vector2Int(2, 0), true);
+
+            // Knock out the left foundation: the left leg is still held via the span
+            // and the right leg, so nothing should fall.
+            List<Vector2Int> detached = s.RemoveCell(new Vector2Int(0, 0));
+            Assert.AreEqual(0, detached.Count, "Redundant load path should keep the span up.");
+            Assert.AreEqual(6, s.CellCount);
+
+            // Now knock out the right foundation too: no anchors remain, everything drops.
+            detached = s.RemoveCell(new Vector2Int(2, 0));
+            Assert.AreEqual(5, detached.Count);
+            Assert.AreEqual(0, s.CellCount);
+        }
+
+        [Test]
+        public void RemoveNonexistentCell_IsNoOp()
+        {
+            var s = Column(2);
+            List<Vector2Int> detached = s.RemoveCell(new Vector2Int(9, 9));
+            Assert.AreEqual(0, detached.Count);
+            Assert.AreEqual(2, s.CellCount);
+        }
+
+        [Test]
+        public void ComputeSupported_ReachesEveryConnectedCellFromAnyAnchor()
+        {
+            // 3-wide, 3-tall solid block, anchored only at one bottom corner.
+            var s = new BuildingStructure();
+            for (int x = 0; x < 3; x++)
+                for (int y = 0; y < 3; y++)
+                    s.AddCell(new Vector2Int(x, y), isAnchor: x == 0 && y == 0);
+
+            HashSet<Vector2Int> supported = s.ComputeSupported();
+            Assert.AreEqual(9, supported.Count, "A solid connected slab is fully supported by one anchor.");
+        }
+
+        [Test]
+        public void Cascade_RemovingSupportBaseDropsFloorsAbove()
+        {
+            // A wider structure: 4 cells wide, 4 tall, all connected, anchored across the
+            // whole bottom row. Removing an entire interior column's base still leaves the
+            // upper floors tied to neighbouring columns (horizontal floors) => no collapse,
+            // which verifies floors provide lateral support. Then sever the top floor links
+            // to isolate a column and confirm it drops.
+            var s = new BuildingStructure();
+            for (int x = 0; x < 4; x++)
+                for (int y = 0; y < 4; y++)
+                    s.AddCell(new Vector2Int(x, y), isAnchor: y == 0);
+
+            // Remove base of column x=1. Column above stays up via horizontal floor links.
+            var d1 = s.RemoveCell(new Vector2Int(1, 0));
+            Assert.AreEqual(0, d1.Count);
+
+            // Isolate cell (1,3): remove its horizontal neighbours (0,3) and (2,3) and the
+            // cell below it (1,2). Now (1,3) has no intact neighbour => it detaches.
+            s.RemoveCell(new Vector2Int(0, 3));
+            s.RemoveCell(new Vector2Int(2, 3));
+            var d2 = s.RemoveCell(new Vector2Int(1, 2));
+
+            Assert.Contains(new Vector2Int(1, 3), d2, "Fully isolated cell must fall.");
+        }
+    }
+}
