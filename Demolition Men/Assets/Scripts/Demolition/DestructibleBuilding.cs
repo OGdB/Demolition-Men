@@ -45,10 +45,11 @@ namespace Demolition
         public float DestroyedFraction =>
             InitialBlockCount == 0 ? 0f : 1f - (float)StandingBlockCount / InitialBlockCount;
 
-        /// <summary>Register a freshly-spawned block with the structure.</summary>
+        /// <summary>Register a freshly-spawned block with the structure. Glass registers
+        /// as fragile: it hangs in its frame but nothing can rest on it.</summary>
         public void RegisterBlock(BuildingBlock block, Vector2Int coord, bool isAnchor)
         {
-            _structure.AddCell(coord, isAnchor);
+            _structure.AddCell(coord, isAnchor, block.Material == BlockMaterial.Glass);
             _blocks[coord] = block;
             InitialBlockCount++;
         }

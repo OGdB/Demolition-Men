@@ -135,7 +135,20 @@ namespace Demolition
             if (y == 0) { mat = BlockMaterial.Metal; isAnchor = true; return true; } // foundation
             if (y == height - 1) { mat = BlockMaterial.Brick; return true; }          // roof cap
             if (isFloor) { mat = BlockMaterial.Metal; return true; }                  // floor slab
-            if (isWall) { mat = (y % 2 == 1) ? BlockMaterial.Glass : BlockMaterial.Brick; return true; } // wall + windows
+            if (isWall)
+            {
+                // Windows: single glass panes at street level and above each floor slab.
+                // Glass is fragile/non-load-bearing, so this spacing keeps every wall
+                // brick connected to a floor, the roof or the foundation through
+                // structural cells only — no cell rests on a pane. On the doorway wall
+                // the lower window is skipped when the doorway carved away the floor
+                // cell that would anchor its sill (small buildings), which would
+                // otherwise leave the sill brick hanging off the pane.
+                bool lowerSillCarved = x == 0 && _floorA <= 2;
+                bool isWindow = y == 2 || (y == _floorA + 2 && !lowerSillCarved) || y == _floorB + 2;
+                mat = isWindow ? BlockMaterial.Glass : BlockMaterial.Brick;
+                return true;
+            }
             if (isColumn) { mat = BlockMaterial.Support; return true; }               // load-bearing column
 
             return false; // hollow interior

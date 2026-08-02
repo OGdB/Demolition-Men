@@ -61,6 +61,7 @@ namespace Demolition
         private float _resolvedMaxHealth;
         private float _settleTimer;
         private float _lastImpactTime = -999f;
+        private bool _destroyed;
         private float _targetLeanDeg;
         private float _targetSag;
         private float _targetDrift;
@@ -115,7 +116,7 @@ namespace Demolition
 
         public void TakeDamage(float amount)
         {
-            if (amount <= 0f)
+            if (_destroyed || amount <= 0f)
                 return;
 
             _health -= amount;
@@ -127,6 +128,9 @@ namespace Demolition
             if (_health <= 0f)
                 Destroyed();
         }
+
+        /// <summary>Destroy the block outright — glass panes on impact.</summary>
+        public void Shatter() => TakeDamage(Mathf.Max(_health, 1f));
 
         /// <summary>
         /// Single source of truth for the sprite tint: damage darkening × rubble dimming,
@@ -146,6 +150,7 @@ namespace Demolition
 
         private void Destroyed()
         {
+            _destroyed = true;
             Particles.Burst(transform.position, BlockMaterialInfo.Tint(material), 16, 5f, 0.16f, 0.75f);
             if (_building != null)
                 _building.OnBlockDestroyed(this);
@@ -252,6 +257,14 @@ namespace Demolition
                 float damage = Mathf.Clamp((impact - minImpactSpeed) * impactDamageScale, 0f, maxImpactDamage);
                 health.TakeDamage(damage);
                 Particles.Burst(collision.GetContact(0).point, new Color(0.95f, 0.8f, 0.2f), 8, 4f, 0.12f, 0.5f);
+            }
+
+            // A falling pane never survives contact — glass shatters instead of
+            // settling into rubble.
+            if (material == BlockMaterial.Glass)
+            {
+                Shatter();
+                return;
             }
 
             // Falling has real consequences: a hard landing chips the block itself, so the

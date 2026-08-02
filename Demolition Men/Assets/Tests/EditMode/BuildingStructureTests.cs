@@ -242,6 +242,75 @@ namespace Demolition.Tests
             Assert.AreEqual(0f, hanging.Lean, 1e-5f, "No sideways support → straight-down sag.");
         }
 
+        // ---------- Fragile (glass) cells ----------
+
+        [Test]
+        public void FragileCell_HangsInItsFrame_ButNothingRestsOnIt()
+        {
+            // anchor - brick - glass - brick, stacked. The pane hangs from the brick
+            // below it, but the brick ABOVE the pane has no structural path to ground.
+            var s = new BuildingStructure();
+            s.AddCell(new Vector2Int(0, 0), isAnchor: true);
+            s.AddCell(new Vector2Int(0, 1));
+            s.AddCell(new Vector2Int(0, 2), isAnchor: false, isFragile: true);
+            s.AddCell(new Vector2Int(0, 3));
+
+            HashSet<Vector2Int> supported = s.ComputeSupported();
+            Assert.IsTrue(supported.Contains(new Vector2Int(0, 2)), "Pane hangs in its frame.");
+            Assert.IsFalse(supported.Contains(new Vector2Int(0, 3)),
+                "Nothing may rest on glass — the cell above the pane is unsupported.");
+        }
+
+        [Test]
+        public void BreakingGlass_DoesNotDropALintelHeldElsewhere()
+        {
+            // Window in a two-column wall: the lintel above the pane is tied to the
+            // neighbouring column, so smashing the pane drops only the pane.
+            //  y2: (0,2)(1,2)
+            //  y1: (0,1)(1,1)g
+            //  y0: (0,0)a(1,0)a
+            var s = new BuildingStructure();
+            s.AddCell(new Vector2Int(0, 0), true);
+            s.AddCell(new Vector2Int(1, 0), true);
+            s.AddCell(new Vector2Int(0, 1));
+            s.AddCell(new Vector2Int(1, 1), isAnchor: false, isFragile: true);
+            s.AddCell(new Vector2Int(0, 2));
+            s.AddCell(new Vector2Int(1, 2));
+
+            List<Vector2Int> detached = s.RemoveCell(new Vector2Int(1, 1));
+            Assert.AreEqual(0, detached.Count, "Lintel is carried by the wall, not the pane.");
+            Assert.AreEqual(5, s.CellCount);
+        }
+
+        [Test]
+        public void RemovingTheFrame_DropsThePane()
+        {
+            // A pane attached sideways to a column falls when its frame brick dies.
+            var s = new BuildingStructure();
+            s.AddCell(new Vector2Int(0, 0), true);
+            s.AddCell(new Vector2Int(0, 1));
+            s.AddCell(new Vector2Int(1, 1), isAnchor: false, isFragile: true);
+
+            List<Vector2Int> detached = s.RemoveCell(new Vector2Int(0, 1));
+            Assert.Contains(new Vector2Int(1, 1), detached, "Pane falls with its frame.");
+        }
+
+        [Test]
+        public void ComputeStress_FragilePane_ShowsNoStrain_AndAddsNoLoad()
+        {
+            // Same shape as the cantilever test, but the arm is all glass: the mast
+            // should stay unloaded and the panes themselves show no lean/stress.
+            var s = Column(4);
+            s.AddCell(new Vector2Int(1, 3), isAnchor: false, isFragile: true);
+            s.AddCell(new Vector2Int(2, 3), isAnchor: false, isFragile: true);
+
+            var stress = s.ComputeStress(4);
+            Assert.AreEqual(0f, stress[new Vector2Int(1, 3)].Stress, 1e-5f);
+            Assert.AreEqual(0f, stress[new Vector2Int(2, 3)].Lean, 1e-5f);
+            Assert.AreEqual(0f, stress[new Vector2Int(0, 0)].Stress, 1e-5f,
+                "Glass attributes no load — the mast carries nothing.");
+        }
+
         [Test]
         public void Cascade_RemovingSupportBaseDropsFloorsAbove()
         {

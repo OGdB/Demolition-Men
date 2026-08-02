@@ -134,11 +134,16 @@ namespace Demolition
                 _anim.SetBool(InAirParam, !IsGrounded);
         }
 
+        // Original behaviour: glass shatters the moment the player touches it — walking
+        // into a window breaks it (and a falling pane breaks on the player's head).
         private void OnCollisionEnter2D(Collision2D collision)
         {
             var block = collision.collider.GetComponentInParent<BuildingBlock>();
             if (block != null && block.Material == BlockMaterial.Glass)
+            {
                 PlayClip(glassBreakSound);
+                block.Shatter();
+            }
         }
 
         private void PlayClip(AudioClip clip)
@@ -147,10 +152,19 @@ namespace Demolition
                 _audio.PlayOneShot(clip);
         }
 
-        private void OnDrawGizmosSelected()
+        // Green when grounded, red when airborne (grey outline in edit mode).
+        private void OnDrawGizmos()
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireCube((Vector2)transform.position + groundCheckOffset, groundCheckSize);
+            Vector3 centre = transform.position + (Vector3)groundCheckOffset;
+
+            Color colour = !Application.isPlaying ? Color.grey
+                : IsGrounded ? Color.green
+                : Color.red;
+
+            Gizmos.color = new Color(colour.r, colour.g, colour.b, 0.25f);
+            Gizmos.DrawCube(centre, groundCheckSize);
+            Gizmos.color = colour;
+            Gizmos.DrawWireCube(centre, groundCheckSize);
         }
     }
 }

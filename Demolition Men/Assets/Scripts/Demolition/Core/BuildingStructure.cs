@@ -29,6 +29,11 @@ namespace Demolition.Core
     /// to any anchor. When a cell is destroyed, every cell that loses its path to an
     /// anchor becomes <b>detached</b> and must fall.
     ///
+    /// Cells may be <b>fragile</b> (glass panes): they hang in their frame — supported
+    /// while any structural neighbour is — but have no carrying capacity, so support
+    /// never flows <i>through</i> them, they never count as pillars, and they transmit
+    /// no span loads.
+    ///
     /// This class contains NO physics and NO MonoBehaviour code, so it can be unit
     /// tested headlessly. <see cref="Demolition.DestructibleBuilding"/> drives the
     /// Unity side from it.
@@ -37,6 +42,7 @@ namespace Demolition.Core
     {
         private readonly HashSet<Vector2Int> _cells = new HashSet<Vector2Int>();
         private readonly HashSet<Vector2Int> _anchors = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> _fragile = new HashSet<Vector2Int>();
 
         // Scratch buffers reused across calls to avoid per-destruction GC.
         private readonly HashSet<Vector2Int> _supportedScratch = new HashSet<Vector2Int>();
@@ -53,15 +59,18 @@ namespace Demolition.Core
         public IReadOnlyCollection<Vector2Int> Cells => _cells;
         public int CellCount => _cells.Count;
 
-        public void AddCell(Vector2Int coord, bool isAnchor = false)
+        public void AddCell(Vector2Int coord, bool isAnchor = false, bool isFragile = false)
         {
             _cells.Add(coord);
             if (isAnchor)
                 _anchors.Add(coord);
+            if (isFragile)
+                _fragile.Add(coord);
         }
 
         public bool HasCell(Vector2Int coord) => _cells.Contains(coord);
         public bool IsAnchor(Vector2Int coord) => _anchors.Contains(coord);
+        public bool IsFragile(Vector2Int coord) => _fragile.Contains(coord);
 
         /// <summary>
         /// Remove a destroyed cell and return every cell that became detached as a
@@ -76,6 +85,7 @@ namespace Demolition.Core
                 return detached; // nothing to do
 
             _anchors.Remove(coord);
+            _fragile.Remove(coord);
 
             // No point flood-filling if the whole thing is already gone.
             if (_cells.Count == 0)
@@ -93,6 +103,7 @@ namespace Demolition.Core
             {
                 _cells.Remove(detached[i]);
                 _anchors.Remove(detached[i]);
+                _fragile.Remove(detached[i]);
             }
 
             return detached;
@@ -110,7 +121,8 @@ namespace Demolition.Core
 
         /// <summary>
         /// Cells with a continuous vertical run of intact cells straight down to an
-        /// anchor. These carry load "columnar" and feel no stress.
+        /// anchor. These carry load "columnar" and feel no stress. Fragile cells end a
+        /// run — a pillar cannot continue up through a glass pane.
         /// </summary>
         public HashSet<Vector2Int> ComputePillared()
         {
@@ -118,7 +130,7 @@ namespace Demolition.Core
             foreach (var anchor in _anchors)
             {
                 var c = anchor;
-                while (_cells.Contains(c) && pillared.Add(c))
+                while (_cells.Contains(c) && !_fragile.Contains(c) && pillared.Add(c))
                     c += Vector2Int.up;
             }
             return pillared;
@@ -158,6 +170,14 @@ namespace Demolition.Core
             // ---- Pass 1: carried cells + load attribution ----
             foreach (var cell in _cells)
             {
+                if (_fragile.Contains(cell))
+                {
+                    // Panes just hang in their frame — they carry nothing, add no
+                    // load to any pillar, and show no strain of their own.
+                    result[cell] = new CellStress();
+                    continue;
+                }
+
                 if (pillared.Contains(cell))
                     continue; // handled in pass 2
 
@@ -271,8 +291,8 @@ namespace Demolition.Core
             for (int step = 1; step <= maxSteps; step++)
             {
                 c = new Vector2Int(c.x + dirX, c.y);
-                if (!_cells.Contains(c))
-                    return -1; // gap — no contiguous load path this way
+                if (!_cells.Contains(c) || _fragile.Contains(c))
+                    return -1; // gap (or a pane, which transmits no load) — no path this way
                 if (pillared.Contains(c))
                     return step;
             }
@@ -286,7 +306,9 @@ namespace Demolition.Core
 
             foreach (var anchor in _anchors)
             {
-                if (_cells.Contains(anchor) && supported.Add(anchor))
+                if (!_cells.Contains(anchor) || !supported.Add(anchor))
+                    continue;
+                if (!_fragile.Contains(anchor))
                     _bfsQueue.Enqueue(anchor);
             }
 
@@ -296,7 +318,11 @@ namespace Demolition.Core
                 for (int i = 0; i < Neighbours.Length; i++)
                 {
                     var next = current + Neighbours[i];
-                    if (_cells.Contains(next) && supported.Add(next))
+                    if (!_cells.Contains(next) || !supported.Add(next))
+                        continue;
+                    // A fragile cell is held by its frame, but support never flows
+                    // through it — nothing may rest on glass.
+                    if (!_fragile.Contains(next))
                         _bfsQueue.Enqueue(next);
                 }
             }
