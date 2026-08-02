@@ -24,12 +24,18 @@ namespace Demolition
             new Dictionary<Vector2Int, BuildingBlock>();
 
         public int StandingBlockCount => _structure.CellCount;
+        public int InitialBlockCount { get; private set; }
+
+        /// <summary>Fraction of the building destroyed or collapsed, 0..1.</summary>
+        public float DestroyedFraction =>
+            InitialBlockCount == 0 ? 0f : 1f - (float)StandingBlockCount / InitialBlockCount;
 
         /// <summary>Register a freshly-spawned block with the structure.</summary>
         public void RegisterBlock(BuildingBlock block, Vector2Int coord, bool isAnchor)
         {
             _structure.AddCell(coord, isAnchor);
             _blocks[coord] = block;
+            InitialBlockCount++;
         }
 
         /// <summary>Called by a <see cref="BuildingBlock"/> when its health reaches zero.</summary>
