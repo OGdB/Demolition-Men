@@ -11,12 +11,14 @@ namespace Demolition
     {
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float respawnInvulnerability = 1.5f;
+        [SerializeField] private AudioClip hurtSound;
 
         public float Max => maxHealth;
         public float Current { get; private set; }
 
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
+        private AudioSource _audio;
         private Color _baseColor;
         private Vector3 _spawnPoint;
         private float _invulnUntil;
@@ -25,7 +27,8 @@ namespace Demolition
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
-            _sr = GetComponent<SpriteRenderer>();
+            _sr = GetComponentInChildren<SpriteRenderer>();
+            _audio = GetComponent<AudioSource>();
             if (_sr != null) _baseColor = _sr.color;
             Current = maxHealth;
         }
@@ -42,6 +45,8 @@ namespace Demolition
 
             Current = Mathf.Max(0f, Current - amount);
             _flashUntil = Time.time + 0.12f;
+            if (hurtSound != null && _audio != null)
+                _audio.PlayOneShot(hurtSound);
             Particles.Burst(transform.position, new Color(0.9f, 0.2f, 0.2f), 10, 3.5f, 0.12f, 0.5f);
 
             if (Current <= 0f)

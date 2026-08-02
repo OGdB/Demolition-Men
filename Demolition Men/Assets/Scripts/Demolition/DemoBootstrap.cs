@@ -21,6 +21,10 @@ namespace Demolition
         [SerializeField] private float blockGap = 0.015f;
         [SerializeField] private Vector2 buildingOrigin = new Vector2(3f, 0.35f);
 
+        [Header("Player")]
+        [Tooltip("Sprite player prefab (Assets/Prefabs/Demolition). In the editor Player_1 is auto-found; falls back to a primitive block player.")]
+        [SerializeField] private GameObject playerPrefab;
+
         [Header("Toggles")]
         [SerializeField] private bool buildOnStart = true;
         [SerializeField] private bool showHud = true;
@@ -139,17 +143,54 @@ namespace Demolition
 
         private void CreatePlayer(Vector2 pos)
         {
-            var go = NewSpriteObject("Player", new Color(0.95f, 0.85f, 0.25f));
+            GameObject prefab = playerPrefab;
+#if UNITY_EDITOR
+            if (prefab == null)
+                prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/Prefabs/Demolition/Player_1.prefab");
+#endif
+
+            GameObject player = prefab != null
+                ? Instantiate(prefab, pos, Quaternion.identity)
+                : CreatePrimitivePlayer(pos);
+
+            _playerHealth = player.GetComponent<PlayerHealth>();
+            if (_playerHealth == null)
+                _playerHealth = player.AddComponent<PlayerHealth>();
+        }
+
+        /// <summary>
+        /// No-assets fallback: the same scripts and physics tuning as the sprite prefabs
+        /// (mass 3, damping 1, gravity 2.2), primitive visuals. The root pivots at the
+        /// feet like the prefabs, so the shared ground-check/attack offsets line up.
+        /// </summary>
+        private GameObject CreatePrimitivePlayer(Vector2 pos)
+        {
+            var go = new GameObject("Player");
             go.transform.position = pos;
-            go.transform.localScale = new Vector3(0.75f, 1.5f, 1f);
+
+            var visual = NewSpriteObject("Visual", new Color(0.95f, 0.85f, 0.25f));
+            visual.transform.SetParent(go.transform, false);
+            visual.transform.localPosition = new Vector3(0f, 0.75f, 0f);
+            visual.transform.localScale = new Vector3(0.75f, 1.5f, 1f);
 
             var rb = go.AddComponent<Rigidbody2D>();
             rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.gravityScale = 3f;
+            rb.mass = 3f;
+            rb.linearDamping = 1f;
+            rb.angularDamping = 1f;
+            rb.gravityScale = 2.2f;
             rb.freezeRotation = true;
-            go.AddComponent<BoxCollider2D>();
-            go.AddComponent<SimplePlayerController>();
-            _playerHealth = go.AddComponent<PlayerHealth>();
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.offset = new Vector2(0f, 0.75f);
+            col.size = new Vector2(0.75f, 1.5f);
+
+            go.AddComponent<PlayerInputReader>();
+            go.AddComponent<PlayerMotor>();
+            go.AddComponent<PlayerCombat>().ConfigureForPrimitive(new Vector2(1f, 0.75f), true);
+            go.AddComponent<PlayerHealth>();
+            return go;
         }
 
         private static GameObject NewSpriteObject(string name, Color color)
@@ -190,8 +231,8 @@ namespace Demolition
                         new Color(0.3f, 0.8f, 0.3f), hp));
             }
 
-            GUI.Label(new Rect(x, 98, w, 20), "A/D move · Space jump · J / L-Mouse punch");
-            GUI.Label(new Rect(x, 116, w, 20), "Leaning or trembling blocks are about to give way!");
+            GUI.Label(new Rect(x, 98, w, 20), "A/D move · Space jump · J / L-Mouse attack (hold)");
+            GUI.Label(new Rect(x, 116, w, 20), "K / R-Mouse dynamite · 1/2/3 weapon · leaning blocks fall!");
         }
 
         private void DrawBar(Rect r, float fraction, Color fill)
