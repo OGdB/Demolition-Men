@@ -35,7 +35,7 @@ definition, so it's independently testable and doesn't disturb the existing prot
 |---|---|---|
 | **Structural core** (pure C#, no physics/MonoBehaviour) | `Core/BuildingStructure.cs` | The support-graph: cells, anchors, `RemoveCell()` → returns detached cells via BFS from anchors. Plus `ComputeStress()` — a per-cell **stress heuristic** (pillared / cantilever / span) used for pre-collapse lean visuals. Unit-testable headlessly. |
 | Material data | `BlockMaterial.cs` | Enum (`Brick/Metal/Wood/Glass/Support`) + per-material health and debug tint. |
-| Per-cell behaviour | `BuildingBlock.cs` | Health + damage (with hit particles + progressive darkening); **Static** while supported — under stress it **leans, sags and trembles** (sprite on a visual child; the collider never moves); `BeginFalling()` flips it to **Dynamic** debris that **settles into persistent Static rubble** and **deals impact damage** to the player on the way down. |
+| Per-cell behaviour | `BuildingBlock.cs` | Health + damage (with hit particles + progressive darkening — RGB only, alpha never changes); **Static** while supported — under stress it **leans, sags and trembles** (sprite on a visual child; the collider never moves); `BeginFalling()` flips it to **Dynamic** debris that **takes real crumble damage from hard landings** (a big drop shatters it), **settles into persistent Static rubble**, and **deals impact damage** to the player on the way down. |
 | Building owner | `DestructibleBuilding.cs` | Holds the `BuildingStructure` + live blocks; on a block's death re-runs support, calls `BeginFalling()` on detached cells, and refreshes per-cell stress targets (minus the intact building's baseline). Exposes `DestroyedFraction` for the HUD. Cap on simultaneous dynamic bodies. |
 | Player health | `PlayerHealth.cs` | Takes impact damage from falling blocks; hurt flash + particles; respawns at start so the bench stays usable. |
 | Feedback | `Particles.cs`, `SpriteFlash.cs` | Code-configured one-shot particle bursts (hit / destroy / impact) and expanding punch-flash sprites — no imported assets. |
@@ -125,6 +125,7 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 - [ ] Player walks, jumps, and stands on the building floors (static blocks are solid ground).
 - [ ] Punching a block shows hit particles and progressive darkening; a **supported** wall takes damage but is **not** shoved.
 - [ ] Destroying a **Support column** collapses whatever loses its path to the foundation; debris falls, tumbles, and **settles into rubble that stays**.
+- [ ] Falling blocks **take real damage from hard landings** (glass shatters outright, brick lands chipped, metal survives); the darkened tint after a fall reflects health that was genuinely lost, and **hitting rubble never makes it look healthier** (alpha never changes — damage/rubble tints darken RGB only).
 - [ ] Destroying a mid-floor block with intact neighbours does **not** collapse (lateral support / redundant load path).
 - [ ] Falling blocks that land on the player **reduce the health bar** (impact scaled by speed); death respawns the player.
 - [ ] Weakened-but-still-supported sections visibly **lean/sag toward the missing support**, and **tremble** when close to giving way (colliders stay put — walking on a leaning floor is unchanged).

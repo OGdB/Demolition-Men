@@ -30,6 +30,12 @@ namespace Demolition
         [SerializeField] private float maxImpactDamage = 45f;
         [SerializeField] private float impactCooldown = 0.4f;
 
+        [Header("Fall impact (self-damage)")]
+        [Tooltip("Relative impact speed below which a falling block lands without crumbling.")]
+        [SerializeField] private float selfDamageMinImpact = 4f;
+        [Tooltip("Damage the block deals to itself per unit of impact speed above the minimum.")]
+        [SerializeField] private float selfDamageScale = 12f;
+
         [Header("Stress visuals (pre-collapse anticipation)")]
         [SerializeField] private float maxLeanDegrees = 7f;
         [SerializeField] private float maxSag = 0.12f;
@@ -116,14 +122,26 @@ namespace Demolition
 
             // Chips of debris + progressive darkening as the block weakens.
             Particles.Burst(transform.position, BlockMaterialInfo.Tint(material), 5, 3f, 0.1f, 0.4f);
-            if (_sr != null)
-            {
-                float frac = Mathf.Clamp01(_health / _resolvedMaxHealth);
-                _sr.color = _baseColor * (0.45f + 0.55f * frac);
-            }
+            RefreshColor();
 
             if (_health <= 0f)
                 Destroyed();
+        }
+
+        /// <summary>
+        /// Single source of truth for the sprite tint: damage darkening × rubble dimming,
+        /// applied to RGB only. Alpha is never touched, so a block can't read as
+        /// "transparent/ghostly", and because health only ever decreases the tint is
+        /// monotonic — a hit can never make a block look healthier.
+        /// </summary>
+        private void RefreshColor()
+        {
+            if (_sr == null)
+                return;
+            float damageFrac = _resolvedMaxHealth > 0f ? Mathf.Clamp01(_health / _resolvedMaxHealth) : 1f;
+            float factor = (0.45f + 0.55f * damageFrac) * (IsRubble ? 0.7f : 1f);
+            _sr.color = new Color(
+                _baseColor.r * factor, _baseColor.g * factor, _baseColor.b * factor, _baseColor.a);
         }
 
         private void Destroyed()
@@ -215,8 +233,7 @@ namespace Demolition
             IsFalling = false;
             IsRubble = true;
             _rb.bodyType = RigidbodyType2D.Static; // leaves the solver; stays visible as debris
-            if (_sr != null)
-                _sr.color = _baseColor * 0.7f; // read as rubble
+            RefreshColor();
         }
 
         private void OnCollisionEnter2D(Collision2D collision)
@@ -224,18 +241,24 @@ namespace Demolition
             if (!IsFalling)
                 return;
 
-            var health = collision.collider.GetComponentInParent<PlayerHealth>();
-            if (health == null)
-                return;
-
             float impact = collision.relativeVelocity.magnitude;
-            if (impact < minImpactSpeed || Time.time - _lastImpactTime < impactCooldown)
-                return;
 
-            _lastImpactTime = Time.time;
-            float damage = Mathf.Clamp((impact - minImpactSpeed) * impactDamageScale, 0f, maxImpactDamage);
-            health.TakeDamage(damage);
-            Particles.Burst(collision.GetContact(0).point, new Color(0.95f, 0.8f, 0.2f), 8, 4f, 0.12f, 0.5f);
+            // Hurt the player it lands on.
+            var health = collision.collider.GetComponentInParent<PlayerHealth>();
+            if (health != null && impact >= minImpactSpeed
+                && Time.time - _lastImpactTime >= impactCooldown)
+            {
+                _lastImpactTime = Time.time;
+                float damage = Mathf.Clamp((impact - minImpactSpeed) * impactDamageScale, 0f, maxImpactDamage);
+                health.TakeDamage(damage);
+                Particles.Burst(collision.GetContact(0).point, new Color(0.95f, 0.8f, 0.2f), 8, 4f, 0.12f, 0.5f);
+            }
+
+            // Falling has real consequences: a hard landing chips the block itself, so the
+            // damage tint after a fall reflects health that was genuinely lost — and a big
+            // enough drop shatters it outright (TakeDamage handles particles/destruction).
+            if (impact >= selfDamageMinImpact)
+                TakeDamage((impact - selfDamageMinImpact) * selfDamageScale);
         }
     }
 }
