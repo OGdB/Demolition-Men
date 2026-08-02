@@ -33,6 +33,7 @@ namespace Demolition
         [Header("Stress visuals (pre-collapse anticipation)")]
         [SerializeField] private float maxLeanDegrees = 7f;
         [SerializeField] private float maxSag = 0.12f;
+        [SerializeField] private float maxDrift = 0.22f;
         [SerializeField] private float visualLerpSpeed = 4f;
         [SerializeField] private float trembleThreshold = 0.55f;
         [SerializeField] private float trembleAmplitude = 0.045f;
@@ -56,6 +57,7 @@ namespace Demolition
         private float _lastImpactTime = -999f;
         private float _targetLeanDeg;
         private float _targetSag;
+        private float _targetDrift;
         private float _tremblePhase;
 
         private void Awake()
@@ -134,14 +136,16 @@ namespace Demolition
 
         /// <summary>
         /// Called by the building after each destruction event: how precarious this cell
-        /// now is (0..1) and which way it should lean (-1 = clockwise / its support is to
-        /// the left, +1 = counter-clockwise, 0 = straight-down sag).
+        /// now is (0..1), which way it should lean (-1 = clockwise, +1 = counter-clockwise,
+        /// 0 = level), and its sideways bend displacement for loaded columns
+        /// (normalized; negative = left, 0 for horizontally-carried cells).
         /// </summary>
-        public void SetStress(float stress, float lean)
+        public void SetStress(float stress, float lean, float drift)
         {
             Stress = Mathf.Clamp01(stress);
             _targetLeanDeg = lean * Stress * maxLeanDegrees;
             _targetSag = Stress * Stress * maxSag;
+            _targetDrift = drift * Stress * maxDrift;
         }
 
         private void Update()
@@ -151,17 +155,19 @@ namespace Demolition
 
             float targetLean = _targetLeanDeg;
             float targetSag = _targetSag;
+            float targetDrift = _targetDrift;
             float stress = Stress;
             if (IsFalling || IsRubble)
             {
                 // Real physics has taken over — ease the fake lean back out.
                 targetLean = 0f;
                 targetSag = 0f;
+                targetDrift = 0f;
                 stress = 0f;
             }
 
             float k = Time.deltaTime * visualLerpSpeed;
-            _smoothVisualPos = Vector3.Lerp(_smoothVisualPos, new Vector3(0f, -targetSag, 0f), k);
+            _smoothVisualPos = Vector3.Lerp(_smoothVisualPos, new Vector3(targetDrift, -targetSag, 0f), k);
 
             // Tremble is added after the smoothing so the lerp doesn't filter it away.
             float trembleX = 0f;

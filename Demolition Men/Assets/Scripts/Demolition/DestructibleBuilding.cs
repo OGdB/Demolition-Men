@@ -24,6 +24,12 @@ namespace Demolition
                + "column when deciding how much a cell should lean/sag.")]
         [SerializeField] private int stressScanRange = 6;
 
+        [Tooltip("Carried-weight shares at which a column's stress (tremble) saturates.")]
+        [SerializeField] private float columnLoadCapacity = 4f;
+
+        [Tooltip("Net lever-arm sum at which a column's lean toward its load saturates.")]
+        [SerializeField] private float columnMomentCapacity = 8f;
+
         private readonly BuildingStructure _structure = new BuildingStructure();
         private readonly Dictionary<Vector2Int, BuildingBlock> _blocks =
             new Dictionary<Vector2Int, BuildingBlock>();
@@ -51,7 +57,7 @@ namespace Demolition
         {
             // Runs after the bootstrap/spawner has registered every block.
             _baselineStress = new Dictionary<Vector2Int, float>();
-            foreach (var kv in _structure.ComputeStress(stressScanRange))
+            foreach (var kv in _structure.ComputeStress(stressScanRange, columnLoadCapacity, columnMomentCapacity))
                 _baselineStress[kv.Key] = kv.Value.Stress;
         }
 
@@ -92,19 +98,21 @@ namespace Demolition
         /// </summary>
         private void RefreshStressVisuals()
         {
-            Dictionary<Vector2Int, CellStress> stress = _structure.ComputeStress(stressScanRange);
+            Dictionary<Vector2Int, CellStress> stress =
+                _structure.ComputeStress(stressScanRange, columnLoadCapacity, columnMomentCapacity);
             foreach (var kv in _blocks)
             {
-                float s = 0f, lean = 0f;
+                float s = 0f, lean = 0f, drift = 0f;
                 if (stress.TryGetValue(kv.Key, out CellStress cs))
                 {
                     s = cs.Stress;
                     lean = cs.Lean;
+                    drift = cs.Drift;
                 }
                 if (_baselineStress != null && _baselineStress.TryGetValue(kv.Key, out float baseline))
                     s = Mathf.Max(0f, s - baseline);
 
-                kv.Value.SetStress(s, lean);
+                kv.Value.SetStress(s, lean, drift);
             }
         }
     }

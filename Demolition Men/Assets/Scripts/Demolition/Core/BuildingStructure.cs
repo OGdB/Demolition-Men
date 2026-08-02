@@ -4,14 +4,19 @@ using UnityEngine;
 namespace Demolition.Core
 {
     /// <summary>
-    /// Cosmetic stress of one cell: how precarious it is (0 = solid → 1 = about to give)
-    /// and which way it tends to tip (-1 = clockwise, i.e. its support is to the left;
-    /// +1 = counter-clockwise; 0 = straight-down sag).
+    /// Cosmetic stress of one cell.
+    /// <see cref="Stress"/>: how precarious/overloaded it is (0 = solid → 1 = at its limit).
+    /// <see cref="Lean"/>: which way it tends to tip (-1 = clockwise, i.e. its support or
+    /// its load is to the left/right respectively; +1 = counter-clockwise; 0 = level).
+    /// <see cref="Drift"/>: normalized sideways displacement for bending columns
+    /// (negative = left), growing with height so a loaded column bows instead of tilting
+    /// as a rigid stick; 0 for horizontally-carried cells.
     /// </summary>
     public struct CellStress
     {
         public float Stress;
         public float Lean;
+        public float Drift;
     }
 
     /// <summary>
@@ -120,27 +125,41 @@ namespace Demolition.Core
         }
 
         /// <summary>
-        /// Heuristic per-cell stress for visual anticipation. A cell that is not
-        /// pillared is carried sideways: scan along its row (through contiguous cells
-        /// only) for the nearest pillared cell on each side. One-sided support is a
-        /// cantilever — stress grows with overhang length and the cell leans away from
-        /// its support; support on both sides is a span — worst at mid-span, level
-        /// there. Purely cosmetic: collapse decisions remain
-        /// <see cref="RemoveCell"/>'s connectivity check, and callers must never move
-        /// colliders from this.
+        /// Heuristic per-cell stress for visual anticipation, in two passes.
+        ///
+        /// Pass 1 — carried cells (not pillared) are held sideways: scan along the row
+        /// (through contiguous cells only) for the nearest pillared cell on each side.
+        /// One-sided support is a cantilever — stress grows with overhang length and the
+        /// cell leans away from its support; both sides is a span — worst at mid-span,
+        /// level there. Each carried cell also *attributes its weight* to the pillar
+        /// cell(s) holding it (split by proximity), with the lever arm as a signed
+        /// bending moment.
+        ///
+        /// Pass 2 — pillar columns: each contiguous vertical run sums the load and
+        /// moment that entered anywhere along it. Heavy load ⇒ stress (an overloaded
+        /// column trembles even when balanced); net moment ⇒ the column leans toward
+        /// the mass it carries, with a height² <see cref="CellStress.Drift"/> so it
+        /// visibly bows.
+        ///
+        /// Purely cosmetic: collapse decisions remain <see cref="RemoveCell"/>'s
+        /// connectivity check, and callers must never move colliders from this.
         /// </summary>
-        public Dictionary<Vector2Int, CellStress> ComputeStress(int maxCantilever = 4)
+        /// <param name="maxCantilever">Row-scan range for finding a supporting pillar.</param>
+        /// <param name="loadCapacity">Carried-weight shares at which a column's stress saturates.</param>
+        /// <param name="momentCapacity">Net lever-arm sum at which a column's lean saturates.</param>
+        public Dictionary<Vector2Int, CellStress> ComputeStress(
+            int maxCantilever = 4, float loadCapacity = 4f, float momentCapacity = 8f)
         {
             HashSet<Vector2Int> pillared = ComputePillared();
             var result = new Dictionary<Vector2Int, CellStress>(_cells.Count);
+            var load = new Dictionary<Vector2Int, float>();   // weight shares entering each pillar cell
+            var moment = new Dictionary<Vector2Int, float>(); // signed lever sum (+ = load to the left = CCW)
 
+            // ---- Pass 1: carried cells + load attribution ----
             foreach (var cell in _cells)
             {
                 if (pillared.Contains(cell))
-                {
-                    result[cell] = default;
-                    continue;
-                }
+                    continue; // handled in pass 2
 
                 int dL = DistanceToPillar(cell, -1, maxCantilever, pillared);
                 int dR = DistanceToPillar(cell, +1, maxCantilever, pillared);
@@ -152,16 +171,24 @@ namespace Demolition.Core
                     // Simply-supported span: sags most at mid-span, stays level there.
                     stress = 0.7f * Mathf.Min(1f, Mathf.Min(dL, dR) / (float)maxCantilever);
                     lean = (dL - dR) / (float)(dL + dR);
+
+                    // The nearer pillar carries the bigger share.
+                    float shareL = dR / (float)(dL + dR);
+                    float shareR = 1f - shareL;
+                    Attribute(load, moment, new Vector2Int(cell.x - dL, cell.y), shareL, -dL * shareL);
+                    Attribute(load, moment, new Vector2Int(cell.x + dR, cell.y), shareR, +dR * shareR);
                 }
                 else if (hasL)
                 {
                     stress = Mathf.Min(1f, dL / (float)maxCantilever);
                     lean = -1f; // supported from the left → tips clockwise over the gap
+                    Attribute(load, moment, new Vector2Int(cell.x - dL, cell.y), 1f, -dL);
                 }
                 else if (hasR)
                 {
                     stress = Mathf.Min(1f, dR / (float)maxCantilever);
                     lean = 1f;
+                    Attribute(load, moment, new Vector2Int(cell.x + dR, cell.y), 1f, +dR);
                 }
                 else
                 {
@@ -169,10 +196,73 @@ namespace Demolition.Core
                     lean = 0f;
                 }
 
-                result[cell] = new CellStress { Stress = stress, Lean = lean };
+                result[cell] = new CellStress { Stress = stress, Lean = lean, Drift = 0f };
+            }
+
+            // ---- Pass 2: pillar columns bear what was attributed to them ----
+            foreach (List<Vector2Int> run in ContiguousPillarRuns(pillared))
+            {
+                float runLoad = 0f, runMoment = 0f;
+                for (int i = 0; i < run.Count; i++)
+                {
+                    if (load.TryGetValue(run[i], out float l)) runLoad += l;
+                    if (moment.TryGetValue(run[i], out float m)) runMoment += m;
+                }
+
+                float stress = Mathf.Min(1f, runLoad / loadCapacity);
+                float lean = Mathf.Clamp(runMoment / momentCapacity, -1f, 1f);
+
+                int baseY = run[0].y; // runs are built bottom-up
+                for (int i = 0; i < run.Count; i++)
+                {
+                    float h = run.Count <= 1 ? 0f : (run[i].y - baseY) / (float)(run.Count - 1);
+                    result[run[i]] = new CellStress
+                    {
+                        Stress = stress,
+                        Lean = lean,
+                        // CCW lean (+) means the column bows to the LEFT (negative x),
+                        // displacement growing with height² like a bending beam.
+                        Drift = -lean * h * h,
+                    };
+                }
             }
 
             return result;
+        }
+
+        private static void Attribute(Dictionary<Vector2Int, float> load,
+            Dictionary<Vector2Int, float> moment, Vector2Int pillarCell, float share, float lever)
+        {
+            load.TryGetValue(pillarCell, out float l);
+            load[pillarCell] = l + share;
+            moment.TryGetValue(pillarCell, out float m);
+            moment[pillarCell] = m + lever;
+        }
+
+        /// <summary>Group pillared cells into contiguous vertical runs (per x, bottom-up).</summary>
+        private static List<List<Vector2Int>> ContiguousPillarRuns(HashSet<Vector2Int> pillared)
+        {
+            var byColumn = new Dictionary<int, List<int>>();
+            foreach (var cell in pillared)
+            {
+                if (!byColumn.TryGetValue(cell.x, out var ys))
+                    byColumn[cell.x] = ys = new List<int>();
+                ys.Add(cell.y);
+            }
+
+            var runs = new List<List<Vector2Int>>();
+            foreach (var kv in byColumn)
+            {
+                kv.Value.Sort();
+                List<Vector2Int> current = null;
+                for (int i = 0; i < kv.Value.Count; i++)
+                {
+                    if (current == null || kv.Value[i] != kv.Value[i - 1] + 1)
+                        runs.Add(current = new List<Vector2Int>());
+                    current.Add(new Vector2Int(kv.Key, kv.Value[i]));
+                }
+            }
+            return runs;
         }
 
         private int DistanceToPillar(Vector2Int cell, int dirX, int maxSteps, HashSet<Vector2Int> pillared)

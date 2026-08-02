@@ -56,16 +56,22 @@ The only physics touched is the handful of blocks currently falling. The structu
 ### Design choices worth noting
 - **Static-while-supported** is the whole performance/stability win — standing blocks never
   enter the solver (see Appendix A).
-- **Pre-collapse anticipation is cosmetic and deterministic.** `ComputeStress()` classifies
-  each cell: *pillared* (continuous column of intact cells straight down to an anchor → no
-  stress), *cantilever* (support on one side only → leans away from it, more with overhang
-  length), *span* (pillars both sides → sags most at mid-span, level there), or *hanging*
-  (max stress, straight sag). Blocks show this by leaning/sagging (and trembling near the
-  limit) on a **visual child transform — colliders never move**, so physics and gameplay are
-  untouched. Because it derives purely from the discrete structure state, every networked
-  client recomputes identical leans locally from the destroyed-set: **zero extra sync**.
-  A baseline captured at spawn hides the stress an intact building legitimately has (roof
-  over a hollow interior), so only damage-induced stress is displayed.
+- **Pre-collapse anticipation is cosmetic and deterministic.** `ComputeStress()` works in two
+  passes. Pass 1 classifies *carried* cells: *cantilever* (support one side only → leans away
+  from it, more with overhang length), *span* (pillars both sides → sags most at mid-span,
+  level there), or *hanging* (max stress, straight sag) — and each carried cell **attributes
+  its weight** to the pillar cell(s) holding it (split by proximity, lever arm = bending
+  moment). Pass 2 makes the *pillars* answer for what they carry: each contiguous column sums
+  incoming load and signed moment — heavy load ⇒ stress/tremble even when balanced; net
+  moment ⇒ the column **leans toward the mass it carries**, with a height² drift so it
+  visibly *bows* like a bending beam. So when one wall is the last load path for a roof, that
+  wall saturates, leans over the span, and trembles — exactly where a player expects the
+  stress to be. Blocks render all of it on a **visual child transform — colliders never
+  move**, so physics and gameplay are untouched. Because it derives purely from the discrete
+  structure state, every networked client recomputes near-identical leans locally from the
+  destroyed-set: **zero extra sync**. A baseline captured at spawn hides the stress an intact
+  building legitimately has (roof over a hollow interior), so only damage-induced stress is
+  displayed.
 - **Punch does not shove supported walls** (they're static); it only knocks loose debris.
   That's intentional and correct — force-based nudging of a standing wall is exactly the
   instability we're avoiding.
@@ -105,10 +111,12 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 | `RemoveNonexistentCell_IsNoOp` | Robust to bad coords. |
 | `ComputeSupported_ReachesEveryConnectedCellFromAnyAnchor` | Flood-fill correctness on a solid slab. |
 | `Cascade_RemovingSupportBaseDropsFloorsAbove` | Floors give lateral support; a fully isolated cell falls. |
-| `ComputeStress_PillaredColumn_IsZero` | Columnar support carries no stress. |
-| `ComputeStress_CantileverArm_GrowsWithDistance_AndLeansAwayFromSupport` | Overhang stress grows with length; lean tips clockwise when support is to the left. |
-| `ComputeStress_SimplySupportedSpan_PeaksAtMidspan_WithMirroredLean` | Span sags most at mid-span (level), with mirrored lean signs either side. |
+| `ComputeStress_PillaredColumn_IsZero` | An unloaded column carries no stress. |
+| `ComputeStress_CantileverArm_GrowsWithDistance_AndLeansAwayFromSupport` | Overhang stress grows with length; the mast carrying the arm is itself stressed and leans/bows toward it. |
+| `ComputeStress_SimplySupportedSpan_PeaksAtMidspan_WithMirroredLean` | Span sags most at mid-span (level), mirrored leans either side; both pillars lean inward toward the load. |
 | `ComputeStress_HangingCell_GetsMaxStress` | A cell with no sideways load path gets max stress, straight-down sag. |
+| `ComputeStress_LoadedColumn_LeansTowardItsLoad` | The "last wall standing" carrying a roof saturates, leans toward the span, and bows with height². |
+| `ComputeStress_BalancedLoad_HeavyButLevel` | Equal loads both sides: overloaded (trembles) but stays upright — moments cancel. |
 
 > These expectations were cross-checked against an independent reference implementation of the
 > same algorithm — all scenarios agree.
@@ -120,6 +128,7 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 - [ ] Destroying a mid-floor block with intact neighbours does **not** collapse (lateral support / redundant load path).
 - [ ] Falling blocks that land on the player **reduce the health bar** (impact scaled by speed); death respawns the player.
 - [ ] Weakened-but-still-supported sections visibly **lean/sag toward the missing support**, and **tremble** when close to giving way (colliders stay put — walking on a leaning floor is unchanged).
+- [ ] When a single wall/column is the **last load path** for the roof, that column itself **leans and bows toward the span it carries** and trembles — the stress shows where a player physically expects it.
 - [ ] The **punch ring** is always visible in front of the player, dims during cooldown, and every swing **flashes** the actual overlap circle.
 - [ ] The **HUD destruction %** climbs as the building comes down.
 - [ ] Framerate stays flat while the building stands, and settled rubble re-freezes to Static (bounded body count).
