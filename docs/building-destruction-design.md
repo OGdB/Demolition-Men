@@ -79,7 +79,8 @@ The only physics touched is the handful of blocks currently falling. The structu
 ## 3. How to run it
 
 **Manual / PlayMode (one click):**
-1. New empty scene → create an empty GameObject → add **`DemoBootstrap`** → press Play.
+1. Open **`Assets/Scenes/DemolitionTestBranch.unity`** (already wired with `DemoBootstrap`)
+   and press Play — or, in any empty scene, add `DemoBootstrap` to an empty GameObject.
 2. Controls: **A/D** or ◀/▶ move · **Space/W** jump · **J or Left-Mouse** punch.
 3. Walk to the building and punch out the base of an **orange Support column**. Watch the
    floors it was holding lose their ground path and collapse. Punch a mid-floor brick instead

@@ -53,7 +53,7 @@ namespace Demolition
             transform.position = _spawnPoint;
             if (_rb != null)
             {
-                _rb.velocity = Vector2.zero;
+                _rb.linearVelocity = Vector2.zero;
                 _rb.angularVelocity = 0f;
             }
             Current = maxHealth;

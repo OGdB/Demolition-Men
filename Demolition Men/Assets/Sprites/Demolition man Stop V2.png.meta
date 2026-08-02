@@ -75,7 +75,7 @@ TextureImporter:
       213: 5470409044789456176
     second: Demolition man Stop V2_23
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 13
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -92,9 +92,12 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
+    flipGreenChannel: 0
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -104,8 +107,8 @@ TextureImporter:
   textureSettings:
     serializedVersion: 2
     filterMode: 0
-    aniso: -1
-    mipBias: -100
+    aniso: 1
+    mipBias: 0
     wrapU: 1
     wrapV: 1
     wrapW: 1
@@ -126,12 +129,17 @@ TextureImporter:
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
+  ignorePngGamma: 0
   applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 1
   platformSettings:
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -141,9 +149,10 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
+    ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: Standalone
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -153,6 +162,20 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
@@ -169,6 +192,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -190,6 +214,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -211,6 +236,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -232,6 +258,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -253,6 +280,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -274,6 +302,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -295,6 +324,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -316,6 +346,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -337,6 +368,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -358,6 +390,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -379,6 +412,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -400,6 +434,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -421,6 +456,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -442,6 +478,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -463,6 +500,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -484,6 +522,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -505,6 +544,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -526,6 +566,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -547,6 +588,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -568,6 +610,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -589,6 +632,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -610,6 +654,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -631,6 +676,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -652,6 +698,7 @@ TextureImporter:
       alignment: 9
       pivot: {x: 0.3, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -663,6 +710,7 @@ TextureImporter:
       edges: []
       weights: []
     outline: []
+    customData: 
     physicsShape: []
     bones: []
     spriteID: 5e97eb03825dee720800000000000000
@@ -672,9 +720,35 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-  spritePackingTag: 
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Demolition man Stop V2_0: -1864574776723683874
+      Demolition man Stop V2_1: -7586582979285983739
+      Demolition man Stop V2_10: -2815987945270860531
+      Demolition man Stop V2_11: -4848019503914778325
+      Demolition man Stop V2_12: -6055408018035731304
+      Demolition man Stop V2_13: 6788600092654409043
+      Demolition man Stop V2_14: 297101009698646044
+      Demolition man Stop V2_15: 7895718300949877008
+      Demolition man Stop V2_16: 6559992696910950998
+      Demolition man Stop V2_17: 1500035423039971124
+      Demolition man Stop V2_18: -6833496016103528461
+      Demolition man Stop V2_19: -5570937826556600450
+      Demolition man Stop V2_2: 2395488664691626196
+      Demolition man Stop V2_20: -4839132405423536629
+      Demolition man Stop V2_21: -6054078871893497188
+      Demolition man Stop V2_22: -2839132753062493996
+      Demolition man Stop V2_23: 5470409044789456176
+      Demolition man Stop V2_3: -2402151848494683174
+      Demolition man Stop V2_4: -8250827105672730993
+      Demolition man Stop V2_5: -1255660847890333595
+      Demolition man Stop V2_6: -9034312028570928801
+      Demolition man Stop V2_7: 5177024124626299463
+      Demolition man Stop V2_8: -1786718727168683886
+      Demolition man Stop V2_9: 5521791032743894492
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
