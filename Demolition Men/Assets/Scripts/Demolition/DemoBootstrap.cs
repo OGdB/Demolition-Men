@@ -176,7 +176,7 @@ namespace Demolition
             }
 
             const int x = 12, w = 320;
-            GUI.Box(new Rect(x - 4, 8, w + 8, 118), GUIContent.none);
+            GUI.Box(new Rect(x - 4, 8, w + 8, 138), GUIContent.none);
 
             GUI.Label(new Rect(x, 14, w, 20), $"Destruction: {_building.DestroyedFraction * 100f:0}%");
             DrawBar(new Rect(x, 34, w, 16), _building.DestroyedFraction,
@@ -191,6 +191,7 @@ namespace Demolition
             }
 
             GUI.Label(new Rect(x, 98, w, 20), "A/D move · Space jump · J / L-Mouse punch");
+            GUI.Label(new Rect(x, 116, w, 20), "Leaning or trembling blocks are about to give way!");
         }
 
         private void DrawBar(Rect r, float fraction, Color fill)

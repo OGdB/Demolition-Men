@@ -8,6 +8,10 @@ namespace Demolition
     /// ControllerManager, or Input System asset.
     ///
     /// Controls: A/D or ◀/▶ move · Space or W jump · J or Left-Mouse punch.
+    ///
+    /// The punch overlap area is always visible as a faint ring in front of the player
+    /// (dimmed while the punch is on cooldown), and every swing flashes the actual
+    /// overlap circle.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public class SimplePlayerController : MonoBehaviour
@@ -25,26 +29,68 @@ namespace Demolition
         [SerializeField] private float punchCooldown = 0.25f;
         [SerializeField] private float punchKnockback = 3f;
 
+        [Header("Feedback")]
+        [SerializeField] private float markerAlpha = 0.25f;
+
         private Rigidbody2D _rb;
         private Collider2D _col;
         private int _facing = 1;
         private float _lastPunchTime = -999f;
         private bool _grounded;
+        private Transform _marker;
+        private SpriteRenderer _markerSr;
 
         // Reused buffer so punching allocates nothing.
         private readonly Collider2D[] _punchHits = new Collider2D[16];
+
+        /// <summary>World-space centre of the punch overlap circle.</summary>
+        private Vector2 PunchOrigin =>
+            (Vector2)transform.position + Vector2.right * (_facing * punchRange);
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
             _col = GetComponent<Collider2D>();
             _rb.freezeRotation = true;
+            CreateRangeMarker();
+        }
+
+        // Unparented on purpose: the player root has a non-uniform scale, which would
+        // squash a child ring into an ellipse. LateUpdate keeps it glued to the fist.
+        private void CreateRangeMarker()
+        {
+            var go = new GameObject("PunchRangeMarker");
+            _markerSr = go.AddComponent<SpriteRenderer>();
+            _markerSr.sprite = PrimitiveSprite.Ring();
+            _markerSr.color = new Color(1f, 1f, 1f, markerAlpha);
+            _markerSr.sortingOrder = 60;
+            _marker = go.transform;
+            _marker.localScale = Vector3.one * (punchRadius * 2f);
         }
 
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.J) || Input.GetMouseButtonDown(0))
                 TryPunch();
+        }
+
+        private void LateUpdate()
+        {
+            if (_marker == null)
+                return;
+            _marker.position = PunchOrigin;
+
+            // Dim the ring while the punch is recharging so timing reads at a glance.
+            bool ready = Time.time - _lastPunchTime >= punchCooldown;
+            var c = _markerSr.color;
+            c.a = ready ? markerAlpha : markerAlpha * 0.35f;
+            _markerSr.color = c;
+        }
+
+        private void OnDestroy()
+        {
+            if (_marker != null)
+                Destroy(_marker.gameObject);
         }
 
         private void FixedUpdate()
@@ -83,7 +129,9 @@ namespace Demolition
                 return;
             _lastPunchTime = Time.time;
 
-            Vector2 origin = (Vector2)transform.position + Vector2.right * (_facing * punchRange);
+            Vector2 origin = PunchOrigin;
+            SpawnSwingFlash(origin);
+
             int count = Physics2D.OverlapCircleNonAlloc(origin, punchRadius, _punchHits);
             for (int i = 0; i < count; i++)
             {
@@ -105,6 +153,17 @@ namespace Demolition
                         brb.AddForce(new Vector2(_facing * punchKnockback, punchKnockback * 0.35f), ForceMode2D.Impulse);
                 }
             }
+        }
+
+        private void SpawnSwingFlash(Vector2 origin)
+        {
+            var go = new GameObject("PunchFlash");
+            go.transform.position = origin;
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = PrimitiveSprite.Disc();
+            sr.color = new Color(1f, 0.85f, 0.35f, 0.5f);
+            sr.sortingOrder = 61;
+            go.AddComponent<SpriteFlash>().Configure(punchRadius * 2f, 0.13f);
         }
 
         private void OnDrawGizmosSelected()

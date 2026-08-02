@@ -7,9 +7,10 @@ namespace Demolition
     ///
     /// Option C lifecycle:
     ///  - <b>Supported</b>: Rigidbody2D is Static (near-zero solver cost, no stacking jitter).
+    ///    Under structural stress it visually leans/sags/trembles so players can anticipate
+    ///    a collapse — sprite only, the collider never moves.
     ///  - <b>Falling</b>: on detach it flips to Dynamic and can hurt the player on impact.
-    ///  - <b>Rubble</b>: once it settles it re-freezes to Static and stays around as debris,
-    ///    so it costs nothing yet remains visible.
+    ///  - <b>Rubble</b>: once it settles it re-freezes to Static and stays around as debris.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public class BuildingBlock : MonoBehaviour
@@ -29,26 +30,38 @@ namespace Demolition
         [SerializeField] private float maxImpactDamage = 45f;
         [SerializeField] private float impactCooldown = 0.4f;
 
+        [Header("Stress visuals (pre-collapse anticipation)")]
+        [SerializeField] private float maxLeanDegrees = 7f;
+        [SerializeField] private float maxSag = 0.12f;
+        [SerializeField] private float visualLerpSpeed = 4f;
+        [SerializeField] private float trembleThreshold = 0.55f;
+        [SerializeField] private float trembleAmplitude = 0.045f;
+
         public BlockMaterial Material => material;
         public Vector2Int Coord { get; private set; }
         public bool IsFalling { get; private set; }
         public bool IsRubble { get; private set; }
+        /// <summary>Current cosmetic stress, 0 (solid) .. 1 (about to give).</summary>
+        public float Stress { get; private set; }
 
         private DestructibleBuilding _building;
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
+        private Transform _visual;
+        private Vector3 _smoothVisualPos;
         private Color _baseColor;
         private float _health;
         private float _resolvedMaxHealth;
         private float _settleTimer;
         private float _lastImpactTime = -999f;
+        private float _targetLeanDeg;
+        private float _targetSag;
+        private float _tremblePhase;
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
             _rb.bodyType = RigidbodyType2D.Static;
-            _sr = GetComponent<SpriteRenderer>();
-            if (_sr != null) _baseColor = _sr.color;
         }
 
         public void Initialise(DestructibleBuilding building, Vector2Int coord, BlockMaterial mat)
@@ -58,6 +71,38 @@ namespace Demolition
             material = mat;
             _resolvedMaxHealth = maxHealth > 0f ? maxHealth : BlockMaterialInfo.DefaultHealth(mat);
             _health = _resolvedMaxHealth;
+            _tremblePhase = Random.value * Mathf.PI * 2f;
+            EnsureVisualChild();
+        }
+
+        /// <summary>
+        /// The stress lean must never move the collider, so the sprite lives on a child
+        /// transform that the visuals can offset/rotate freely. If the sprite was
+        /// authored on the root (as the demo bootstrap does), migrate it to a child.
+        /// </summary>
+        private void EnsureVisualChild()
+        {
+            var rootSr = GetComponent<SpriteRenderer>();
+            if (rootSr != null)
+            {
+                var child = new GameObject("Visual");
+                child.transform.SetParent(transform, false);
+                var childSr = child.AddComponent<SpriteRenderer>();
+                childSr.sprite = rootSr.sprite;
+                childSr.color = rootSr.color;
+                childSr.sortingLayerID = rootSr.sortingLayerID;
+                childSr.sortingOrder = rootSr.sortingOrder;
+                Destroy(rootSr);
+                _sr = childSr;
+            }
+            else
+            {
+                _sr = GetComponentInChildren<SpriteRenderer>();
+            }
+
+            _visual = _sr != null ? _sr.transform : null;
+            if (_sr != null)
+                _baseColor = _sr.color;
         }
 
         public void TakeDamage(float amount)
@@ -85,6 +130,50 @@ namespace Demolition
             if (_building != null)
                 _building.OnBlockDestroyed(this);
             Destroy(gameObject);
+        }
+
+        /// <summary>
+        /// Called by the building after each destruction event: how precarious this cell
+        /// now is (0..1) and which way it should lean (-1 = clockwise / its support is to
+        /// the left, +1 = counter-clockwise, 0 = straight-down sag).
+        /// </summary>
+        public void SetStress(float stress, float lean)
+        {
+            Stress = Mathf.Clamp01(stress);
+            _targetLeanDeg = lean * Stress * maxLeanDegrees;
+            _targetSag = Stress * Stress * maxSag;
+        }
+
+        private void Update()
+        {
+            if (_visual == null)
+                return;
+
+            float targetLean = _targetLeanDeg;
+            float targetSag = _targetSag;
+            float stress = Stress;
+            if (IsFalling || IsRubble)
+            {
+                // Real physics has taken over — ease the fake lean back out.
+                targetLean = 0f;
+                targetSag = 0f;
+                stress = 0f;
+            }
+
+            float k = Time.deltaTime * visualLerpSpeed;
+            _smoothVisualPos = Vector3.Lerp(_smoothVisualPos, new Vector3(0f, -targetSag, 0f), k);
+
+            // Tremble is added after the smoothing so the lerp doesn't filter it away.
+            float trembleX = 0f;
+            if (stress > trembleThreshold)
+            {
+                float t = (stress - trembleThreshold) / (1f - trembleThreshold);
+                trembleX = Mathf.Sin(Time.time * 33f + _tremblePhase) * trembleAmplitude * t;
+            }
+
+            _visual.localPosition = _smoothVisualPos + new Vector3(trembleX, 0f, 0f);
+            _visual.localRotation = Quaternion.Lerp(
+                _visual.localRotation, Quaternion.Euler(0f, 0f, targetLean), k);
         }
 
         /// <summary>Static structure -> falling debris. Called for every detached cell.</summary>
