@@ -35,10 +35,12 @@ definition, so it's independently testable and doesn't disturb the existing prot
 |---|---|---|
 | **Structural core** (pure C#, no physics/MonoBehaviour) | `Core/BuildingStructure.cs` | The support-graph: cells, anchors, `RemoveCell()` → returns detached cells via BFS from anchors. Unit-testable headlessly. |
 | Material data | `BlockMaterial.cs` | Enum (`Brick/Metal/Wood/Glass/Support`) + per-material health and debug tint. |
-| Per-cell behaviour | `BuildingBlock.cs` | Health + damage; **Static** rigidbody while supported; `BeginFalling()` flips it to **Dynamic** debris with a lifetime. |
-| Building owner | `DestructibleBuilding.cs` | Holds the `BuildingStructure` + live blocks; on a block's death re-runs support and calls `BeginFalling()` on detached cells. Cap on simultaneous dynamic bodies. |
+| Per-cell behaviour | `BuildingBlock.cs` | Health + damage (with hit particles + progressive darkening); **Static** while supported; `BeginFalling()` flips it to **Dynamic** debris that **settles into persistent Static rubble** and **deals impact damage** to the player on the way down. |
+| Building owner | `DestructibleBuilding.cs` | Holds the `BuildingStructure` + live blocks; on a block's death re-runs support and calls `BeginFalling()` on detached cells. Exposes `DestroyedFraction` for the HUD. Cap on simultaneous dynamic bodies. |
+| Player health | `PlayerHealth.cs` | Takes impact damage from falling blocks; hurt flash + particles; respawns at start so the bench stays usable. |
+| Feedback | `Particles.cs` | Code-configured one-shot particle bursts (hit / destroy / impact) — no imported assets. |
 | Test player | `SimplePlayerController.cs` | Legacy-input keyboard controller with a **punch** (OverlapCircle → `TakeDamage`, knockback only on already-loose debris). |
-| Test harness | `DemoBootstrap.cs`, `PrimitiveSprite.cs` | Builds ground + building + player + camera from code — no prefabs or art needed. |
+| Test harness | `DemoBootstrap.cs`, `PrimitiveSprite.cs` | Builds ground + a **realistic hollow building** (walls with windows, interior floor slabs, load-bearing support columns, ground-floor doorway, roof) + player + camera from code, plus a **HUD** (destruction % + health). No prefabs or art needed. |
 
 ### Data flow on a punch
 ```
@@ -97,12 +99,13 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 > same algorithm — all scenarios agree.
 
 ### Manual / PlayMode checklist (via `DemoBootstrap`)
-- [ ] Player walks, jumps, and stands on the building (static blocks are solid ground).
-- [ ] Punching a **supported** wall damages it but does **not** shove it.
-- [ ] Destroying a **Support column base** collapses the floors above; debris falls and settles.
-- [ ] Destroying a mid-floor brick with intact neighbours does **not** collapse (lateral support).
-- [ ] Debris despawns after its lifetime (no unbounded body count).
-- [ ] Framerate stays flat while the building stands (confirming static-body cost ≈ 0).
+- [ ] Player walks, jumps, and stands on the building floors (static blocks are solid ground).
+- [ ] Punching a block shows hit particles and progressive darkening; a **supported** wall takes damage but is **not** shoved.
+- [ ] Destroying a **Support column** collapses whatever loses its path to the foundation; debris falls, tumbles, and **settles into rubble that stays**.
+- [ ] Destroying a mid-floor block with intact neighbours does **not** collapse (lateral support / redundant load path).
+- [ ] Falling blocks that land on the player **reduce the health bar** (impact scaled by speed); death respawns the player.
+- [ ] The **HUD destruction %** climbs as the building comes down.
+- [ ] Framerate stays flat while the building stands, and settled rubble re-freezes to Static (bounded body count).
 
 ### Future test coverage (with each roadmap step)
 - PlayMode test that spawns a `DestructibleBuilding` and asserts detached blocks become
@@ -136,8 +139,9 @@ run locally.
 
 ## 6. Roadmap
 
-1. **✅ Prototype (this change):** static support-graph, collapse-on-detach, debris, test
-   player with punch, headless unit tests, one-click demo scene.
+1. **✅ Prototype:** static support-graph, collapse-on-detach, persistent rubble, hit/impact
+   particles, player impact damage + HUD, a realistic procedural building, test player with
+   punch, headless unit tests, one-click demo scene.
 2. **Content integration:** author real building prefabs on the same grid contract; map the
    existing material sprites (`Brick`, `MetalBeam`, `SupportBeams`, `Glass`, `Wood*`) onto
    `BuildingBlock`; flag `SupportBeams` as anchors. Retire `AddJointScript` and the dead joint
@@ -160,8 +164,9 @@ run locally.
   no, debris is pure visual and cheap. Decide per design intent.
 - **Diagonal support:** currently 4-neighbour (orthogonal), which reads as "cut the column,
   top falls." Revisit if designers want diagonal bracing.
-- **Rubble persistence:** static rubble as obstacles is a nice touch but adds sync surface —
-  decide per level.
+- **Rubble persistence:** implemented as settle-to-Static (rubble stays, costs nothing). It
+  currently adds no network sync surface because it's client-side cosmetic; if rubble must be
+  a shared gameplay obstacle, that state has to be replicated — decide per level.
 
 ---
 
