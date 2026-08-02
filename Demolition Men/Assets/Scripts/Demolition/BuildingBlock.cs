@@ -107,7 +107,7 @@ namespace Demolition
                 return;
 
             // Settle detection: once it has come to rest, freeze it into persistent rubble.
-            bool slow = _rb.velocity.magnitude < settleLinearThreshold
+            bool slow = _rb.linearVelocity.magnitude < settleLinearThreshold
                         && Mathf.Abs(_rb.angularVelocity) < settleAngularThreshold;
             _settleTimer = slow ? _settleTimer + Time.fixedDeltaTime : 0f;
 
