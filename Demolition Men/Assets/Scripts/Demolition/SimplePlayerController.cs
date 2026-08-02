@@ -58,11 +58,11 @@ namespace Demolition
             if (Mathf.Abs(x) > 0.01f)
                 _facing = x > 0f ? 1 : -1;
 
-            _rb.velocity = new Vector2(x * moveSpeed, _rb.velocity.y);
+            _rb.linearVelocity = new Vector2(x * moveSpeed, _rb.linearVelocity.y);
 
             bool jump = Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow);
             if (jump && _grounded)
-                _rb.velocity = new Vector2(_rb.velocity.x, jumpVelocity);
+                _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, jumpVelocity);
         }
 
         private bool CheckGrounded()

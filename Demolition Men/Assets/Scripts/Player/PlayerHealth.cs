@@ -115,7 +115,7 @@ public class PlayerHealth : MonoBehaviour
      */
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.tag == "Destructibles" && rgb.velocity.y < 0.5f && collision.rigidbody.velocity.y < -0.1f) 
+        if (collision.gameObject.tag == "Destructibles" && rgb.linearVelocity.y < 0.5f && collision.rigidbody.linearVelocity.y < -0.1f) 
         {
             Vector3 velocityForce = collision.relativeVelocity;
             if (velocityForce.y <= -4f)

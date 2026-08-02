@@ -1,0 +1,5 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Demolition.csproj" />
+  <Project Path="Demolition.Tests.EditMode.csproj" />
+</Solution>

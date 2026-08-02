@@ -69,7 +69,7 @@ public class PlayerMovement : MonoBehaviour
     // AddForce adds time.Deltatime inherently. No need to add it.
     private void Running()
     {
-        currentXSpeed = Mathf.Abs(rgb.velocity.x);
+        currentXSpeed = Mathf.Abs(rgb.linearVelocity.x);
 
         XmovementInput = pi.controller.JoystickRaw_Left.x;
 
@@ -117,15 +117,15 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // Source help: https://www.youtube.com/watch?v=7KiK0Aqtmzc
-        if (rgb.velocity.y < 0)
+        if (rgb.linearVelocity.y < 0)
         {
             Jump = false;
-            rgb.velocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+            rgb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
         }
-        else if (rgb.velocity.y > 0 && !pi.controller.A && Mathf.Abs(XmovementInput) < 0.2f)
+        else if (rgb.linearVelocity.y > 0 && !pi.controller.A && Mathf.Abs(XmovementInput) < 0.2f)
         {
             Jump = false;
-            rgb.velocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
+            rgb.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
         }
     }
 
