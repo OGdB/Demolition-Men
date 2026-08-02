@@ -111,6 +111,81 @@ namespace Demolition.Tests
             Assert.AreEqual(9, supported.Count, "A solid connected slab is fully supported by one anchor.");
         }
 
+        // ---------- Stress heuristic (pre-collapse lean visuals) ----------
+
+        [Test]
+        public void ComputeStress_PillaredColumn_IsZero()
+        {
+            var s = Column(4);
+            foreach (var kv in s.ComputeStress())
+                Assert.AreEqual(0f, kv.Value.Stress, 1e-5f,
+                    $"Pillared cell {kv.Key} should carry no stress.");
+        }
+
+        [Test]
+        public void ComputeStress_CantileverArm_GrowsWithDistance_AndLeansAwayFromSupport()
+        {
+            // Pillar x=0 (anchor at base) with a horizontal arm off the top: (1,3)(2,3)(3,3).
+            var s = Column(4);
+            s.AddCell(new Vector2Int(1, 3));
+            s.AddCell(new Vector2Int(2, 3));
+            s.AddCell(new Vector2Int(3, 3));
+
+            var stress = s.ComputeStress(4);
+
+            Assert.AreEqual(0f, stress[new Vector2Int(0, 3)].Stress, 1e-5f, "Pillar top is unstressed.");
+            Assert.AreEqual(0.25f, stress[new Vector2Int(1, 3)].Stress, 1e-4f);
+            Assert.AreEqual(0.50f, stress[new Vector2Int(2, 3)].Stress, 1e-4f);
+            Assert.AreEqual(0.75f, stress[new Vector2Int(3, 3)].Stress, 1e-4f);
+            for (int x = 1; x <= 3; x++)
+                Assert.AreEqual(-1f, stress[new Vector2Int(x, 3)].Lean, 1e-4f,
+                    "Supported from the left → the overhang tips clockwise (negative lean).");
+        }
+
+        [Test]
+        public void ComputeStress_SimplySupportedSpan_PeaksAtMidspan_WithMirroredLean()
+        {
+            // Two pillars (x=0 and x=6, anchored) joined by a beam row at y=2, x=1..5.
+            var s = new BuildingStructure();
+            for (int y = 0; y < 3; y++)
+            {
+                s.AddCell(new Vector2Int(0, y), isAnchor: y == 0);
+                s.AddCell(new Vector2Int(6, y), isAnchor: y == 0);
+            }
+            for (int x = 1; x <= 5; x++)
+                s.AddCell(new Vector2Int(x, 2));
+
+            var stress = s.ComputeStress(4);
+            var mid = stress[new Vector2Int(3, 2)];
+
+            Assert.AreEqual(0.525f, mid.Stress, 1e-4f, "Mid-span carries the most stress.");
+            Assert.AreEqual(0f, mid.Lean, 1e-4f, "Mid-span sags level.");
+            Assert.Greater(mid.Stress, stress[new Vector2Int(2, 2)].Stress);
+            Assert.Greater(mid.Stress, stress[new Vector2Int(4, 2)].Stress);
+            Assert.AreEqual(-1f / 3f, stress[new Vector2Int(2, 2)].Lean, 1e-4f,
+                "Left of mid-span tilts clockwise, toward the sag.");
+            Assert.AreEqual(1f / 3f, stress[new Vector2Int(4, 2)].Lean, 1e-4f,
+                "Right of mid-span mirrors it.");
+        }
+
+        [Test]
+        public void ComputeStress_HangingCell_GetsMaxStress()
+        {
+            // Pillar x=0 with a roof arm (1,2)(2,2); cell (2,1) hangs below the arm tip
+            // with no contiguous row path to any pillar.
+            var s = new BuildingStructure();
+            s.AddCell(new Vector2Int(0, 0), isAnchor: true);
+            s.AddCell(new Vector2Int(0, 1));
+            s.AddCell(new Vector2Int(0, 2));
+            s.AddCell(new Vector2Int(1, 2));
+            s.AddCell(new Vector2Int(2, 2));
+            s.AddCell(new Vector2Int(2, 1));
+
+            var hanging = s.ComputeStress(4)[new Vector2Int(2, 1)];
+            Assert.AreEqual(1f, hanging.Stress, 1e-5f);
+            Assert.AreEqual(0f, hanging.Lean, 1e-5f, "No sideways support → straight-down sag.");
+        }
+
         [Test]
         public void Cascade_RemovingSupportBaseDropsFloorsAbove()
         {

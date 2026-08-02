@@ -33,13 +33,13 @@ definition, so it's independently testable and doesn't disturb the existing prot
 
 | Layer | File | Responsibility |
 |---|---|---|
-| **Structural core** (pure C#, no physics/MonoBehaviour) | `Core/BuildingStructure.cs` | The support-graph: cells, anchors, `RemoveCell()` → returns detached cells via BFS from anchors. Unit-testable headlessly. |
+| **Structural core** (pure C#, no physics/MonoBehaviour) | `Core/BuildingStructure.cs` | The support-graph: cells, anchors, `RemoveCell()` → returns detached cells via BFS from anchors. Plus `ComputeStress()` — a per-cell **stress heuristic** (pillared / cantilever / span) used for pre-collapse lean visuals. Unit-testable headlessly. |
 | Material data | `BlockMaterial.cs` | Enum (`Brick/Metal/Wood/Glass/Support`) + per-material health and debug tint. |
-| Per-cell behaviour | `BuildingBlock.cs` | Health + damage (with hit particles + progressive darkening); **Static** while supported; `BeginFalling()` flips it to **Dynamic** debris that **settles into persistent Static rubble** and **deals impact damage** to the player on the way down. |
-| Building owner | `DestructibleBuilding.cs` | Holds the `BuildingStructure` + live blocks; on a block's death re-runs support and calls `BeginFalling()` on detached cells. Exposes `DestroyedFraction` for the HUD. Cap on simultaneous dynamic bodies. |
+| Per-cell behaviour | `BuildingBlock.cs` | Health + damage (with hit particles + progressive darkening); **Static** while supported — under stress it **leans, sags and trembles** (sprite on a visual child; the collider never moves); `BeginFalling()` flips it to **Dynamic** debris that **settles into persistent Static rubble** and **deals impact damage** to the player on the way down. |
+| Building owner | `DestructibleBuilding.cs` | Holds the `BuildingStructure` + live blocks; on a block's death re-runs support, calls `BeginFalling()` on detached cells, and refreshes per-cell stress targets (minus the intact building's baseline). Exposes `DestroyedFraction` for the HUD. Cap on simultaneous dynamic bodies. |
 | Player health | `PlayerHealth.cs` | Takes impact damage from falling blocks; hurt flash + particles; respawns at start so the bench stays usable. |
-| Feedback | `Particles.cs` | Code-configured one-shot particle bursts (hit / destroy / impact) — no imported assets. |
-| Test player | `SimplePlayerController.cs` | Legacy-input keyboard controller with a **punch** (OverlapCircle → `TakeDamage`, knockback only on already-loose debris). |
+| Feedback | `Particles.cs`, `SpriteFlash.cs` | Code-configured one-shot particle bursts (hit / destroy / impact) and expanding punch-flash sprites — no imported assets. |
+| Test player | `SimplePlayerController.cs` | Legacy-input keyboard controller with a **punch** (OverlapCircle → `TakeDamage`, knockback only on already-loose debris). The punch overlap circle is **always visible** as a faint ring (dims on cooldown) and **flashes** on every swing. |
 | Test harness | `DemoBootstrap.cs`, `PrimitiveSprite.cs` | Builds ground + a **realistic hollow building** (walls with windows, interior floor slabs, load-bearing support columns, ground-floor doorway, roof) + player + camera from code, plus a **HUD** (destruction % + health). No prefabs or art needed. |
 
 ### Data flow on a punch
@@ -56,6 +56,16 @@ The only physics touched is the handful of blocks currently falling. The structu
 ### Design choices worth noting
 - **Static-while-supported** is the whole performance/stability win — standing blocks never
   enter the solver (see Appendix A).
+- **Pre-collapse anticipation is cosmetic and deterministic.** `ComputeStress()` classifies
+  each cell: *pillared* (continuous column of intact cells straight down to an anchor → no
+  stress), *cantilever* (support on one side only → leans away from it, more with overhang
+  length), *span* (pillars both sides → sags most at mid-span, level there), or *hanging*
+  (max stress, straight sag). Blocks show this by leaning/sagging (and trembling near the
+  limit) on a **visual child transform — colliders never move**, so physics and gameplay are
+  untouched. Because it derives purely from the discrete structure state, every networked
+  client recomputes identical leans locally from the destroyed-set: **zero extra sync**.
+  A baseline captured at spawn hides the stress an intact building legitimately has (roof
+  over a hollow interior), so only damage-induced stress is displayed.
 - **Punch does not shove supported walls** (they're static); it only knocks loose debris.
   That's intentional and correct — force-based nudging of a standing wall is exactly the
   instability we're avoiding.
@@ -69,7 +79,8 @@ The only physics touched is the handful of blocks currently falling. The structu
 ## 3. How to run it
 
 **Manual / PlayMode (one click):**
-1. New empty scene → create an empty GameObject → add **`DemoBootstrap`** → press Play.
+1. Open **`Assets/Scenes/DemolitionTestBranch.unity`** (already wired with `DemoBootstrap`)
+   and press Play — or, in any empty scene, add `DemoBootstrap` to an empty GameObject.
 2. Controls: **A/D** or ◀/▶ move · **Space/W** jump · **J or Left-Mouse** punch.
 3. Walk to the building and punch out the base of an **orange Support column**. Watch the
    floors it was holding lose their ground path and collapse. Punch a mid-floor brick instead
@@ -94,6 +105,10 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 | `RemoveNonexistentCell_IsNoOp` | Robust to bad coords. |
 | `ComputeSupported_ReachesEveryConnectedCellFromAnyAnchor` | Flood-fill correctness on a solid slab. |
 | `Cascade_RemovingSupportBaseDropsFloorsAbove` | Floors give lateral support; a fully isolated cell falls. |
+| `ComputeStress_PillaredColumn_IsZero` | Columnar support carries no stress. |
+| `ComputeStress_CantileverArm_GrowsWithDistance_AndLeansAwayFromSupport` | Overhang stress grows with length; lean tips clockwise when support is to the left. |
+| `ComputeStress_SimplySupportedSpan_PeaksAtMidspan_WithMirroredLean` | Span sags most at mid-span (level), with mirrored lean signs either side. |
+| `ComputeStress_HangingCell_GetsMaxStress` | A cell with no sideways load path gets max stress, straight-down sag. |
 
 > These expectations were cross-checked against an independent reference implementation of the
 > same algorithm — all scenarios agree.
@@ -104,6 +119,8 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 - [ ] Destroying a **Support column** collapses whatever loses its path to the foundation; debris falls, tumbles, and **settles into rubble that stays**.
 - [ ] Destroying a mid-floor block with intact neighbours does **not** collapse (lateral support / redundant load path).
 - [ ] Falling blocks that land on the player **reduce the health bar** (impact scaled by speed); death respawns the player.
+- [ ] Weakened-but-still-supported sections visibly **lean/sag toward the missing support**, and **tremble** when close to giving way (colliders stay put — walking on a leaning floor is unchanged).
+- [ ] The **punch ring** is always visible in front of the player, dims during cooldown, and every swing **flashes** the actual overlap circle.
 - [ ] The **HUD destruction %** climbs as the building comes down.
 - [ ] Framerate stays flat while the building stands, and settled rubble re-freezes to Static (bounded body count).
 
@@ -140,8 +157,9 @@ run locally.
 ## 6. Roadmap
 
 1. **✅ Prototype:** static support-graph, collapse-on-detach, persistent rubble, hit/impact
-   particles, player impact damage + HUD, a realistic procedural building, test player with
-   punch, headless unit tests, one-click demo scene.
+   particles, player impact damage + HUD, pre-collapse **stress lean/sag/tremble**
+   anticipation, always-visible punch-range indicator, a realistic procedural building, test
+   player with punch, headless unit tests, one-click demo scene.
 2. **Content integration:** author real building prefabs on the same grid contract; map the
    existing material sprites (`Brick`, `MetalBeam`, `SupportBeams`, `Glass`, `Wood*`) onto
    `BuildingBlock`; flag `SupportBeams` as anchors. Retire `AddJointScript` and the dead joint

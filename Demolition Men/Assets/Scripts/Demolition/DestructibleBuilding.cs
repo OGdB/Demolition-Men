@@ -7,7 +7,8 @@ namespace Demolition
     /// <summary>
     /// Owns one building's <see cref="BuildingStructure"/> and the live
     /// <see cref="BuildingBlock"/> instances. When a block is destroyed it re-runs the
-    /// support flood-fill and tells any newly-detached blocks to fall.
+    /// support flood-fill, tells newly-detached blocks to fall, and refreshes the
+    /// cosmetic per-cell stress (lean/sag) so players can see a collapse coming.
     ///
     /// This is where the discrete, deterministic "which cells exist / which detached"
     /// state lives — the exact thing that would be replicated over Fishnet (see the
@@ -19,9 +20,17 @@ namespace Demolition
                + "collapse event. Extra detached blocks are removed without simulation.")]
         [SerializeField] private int maxSimultaneousFalling = 200;
 
+        [Tooltip("How far (in cells) the stress heuristic scans sideways for a load-bearing "
+               + "column when deciding how much a cell should lean/sag.")]
+        [SerializeField] private int stressScanRange = 6;
+
         private readonly BuildingStructure _structure = new BuildingStructure();
         private readonly Dictionary<Vector2Int, BuildingBlock> _blocks =
             new Dictionary<Vector2Int, BuildingBlock>();
+
+        // Stress present in the intact building (e.g. a roof over a hollow interior).
+        // Only damage-induced stress beyond this baseline is shown to the player.
+        private Dictionary<Vector2Int, float> _baselineStress;
 
         public int StandingBlockCount => _structure.CellCount;
         public int InitialBlockCount { get; private set; }
@@ -38,6 +47,14 @@ namespace Demolition
             InitialBlockCount++;
         }
 
+        private void Start()
+        {
+            // Runs after the bootstrap/spawner has registered every block.
+            _baselineStress = new Dictionary<Vector2Int, float>();
+            foreach (var kv in _structure.ComputeStress(stressScanRange))
+                _baselineStress[kv.Key] = kv.Value.Stress;
+        }
+
         /// <summary>Called by a <see cref="BuildingBlock"/> when its health reaches zero.</summary>
         public void OnBlockDestroyed(BuildingBlock block)
         {
@@ -45,8 +62,6 @@ namespace Demolition
             _blocks.Remove(coord);
 
             List<Vector2Int> detached = _structure.RemoveCell(coord);
-            if (detached.Count == 0)
-                return;
 
             int fallen = 0;
             for (int i = 0; i < detached.Count; i++)
@@ -65,6 +80,31 @@ namespace Demolition
                     // Over the cap: drop it without adding a dynamic body.
                     Destroy(detachedBlock.gameObject);
                 }
+            }
+
+            RefreshStressVisuals();
+        }
+
+        /// <summary>
+        /// Recompute per-cell stress and push lean/sag targets to the surviving blocks.
+        /// Purely cosmetic and fully deterministic from the structure state, so networked
+        /// clients can run it locally with no extra sync.
+        /// </summary>
+        private void RefreshStressVisuals()
+        {
+            Dictionary<Vector2Int, CellStress> stress = _structure.ComputeStress(stressScanRange);
+            foreach (var kv in _blocks)
+            {
+                float s = 0f, lean = 0f;
+                if (stress.TryGetValue(kv.Key, out CellStress cs))
+                {
+                    s = cs.Stress;
+                    lean = cs.Lean;
+                }
+                if (_baselineStress != null && _baselineStress.TryGetValue(kv.Key, out float baseline))
+                    s = Mathf.Max(0f, s - baseline);
+
+                kv.Value.SetStress(s, lean);
             }
         }
     }

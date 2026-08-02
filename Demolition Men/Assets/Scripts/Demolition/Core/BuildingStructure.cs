@@ -4,6 +4,17 @@ using UnityEngine;
 namespace Demolition.Core
 {
     /// <summary>
+    /// Cosmetic stress of one cell: how precarious it is (0 = solid → 1 = about to give)
+    /// and which way it tends to tip (-1 = clockwise, i.e. its support is to the left;
+    /// +1 = counter-clockwise; 0 = straight-down sag).
+    /// </summary>
+    public struct CellStress
+    {
+        public float Stress;
+        public float Lean;
+    }
+
+    /// <summary>
     /// Pure (engine-light) structural model for one building, implementing the
     /// "support-graph" of Option C.
     ///
@@ -88,6 +99,94 @@ namespace Demolition.Core
             var result = new HashSet<Vector2Int>();
             ComputeSupportedInto(result);
             return result;
+        }
+
+        // ---------- Stress heuristic (pre-collapse lean/sag visuals) ----------
+
+        /// <summary>
+        /// Cells with a continuous vertical run of intact cells straight down to an
+        /// anchor. These carry load "columnar" and feel no stress.
+        /// </summary>
+        public HashSet<Vector2Int> ComputePillared()
+        {
+            var pillared = new HashSet<Vector2Int>();
+            foreach (var anchor in _anchors)
+            {
+                var c = anchor;
+                while (_cells.Contains(c) && pillared.Add(c))
+                    c += Vector2Int.up;
+            }
+            return pillared;
+        }
+
+        /// <summary>
+        /// Heuristic per-cell stress for visual anticipation. A cell that is not
+        /// pillared is carried sideways: scan along its row (through contiguous cells
+        /// only) for the nearest pillared cell on each side. One-sided support is a
+        /// cantilever — stress grows with overhang length and the cell leans away from
+        /// its support; support on both sides is a span — worst at mid-span, level
+        /// there. Purely cosmetic: collapse decisions remain
+        /// <see cref="RemoveCell"/>'s connectivity check, and callers must never move
+        /// colliders from this.
+        /// </summary>
+        public Dictionary<Vector2Int, CellStress> ComputeStress(int maxCantilever = 4)
+        {
+            HashSet<Vector2Int> pillared = ComputePillared();
+            var result = new Dictionary<Vector2Int, CellStress>(_cells.Count);
+
+            foreach (var cell in _cells)
+            {
+                if (pillared.Contains(cell))
+                {
+                    result[cell] = default;
+                    continue;
+                }
+
+                int dL = DistanceToPillar(cell, -1, maxCantilever, pillared);
+                int dR = DistanceToPillar(cell, +1, maxCantilever, pillared);
+                bool hasL = dL > 0, hasR = dR > 0;
+
+                float stress, lean;
+                if (hasL && hasR)
+                {
+                    // Simply-supported span: sags most at mid-span, stays level there.
+                    stress = 0.7f * Mathf.Min(1f, Mathf.Min(dL, dR) / (float)maxCantilever);
+                    lean = (dL - dR) / (float)(dL + dR);
+                }
+                else if (hasL)
+                {
+                    stress = Mathf.Min(1f, dL / (float)maxCantilever);
+                    lean = -1f; // supported from the left → tips clockwise over the gap
+                }
+                else if (hasR)
+                {
+                    stress = Mathf.Min(1f, dR / (float)maxCantilever);
+                    lean = 1f;
+                }
+                else
+                {
+                    stress = 1f; // held only via a roundabout path — about to give
+                    lean = 0f;
+                }
+
+                result[cell] = new CellStress { Stress = stress, Lean = lean };
+            }
+
+            return result;
+        }
+
+        private int DistanceToPillar(Vector2Int cell, int dirX, int maxSteps, HashSet<Vector2Int> pillared)
+        {
+            var c = cell;
+            for (int step = 1; step <= maxSteps; step++)
+            {
+                c = new Vector2Int(c.x + dirX, c.y);
+                if (!_cells.Contains(c))
+                    return -1; // gap — no contiguous load path this way
+                if (pillared.Contains(c))
+                    return step;
+            }
+            return -1;
         }
 
         private void ComputeSupportedInto(HashSet<Vector2Int> supported)
