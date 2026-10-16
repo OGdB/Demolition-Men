@@ -35,3 +35,13 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+# Unity logs and per-user editor state
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# Personal editor config
+.zed/
+.vscode/
+.idea/
