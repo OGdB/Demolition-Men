@@ -12,8 +12,8 @@ namespace Demolition
     /// the animator's Speed float, so the run cycle eases in and out the way it used to.
     ///
     /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · LB/RB weapon.
-    /// Keyboard: A/D or ◀/▶ move · Space/W jump · J or L-Mouse attack · K or R-Mouse
-    /// dynamite · Q/E weapon · 1/2/3 weapon hotkeys (debug).
+    /// Keyboard: A/D or ◀/▶ move · Space/W jump · Z, F or L-Mouse attack · X, R or
+    /// R-Mouse dynamite · Q/E weapon.
     /// </summary>
     public class PlayerInputReader : MonoBehaviour
     {
@@ -35,10 +35,10 @@ namespace Demolition
         public bool JumpUp { get; private set; }
         public bool AttackHeld { get; private set; }
         public bool DynamiteDown { get; private set; }
-        /// <summary>1..3 on the frame a weapon hotkey is pressed, otherwise 0.</summary>
-        public int WeaponHotkey { get; private set; }
         /// <summary>+1 / -1 on the frame the next / previous weapon is requested, otherwise 0.</summary>
         public int WeaponCycle { get; private set; }
+        /// <summary>The last input came from a gamepad (for button prompts).</summary>
+        public bool UsingGamepad { get; private set; }
 
         private Vector2 _smoothed;
         private Vector2 _smoothedVelocity;
@@ -46,7 +46,13 @@ namespace Demolition
 
         /// <summary>Read only this device (keyboard + mouse, or one gamepad) instead of the
         /// default gamepad index + keyboard. Null restores the default.</summary>
-        public void AssignDevice(InputDevice device) => _assigned = device;
+        public void AssignDevice(InputDevice device)
+        {
+            _assigned = device;
+            UsingGamepad = device != null ? device is Gamepad : !keyboardEnabled;
+        }
+
+        private void Awake() => UsingGamepad = !keyboardEnabled;
 
         private void Update()
         {
@@ -67,7 +73,7 @@ namespace Demolition
             Vector2 raw = Vector2.zero;
             bool jumpDown = false, jumpHeld = false, jumpUp = false;
             bool attack = false, dynamiteDown = false;
-            int hotkey = 0, cycle = 0;
+            int cycle = 0;
 
             if (pad != null)
             {
@@ -79,6 +85,8 @@ namespace Demolition
                 dynamiteDown |= pad.bButton.wasPressedThisFrame;
                 if (pad.rightShoulder.wasPressedThisFrame) cycle = 1;
                 else if (pad.leftShoulder.wasPressedThisFrame) cycle = -1;
+                if (pad.wasUpdatedThisFrame && (pad.leftStick.ReadValue().sqrMagnitude > 0.25f || AnyButton(pad)))
+                    UsingGamepad = true;
             }
 
             if (kb != null)
@@ -96,21 +104,21 @@ namespace Demolition
                 jumpUp |= kb.spaceKey.wasReleasedThisFrame || kb.wKey.wasReleasedThisFrame
                           || kb.upArrowKey.wasReleasedThisFrame;
 
-                attack |= kb.jKey.isPressed;
-                dynamiteDown |= kb.kKey.wasPressedThisFrame;
+                attack |= kb.zKey.isPressed || kb.fKey.isPressed;
+                dynamiteDown |= kb.xKey.wasPressedThisFrame || kb.rKey.wasPressedThisFrame;
 
                 if (kb.eKey.wasPressedThisFrame) cycle = 1;
                 else if (kb.qKey.wasPressedThisFrame) cycle = -1;
-
-                if (kb.digit1Key.wasPressedThisFrame) hotkey = 1;
-                else if (kb.digit2Key.wasPressedThisFrame) hotkey = 2;
-                else if (kb.digit3Key.wasPressedThisFrame) hotkey = 3;
+                if (kb.anyKey.wasPressedThisFrame)
+                    UsingGamepad = false;
             }
 
             if (mouse != null)
             {
                 attack |= mouse.leftButton.isPressed;
                 dynamiteDown |= mouse.rightButton.wasPressedThisFrame;
+                if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)
+                    UsingGamepad = false;
             }
 
             MoveRaw = Vector2.ClampMagnitude(raw, 1f);
@@ -123,8 +131,13 @@ namespace Demolition
             JumpUp = jumpUp;
             AttackHeld = attack;
             DynamiteDown = dynamiteDown;
-            WeaponHotkey = hotkey;
             WeaponCycle = cycle;
         }
+
+        private static bool AnyButton(Gamepad pad) =>
+            pad.buttonSouth.wasPressedThisFrame || pad.buttonEast.wasPressedThisFrame
+            || pad.buttonWest.wasPressedThisFrame || pad.buttonNorth.wasPressedThisFrame
+            || pad.leftShoulder.wasPressedThisFrame || pad.rightShoulder.wasPressedThisFrame
+            || pad.startButton.wasPressedThisFrame;
     }
 }

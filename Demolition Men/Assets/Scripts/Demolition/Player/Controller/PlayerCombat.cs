@@ -63,8 +63,6 @@ namespace Demolition
         [SerializeField] private float attackForce = 500f;
         [SerializeField] private float damageMultiplier = 1f;
         [SerializeField] private WeaponType weapon = WeaponType.Fists;
-        [Tooltip("Debug builds only: 1/2/3 switch fists/axe/wrecking ball with unlimited hits.")]
-        [SerializeField] private bool weaponHotkeys = true;
 
         [Header("Damage per material")]
         [SerializeField] private DamageProfile fistDamage = new DamageProfile(35f, 12f, 5f, 25f, 8f);
@@ -124,12 +122,6 @@ namespace Demolition
 
         private void Update()
         {
-            if (weaponHotkeys && Debug.isDebugBuild && _input.WeaponHotkey != 0)
-            {
-                weapon = (WeaponType)(_input.WeaponHotkey - 1);
-                if (weapon != WeaponType.Fists)
-                    _uses[(int)weapon] = Mathf.Max(_uses[(int)weapon], 999);
-            }
             if (_input.WeaponCycle != 0)
                 CycleWeapon(_input.WeaponCycle);
 

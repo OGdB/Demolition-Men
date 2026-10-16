@@ -732,7 +732,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: DYNAMITE  B / K  -  throw it at the base of a building
+  message: DYNAMITE  [X] / (B)  -  throw it at the base of a building
   duration: 6
 --- !u!1001 &410537503
 PrefabInstance:
@@ -1854,7 +1854,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: Grab the AXE  -  switch weapons with LB / RB or Q / E
+  message: Grab the AXE  -  switch weapons with [Q] [E] / (LB) (RB)
   duration: 6
 --- !u!1 &925040993
 GameObject:
@@ -2401,7 +2401,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: HIT  hold X / J  -  smash your way through!
+  message: HIT  hold [Z] / (X)  -  smash your way through!
   duration: 6
 --- !u!50 &1123219455 stripped
 Rigidbody2D:
@@ -115201,7 +115201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: MOVE  stick / A D        JUMP  A / SPACE  (hold to jump higher)
+  message: MOVE  [A] [D] / stick        JUMP  [SPACE] / (A)  - hold to jump higher
   duration: 6
 --- !u!1 &1879748805
 GameObject:

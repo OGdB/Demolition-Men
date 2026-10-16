@@ -51,6 +51,32 @@ namespace Demolition
         }
 
         private static Sprite _checker;
+        private static Sprite _hazard;
+
+        /// <summary>Yellow/black diagonal warning stripes, for tiled UI images.</summary>
+        public static Sprite Hazard()
+        {
+            if (_hazard != null)
+                return _hazard;
+
+            const int size = 16;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Repeat,
+            };
+            var yellow = new Color(1f, 0.8f, 0.1f);
+            var black = new Color(0.12f, 0.12f, 0.12f);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                    tex.SetPixel(x, y, (x + y) % size < size / 2 ? yellow : black);
+            tex.Apply();
+
+            _hazard = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 50f, 0,
+                SpriteMeshType.FullRect);
+            _hazard.name = "HazardSprite";
+            return _hazard;
+        }
 
         /// <summary>Soft-edged filled circle.</summary>
         public static Sprite Disc()

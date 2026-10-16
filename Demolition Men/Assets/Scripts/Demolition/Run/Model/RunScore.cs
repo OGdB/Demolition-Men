@@ -18,6 +18,8 @@ namespace Demolition.Run
         public const float MaxSpeedMultiplier = 1.5f;
         /// <summary>Fraction of par at (or below) which the full speed bonus applies.</summary>
         public const float FullSpeedBonusAt = 0.6f;
+        /// <summary>Level-wide destruction needed for each grade.</summary>
+        public const float GradeB = 0.4f, GradeA = 0.6f, GradeS = 0.8f;
 
         private readonly int[] _points;
 
@@ -84,9 +86,9 @@ namespace Demolition.Run
 
         public static Grade GradeFor(float destroyedFraction)
         {
-            if (destroyedFraction >= 0.8f) return Grade.S;
-            if (destroyedFraction >= 0.6f) return Grade.A;
-            if (destroyedFraction >= 0.4f) return Grade.B;
+            if (destroyedFraction >= GradeS) return Grade.S;
+            if (destroyedFraction >= GradeA) return Grade.A;
+            if (destroyedFraction >= GradeB) return Grade.B;
             return Grade.C;
         }
 

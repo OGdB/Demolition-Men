@@ -20,6 +20,7 @@ namespace Demolition.Run
             public PlayerHealth Health;
             public PlayerCombat Combat;
             public PlayerMotor Motor;
+            public PlayerInputReader Input;
         }
 
         // Players are found by GameObject name (see CLAUDE.md).
@@ -132,6 +133,7 @@ namespace Demolition.Run
                     Motor = go.GetComponent<PlayerMotor>(),
                 };
                 var input = go.GetComponent<PlayerInputReader>();
+                player.Input = input;
                 input.PlayerIndex = player.Index;
                 input.AssignDevice(Session.DeviceFor(player.Index));
                 player.Health.ManagedByRun = true;

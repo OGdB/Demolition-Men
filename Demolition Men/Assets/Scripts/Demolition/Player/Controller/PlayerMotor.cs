@@ -17,6 +17,9 @@ namespace Demolition
     {
         [Header("Running")]
         [SerializeField] private float maxSpeed = 8f;
+        [Tooltip("Share of max speed while the attack button is held: swings plant the "
+               + "player instead of sliding them along at full run speed.")]
+        [SerializeField, Range(0f, 1f)] private float attackMoveFactor = 0.35f;
 
         [Header("Jumping")]
         [SerializeField] private float jumpImpulse = 45f;
@@ -78,13 +81,18 @@ namespace Demolition
         private void Run()
         {
             float x = _input.MoveRaw.x;
+            bool attacking = _input.AttackHeld;
+            float cap = attacking ? maxSpeed * attackMoveFactor : maxSpeed;
 
-            if (Mathf.Abs(_rb.linearVelocity.x) <= maxSpeed && Mathf.Abs(x) > 0.2f)
-                _rb.AddForce(new Vector2(x * (maxSpeed * 0.5f), 0f), ForceMode2D.Impulse);
+            if (Mathf.Abs(_rb.linearVelocity.x) <= cap && Mathf.Abs(x) > 0.2f)
+                _rb.AddForce(new Vector2(x * (cap * 0.5f), 0f), ForceMode2D.Impulse);
+            if (attacking && Mathf.Abs(_rb.linearVelocity.x) > cap)
+                _rb.linearVelocity = new Vector2(Mathf.Sign(_rb.linearVelocity.x) * cap, _rb.linearVelocity.y);
 
+            // Facing is locked mid-swing, so a swing lands where it started.
             float smoothedX = _input.MoveSmoothed.x;
-            if (smoothedX < 0f) Facing = -1;
-            else if (smoothedX > 0f) Facing = 1;
+            if (!attacking && smoothedX < 0f) Facing = -1;
+            else if (!attacking && smoothedX > 0f) Facing = 1;
             if (_sr != null)
                 _sr.flipX = Facing < 0;
 

@@ -12,6 +12,10 @@ namespace Demolition
     {
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float respawnInvulnerability = 1.5f;
+        [Tooltip("Invulnerable this long after any hit, so a pile of falling debris can't stack damage.")]
+        [SerializeField] private float hitInvulnerability = 0.75f;
+        [Tooltip("Most damage one hit can deal.")]
+        [SerializeField] private float maxDamagePerHit = 20f;
         [SerializeField] private AudioClip hurtSound;
 
         public float Max => maxHealth;
@@ -93,8 +97,9 @@ namespace Demolition
             if (IsDead || amount <= 0f || Time.time < _invulnUntil)
                 return;
 
-            Current = Mathf.Max(0f, Current - amount);
+            Current = Mathf.Max(0f, Current - Mathf.Min(amount, maxDamagePerHit));
             _flashUntil = Time.time + 0.12f;
+            _invulnUntil = Time.time + hitInvulnerability;
             if (hurtSound != null && _audio != null)
                 _audio.PlayOneShot(hurtSound);
             Particles.Burst(transform.position, new Color(0.9f, 0.2f, 0.2f), 10, 3.5f, 0.12f, 0.5f);

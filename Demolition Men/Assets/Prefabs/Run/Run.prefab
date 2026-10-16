@@ -56,6 +56,7 @@ MonoBehaviour:
   rejoinOffset: {x: -1.5, y: 1}
   bottomMargin: 0.1
   menuScene: MainMenu
+  nextScene: 
 --- !u!114 &2317896951977597424
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,6 +70,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.RunHud
   warningSign: {fileID: 21300000, guid: 7206809f97ab66745be031fbf32788c0, type: 3}
+  axeIcon: {fileID: -5082318553336741150, guid: 5aafc0c65d7f3274a8dcc13c157a28ae,
+    type: 3}
+  wreckingBallIcon: {fileID: 9147546874185701050, guid: 5aafc0c65d7f3274a8dcc13c157a28ae,
+    type: 3}
+  dynamiteIcon: {fileID: 5601323976189978565, guid: 5aafc0c65d7f3274a8dcc13c157a28ae,
+    type: 3}
 --- !u!114 &7087220444497947802
 MonoBehaviour:
   m_ObjectHideFlags: 0

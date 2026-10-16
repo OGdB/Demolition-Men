@@ -7,6 +7,12 @@ namespace Demolition
     /// <summary>Small helpers for views that build their uGUI in code.</summary>
     public static class UiFactory
     {
+        private static Material _outline;
+
+        /// <summary>TMP's bundled outline preset: dark edge so text reads over the bright sky.</summary>
+        public static Material Outline =>
+            _outline != null ? _outline : _outline = Resources.Load<Material>("Fonts & Materials/LiberationSans SDF - Outline");
+
         public static Canvas Canvas(Transform parent, string name, int sortingOrder)
         {
             var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -41,7 +47,7 @@ namespace Demolition
         }
 
         public static TextMeshProUGUI Text(Transform parent, string name, Vector2 anchor, Vector2 position,
-            float fontSize, TextAlignmentOptions alignment, Vector2? size = null)
+            float fontSize, TextAlignmentOptions alignment, Vector2? size = null, bool outlined = false)
         {
             RectTransform rt = Rect(parent, name, anchor, position, size ?? new Vector2(600f, fontSize * 1.4f));
             var text = rt.gameObject.AddComponent<TextMeshProUGUI>();
@@ -49,6 +55,11 @@ namespace Demolition
             text.alignment = alignment;
             text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.NoWrap;
+            if (outlined && Outline != null)
+            {
+                text.fontSharedMaterial = Outline;
+                text.fontStyle = FontStyles.Bold;
+            }
             return text;
         }
 

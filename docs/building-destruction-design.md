@@ -87,9 +87,9 @@ The only physics touched is the handful of blocks currently falling. The structu
 **Manual / PlayMode (one click):**
 1. Open **`Assets/Scenes/DemolitionTestBranch.unity`** (already wired with `DemoBootstrap`)
    and press Play — or, in any empty scene, add `DemoBootstrap` to an empty GameObject.
-2. Controls: **A/D** or ◀/▶ move · **Space/W** jump · hold **J or Left-Mouse** to attack ·
-   **K or Right-Mouse** dynamite · **1/2/3** fists / axe / wrecking ball. Gamepad: left stick,
-   **A** jump, **X** attack, **B** dynamite.
+2. Controls: **A/D** or ◀/▶ move · **Space/W** jump · hold **Z, F or Left-Mouse** to attack ·
+   **X, R or Right-Mouse** dynamite · **Q/E** switch weapon (picked-up weapons only). Gamepad:
+   left stick, **A** jump, **X** attack, **B** dynamite, **LB/RB** switch weapon.
 3. Walk to the building and punch out the base of an **orange Support column**. Watch the
    floors it was holding lose their ground path and collapse. Punch a mid-floor brick instead
    and note that horizontally-tied floors *don't* fall — the graph models redundant load

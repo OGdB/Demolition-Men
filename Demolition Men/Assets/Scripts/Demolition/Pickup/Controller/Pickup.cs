@@ -1,3 +1,4 @@
+using System;
 using Demolition.Run;
 using UnityEngine;
 
@@ -26,6 +27,9 @@ namespace Demolition
         private bool _collected;
 
         public PickupKind Kind => kind;
+
+        /// <summary>Someone collected a pickup: who, what, how much.</summary>
+        public static event Action<PlayerCombat, PickupKind, int> Collected;
 
         public void Configure(PickupKind pickupKind, int pickupAmount)
         {
@@ -76,6 +80,7 @@ namespace Demolition
             if (combat == null || !combat.isActiveAndEnabled || !TryApply(combat))
                 return;
             _collected = true;
+            Collected?.Invoke(combat, kind, amount);
             Particles.Burst(transform.position, new Color(1f, 0.9f, 0.4f), 14, 4f, 0.12f, 0.5f);
             Destroy(gameObject);
         }
