@@ -242,6 +242,90 @@ namespace Demolition.Tests
             Assert.AreEqual(0f, hanging.Lean, 1e-5f, "No sideways support → straight-down sag.");
         }
 
+        // ---------- Overload (supports pushed past capacity) ----------
+
+        [Test]
+        public void ComputeStress_PillaredColumn_HasNoOverload()
+        {
+            var s = Column(4);
+            foreach (var kv in s.ComputeStress())
+                Assert.AreEqual(0f, kv.Value.Overload, 1e-5f,
+                    $"Unloaded pillar cell {kv.Key} carries nothing — no overload.");
+        }
+
+        [Test]
+        public void ComputeStress_OverloadedColumn_ReportsUnclampedOverload()
+        {
+            // Lone wall x=6 carrying a 6-cell roof row: stress clamps at 1, but the
+            // overload keeps counting — 6 shares on capacity 4 = 1.5.
+            var s = new BuildingStructure();
+            for (int y = 0; y < 4; y++)
+                s.AddCell(new Vector2Int(6, y), isAnchor: y == 0);
+            for (int x = 0; x < 6; x++)
+                s.AddCell(new Vector2Int(x, 3));
+
+            var wallBase = s.ComputeStress(6)[new Vector2Int(6, 0)];
+            Assert.AreEqual(1f, wallBase.Stress, 1e-4f, "Stress stays saturated at 1.");
+            Assert.AreEqual(1.5f, wallBase.Overload, 1e-4f,
+                "Overload is the raw load/capacity ratio, past 1.");
+        }
+
+        [Test]
+        public void ComputeStress_BalancedLoad_StillOverloads()
+        {
+            // Balanced arms cancel the lean but not the weight: an overloaded column
+            // must crumble even when it stands perfectly upright.
+            var s = new BuildingStructure();
+            for (int y = 0; y < 3; y++)
+                s.AddCell(new Vector2Int(3, y), isAnchor: y == 0);
+            for (int x = 0; x < 3; x++)
+            {
+                s.AddCell(new Vector2Int(x, 2));     // three cells left
+                s.AddCell(new Vector2Int(x + 4, 2)); // three cells right
+            }
+
+            var pillar = s.ComputeStress(4)[new Vector2Int(3, 0)];
+            Assert.AreEqual(0f, pillar.Lean, 1e-4f);
+            Assert.AreEqual(1.5f, pillar.Overload, 1e-4f, "6 shares / capacity 4.");
+        }
+
+        [Test]
+        public void ComputeStress_HangingCell_OverloadIsBeyondSaturation()
+        {
+            // Same shape as the hanging-cell test: held only via a roundabout path.
+            var s = new BuildingStructure();
+            s.AddCell(new Vector2Int(0, 0), isAnchor: true);
+            s.AddCell(new Vector2Int(0, 1));
+            s.AddCell(new Vector2Int(0, 2));
+            s.AddCell(new Vector2Int(1, 2));
+            s.AddCell(new Vector2Int(2, 2));
+            s.AddCell(new Vector2Int(2, 1));
+
+            var hanging = s.ComputeStress(4)[new Vector2Int(2, 1)];
+            Assert.AreEqual(BuildingStructure.UnsupportedOverload, hanging.Overload, 1e-5f,
+                "A cell with no support in range is past capacity by definition.");
+        }
+
+        [Test]
+        public void ComputeStress_SpanAndCantilever_NeverOverload()
+        {
+            // A span carried on both sides and a short overhang are strained but not
+            // past capacity — they must not crumble on their own.
+            var s = new BuildingStructure();
+            for (int y = 0; y < 3; y++)
+            {
+                s.AddCell(new Vector2Int(0, y), isAnchor: y == 0);
+                s.AddCell(new Vector2Int(4, y), isAnchor: y == 0);
+            }
+            for (int x = 1; x <= 3; x++)
+                s.AddCell(new Vector2Int(x, 2));
+            s.AddCell(new Vector2Int(5, 2)); // one-cell overhang off the right pillar
+
+            var stress = s.ComputeStress(4);
+            Assert.LessOrEqual(stress[new Vector2Int(2, 2)].Overload, 1f, "Mid-span.");
+            Assert.LessOrEqual(stress[new Vector2Int(5, 2)].Overload, 1f, "Overhang.");
+        }
+
         // ---------- Fragile (glass) cells ----------
 
         [Test]

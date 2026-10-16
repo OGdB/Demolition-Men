@@ -1,36 +1,36 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Cross-scene meta state: the score (fed by the destruction system), the score UI,
+/// and the menu-chosen single-player / controller flags. Lives on the SkillManager
+/// prefab and survives scene loads. The old per-player stat plumbing died with the
+/// legacy player scripts — the Demolition player components own their own tuning now.
+/// </summary>
 public class GlobalVariables : MonoBehaviour
 {
     public GameObject Player1;
     public GameObject Player2;
 
-    public static int score;
-    public static Text scoreText;
+    /// <summary>Proxy onto the Demolition assembly's score so the legacy UI keeps
+    /// its <c>GlobalVariables.score</c> contract (EndMenu resets it, the score/points
+    /// UIs read it) while BuildingBlock awards points directly.</summary>
+    public static int score
+    {
+        get => Demolition.Score.Value;
+        set => Demolition.Score.Value = value;
+    }
 
-    public bool applySkills;
+    public static Text scoreText;
+    private int _displayedScore = int.MinValue;
+
     public static bool singlePlayer;
     public static bool controller;
-
-    [Header("Player 1")]
-    public float P1Health;
-    public float P1Speed;
-    public float P1Strength;
-    public float P1JumpVelocity;
-    [Header("Player 2")]
-    public float P2Health;
-    public float P2Speed;
-    public float P2Strength;
-    public float P2JumpVelocity;
 
     void Awake()
     {
         DontDestroyOnLoad(gameObject);
-        applySkills = true;
         scoreText = GetComponentInChildren<Text>();
     }
 
@@ -50,64 +50,25 @@ public class GlobalVariables : MonoBehaviour
             Player2 = GameObject.Find("Player_2");
         }
 
-        //Enable / disable controls according to player choosing keyboard or controller
-        enableController();
-
         // Singleplayer check
         if (singlePlayer && SceneManager.GetActiveScene().name != "MainMenu" && Player2 != null)
         {
             Player2.SetActive(false);
         }
 
-        // Apply player stats at beginning of scene. Didn't seem to work in Start-function.
-        UpdateStats();
-    }
-
-    private void enableController()
-    {
-        if (controller && SceneManager.GetActiveScene().name != "MainMenu")
+        // Keep the score label in sync with points the destruction system awards.
+        if (score != _displayedScore)
         {
-            Player1.GetComponent<PlayerInput>().controller.DebugMode = false;
-            if (Player2 != null)
-            {
-                Player2.GetComponent<PlayerInput>().controller.DebugMode = false;
-            }
-        }
-        else if (SceneManager.GetActiveScene().name != "MainMenu")
-        {
-            Player1.GetComponent<PlayerInput>().controller.DebugMode = true;
-            if (Player2 != null)
-            {
-                Player2.GetComponent<PlayerInput>().controller.DebugMode = true;
-            }
-        }
-    }
-
-    private void UpdateStats()
-    {
-        if (applySkills && Player1 != null)
-        {
-            Player1.GetComponentInChildren<Slider>().maxValue = P1Health;
-            Player1.GetComponent<PlayerMovement>().MaxSpeed = P1Speed;
-            Player1.GetComponent<PlayerAttack>().damageMultiplier = P1Strength;
-            Player1.GetComponent<PlayerMovement>().JumpVelocity = P1JumpVelocity;
-
-            if (Player2 != null)
-            {
-                Player2.GetComponentInChildren<Slider>().maxValue = P2Health;
-                Player2.GetComponent<PlayerMovement>().MaxSpeed = P2Speed;
-                Player2.GetComponent<PlayerAttack>().damageMultiplier = P2Strength;
-                Player2.GetComponent<PlayerMovement>().JumpVelocity = P2JumpVelocity;
-            }
-            applySkills = false;
+            _displayedScore = score;
+            UpdateScore();
         }
     }
 
     public static void UpdateScore()
     {
-        scoreText.text = "Score: " + score.ToString();
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: " + score.ToString();
+        }
     }
-
-    // Script contains the variables needed
-    // Apply the variables onto the player.
 }

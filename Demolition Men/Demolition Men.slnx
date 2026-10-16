@@ -2,4 +2,5 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Demolition.csproj" />
   <Project Path="Demolition.Tests.EditMode.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>

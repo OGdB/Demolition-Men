@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using PlayerHealth = Demolition.PlayerHealth;
 
 
 public class EndMenu : MonoBehaviour
 {
     public static bool GameisPaused = false;
-    public GameObject player1HP;
-    public GameObject player2HP;
 
     public GameObject endMenuUI;
+
+    private PlayerHealth _p1Health;
+    private PlayerHealth _p2Health;
 
     public GameObject[] buttons;
 
@@ -49,25 +51,42 @@ public class EndMenu : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
+    // The old health sliders died with the legacy players; the run is over when the
+    // Demolition players are permanently dead (PlayerHealth.Kill — e.g. caught by the
+    // scrolling camera). Normal knock-outs respawn and never end the run.
     void Update()
     {
-        if(GlobalVariables.singlePlayer == true)
+        if (_p1Health == null)
         {
-            if (player1HP.GetComponent<Slider>().value <= 0)
+            GameObject found = GameObject.Find("Player_1");
+            if (found != null)
             {
-                endMenuUI.SetActive(true);
-                Time.timeScale = 0;
+                _p1Health = found.GetComponent<PlayerHealth>();
             }
-        } else
+        }
+        if (_p2Health == null)
         {
-            if (player1HP.GetComponent<Slider>().value <= 0 && player2HP.GetComponent<Slider>().value <= 0)
+            GameObject found = GameObject.Find("Player_2");
+            if (found != null)
             {
-                endMenuUI.SetActive(true);
-                Time.timeScale = 0;
+                _p2Health = found.GetComponent<PlayerHealth>();
             }
         }
 
+        if (_p1Health == null)
+        {
+            return; // no player in this scene (or not spawned yet)
+        }
+
+        bool p1Dead = _p1Health.IsDead;
+        bool p2Dead = _p2Health == null || _p2Health.IsDead;
+        bool runOver = GlobalVariables.singlePlayer ? p1Dead : (p1Dead && p2Dead);
+
+        if (runOver && endMenuUI != null && !endMenuUI.activeSelf)
+        {
+            endMenuUI.SetActive(true);
+            Time.timeScale = 0;
+        }
     }
 
     public void QuitGame()

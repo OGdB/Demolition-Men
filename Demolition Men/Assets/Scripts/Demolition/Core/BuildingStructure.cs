@@ -11,12 +11,16 @@ namespace Demolition.Core
     /// <see cref="Drift"/>: normalized sideways displacement for bending columns
     /// (negative = left), growing with height so a loaded column bows instead of tilting
     /// as a rigid stick; 0 for horizontally-carried cells.
+    /// <see cref="Overload"/>: load-to-capacity ratio, UNCLAMPED — <see cref="Stress"/>
+    /// is this saturated at 1, so a column carrying three buildings' worth of weight
+    /// reads 3, not 1. Callers use it to decide whether a support should give way.
     /// </summary>
     public struct CellStress
     {
         public float Stress;
         public float Lean;
         public float Drift;
+        public float Overload;
     }
 
     /// <summary>
@@ -80,12 +84,32 @@ namespace Demolition.Core
         /// </summary>
         public List<Vector2Int> RemoveCell(Vector2Int coord)
         {
-            var detached = new List<Vector2Int>();
-            if (!_cells.Remove(coord))
-                return detached; // nothing to do
+            _singleCellScratch[0] = coord;
+            return RemoveCells(_singleCellScratch);
+        }
 
-            _anchors.Remove(coord);
-            _fragile.Remove(coord);
+        private readonly Vector2Int[] _singleCellScratch = new Vector2Int[1];
+
+        /// <summary>
+        /// Remove several cells atomically (a destroyed multi-cell block) and return
+        /// every OTHER cell that became detached as a result. One flood-fill total, so
+        /// a rigid block spanning many cells can't tear itself apart halfway through.
+        /// </summary>
+        public List<Vector2Int> RemoveCells(IReadOnlyList<Vector2Int> coords)
+        {
+            var detached = new List<Vector2Int>();
+            bool removedAny = false;
+            for (int i = 0; i < coords.Count; i++)
+            {
+                if (!_cells.Remove(coords[i]))
+                    continue;
+                removedAny = true;
+                _anchors.Remove(coords[i]);
+                _fragile.Remove(coords[i]);
+            }
+
+            if (!removedAny)
+                return detached; // nothing to do
 
             // No point flood-filling if the whole thing is already gone.
             if (_cells.Count == 0)
@@ -118,6 +142,13 @@ namespace Demolition.Core
         }
 
         // ---------- Stress heuristic (pre-collapse lean/sag visuals) ----------
+
+        /// <summary>
+        /// <see cref="CellStress.Overload"/> assigned to a cell held only through a
+        /// roundabout path (no pillar within scan range): well past capacity, so a
+        /// caller that fails overloaded supports will let such orphaned chunks give way.
+        /// </summary>
+        public const float UnsupportedOverload = 1.5f;
 
         /// <summary>
         /// Cells with a continuous vertical run of intact cells straight down to an
@@ -185,12 +216,13 @@ namespace Demolition.Core
                 int dR = DistanceToPillar(cell, +1, maxCantilever, pillared);
                 bool hasL = dL > 0, hasR = dR > 0;
 
-                float stress, lean;
+                float stress, lean, overload;
                 if (hasL && hasR)
                 {
                     // Simply-supported span: sags most at mid-span, stays level there.
                     stress = 0.7f * Mathf.Min(1f, Mathf.Min(dL, dR) / (float)maxCantilever);
                     lean = (dL - dR) / (float)(dL + dR);
+                    overload = stress; // a proper span never exceeds capacity by itself
 
                     // The nearer pillar carries the bigger share.
                     float shareL = dR / (float)(dL + dR);
@@ -202,21 +234,24 @@ namespace Demolition.Core
                 {
                     stress = Mathf.Min(1f, dL / (float)maxCantilever);
                     lean = -1f; // supported from the left → tips clockwise over the gap
+                    overload = stress;
                     Attribute(load, moment, new Vector2Int(cell.x - dL, cell.y), 1f, -dL);
                 }
                 else if (hasR)
                 {
                     stress = Mathf.Min(1f, dR / (float)maxCantilever);
                     lean = 1f;
+                    overload = stress;
                     Attribute(load, moment, new Vector2Int(cell.x + dR, cell.y), 1f, +dR);
                 }
                 else
                 {
                     stress = 1f; // held only via a roundabout path — about to give
                     lean = 0f;
+                    overload = UnsupportedOverload;
                 }
 
-                result[cell] = new CellStress { Stress = stress, Lean = lean, Drift = 0f };
+                result[cell] = new CellStress { Stress = stress, Lean = lean, Drift = 0f, Overload = overload };
             }
 
             // ---- Pass 2: pillar columns bear what was attributed to them ----
@@ -229,7 +264,8 @@ namespace Demolition.Core
                     if (moment.TryGetValue(run[i], out float m)) runMoment += m;
                 }
 
-                float stress = Mathf.Min(1f, runLoad / loadCapacity);
+                float overload = runLoad / loadCapacity;
+                float stress = Mathf.Min(1f, overload);
                 float lean = Mathf.Clamp(runMoment / momentCapacity, -1f, 1f);
 
                 int baseY = run[0].y; // runs are built bottom-up
@@ -243,6 +279,7 @@ namespace Demolition.Core
                         // CCW lean (+) means the column bows to the LEFT (negative x),
                         // displacement growing with height² like a bending beam.
                         Drift = -lean * h * h,
+                        Overload = overload,
                     };
                 }
             }

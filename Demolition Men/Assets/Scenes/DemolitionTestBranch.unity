@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 80777786}
   - component: {fileID: 80777787}
+  - component: {fileID: 80777788}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -168,8 +169,17 @@ MonoBehaviour:
   blockSize: 0.9
   blockGap: 0.02
   buildingOrigin: {x: 2, y: 0}
+  playerPrefab: {fileID: 0}
   buildOnStart: 1
-  showControlsOverlay: 1
+  showHud: 1
+--- !u!81 &80777788
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 80777785}
+  m_Enabled: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

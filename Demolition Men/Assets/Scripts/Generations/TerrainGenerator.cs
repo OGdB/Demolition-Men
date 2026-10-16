@@ -8,7 +8,9 @@ public class TerrainGenerator : MonoBehaviour
 
     [SerializeField] public Transform levelPart_Start;
     [SerializeField] public List<Transform> levelPartList;
-    [SerializeField] public PlayerPosition player;
+    [Tooltip("Player the generator paces itself against. Auto-found by name when empty "
+           + "(the old PlayerPosition helper died with the legacy player stack).")]
+    [SerializeField] public Transform player;
     [SerializeField] public Transform levelPart_End;
 
     private Vector3 lastEndPosition;
@@ -21,6 +23,15 @@ public class TerrainGenerator : MonoBehaviour
 
     private void Awake()
     {
+        if (player == null)
+        {
+            GameObject found = GameObject.Find("Player_1");
+            if (found != null)
+            {
+                player = found.transform;
+            }
+        }
+
         lastEndPosition = levelPart_Start.Find("EndPosition").position;
 
         int startingSpawnLevelParts = 5;
@@ -33,7 +44,7 @@ public class TerrainGenerator : MonoBehaviour
 
     private void Update()
     {
-        if (Vector3.Distance(player.GetPosition(), lastEndPosition) < pl_distance_spwn_lvl_prt)
+        if (player != null && Vector3.Distance(player.position, lastEndPosition) < pl_distance_spwn_lvl_prt)
         {
             if(levelCount < number)
             {

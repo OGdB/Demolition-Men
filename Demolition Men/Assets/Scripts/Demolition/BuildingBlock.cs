@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Demolition
@@ -45,12 +46,15 @@ namespace Demolition
         [SerializeField] private float trembleAmplitude = 0.045f;
 
         public BlockMaterial Material => material;
-        public Vector2Int Coord { get; private set; }
+        /// <summary>Grid cells this block occupies (one for unit bricks, several for
+        /// beams/platforms/walls). Empty while unregistered or for cosmetic riders.</summary>
+        public IReadOnlyList<Vector2Int> Coords => _coords;
         public bool IsFalling { get; private set; }
         public bool IsRubble { get; private set; }
         /// <summary>Current cosmetic stress, 0 (solid) .. 1 (about to give).</summary>
         public float Stress { get; private set; }
 
+        private readonly List<Vector2Int> _coords = new List<Vector2Int>();
         private DestructibleBuilding _building;
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
@@ -66,21 +70,43 @@ namespace Demolition
         private float _targetSag;
         private float _targetDrift;
         private float _tremblePhase;
+        private float _trembleBoost = 1f;
+
+        /// <summary>Registered with a building (loose, unregistered blocks still take
+        /// damage and die; they just trigger no structural collapse).</summary>
+        public bool IsRegistered => _building != null;
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
             _rb.bodyType = RigidbodyType2D.Static;
-        }
 
-        public void Initialise(DestructibleBuilding building, Vector2Int coord, BlockMaterial mat)
-        {
-            _building = building;
-            Coord = coord;
-            material = mat;
-            _resolvedMaxHealth = maxHealth > 0f ? maxHealth : BlockMaterialInfo.DefaultHealth(mat);
+            // Prefab-authored blocks are functional even before (or without) a
+            // DestructibleBuilding adopting them; Initialise re-runs this harmlessly.
+            _resolvedMaxHealth = maxHealth > 0f ? maxHealth : BlockMaterialInfo.DefaultHealth(material);
             _health = _resolvedMaxHealth;
             _tremblePhase = Random.value * Mathf.PI * 2f;
+            EnsureVisualChild();
+        }
+
+        /// <summary>Code-driven registration (bootstrap/tests): one cell, explicit material.</summary>
+        public void Initialise(DestructibleBuilding building, Vector2Int coord, BlockMaterial mat)
+        {
+            material = mat;
+            Initialise(building, new List<Vector2Int> { coord });
+        }
+
+        /// <summary>Adopt this block into a building on the given cells, keeping the
+        /// material it was authored with. An empty/null list marks a cosmetic rider
+        /// (a background block that just falls when its host does).</summary>
+        public void Initialise(DestructibleBuilding building, List<Vector2Int> coords)
+        {
+            _building = building;
+            _coords.Clear();
+            if (coords != null)
+                _coords.AddRange(coords);
+            _resolvedMaxHealth = maxHealth > 0f ? maxHealth : BlockMaterialInfo.DefaultHealth(material);
+            _health = _resolvedMaxHealth;
             EnsureVisualChild();
         }
 
@@ -91,6 +117,9 @@ namespace Demolition
         /// </summary>
         private void EnsureVisualChild()
         {
+            if (_visual != null)
+                return; // already migrated (Awake ran before Initialise)
+
             var rootSr = GetComponent<SpriteRenderer>();
             if (rootSr != null)
             {
@@ -152,6 +181,7 @@ namespace Demolition
         {
             _destroyed = true;
             Particles.Burst(transform.position, BlockMaterialInfo.Tint(material), 16, 5f, 0.16f, 0.75f);
+            Score.Add(10); // same reward the old dstrBlock gave
             if (_building != null)
                 _building.OnBlockDestroyed(this);
             Destroy(gameObject);
@@ -160,15 +190,18 @@ namespace Demolition
         /// <summary>
         /// Called by the building after each destruction event: how precarious this cell
         /// now is (0..1), which way it should lean (-1 = clockwise, +1 = counter-clockwise,
-        /// 0 = level), and its sideways bend displacement for loaded columns
-        /// (normalized; negative = left, 0 for horizontally-carried cells).
+        /// 0 = level), its sideways bend displacement for loaded columns (normalized;
+        /// negative = left, 0 for horizontally-carried cells), and how far past its
+        /// baseline load capacity it is (0..∞) — a crumbling support rattles harder the
+        /// further past capacity it is pushed.
         /// </summary>
-        public void SetStress(float stress, float lean, float drift)
+        public void SetStress(float stress, float lean, float drift, float overload = 0f)
         {
             Stress = Mathf.Clamp01(stress);
             _targetLeanDeg = lean * Stress * maxLeanDegrees;
             _targetSag = Stress * Stress * maxSag;
             _targetDrift = drift * Stress * maxDrift;
+            _trembleBoost = 1f + Mathf.Min(2f, overload);
         }
 
         private void Update()
@@ -197,7 +230,7 @@ namespace Demolition
             if (stress > trembleThreshold)
             {
                 float t = (stress - trembleThreshold) / (1f - trembleThreshold);
-                trembleX = Mathf.Sin(Time.time * 33f + _tremblePhase) * trembleAmplitude * t;
+                trembleX = Mathf.Sin(Time.time * 33f + _tremblePhase) * trembleAmplitude * t * _trembleBoost;
             }
 
             _visual.localPosition = _smoothVisualPos + new Vector3(trembleX, 0f, 0f);
@@ -212,6 +245,12 @@ namespace Demolition
                 return;
             IsFalling = true;
             _settleTimer = 0f;
+
+            // Blocks migrated from the old joint-based system may still carry authored
+            // joints; a FixedJoint2D with no connected body pins a dynamic body to the
+            // world, so strip them the moment real physics takes over.
+            foreach (var joint in GetComponents<Joint2D>())
+                Destroy(joint);
 
             _rb.bodyType = RigidbodyType2D.Dynamic;
             _rb.gravityScale = 1f;
