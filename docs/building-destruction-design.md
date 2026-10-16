@@ -37,15 +37,15 @@ definition, so it's independently testable and doesn't disturb the existing prot
 | Material data | `BlockMaterial.cs` | Enum (`Brick/Metal/Wood/Glass/Support`) + per-material health and debug tint. |
 | Per-cell behaviour | `BuildingBlock.cs` | Health + damage (with hit particles + progressive darkening — RGB only, alpha never changes); **Static** while supported — under stress it **leans, sags and trembles** (sprite on a visual child; the collider never moves); `BeginFalling()` flips it to **Dynamic** debris that **takes real crumble damage from hard landings** (a big drop shatters it), **settles into persistent Static rubble**, and **deals impact damage** to the player on the way down. |
 | Building owner | `DestructibleBuilding.cs` | Holds the `BuildingStructure` + live blocks; on a block's death re-runs support, calls `BeginFalling()` on detached cells, and refreshes per-cell stress targets (minus the intact building's baseline). Exposes `DestroyedFraction` for the HUD. Cap on simultaneous dynamic bodies. |
-| Player health | `PlayerHealth.cs` | Takes impact damage from falling blocks; hurt flash + particles; respawns at start so the bench stays usable. |
+| Player health | `PlayerHealth.cs` | Takes impact damage from falling blocks; hurt flash + particles. Respawns at start on the test bench; under the scrolling camera, death is permanent (`Kill()`). |
 | Feedback | `Particles.cs`, `SpriteFlash.cs` | Code-configured one-shot particle bursts (hit / destroy / impact) and expanding punch-flash sprites — no imported assets. |
-| Test player | `SimplePlayerController.cs` | Legacy-input keyboard controller with a **punch** (OverlapCircle → `TakeDamage`, knockback only on already-loose debris). The punch overlap circle is **always visible** as a faint ring (dims on cooldown) and **flashes** on every swing. |
+| Players | `Player/PlayerInputReader.cs`, `PlayerMotor.cs`, `PlayerCombat.cs`, `Dynamite.cs` | Input System (gamepad + keyboard), impulse movement, fists / axe / wrecking ball with per-material damage (OverlapCircleAll → `TakeDamage`, knockback only on already-loose debris), thrown dynamite. Swings land on the attack animations' `applyDamage` events; without an Animator (the bench player) they land on a fixed cadence and **flash** the overlap circle. |
 | Test harness | `DemoBootstrap.cs`, `PrimitiveSprite.cs` | Builds ground + a **realistic hollow building** (walls with windows, interior floor slabs, load-bearing support columns, ground-floor doorway, roof) + player + camera from code, plus a **HUD** (destruction % + health). No prefabs or art needed. |
 
 ### Data flow on a punch
 ```
-SimplePlayerController.TryPunch()
-  └─ Physics2D.OverlapCircle → BuildingBlock.TakeDamage(dmg)
+PlayerCombat.applyDamage()   (attack-animation event)
+  └─ Physics2D.OverlapCircleAll → BuildingBlock.TakeDamage(dmg)
        └─ health ≤ 0 → DestructibleBuilding.OnBlockDestroyed(block)
             ├─ BuildingStructure.RemoveCell(coord)  → List<detached cells>   (pure, deterministic)
             └─ for each detached block → BeginFalling()  (Static → Dynamic + gravity + nudge)
@@ -87,7 +87,9 @@ The only physics touched is the handful of blocks currently falling. The structu
 **Manual / PlayMode (one click):**
 1. Open **`Assets/Scenes/DemolitionTestBranch.unity`** (already wired with `DemoBootstrap`)
    and press Play — or, in any empty scene, add `DemoBootstrap` to an empty GameObject.
-2. Controls: **A/D** or ◀/▶ move · **Space/W** jump · **J or Left-Mouse** punch.
+2. Controls: **A/D** or ◀/▶ move · **Space/W** jump · hold **J or Left-Mouse** to attack ·
+   **K or Right-Mouse** dynamite · **1/2/3** fists / axe / wrecking ball. Gamepad: left stick,
+   **A** jump, **X** attack, **B** dynamite.
 3. Walk to the building and punch out the base of an **orange Support column**. Watch the
    floors it was holding lose their ground path and collapse. Punch a mid-floor brick instead
    and note that horizontally-tied floors *don't* fall — the graph models redundant load
@@ -130,7 +132,7 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 - [ ] Falling blocks that land on the player **reduce the health bar** (impact scaled by speed); death respawns the player.
 - [ ] Weakened-but-still-supported sections visibly **lean/sag toward the missing support**, and **tremble** when close to giving way (colliders stay put — walking on a leaning floor is unchanged).
 - [ ] When a single wall/column is the **last load path** for the roof, that column itself **leans and bows toward the span it carries** and trembles — the stress shows where a player physically expects it.
-- [ ] The **punch ring** is always visible in front of the player, dims during cooldown, and every swing **flashes** the actual overlap circle.
+- [ ] On the bench player, every swing **flashes** the actual overlap circle.
 - [ ] The **HUD destruction %** climbs as the building comes down.
 - [ ] Framerate stays flat while the building stands, and settled rubble re-freezes to Static (bounded body count).
 

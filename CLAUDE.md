@@ -5,10 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repository layout
 
 - `Demolition Men/` — the Unity project (Unity **6000.4.9f1**, 2D, built-in render pipeline). All code lives under `Demolition Men/Assets/`.
-- `docs/building-destruction-design.md` — design rationale for the destruction system ("Option C" support-graph), the NGO (Netcode for GameObjects) networking plan, and the PlayMode manual test checklist. Note: its §2/§3 still mention `SimplePlayerController` and legacy input; that controller has since been replaced by the components in `Scripts/Demolition/Player/`.
-- `docs/roadmap.md` — the plan to v1.0: current-state gap analysis, milestones M0–M6, the procedural building/level generation design, the art pipeline and the agentic content pipeline, plus open design decisions. Check it before starting feature work.
-- `Demolition Men/Demolition Men/` — a **stale, tracked copy** of an old project snapshot from the initial commit. Not part of the build. Never edit or search-and-replace into it; exclude it from greps.
-- The `*.csproj` files and `Library/`, `Temp/` are Unity-generated (csproj are gitignored). `Demolition Men.slnx` scopes the solution to the four project assemblies.
+- `docs/building-destruction-design.md` — design rationale for the destruction system ("Option C" support-graph), the NGO (Netcode for GameObjects) networking plan, and the PlayMode manual test checklist.
+- `docs/roadmap.md` — the plan to v1.0: current-state gap analysis, milestones M0–M6, the procedural building/level generation design, the art pipeline and the agentic content pipeline, plus the design decisions. Check it before starting feature work.
+- The `*.csproj` files and `Library/`, `Temp/`, `Logs/`, `UserSettings/` are Unity-generated or per-user and gitignored. `Demolition Men.slnx` scopes the solution to the four project assemblies.
 
 ## Commands
 
@@ -35,7 +34,7 @@ Build scene order: MainMenu → Tutorial → HubWorld → Level 1.
 ## Assemblies and the dependency boundary
 
 - `Assets/Scripts/Demolition/Demolition.asmdef` → assembly **`Demolition`**: the destruction system, players, health, score. References only `Unity.InputSystem`. Any other package used from this folder must be added to the asmdef's `references` or it won't compile (even though Assembly-CSharp sees it).
-- Everything else in `Assets/Scripts/` (Camera, UI, Generations, SkillShop, `GlobalVariables`) → **Assembly-CSharp**, which references `Demolition` — never the reverse.
+- Everything else in `Assets/Scripts/` (Camera, UI, Generations, `GlobalVariables`) → **Assembly-CSharp**, which references `Demolition` — never the reverse.
 
 Because `Demolition` can't see Assembly-CSharp, cross-boundary state is pushed in from the outside:
 - Score: `Demolition.Score.Value` is the source of truth (`BuildingBlock` awards +10 per destroyed block); `GlobalVariables.score` is a proxy property so legacy UI keeps its contract.
@@ -78,6 +77,15 @@ Code-driven alternative (`DemoBootstrap`): call `BuildingBlock.Initialise` + `De
 The original sprite art is reused through a **name contract** that fails silently if broken:
 - Animator parameters: `Speed`, `InAir`, `IsPunching`, `IsAxeing`, `IsWrecking`.
 - Animation-event methods: `applyDamage` (attack clips → `PlayerCombat`), `Effect` and `destroyDynamite` (`Explosion.anim` → `Dynamite`). Don't rename these methods.
+
+## Code structure (MVC)
+
+The project follows Model–View–Controller. Keep the structure clean: no person-named folders, no scratch files in `Assets/`, delete dead code instead of leaving it around.
+- **Model** — plain C# state and rules. No MonoBehaviour, no scene access, unit-testable in EditMode. Example: `Core/BuildingStructure`.
+- **View** — MonoBehaviours that only present: sprites, animation, HUD, particles, audio, camera framing. They read models or listen to events and never change game state.
+- **Controller** — MonoBehaviours that turn input and events into model changes and tell views what to show. Example: `DestructibleBuilding`.
+- Folders go feature first, then layer: `Scripts/<Feature>/Model|View|Controller/`. New code uses this layout; existing scripts move into it (with their `.meta`) when a milestone touches them. Don't restructure untouched code.
+- Legacy exceptions: the person-named content folders (`Prefabs/Building Materials/Oeds/`, `Prefabs/Sky's Prefabs/`, `Scenes/Oeds.unity`) stay until generated content replaces them (roadmap M2/M3).
 
 ## Unity conventions here
 

@@ -107,13 +107,15 @@ M0 Stabilize ─▶ M1 Core loop ─▶ M2 Building gen ─▶ M3 Level gen ─�
                                    └──────── M4 Art pipeline (parallel) ───────┘
 ```
 
-### M0 — Stabilize (S)
-- Commit the migration in logical commits (deletions / prefab migration / new scripts /
-  editor tools), then merge the branch into `main`.
-- Delete the stale `Demolition Men/Demolition Men/` copy.
-- Remove dead code (`PointsScript`, `Tutorial.cs` until it's rebuilt in M1).
-- Set every sprite to 32 px/unit (re-check prefab scales after).
-- Update design doc §2/§3 (they still describe `SimplePlayerController`).
+### M0 — Stabilize (S) ✅ 2026-10-16
+- ✅ Commit the migration in logical commits, then merge the branch into `main`.
+- ✅ Delete the stale `Demolition Men/Demolition Men/` copy; stop tracking `Logs/` and
+  `UserSettings/`.
+- ✅ Remove dead code (`PointsScript`, `Tutorial.cs` until it's rebuilt in M1).
+- ✅ Update design doc §2/§3 (they described `SimplePlayerController`).
+- ✅ MVC convention and folder layout recorded in `CLAUDE.md`.
+- Moved to M4: sprite pixels-per-unit. Changing legacy sprites would rescale existing
+  prefabs for art that M4 replaces; the M4 import rules enforce 32 px/unit on new art.
 - **Done when:** `main` compiles from a fresh clone, EditMode tests pass, and Level 1 plays.
 
 ### M1 — Core loop complete (M/L)
