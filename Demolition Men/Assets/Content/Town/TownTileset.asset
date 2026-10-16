@@ -1,0 +1,117 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b5036be24e9ee141a6d00164810fef9, type: 3}
+  m_Name: TownTileset
+  m_EditorClassIdentifier: Demolition::Demolition.Generation.BuildingTileset
+  entries:
+  - kind: 0
+    sprites:
+    - {fileID: 7420818959449262101, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 1
+    sprites:
+    - {fileID: -5763196583737619168, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 2
+    sprites:
+    - {fileID: -1015413227320911918, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    - {fileID: 5830312861035302250, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    - {fileID: -8795828272198991988, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    - {fileID: 1397743489307316228, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 3
+    sprites:
+    - {fileID: 3220200042520012895, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 4
+    sprites:
+    - {fileID: 1634704141352095100, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 1
+  - kind: 5
+    sprites:
+    - {fileID: -1093053261778504529, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 0.94}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 6
+    sprites:
+    - {fileID: -1899100722229507848, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0.25}
+    sortingOrder: 0
+  - kind: 7
+    sprites:
+    - {fileID: -3959114892595188347, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 8
+    sprites:
+    - {fileID: 4911881936025757635, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 90
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 9
+    sprites:
+    - {fileID: -7543580421655677744, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 10
+    sprites:
+    - {fileID: 5125338010525853366, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 11
+    sprites:
+    - {fileID: -6095201013254936090, guid: 821c666b61c7a7345a9bced16a8cd816, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  windowBack: {fileID: -5763196583737619168, guid: 821c666b61c7a7345a9bced16a8cd816,
+    type: 3}
+  windowBackTint: {r: 0.47, g: 0.47, b: 0.47, a: 1}

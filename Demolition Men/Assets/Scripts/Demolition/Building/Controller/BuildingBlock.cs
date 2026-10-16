@@ -61,6 +61,9 @@ namespace Demolition
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
         private Transform _visual;
+        // Authored pose of the visual (a rotated or scaled sprite); the stress lean is applied on top.
+        private Vector3 _visualBasePos;
+        private Quaternion _visualBaseRot = Quaternion.identity;
         private Vector3 _smoothVisualPos;
         private Color _baseColor;
         private float _health;
@@ -93,6 +96,9 @@ namespace Demolition
             _tremblePhase = Random.value * Mathf.PI * 2f;
             EnsureVisualChild();
         }
+
+        /// <summary>Authoring (generated buildings): set the material before the block is registered.</summary>
+        public void SetMaterial(BlockMaterial mat) => material = mat;
 
         /// <summary>Code-driven registration (bootstrap/tests): one cell, explicit material.</summary>
         public void Initialise(DestructibleBuilding building, Vector2Int coord, BlockMaterial mat)
@@ -144,6 +150,11 @@ namespace Demolition
             }
 
             _visual = _sr != null ? _sr.transform : null;
+            if (_visual != null)
+            {
+                _visualBasePos = _visual.localPosition;
+                _visualBaseRot = _visual.localRotation;
+            }
             if (_sr != null)
                 _baseColor = _sr.color;
         }
@@ -249,9 +260,9 @@ namespace Demolition
                 trembleX = Mathf.Sin(Time.time * 33f + _tremblePhase) * trembleAmplitude * t * _trembleBoost;
             }
 
-            _visual.localPosition = _smoothVisualPos + new Vector3(trembleX, 0f, 0f);
+            _visual.localPosition = _visualBasePos + _smoothVisualPos + new Vector3(trembleX, 0f, 0f);
             _visual.localRotation = Quaternion.Lerp(
-                _visual.localRotation, Quaternion.Euler(0f, 0f, targetLean), k);
+                _visual.localRotation, Quaternion.Euler(0f, 0f, targetLean) * _visualBaseRot, k);
         }
 
         /// <summary>Static structure -> falling debris. Called for every detached cell.</summary>

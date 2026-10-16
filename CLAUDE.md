@@ -75,6 +75,16 @@ Code-driven alternative (`DemoBootstrap`): call `BuildingBlock.Initialise` + `De
 
 `Prefabs/Buildings/Crane.prefab` keeps its authored joints on purpose — it's a physics prop outside the destruction system.
 
+## Building generation
+
+`Scripts/Demolition/Generation/` (see `docs/roadmap.md` §5.1):
+- `BuildingGrammar.GenerateValid(archetype, seed, out report)` → `BuildingSpec` (blocks on a cell grid, bottom-left (0,0), ground row anchored). It retries derived seeds until `BuildingValidator` says the building stands and has the archetype's weak-point count. Same seed, same building (`Pcg32`, never `UnityEngine.Random`, inside the grammar).
+- Glass carries nothing, so walls with windows hang from the slab above; interior `Support` columns (walk-through triggers) are the backbone. Stairwells never cut a slab piece off from them.
+- `BuildingBuilder.Build(spec, tileset, origin)` registers cells in code at runtime; in edit mode it only creates the objects, and a baked prefab auto-scans to the same cells.
+- Archetypes are JSON in `Assets/Content/<Theme>/Archetypes/`; looks come from a `BuildingTileset` asset (`TownTileset`). Block visuals sit on a child `Visual`; `BuildingBlock` keeps its authored rotation/scale/offset under the stress lean.
+- Building Lab: Tools ▸ Demolition ▸ Building Lab. From agents: `BuildingLab.Validate(path, seeds)`, `BuildingLab.RenderContactSheet(...)` (PNG in `Temp/`), `BuildingLab.ValidateAllCli` for batch mode.
+- The validator judges with `StructureDefaults` (the `DestructibleBuilding` defaults). A building whose serialized tuning differs plays differently from what the validator predicted.
+
 ## Players
 
 `Scripts/Demolition/Player/Controller/`: `PlayerHealth`, `PlayerInputReader` (Input System; the device assigned from `Session` by the join screen, or gamepad index + keyboard when a level is started directly), `PlayerMotor` (impulse movement, better-jump gravity), `PlayerCombat` (per-weapon × per-material damage profiles, `Physics2D.OverlapCircleAll` hits), `Dynamite`. Prefabs: `Prefabs/Demolition/Player_1`, `Player_2`, `Dynamite`. The same scripts drive the primitive no-art player in `DemoBootstrap`.

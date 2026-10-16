@@ -165,18 +165,26 @@ The described game, playable start to finish with today's content. Code lives in
   behind, recover inside 3 seconds, and see a grade. A weak-point collapse visibly
   outscores grinding the same blocks.
 
-### M2 — Procedural buildings (M)
-Design in §5.1. Built on **today's sprites** first, to prove the system before any new art.
-- `BuildingSpec`, archetype grammar, `BuildingValidator` (uses `BuildingStructure`
-  directly), `BuildingBuilder` (spec → blocks through the existing `RegisterBlock` path),
-  autotiled sprite variants.
-- **Building Lab** editor window: archetype + seed → live preview, metrics, optional
-  "bake to prefab".
-- EditMode tests: every generated building stands at spawn, the baseline stress is under
-  tolerance, the same seed gives an identical spec hash, and weak points fall in the target
-  range.
-- **Done when:** 5 archetypes generate buildings that look at home next to the hand-made
-  ones, with 0 validator failures over 1,000 seeds.
+### M2 — Procedural buildings (M) — ✅ 2026-10-17
+Design in §5.1. Built on **today's sprites**. Code in `Scripts/Demolition/Generation/`.
+- ✅ `BuildingSpec`, `BuildingGrammar` (storeys, walls with windows and a door, slabs with
+  stairwells, interior supports, setbacks, roof, chimney), `BuildingValidator`,
+  `BuildingBuilder`, `GeneratedBuilding` slot, `Pcg32`.
+- ✅ The validator replays each ground-level block's destruction on a fresh
+  `BuildingStructure`, including overload crumble (weakest first, only crumbles that happen
+  within 3 s count). Its predictions match play within a few percent.
+- ✅ **5 Town archetypes** (`Assets/Content/Town/Archetypes/*.json`: shack, rowhouse,
+  apartment, warehouse, tower) and the `TownTileset` (object-set sprites).
+- ✅ **Building Lab** (Tools ▸ Demolition ▸ Building Lab): seed browsing with weak points
+  tinted red, metrics, bake to prefab (auto-scans to the same cells), validate 1,000 seeds,
+  contact sheet PNG. Static entry points for agents/batch (`BuildingLab.ValidateAllCli`).
+- ✅ EditMode tests: 200 seeds per archetype stand and hit targets, same seed → same hash,
+  seeds vary, validator unit cases.
+- ✅ Result: 0 failures over 1,000 seeds for every archetype, 0.1–4 ms per building.
+  Level 1's building slots grow a generated building half the time (shortcut in the legacy
+  `BuildingGenerator`; generated buildings never grow into a standing neighbour).
+- Deferred to M4: autotiled edge variants (the tileset has one sprite per kind; variants
+  slot in per entry when the art pipeline makes them).
 
 ### M3 — Procedural levels (M)
 Design in §5.2.
@@ -234,26 +242,20 @@ and people edit specs, never prefab or scene YAML. Because the output is determi
 level is fully described by `{specId, seed}`. That gives shareable daily seeds for free and,
 later, netcode that only replicates the seed and the destroyed cells.
 
-### Code layout (proposed)
+### Code layout
+Feature folders inside the `Demolition` assembly, split by MVC layer (no separate asmdef):
 ```
-Assets/Scripts/Generation/          asmdef Demolition.Generation → references Demolition
-  Pcg32.cs                          own RNG: same seed → same output on every machine
-  Specs/BuildingSpec.cs             grid cell → {material, tileRole, anchor}; riders[]
-  Specs/LevelSpec.cs                segments[], ground profile, slots, camera rails, par
-  Buildings/BuildingGrammar.cs      archetype + seed → BuildingSpec
-  Buildings/BuildingValidator.cs    BuildingStructure checks + fun metrics
-  Levels/LevelGrammar.cs            pacing + seed → LevelSpec
-  Levels/TraversalValidator.cs      jump arcs derived from PlayerMotor tuning
-  Build/BuildingBuilder.cs          spec → BuildingBlocks via Initialise + RegisterBlock
-  Build/LevelBuilder.cs             spec → tilemap ground, buildings, pickups, finish
-Assets/Editor/Generation/           Building Lab window, JSON → ScriptableObject importer,
-                                    -executeMethod entry points for headless validation
-Assets/Content/<theme>/             theme.json, archetypes/*.json, levels/*.json, Sprites/
+Assets/Scripts/Demolition/Generation/
+  Model/      Pcg32, BuildingArchetype (JSON), TileKind, BuildingSpec, BuildingGrammar,
+              BuildingValidator; later LevelSpec, LevelGrammar, TraversalValidator (M3)
+  View/       BuildingTileset (ScriptableObject: TileKind → sprites)
+  Controller/ BuildingBuilder (spec → blocks), GeneratedBuilding (slot); later LevelBuilder
+Assets/Editor/Generation/           Building Lab window + -executeMethod entry points
+Assets/Content/<theme>/             Archetypes/*.json, <Theme>Tileset.asset; later levels/*.json
 tools/artpipe/                      Python art tooling (see §6)
 ```
-Specs are JSON, read with `com.unity.nuget.newtonsoft-json` (Unity's `JsonUtility` can't do
-dictionaries or polymorphism). ScriptableObjects (`ThemeDef`, `MaterialTileset`) hold only
-the asset references that JSON can't.
+Specs are JSON read with `JsonUtility`; tile names are strings parsed to `TileKind`, so no
+extra JSON package is needed. ScriptableObjects hold only the asset references JSON can't.
 
 ### 5.1 Buildings: grammar → validate → build
 1. **Massing.** The archetype picks width, floors and floor height, plus optional setbacks,

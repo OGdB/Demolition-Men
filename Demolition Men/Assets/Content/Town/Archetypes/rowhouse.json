@@ -1,0 +1,16 @@
+{
+  "id": "town.rowhouse",
+  "width": { "min": 7, "max": 11 },
+  "floors": { "min": 2, "max": 3 },
+  "floorHeight": { "min": 4, "max": 4 },
+  "wall": "Brick",
+  "tallBrickChance": 0.3,
+  "floor": "Plank",
+  "roof": "Beam",
+  "columnSpacing": { "min": 4, "max": 5 },
+  "windowChance": 0.8,
+  "door": true,
+  "chimneyChance": 0.5,
+  "weakPoints": { "min": 1, "max": 4 },
+  "weakPointCascade": 0.3
+}

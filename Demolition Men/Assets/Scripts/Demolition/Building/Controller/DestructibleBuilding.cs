@@ -34,22 +34,22 @@ namespace Demolition
 
         [Tooltip("How far (in cells) the stress heuristic scans sideways for a load-bearing "
                + "column when deciding how much a cell should lean/sag.")]
-        [SerializeField] private int stressScanRange = 6;
+        [SerializeField] private int stressScanRange = StructureDefaults.StressScanRange;
 
         [Tooltip("Carried-weight shares at which a column's stress (tremble) saturates.")]
-        [SerializeField] private float columnLoadCapacity = 4f;
+        [SerializeField] private float columnLoadCapacity = StructureDefaults.ColumnLoadCapacity;
 
         [Tooltip("Net lever-arm sum at which a column's lean toward its load saturates.")]
-        [SerializeField] private float columnMomentCapacity = 8f;
+        [SerializeField] private float columnMomentCapacity = StructureDefaults.ColumnMomentCapacity;
 
         [Header("Overload collapse")]
         [Tooltip("How much overload (load/capacity) beyond the intact building's baseline a "
                + "support tolerates before it starts to crumble. Below this it only trembles.")]
-        [SerializeField] private float overloadTolerance = 0.6f;
+        [SerializeField] private float overloadTolerance = StructureDefaults.OverloadTolerance;
 
         [Tooltip("Health a crumbling block loses per second, per unit of overload past the "
                + "tolerance. Weak materials give way first; steel supports hold out longest.")]
-        [SerializeField] private float crumbleDamageRate = 150f;
+        [SerializeField] private float crumbleDamageRate = StructureDefaults.CrumbleDamageRate;
 
         [Tooltip("Seconds between crumble damage ticks (each tick also puffs dust, so this "
                + "paces the visual crumble).")]

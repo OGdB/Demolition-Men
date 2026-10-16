@@ -23,13 +23,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6802667592180403279}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6802667593028215036}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6802667593028215037
 GameObject:
@@ -41,6 +42,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6802667593028215036}
   - component: {fileID: 6802667593028214979}
+  - component: {fileID: 5457484668329980702}
   m_Layer: 0
   m_Name: BuildingSpawner
   m_TagString: Untagged
@@ -55,12 +57,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6802667593028215037}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6802667592180403278}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6802667593028214979
 MonoBehaviour:
@@ -86,3 +89,26 @@ MonoBehaviour:
   - {fileID: 7730217575436041986, guid: ae449c34e217c85439f8f4d94c2d2fa3, type: 3}
   - {fileID: 5367898019733487608, guid: d4c3bbd41a3a02444b5409642effadde, type: 3}
   - {fileID: 4339690375049307136, guid: 2a342f6a9ed87d9449b9b7146336c8c1, type: 3}
+  generatedChance: 0.5
+--- !u!114 &5457484668329980702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6802667593028215037}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ae0126b2f19ec24791937eeb058bd9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.Generation.GeneratedBuilding
+  archetypes:
+  - {fileID: 4900000, guid: 1d6e2b2be2596554caa4c30bd1994758, type: 3}
+  - {fileID: 4900000, guid: 2ab3c29ddc44e0b4fb84a6720c263fc0, type: 3}
+  - {fileID: 4900000, guid: c9e97ef69e2473f4e8e1b9be3157a49e, type: 3}
+  - {fileID: 4900000, guid: a20aa954f2b70a943a94dd5e08fe3efc, type: 3}
+  - {fileID: 4900000, guid: 4ce346711604c8b4895a74672a6346f3, type: 3}
+  tileset: {fileID: 11400000, guid: 799172363abac054faaac92cc47b7816, type: 2}
+  seed: 0
+  randomSeed: 1
+  maxWidth: 16
