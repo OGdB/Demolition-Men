@@ -44,6 +44,7 @@ Players are located at runtime **by GameObject name** `"Player_1"` / `"Player_2"
 - **Model:** `RunState` (countdown → playing → finished/failed; out-of-bounds grace, co-op free rejoin then Resurrect, finish + last call), `RunScore` (material points, collapse chain multiplier, speed bonus vs par, grade), `Session`.
 - **Controller:** `RunController` finds the players, feeds the models (viewport out-of-bounds, finish crossing, health depletion, `DestructionEvents`) and applies their decisions (`PlayerHealth.Kill/Revive`, controls on/off, camera targets). `FinishLine` marks the finish (in `levelPart_End`).
 - **View:** `ScrollCamera` on `Main Camera 1` (push/auto-scroll, ground-anchored zoom framing, letterbox clear), `RunHud` and `ResultsView` (uGUI built in code through `UiFactory`), `FinishLineView`.
+- Pickups: `Scripts/Demolition/Pickup/` (`Pickup`, `PickupSlot` in each level part, `PickupView`), prefab `Prefabs/Pickups/Pickup.prefab`. Resurrect calls `RunController.Current.TryResurrect`.
 - Score attribution: `TakeDamage(amount, instigator)` carries the player index (`PlayerInputReader.PlayerIndex`, assigned by the run). Collapsed blocks are credited to whoever destroyed the support; blocks credited once never score again. `PlayerHealth.ManagedByRun` makes depletion raise `Depleted` instead of the test-bench respawn.
 
 ## Destruction architecture (support-graph)

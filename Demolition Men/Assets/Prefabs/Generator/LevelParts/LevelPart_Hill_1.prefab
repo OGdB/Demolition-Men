@@ -76,6 +76,65 @@ Grid:
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 0
   m_CellSwizzle: 0
+--- !u!1 &3344335913576781905
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5087117442580583700}
+  - component: {fileID: 1911604346275377367}
+  m_Layer: 0
+  m_Name: PickupSlot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5087117442580583700
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3344335913576781905}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 15, y: 20, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5040365606253649817}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1911604346275377367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3344335913576781905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce50c53eaf080d489c62167d95e0d9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.PickupSlot
+  prefab: {fileID: 5921544143652039461, guid: 3de564e561acff847a5392084ea8bdf3, type: 3}
+  spawnChance: 0.7
+  table:
+  - kind: 2
+    amount: 2
+    weight: 4
+  - kind: 0
+    amount: 25
+    weight: 3
+  - kind: 1
+    amount: 20
+    weight: 2
+  - kind: 3
+    amount: 1
+    weight: 1
 --- !u!1 &3798841323491428006
 GameObject:
   m_ObjectHideFlags: 0
@@ -10335,6 +10394,7 @@ Transform:
   - {fileID: 216139159566478806}
   - {fileID: 4667616893227282668}
   - {fileID: 651664450772379675}
+  - {fileID: 5087117442580583700}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1611561055613318055

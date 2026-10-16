@@ -41,6 +41,9 @@ namespace Demolition.Run
         private int _totalCells;
         private int _removedCells;
 
+        /// <summary>The run in progress, if the scene has one.</summary>
+        public static RunController Current { get; private set; }
+
         public RunState State { get; private set; }
         public RunScore Score { get; private set; }
         public IReadOnlyList<Player> Players => _players;
@@ -65,6 +68,12 @@ namespace Demolition.Run
             DestructionEvents.Collapsed += OnCollapsed;
         }
 
+        private void OnDestroy()
+        {
+            if (Current == this)
+                Current = null;
+        }
+
         private void OnDisable()
         {
             DestructionEvents.BuildingReady -= OnBuildingReady;
@@ -78,6 +87,7 @@ namespace Demolition.Run
 
         private void Awake()
         {
+            Current = this;
             FindPlayers();
             State = new RunState(_players.Count, rules);
             Score = new RunScore(_players.Count);

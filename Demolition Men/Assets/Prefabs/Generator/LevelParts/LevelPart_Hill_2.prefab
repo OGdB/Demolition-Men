@@ -32,8 +32,68 @@ Transform:
   - {fileID: 4943021918653898310}
   - {fileID: 8324630472180469302}
   - {fileID: 2975451564703370286}
+  - {fileID: 2420573833734632076}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1963623102307951399
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2420573833734632076}
+  - component: {fileID: 2451967045441697205}
+  m_Layer: 0
+  m_Name: PickupSlot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2420573833734632076
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1963623102307951399}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 15, y: 20, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3785873573792398457}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2451967045441697205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1963623102307951399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce50c53eaf080d489c62167d95e0d9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.PickupSlot
+  prefab: {fileID: 5921544143652039461, guid: 3de564e561acff847a5392084ea8bdf3, type: 3}
+  spawnChance: 0.7
+  table:
+  - kind: 2
+    amount: 2
+    weight: 4
+  - kind: 0
+    amount: 25
+    weight: 3
+  - kind: 1
+    amount: 20
+    weight: 2
+  - kind: 3
+    amount: 1
+    weight: 1
 --- !u!1 &5026250464698524998
 GameObject:
   m_ObjectHideFlags: 0

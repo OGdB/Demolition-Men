@@ -170,7 +170,9 @@ namespace Demolition.Run
                     break;
                 default:
                     string respawn = state.HasFreeRespawn(index) ? "  +1 LIFE" : string.Empty;
-                    panel.Status.text = $"{WeaponName(player.Combat.Weapon)}  TNT x{player.Combat.DynamiteCount}{respawn}";
+                    int uses = player.Combat.WeaponUses;
+                    string weapon = WeaponName(player.Combat.Weapon) + (uses >= 0 ? " " + uses : string.Empty);
+                    panel.Status.text = $"{weapon}  TNT x{player.Combat.DynamiteCount}{respawn}";
                     break;
             }
 

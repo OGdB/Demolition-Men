@@ -11,9 +11,9 @@ namespace Demolition
     /// SmoothDamp'd, deadzoned copy (<see cref="MoveSmoothed"/>) drives sprite flip and
     /// the animator's Speed float, so the run cycle eases in and out the way it used to.
     ///
-    /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite.
+    /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · LB/RB weapon.
     /// Keyboard: A/D or ◀/▶ move · Space/W jump · J or L-Mouse attack · K or R-Mouse
-    /// dynamite · 1/2/3 weapon hotkeys.
+    /// dynamite · Q/E weapon · 1/2/3 weapon hotkeys (debug).
     /// </summary>
     public class PlayerInputReader : MonoBehaviour
     {
@@ -37,6 +37,8 @@ namespace Demolition
         public bool DynamiteDown { get; private set; }
         /// <summary>1..3 on the frame a weapon hotkey is pressed, otherwise 0.</summary>
         public int WeaponHotkey { get; private set; }
+        /// <summary>+1 / -1 on the frame the next / previous weapon is requested, otherwise 0.</summary>
+        public int WeaponCycle { get; private set; }
 
         private Vector2 _smoothed;
         private Vector2 _smoothedVelocity;
@@ -50,7 +52,7 @@ namespace Demolition
             Vector2 raw = Vector2.zero;
             bool jumpDown = false, jumpHeld = false, jumpUp = false;
             bool attack = false, dynamiteDown = false;
-            int hotkey = 0;
+            int hotkey = 0, cycle = 0;
 
             if (pad != null)
             {
@@ -60,6 +62,8 @@ namespace Demolition
                 jumpUp |= pad.aButton.wasReleasedThisFrame;
                 attack |= pad.xButton.isPressed;
                 dynamiteDown |= pad.bButton.wasPressedThisFrame;
+                if (pad.rightShoulder.wasPressedThisFrame) cycle = 1;
+                else if (pad.leftShoulder.wasPressedThisFrame) cycle = -1;
             }
 
             if (kb != null)
@@ -79,6 +83,9 @@ namespace Demolition
 
                 attack |= kb.jKey.isPressed;
                 dynamiteDown |= kb.kKey.wasPressedThisFrame;
+
+                if (kb.eKey.wasPressedThisFrame) cycle = 1;
+                else if (kb.qKey.wasPressedThisFrame) cycle = -1;
 
                 if (kb.digit1Key.wasPressedThisFrame) hotkey = 1;
                 else if (kb.digit2Key.wasPressedThisFrame) hotkey = 2;
@@ -102,6 +109,7 @@ namespace Demolition
             AttackHeld = attack;
             DynamiteDown = dynamiteDown;
             WeaponHotkey = hotkey;
+            WeaponCycle = cycle;
         }
     }
 }

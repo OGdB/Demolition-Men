@@ -146,10 +146,12 @@ The described game, playable start to finish with today's content. Code lives in
   rejoin and out status, out-of-bounds warning, 3-2-1/GO!/last call, score popups.
 - ✅ **Results screen:** grade, time vs par, points per player, speed bonus, total;
   Retry / Menu (Next and Hub arrive with M3/M6).
-- **Pickups:** one `Pickup` component (weapon swap with limited uses, dynamite refill,
-  utilities, Resurrect). Resurrect only spawns in co-op and can only be collected while
-  the partner is out (`RunController.TryResurrect` is ready). Gamepad weapon cycle on the
-  shoulder buttons. Keyboard hotkeys stay for debug.
+- ✅ **Pickups** (`Scripts/Demolition/Pickup/`): axe (25 hits), wrecking ball (20), dynamite
+  (+2, carry max 9), Resurrect (co-op only; stays put unless the partner is out). Weapons
+  lose a hit per landed swing and fall back to fists; players carry an inventory and cycle
+  it with LB/RB or Q/E (1/2/3 hotkeys are debug-build only). Pickups fall when their roof
+  collapses. Each level part has a `PickupSlot` rolling a weighted random pickup
+  (shortcut until M3 places them from the level spec).
 - **Join screen:** "press any button to join" assigns keyboard or a specific gamepad to
   P1/P2. `PlayerInputReader` takes an assigned device instead of a fixed index. Replaces
   the menu's keyboard/controller step.

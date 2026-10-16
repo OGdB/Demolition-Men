@@ -63,7 +63,7 @@ namespace Demolition
         [SerializeField] private float attackForce = 500f;
         [SerializeField] private float damageMultiplier = 1f;
         [SerializeField] private WeaponType weapon = WeaponType.Fists;
-        [Tooltip("1/2/3 switch fists/axe/wrecking ball — sandbox stand-in for weapon pickups.")]
+        [Tooltip("Debug builds only: 1/2/3 switch fists/axe/wrecking ball with unlimited hits.")]
         [SerializeField] private bool weaponHotkeys = true;
 
         [Header("Damage per material")]
@@ -79,6 +79,7 @@ namespace Demolition
         [Header("Dynamite")]
         [SerializeField] private GameObject dynamitePrefab;
         [SerializeField] private int dynamiteCount = 3;
+        [SerializeField] private int maxDynamite = 9;
         [SerializeField] private float throwForce = 400f;
 
         [Header("Audio")]
@@ -95,8 +96,12 @@ namespace Demolition
         private bool _canDynamite = true;
         private float _nextFallbackSwing;
         private readonly HashSet<BuildingBlock> _hitThisSwing = new HashSet<BuildingBlock>();
+        // Landed hits left per weapon (indexed by WeaponType); fists never run out.
+        private readonly int[] _uses = new int[3];
 
-        public WeaponType Weapon { get => weapon; set => weapon = value; }
+        public WeaponType Weapon => weapon;
+        /// <summary>Landed hits left on the current weapon, -1 for fists.</summary>
+        public int WeaponUses => weapon == WeaponType.Fists ? -1 : _uses[(int)weapon];
         public int DynamiteCount { get => dynamiteCount; set => dynamiteCount = Mathf.Max(0, value); }
         public int PlayerIndex => _input.PlayerIndex;
 
@@ -119,8 +124,14 @@ namespace Demolition
 
         private void Update()
         {
-            if (weaponHotkeys && _input.WeaponHotkey != 0)
+            if (weaponHotkeys && Debug.isDebugBuild && _input.WeaponHotkey != 0)
+            {
                 weapon = (WeaponType)(_input.WeaponHotkey - 1);
+                if (weapon != WeaponType.Fists)
+                    _uses[(int)weapon] = Mathf.Max(_uses[(int)weapon], 999);
+            }
+            if (_input.WeaponCycle != 0)
+                CycleWeapon(_input.WeaponCycle);
 
             bool attacking = _input.AttackHeld;
             if (_anim != null)
@@ -183,6 +194,41 @@ namespace Demolition
 
             if (hitAnything && hitSound != null && _audio != null)
                 _audio.PlayOneShot(hitSound);
+
+            if (hitAnything && weapon != WeaponType.Fists && --_uses[(int)weapon] <= 0)
+                weapon = WeaponType.Fists;
+        }
+
+        /// <summary>Pick up a weapon: add landed hits and switch to it.</summary>
+        public void AddWeapon(WeaponType type, int hits)
+        {
+            if (type == WeaponType.Fists || hits <= 0)
+                return;
+            _uses[(int)type] += hits;
+            weapon = type;
+        }
+
+        /// <returns>False when already carrying the maximum.</returns>
+        public bool AddDynamite(int amount)
+        {
+            if (dynamiteCount >= maxDynamite)
+                return false;
+            dynamiteCount = Mathf.Min(maxDynamite, dynamiteCount + amount);
+            return true;
+        }
+
+        // Next/previous weapon that still has hits; fists are always available.
+        private void CycleWeapon(int direction)
+        {
+            for (int step = 1; step < _uses.Length; step++)
+            {
+                int candidate = ((int)weapon + direction * step + _uses.Length) % _uses.Length;
+                if (candidate == (int)WeaponType.Fists || _uses[candidate] > 0)
+                {
+                    weapon = (WeaponType)candidate;
+                    return;
+                }
+            }
         }
 
         private void ThrowDynamite()

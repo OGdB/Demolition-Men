@@ -1,5 +1,64 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &150583745486024920
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5824236647215116108}
+  - component: {fileID: 7523933860976520862}
+  m_Layer: 0
+  m_Name: PickupSlot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5824236647215116108
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150583745486024920}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 20.04, y: 20, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7618846407034551018}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7523933860976520862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150583745486024920}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce50c53eaf080d489c62167d95e0d9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.PickupSlot
+  prefab: {fileID: 5921544143652039461, guid: 3de564e561acff847a5392084ea8bdf3, type: 3}
+  spawnChance: 0.7
+  table:
+  - kind: 2
+    amount: 2
+    weight: 4
+  - kind: 0
+    amount: 25
+    weight: 3
+  - kind: 1
+    amount: 20
+    weight: 2
+  - kind: 3
+    amount: 1
+    weight: 1
 --- !u!1 &1108407629382141391
 GameObject:
   m_ObjectHideFlags: 0
@@ -16119,6 +16178,7 @@ Transform:
   - {fileID: 584894725082222026}
   - {fileID: 4355151781894276808}
   - {fileID: 9220209727528783534}
+  - {fileID: 5824236647215116108}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2498264133926956941
@@ -16137,6 +16197,9 @@ MonoBehaviour:
   stressScanRange: 6
   columnLoadCapacity: 4
   columnMomentCapacity: 8
+  overloadTolerance: 0.6
+  crumbleDamageRate: 150
+  crumbleTickInterval: 0.25
   autoScanChildren: 1
   cellSize: 1
   anchorProbeDepth: 0.35
