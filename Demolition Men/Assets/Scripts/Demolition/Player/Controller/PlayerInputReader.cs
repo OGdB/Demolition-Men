@@ -42,12 +42,27 @@ namespace Demolition
 
         private Vector2 _smoothed;
         private Vector2 _smoothedVelocity;
+        private InputDevice _assigned;
+
+        /// <summary>Read only this device (keyboard + mouse, or one gamepad) instead of the
+        /// default gamepad index + keyboard. Null restores the default.</summary>
+        public void AssignDevice(InputDevice device) => _assigned = device;
 
         private void Update()
         {
-            Gamepad pad = Gamepad.all.Count > gamepadIndex ? Gamepad.all[gamepadIndex] : null;
-            Keyboard kb = keyboardEnabled ? Keyboard.current : null;
-            Mouse mouse = keyboardEnabled ? Mouse.current : null;
+            Gamepad pad;
+            Keyboard kb;
+            if (_assigned != null)
+            {
+                pad = _assigned as Gamepad;
+                kb = _assigned as Keyboard;
+            }
+            else
+            {
+                pad = Gamepad.all.Count > gamepadIndex ? Gamepad.all[gamepadIndex] : null;
+                kb = keyboardEnabled ? Keyboard.current : null;
+            }
+            Mouse mouse = kb != null ? Mouse.current : null;
 
             Vector2 raw = Vector2.zero;
             bool jumpDown = false, jumpHeld = false, jumpUp = false;

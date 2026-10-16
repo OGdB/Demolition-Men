@@ -77,7 +77,7 @@ Code-driven alternative (`DemoBootstrap`): call `BuildingBlock.Initialise` + `De
 
 ## Players
 
-`Scripts/Demolition/Player/Controller/`: `PlayerHealth`, `PlayerInputReader` (Input System; merged gamepad + keyboard per player index), `PlayerMotor` (impulse movement, better-jump gravity), `PlayerCombat` (per-weapon × per-material damage profiles, `Physics2D.OverlapCircleAll` hits), `Dynamite`. Prefabs: `Prefabs/Demolition/Player_1`, `Player_2`, `Dynamite`. The same scripts drive the primitive no-art player in `DemoBootstrap`.
+`Scripts/Demolition/Player/Controller/`: `PlayerHealth`, `PlayerInputReader` (Input System; the device assigned from `Session` by the join screen, or gamepad index + keyboard when a level is started directly), `PlayerMotor` (impulse movement, better-jump gravity), `PlayerCombat` (per-weapon × per-material damage profiles, `Physics2D.OverlapCircleAll` hits), `Dynamite`. Prefabs: `Prefabs/Demolition/Player_1`, `Player_2`, `Dynamite`. The same scripts drive the primitive no-art player in `DemoBootstrap`.
 
 The original sprite art is reused through a **name contract** that fails silently if broken:
 - Animator parameters: `Speed`, `InAir`, `IsPunching`, `IsAxeing`, `IsWrecking`.

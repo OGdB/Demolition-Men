@@ -125,7 +125,9 @@ namespace Demolition.Run
                     Combat = go.GetComponent<PlayerCombat>(),
                     Motor = go.GetComponent<PlayerMotor>(),
                 };
-                go.GetComponent<PlayerInputReader>().PlayerIndex = player.Index;
+                var input = go.GetComponent<PlayerInputReader>();
+                input.PlayerIndex = player.Index;
+                input.AssignDevice(Session.DeviceFor(player.Index));
                 player.Health.ManagedByRun = true;
                 player.Health.Depleted += OnDepleted;
                 _players.Add(player);

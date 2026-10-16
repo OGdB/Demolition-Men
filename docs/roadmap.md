@@ -152,9 +152,11 @@ The described game, playable start to finish with today's content. Code lives in
   it with LB/RB or Q/E (1/2/3 hotkeys are debug-build only). Pickups fall when their roof
   collapses. Each level part has a `PickupSlot` rolling a weighted random pickup
   (shortcut until M3 places them from the level spec).
-- **Join screen:** "press any button to join" assigns keyboard or a specific gamepad to
-  P1/P2. `PlayerInputReader` takes an assigned device instead of a fixed index. Replaces
-  the menu's keyboard/controller step.
+- ✅ **Join screen** (`Menu/Controller/JoinScreen`, `Menu/View/JoinView`): Play opens a lobby
+  where any keyboard or gamepad joins with A / Space, leaves with B / Esc, and continues with
+  Start / Enter. Joined devices go to `Session`; each player then reads only their own
+  device (keyboard + one gamepad works). Replaces the single/co-op and keyboard/controller
+  menu steps. Starting a level directly in the editor keeps the default input.
 - **Tutorial** rebuilt with trigger-volume prompts for the current mechanics, plus a finish.
 - **Done when:** a 3-minute Level 1 can be finished solo and co-op. You can lose by falling
   behind, recover inside 3 seconds, and see a grade. A weak-point collapse visibly
