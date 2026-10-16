@@ -24,6 +24,9 @@ namespace Demolition
         [SerializeField] private float joystickDampSpeed = 10f;
         [SerializeField] private float deadzone = 0.1f;
 
+        /// <summary>Which player this is (0 = P1). Set by the run controller; credits damage and score.</summary>
+        public int PlayerIndex { get; set; }
+
         public Vector2 MoveRaw { get; private set; }
         /// <summary>Smoothed + deadzoned move input — for facing and animation blend.</summary>
         public Vector2 MoveSmoothed { get; private set; }

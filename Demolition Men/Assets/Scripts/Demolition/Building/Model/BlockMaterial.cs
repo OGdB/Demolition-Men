@@ -27,6 +27,20 @@ namespace Demolition
             }
         }
 
+        /// <summary>Score for one destroyed or collapsed cell. Tougher material pays more.</summary>
+        public static int Points(BlockMaterial material)
+        {
+            switch (material)
+            {
+                case BlockMaterial.Support: return 40;
+                case BlockMaterial.Metal:   return 25;
+                case BlockMaterial.Brick:   return 15;
+                case BlockMaterial.Wood:    return 10;
+                case BlockMaterial.Glass:   return 5;
+                default:                    return 10;
+            }
+        }
+
         /// <summary>Debug tint used by the code-driven test scene.</summary>
         public static Color Tint(BlockMaterial material)
         {

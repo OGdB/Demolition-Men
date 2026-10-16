@@ -118,50 +118,42 @@ M0 Stabilize ─▶ M1 Core loop ─▶ M2 Building gen ─▶ M3 Level gen ─�
   prefabs for art that M4 replaces; the M4 import rules enforce 32 px/unit on new art.
 - **Done when:** `main` compiles from a fresh clone, EditMode tests pass, and Level 1 plays.
 
-### M1 — Core loop complete (M/L)
-The described game, playable start to finish with today's content.
-- **`RunManager`** state machine: `Intro → Countdown(3-2-1) → Playing → Finished | Failed →
-  Results`. It owns the timer and pause interplay. All run-end logic moves here; `EndMenu`
-  becomes a view.
-- **Finish line** in the end part. The run finishes when all living players have crossed;
-  a 5-second "last call" starts when the first one crosses.
-- **Camera v2**
-  - Out-of-bounds uses viewport math (`Camera.ViewportToWorldPoint`) instead of colliders.
-    A player left of the visible edge (or below the bottom) gets a **3-second countdown**,
-    shown as a big warning sign pinned to the screen edge at their height (it fits the
-    character's sign head). Getting back in cancels it.
-  - Front-edge speed-up is driven by "any player beyond X% of the screen", which fixes the
-    stacking bug.
-  - Camera rails per level segment (min/max Y) replace `baseY`, so the camera can follow
-    players down into sewers. Zoom framing stays as is.
-- **Co-op elimination (D1).** A player is *out* when the 3-second countdown runs out or
-  their health hits 0.
-  - First time out: they rejoin next to their partner after 5 s, with a score penalty.
-    This is their one free respawn.
-  - After that, they stay out until their partner collects a **Resurrect** pickup, which
-    brings them back next to the partner.
-  - The run ends when no player is alive, since a rejoin needs a living partner. Solo: out
-    ends the run.
-  - `PlayerHealth` needs a `Revive(position)` next to `Kill()`, and per-player respawn
-    bookkeeping lives in `RunManager`.
-- **Scoring v2.** Add a `RunStats` service in the `Demolition` assembly, with events
-  `BlockDestroyed` / `BlocksCollapsed(material, cause, playerIndex, chainSize)`.
-  - Points per material: tougher blocks are worth more.
-  - **Collapsed blocks score too**, credited to whoever destroyed the support.
-  - **Collapse chain multiplier:** one structural event that drops *n* blocks pays
-    `×(1 + n/20)`, capped at ×3.
-  - **Speed bonus** against par time: ×1.0 at par, up to ×1.5 at 60% of par.
-  - **Grade (S/A/B/C)** from the level-wide destruction %, summed over all buildings.
-  - `TakeDamage` needs a damage source for attribution (small API change).
-- **HUD:** timer, score, destruction %, per-player health, weapon icon, dynamite count,
-  out-of-bounds countdown.
-- **Results screen:** score breakdown per player, grade, Retry / Next / Hub.
+### M1 — Core loop complete (M/L) — in progress
+The described game, playable start to finish with today's content. Code lives in
+`Scripts/Demolition/Run/` (see the Run loop section of `CLAUDE.md`).
+- ✅ **`RunController`** + `RunState` model: `Countdown(3-2-1) → Playing → Finished | Failed`,
+  timer, controls locked during the countdown. `EndMenu`, `ScoreManager`, `GlobalVariables`
+  and `Score` are gone; menu choices go through `Session`.
+- ✅ **Finish line** (`FinishLine` in `levelPart_End`). The run finishes when all living
+  players have crossed; a 5-second "last call" starts when the first one crosses.
+- ✅ **Camera v2** (`ScrollCamera`, replaces `CameraMovement` + `cameraSpeed`)
+  - Out-of-bounds from the viewport: left of the screen (or below the bottom) starts a
+    **3-second countdown**, shown as the warning sign pinned to the left edge at the
+    player's height. Getting back in cancels it.
+  - The front player pushes the camera at 70% of the screen; the first push starts the
+    auto-scroll. Fixes the speed-up stacking bug.
+  - Framing keeps the authored ground at the bottom and zooms out for jumps; a player below
+    the ground (sewer) lowers the bottom edge. Explicit per-segment camera rails move to M3,
+    where level specs can carry them.
+- ✅ **Co-op elimination (D1).** Out when the countdown runs out or health hits 0. First
+  time: rejoin next to the partner after 5 s, −500 points. After that: out until the partner
+  collects a Resurrect. The run fails when no player is alive. Solo: out ends the run.
+- ✅ **Scoring v2** (`RunScore`, fed by `DestructionEvents`): points per material (glass 5 …
+  support 40), collapsed blocks credited to whoever destroyed the support, chain multiplier
+  `×(1 + n/20)` capped at ×3, speed bonus ×1.5 at ≤60% of par down to ×1.0 at par, grade
+  S/A/B/C from level-wide destruction (80/60/40%).
+- ✅ **HUD:** timer, par, destruction %, per-player score/health/weapon/dynamite/free-life,
+  rejoin and out status, out-of-bounds warning, 3-2-1/GO!/last call, score popups.
+- ✅ **Results screen:** grade, time vs par, points per player, speed bonus, total;
+  Retry / Menu (Next and Hub arrive with M3/M6).
 - **Pickups:** one `Pickup` component (weapon swap with limited uses, dynamite refill,
   utilities, Resurrect). Resurrect only spawns in co-op and can only be collected while
-  the partner is out. Gamepad weapon cycle on the shoulder buttons. Keyboard hotkeys stay for debug.
+  the partner is out (`RunController.TryResurrect` is ready). Gamepad weapon cycle on the
+  shoulder buttons. Keyboard hotkeys stay for debug.
 - **Join screen:** "press any button to join" assigns keyboard or a specific gamepad to
-  P1/P2. `PlayerInputReader` takes an assigned device instead of a fixed index.
-- **Tutorial** rebuilt with trigger-volume prompts for the current mechanics.
+  P1/P2. `PlayerInputReader` takes an assigned device instead of a fixed index. Replaces
+  the menu's keyboard/controller step.
+- **Tutorial** rebuilt with trigger-volume prompts for the current mechanics, plus a finish.
 - **Done when:** a 3-minute Level 1 can be finished solo and co-op. You can lose by falling
   behind, recover inside 3 seconds, and see a grade. A weak-point collapse visibly
   outscores grinding the same blocks.

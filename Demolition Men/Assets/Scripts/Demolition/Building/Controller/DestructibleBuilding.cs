@@ -95,6 +95,10 @@ namespace Demolition
             new List<KeyValuePair<BuildingBlock, float>>();
         private float _crumbleTimer;
 
+        // Player who last destroyed a block here. Gets the credit when a block dies with
+        // no instigator of its own (overload crumble).
+        private int _lastInstigator = -1;
+
         public int StandingBlockCount => _structure.CellCount;
         public int InitialCellCount { get; private set; }
 
@@ -135,6 +139,9 @@ namespace Demolition
             _baseline = new Dictionary<Vector2Int, CellStress>();
             foreach (var kv in _structure.ComputeStress(stressScanRange, columnLoadCapacity, columnMomentCapacity))
                 _baseline[kv.Key] = kv.Value;
+
+            if (InitialCellCount > 0)
+                DestructionEvents.RaiseBuildingReady(InitialCellCount);
         }
 
         private void Update()
@@ -399,26 +406,41 @@ namespace Demolition
                 return;
             }
 
+            int instigator = block.LastInstigator >= 0 ? block.LastInstigator : _lastInstigator;
+            _lastInstigator = instigator;
+
+            // A block that already fell has no standing cells left; only count real removals.
+            int removed = 0;
             for (int i = 0; i < block.Coords.Count; i++)
-                _blocks.Remove(block.Coords[i]);
+                if (_blocks.Remove(block.Coords[i]))
+                    removed++;
 
             List<Vector2Int> detached = _structure.RemoveCells(block.Coords);
 
             // Group detached cells into distinct blocks (a rigid block's cells always
             // detach together).
             var fallers = new List<BuildingBlock>();
+            var collapsed = new List<BlockMaterial>();
             for (int i = 0; i < detached.Count; i++)
             {
                 if (!_blocks.TryGetValue(detached[i], out var detachedBlock))
                     continue;
                 _blocks.Remove(detached[i]);
+                removed++;
+                collapsed.Add(detachedBlock.Material);
                 if (!fallers.Contains(detachedBlock))
                     fallers.Add(detachedBlock);
             }
 
+            if (removed > 0)
+                DestructionEvents.RaiseStandingCellsRemoved(removed);
+            if (collapsed.Count > 0)
+                DestructionEvents.RaiseCollapsed(new CollapseInfo(instigator, collapsed, block.transform.position));
+
             int fallen = 0;
             for (int i = 0; i < fallers.Count; i++)
             {
+                fallers[i].MarkCredited();
                 ReleaseRiders(fallers[i]);
                 if (fallen < maxSimultaneousFalling)
                 {
@@ -442,8 +464,11 @@ namespace Demolition
             _riders.Remove(host);
             for (int i = 0; i < list.Count; i++)
             {
-                if (list[i] != null)
-                    list[i].BeginFalling();
+                if (list[i] == null)
+                    continue;
+                // Cosmetic dressing falling with its host isn't the player's doing.
+                list[i].MarkCredited();
+                list[i].BeginFalling();
             }
         }
 

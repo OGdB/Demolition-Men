@@ -53,6 +53,8 @@ namespace Demolition
         public bool IsRubble { get; private set; }
         /// <summary>Current cosmetic stress, 0 (solid) .. 1 (about to give).</summary>
         public float Stress { get; private set; }
+        /// <summary>Player who last damaged this block, -1 if none.</summary>
+        public int LastInstigator { get; private set; } = -1;
 
         private readonly List<Vector2Int> _coords = new List<Vector2Int>();
         private DestructibleBuilding _building;
@@ -66,6 +68,9 @@ namespace Demolition
         private float _settleTimer;
         private float _lastImpactTime = -999f;
         private bool _destroyed;
+        // Points for this block were already awarded (collapse credit, or a cosmetic
+        // rider released by its host), so destroying it later scores nothing.
+        private bool _credited;
         private float _targetLeanDeg;
         private float _targetSag;
         private float _targetDrift;
@@ -143,11 +148,14 @@ namespace Demolition
                 _baseColor = _sr.color;
         }
 
-        public void TakeDamage(float amount)
+        /// <param name="instigator">Player index dealing the damage, -1 for none.</param>
+        public void TakeDamage(float amount, int instigator = -1)
         {
             if (_destroyed || amount <= 0f)
                 return;
 
+            if (instigator >= 0)
+                LastInstigator = instigator;
             _health -= amount;
 
             // Chips of debris + progressive darkening as the block weakens.
@@ -159,7 +167,10 @@ namespace Demolition
         }
 
         /// <summary>Destroy the block outright — glass panes on impact.</summary>
-        public void Shatter() => TakeDamage(Mathf.Max(_health, 1f));
+        public void Shatter(int instigator = -1) => TakeDamage(Mathf.Max(_health, 1f), instigator);
+
+        /// <summary>The building scored this block's collapse; its later destruction pays nothing.</summary>
+        internal void MarkCredited() => _credited = true;
 
         /// <summary>
         /// Single source of truth for the sprite tint: damage darkening × rubble dimming,
@@ -181,7 +192,12 @@ namespace Demolition
         {
             _destroyed = true;
             Particles.Burst(transform.position, BlockMaterialInfo.Tint(material), 16, 5f, 0.16f, 0.75f);
-            Score.Add(10); // same reward the old dstrBlock gave
+            if (!_credited)
+            {
+                _credited = true;
+                DestructionEvents.RaiseBlockDestroyed(new BlockDestroyedInfo(
+                    material, Mathf.Max(1, _coords.Count), LastInstigator, transform.position));
+            }
             if (_building != null)
                 _building.OnBlockDestroyed(this);
             Destroy(gameObject);

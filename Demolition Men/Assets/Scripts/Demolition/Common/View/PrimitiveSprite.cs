@@ -29,6 +29,29 @@ namespace Demolition
             return _unit;
         }
 
+        /// <summary>Black/white 2×2 checker, half a unit per square, pivot at the bottom
+        /// centre. Meant for <see cref="SpriteDrawMode.Tiled"/> (finish-line banner).</summary>
+        public static Sprite Checker()
+        {
+            if (_checker != null)
+                return _checker;
+
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Repeat,
+            };
+            tex.SetPixels(new[] { Color.white, Color.black, Color.black, Color.white });
+            tex.Apply();
+
+            _checker = Sprite.Create(tex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0f), 2f, 0,
+                SpriteMeshType.FullRect);
+            _checker.name = "CheckerSprite";
+            return _checker;
+        }
+
+        private static Sprite _checker;
+
         /// <summary>Soft-edged filled circle.</summary>
         public static Sprite Disc()
         {

@@ -142,7 +142,7 @@ namespace Demolition
             if (block != null && block.Material == BlockMaterial.Glass)
             {
                 PlayClip(glassBreakSound);
-                block.Shatter();
+                block.Shatter(_input.PlayerIndex);
             }
         }
 

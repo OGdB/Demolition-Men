@@ -98,6 +98,7 @@ namespace Demolition
 
         public WeaponType Weapon { get => weapon; set => weapon = value; }
         public int DynamiteCount { get => dynamiteCount; set => dynamiteCount = Mathf.Max(0, value); }
+        public int PlayerIndex => _input.PlayerIndex;
 
         private Vector2 AttackOrigin =>
             (Vector2)transform.position + new Vector2(attackOffset.x * _motor.Facing, attackOffset.y);
@@ -169,7 +170,7 @@ namespace Demolition
                     continue;
 
                 hitAnything = true;
-                block.TakeDamage(CurrentDamage.For(block.Material) * damageMultiplier);
+                block.TakeDamage(CurrentDamage.For(block.Material) * damageMultiplier, _input.PlayerIndex);
 
                 // Only shoves loose debris; a supported (static) wall just takes damage.
                 if (block != null && block.IsFalling)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Demolition.Run;
 
 public class MainMenu : MonoBehaviour
 {
@@ -68,23 +69,18 @@ public class MainMenu : MonoBehaviour
 
     public void SinglePlayer()
     {
-        GlobalVariables.singlePlayer = true;
+        Session.PlayerCount = 1;
     }
 
     public void Coop()
     {
-        GlobalVariables.singlePlayer = false;
+        Session.PlayerCount = 2;
     }
 
-    public void Keyboard()
-    {
-        GlobalVariables.controller = false;
-    }
-    public void Controller()
-    {
-        GlobalVariables.controller = true;
-
-    }
+    // shortcut: the keyboard/controller menu step is a no-op; input devices are merged per
+    // player. Remove with the join screen (roadmap M1).
+    public void Keyboard() { }
+    public void Controller() { }
 
     public void QuitGame()
     {

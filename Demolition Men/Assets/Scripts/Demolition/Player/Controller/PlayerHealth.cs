@@ -3,9 +3,10 @@ using UnityEngine;
 namespace Demolition
 {
     /// <summary>
-    /// Simple health for the test player. Falling blocks deal impact damage
-    /// (see <see cref="BuildingBlock"/>). On death the player respawns at its start
-    /// position so the bench stays usable.
+    /// Player health. Falling blocks deal impact damage (see <see cref="BuildingBlock"/>).
+    /// In a run, running out of health raises <see cref="Depleted"/> and the run
+    /// controller decides what happens. On the test bench the player respawns at its
+    /// start position instead.
     /// </summary>
     public class PlayerHealth : MonoBehaviour
     {
@@ -15,16 +16,15 @@ namespace Demolition
 
         public float Max => maxHealth;
         public float Current { get; private set; }
-        /// <summary>Permanently dead (e.g. caught by the scrolling death camera).
-        /// Unlike a normal knock-out this does not respawn.</summary>
+        /// <summary>Out of play: hidden, no physics, no controls (see <see cref="Kill"/>).</summary>
         public bool IsDead { get; private set; }
 
-        /// <summary>When set, running out of health kills permanently instead of
-        /// respawning. The scrolling camera sets this on the players it manages: in a
-        /// scrolling level the spawn point is long gone behind the kill wall, so a
-        /// bench-style respawn would strand the player off-screen. (This assembly
-        /// cannot reference CameraMovement, hence the push-in flag.)</summary>
-        public bool PermanentDeath { get; set; }
+        /// <summary>Set by the run controller: depletion only raises <see cref="Depleted"/>
+        /// instead of the bench respawn.</summary>
+        public bool ManagedByRun { get; set; }
+
+        /// <summary>Health reached 0 while <see cref="ManagedByRun"/>.</summary>
+        public event System.Action<PlayerHealth> Depleted;
 
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
@@ -48,8 +48,7 @@ namespace Demolition
             _spawnPoint = transform.position;
         }
 
-        /// <summary>Kill outright with no respawn — the scrolling camera's mechanic:
-        /// fall behind once and you're out. The object stays for camera targeting.</summary>
+        /// <summary>Take the player out of play. The object stays so it can be revived.</summary>
         public void Kill()
         {
             if (IsDead)
@@ -57,13 +56,36 @@ namespace Demolition
             IsDead = true;
             Current = 0f;
             Particles.Burst(transform.position, new Color(0.9f, 0.2f, 0.2f), 16, 4.5f, 0.14f, 0.7f);
+            SetInPlay(false);
+        }
 
+        /// <summary>Bring a killed player back at <paramref name="position"/> with full
+        /// health and a short invulnerability.</summary>
+        public void Revive(Vector3 position)
+        {
+            if (!IsDead)
+                return;
+            IsDead = false;
+            transform.position = position;
+            if (_rb != null)
+            {
+                _rb.linearVelocity = Vector2.zero;
+                _rb.angularVelocity = 0f;
+            }
+            Current = maxHealth;
+            _invulnUntil = Time.time + respawnInvulnerability;
+            SetInPlay(true);
+            Particles.Burst(transform.position, new Color(1f, 0.85f, 0.3f), 16, 4.5f, 0.14f, 0.7f);
+        }
+
+        private void SetInPlay(bool inPlay)
+        {
             var motor = GetComponent<PlayerMotor>();
-            if (motor != null) motor.enabled = false;
+            if (motor != null) motor.enabled = inPlay;
             var combat = GetComponent<PlayerCombat>();
-            if (combat != null) combat.enabled = false;
-            if (_rb != null) _rb.simulated = false;
-            if (_sr != null) _sr.enabled = false;
+            if (combat != null) combat.enabled = inPlay;
+            if (_rb != null) _rb.simulated = inPlay;
+            if (_sr != null) _sr.enabled = inPlay;
         }
 
         public void TakeDamage(float amount)
@@ -79,8 +101,8 @@ namespace Demolition
 
             if (Current <= 0f)
             {
-                if (PermanentDeath)
-                    Kill();
+                if (ManagedByRun)
+                    Depleted?.Invoke(this);
                 else
                     Respawn();
             }

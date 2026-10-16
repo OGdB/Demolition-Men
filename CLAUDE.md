@@ -17,30 +17,34 @@ All paths below are relative to the repo root.
 ```
 dotnet build "Demolition Men/Demolition Men.slnx"
 ```
-The generated csproj files list sources explicitly (`<Compile Include>`), so a newly created `.cs` file is not compiled by this until Unity regenerates the projects (focus the editor, or Preferences ▸ External Tools ▸ Regenerate project files). Output goes to `Temp/obj`. Two CS0649 warnings in `EndMenu`/`MainMenu` are pre-existing.
+The generated csproj files list sources explicitly (`<Compile Include>`), so a newly created `.cs` file is not compiled by this until Unity regenerates the projects (focus the editor, or Preferences ▸ External Tools ▸ Regenerate project files). Output goes to `Temp/obj`. One CS0649 warning in `MainMenu` is pre-existing.
 
-**EditMode tests** (`Assets/Tests/EditMode/BuildingStructureTests.cs`, assembly `Demolition.Tests.EditMode`):
-- With the editor open: Window ▸ General ▸ Test Runner ▸ EditMode ▸ Run All. Batch mode refuses to run while the editor holds `Temp/UnityLockfile`.
+**EditMode tests** (`Assets/Tests/EditMode/`, assembly `Demolition.Tests.EditMode`: `BuildingStructure`, `RunState`, `RunScore`):
+- With the editor open: Window ▸ General ▸ Test Runner ▸ EditMode ▸ Run All. Batch mode refuses to run while the editor holds `Temp/UnityLockfile`. From an agent, the Unity MCP `RunCommand` can start `TestRunnerApi` with an `ICallbacks` that writes results to `Temp/` (the callback class must be top-level, not nested; `System.Reflection` is blocked).
 - With the editor closed (PowerShell):
   ```
   & "C:\Program Files\Unity\Hub\Editor\6000.4.9f1\Editor\Unity.exe" -batchmode -projectPath "Demolition Men" -runTests -testPlatform EditMode -testResults "$env:TEMP\editmode.xml" -logFile -
   ```
   Single test: add `-testFilter "Demolition.Tests.BuildingStructureTests.RemoveMidColumn_DetachesEverythingAbove"`. Don't pass `-quit` with `-runTests`.
 
-Only the pure `BuildingStructure` model has automated tests; everything physics/visual is verified manually in `Assets/Scenes/DemolitionTestBranch.unity` (a `DemoBootstrap` test bench that builds ground, a building, player, camera and HUD entirely from code).
+Only the pure models have automated tests; everything physics/visual is verified manually in `Assets/Scenes/DemolitionTestBranch.unity` (a `DemoBootstrap` test bench that builds ground, a building, player, camera and HUD entirely from code).
 
 Build scene order: MainMenu → Tutorial → HubWorld → Level 1.
 
 ## Assemblies and the dependency boundary
 
-- `Assets/Scripts/Demolition/Demolition.asmdef` → assembly **`Demolition`**: the destruction system, players, health, score. References only `Unity.InputSystem`. Any other package used from this folder must be added to the asmdef's `references` or it won't compile (even though Assembly-CSharp sees it).
-- Everything else in `Assets/Scripts/` (Camera, Menu, UI, Generations, `GlobalVariables`) → **Assembly-CSharp**, which references `Demolition` — never the reverse.
+- `Assets/Scripts/Demolition/Demolition.asmdef` → assembly **`Demolition`**: the destruction system, players, the run loop, its HUD. References `Unity.InputSystem`, `Unity.TextMeshPro`, `UnityEngine.UI`. Any other package used from this folder must be added to the asmdef's `references` or it won't compile (even though Assembly-CSharp sees it).
+- Everything else in `Assets/Scripts/` (Camera/Parralyx, Menu, Generations) → **Assembly-CSharp**, which references `Demolition` — never the reverse. Menu choices reach the run through `Demolition.Run.Session` (e.g. `PlayerCount`).
 
-Because `Demolition` can't see Assembly-CSharp, cross-boundary state is pushed in from the outside:
-- Score: `Demolition.Score.Value` is the source of truth (`BuildingBlock` awards +10 per destroyed block); `GlobalVariables.score` is a proxy property so legacy UI keeps its contract.
-- Death mode: `CameraMovement` (scrolling death camera) sets `PlayerHealth.PermanentDeath` / calls `Kill()`; otherwise a knocked-out player respawns.
+Players are located at runtime **by GameObject name** `"Player_1"` / `"Player_2"` (`RunController`, `TerrainGenerator`) — scene references to players are not serialized, so keep those names.
 
-Players are located at runtime **by GameObject name** `"Player_1"` / `"Player_2"` (`CameraMovement`, `EndMenu`, `GlobalVariables`) — scene references to players are not serialized, so keep those names.
+## Run loop
+
+`Scripts/Demolition/Run/`, one `Prefabs/Run/Run.prefab` per level scene (Level 1, Tutorial):
+- **Model:** `RunState` (countdown → playing → finished/failed; out-of-bounds grace, co-op free rejoin then Resurrect, finish + last call), `RunScore` (material points, collapse chain multiplier, speed bonus vs par, grade), `Session`.
+- **Controller:** `RunController` finds the players, feeds the models (viewport out-of-bounds, finish crossing, health depletion, `DestructionEvents`) and applies their decisions (`PlayerHealth.Kill/Revive`, controls on/off, camera targets). `FinishLine` marks the finish (in `levelPart_End`).
+- **View:** `ScrollCamera` on `Main Camera 1` (push/auto-scroll, ground-anchored zoom framing, letterbox clear), `RunHud` and `ResultsView` (uGUI built in code through `UiFactory`), `FinishLineView`.
+- Score attribution: `TakeDamage(amount, instigator)` carries the player index (`PlayerInputReader.PlayerIndex`, assigned by the run). Collapsed blocks are credited to whoever destroyed the support; blocks credited once never score again. `PlayerHealth.ManagedByRun` makes depletion raise `Depleted` instead of the test-bench respawn.
 
 ## Destruction architecture (support-graph)
 

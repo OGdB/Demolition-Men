@@ -82,7 +82,7 @@ namespace Demolition
             {
                 var block = hit != null ? hit.GetComponentInParent<BuildingBlock>() : null;
                 if (block != null && damaged.Add(block))
-                    block.TakeDamage(damage);
+                    block.TakeDamage(damage, _owner != null ? _owner.PlayerIndex : -1);
             }
 
             foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect))
