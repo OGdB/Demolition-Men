@@ -2,7 +2,7 @@
 
 **Status:** Approved direction (Option C) · prototype landed
 **Scope:** How buildings are composed, destroyed, and collapse — performant, stable,
-emergent (Duke Nukem / Broforce), and ready for **Fishnet** networked multiplayer + local
+emergent (Duke Nukem / Broforce), and ready for **NGO** (Netcode for GameObjects) networked multiplayer + local
 co-op.
 
 > **Decision:** buildings use a **structural support-graph** — blocks are **static while
@@ -138,17 +138,17 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 - PlayMode test that spawns a `DestructibleBuilding` and asserts detached blocks become
   `Dynamic` and standing ones stay `Static`.
 - Stress/load model unit tests (Phase 2).
-- Fishnet: a headless test that a client reconstructs the correct standing set from a
+- NGO: a headless test that a client reconstructs the correct standing set from a
   replicated destroyed-set (Phase 3).
 
 ---
 
-## 5. Networking plan (Fishnet) — designed in, not yet wired
+## 5. Networking plan (Netcode for GameObjects) — designed in, not yet wired
 
 The reason C is the right base for netcode: **structural state is discrete and tiny.**
 
 - **Server-authoritative grid.** Each `DestructibleBuilding` becomes a `NetworkBehaviour`
-  owning a **destroyed-set** (`SyncList<ushort>`/bitset of cell indices). Blocks are grid
+  owning a **destroyed-set** (`NetworkList<ushort>`/bitset of cell indices). Blocks are grid
   indices, **not** a `NetworkObject` each.
 - **Replicate events, not rigidbodies.** Punch → client request → server validates hit →
   applies damage → broadcasts `{destroyedCellId, detachedCellIds, seed}`. Never stream falling
@@ -178,7 +178,7 @@ run locally.
    `Support` bears a lot, wood/glass little; overload *yields* even while connected → sagging
    and partial collapses before full detachment. Merge large detached islands into a single
    `CompositeCollider2D` body for cheaper, cleaner falls.
-4. **Fishnet (Phase 3):** per-building destroyed-set `SyncList` + collapse events with seed;
+4. **NGO (Phase 3, post-v1):** per-building destroyed-set `NetworkList` + collapse events with seed;
    client-side debris; late-join reconstruction; authoritative punch validation.
 
 ---

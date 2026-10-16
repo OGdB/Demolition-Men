@@ -1,0 +1,449 @@
+# Demolition Men — Roadmap to v1.0
+
+**Status:** proposal · written 2026-10-16 from a full pass over the code, scenes and prefabs
+**Supersedes:** the project-level parts of `building-destruction-design.md` §6 (its
+destruction-specific phases are folded in below).
+
+---
+
+## 1. The game
+
+One or two Demolition Men walk a level from left to right, from start to finish. The goal is
+to **destroy as much as possible in as short a time as possible**, with fists, tools
+(axe, wrecking ball) and utilities (dynamite and similar). When a player first reaches a
+threshold, the camera starts scrolling right and keeps going. A player who falls behind the
+left edge has **3 seconds to get back in** before they're out. When players climb, jump or
+drop, the camera zooms so that **both players stay in frame**.
+
+What makes it more than a beat-'em-up against walls is the support-graph destruction:
+buildings collapse when they lose their path to the ground. **The best players read a
+building and hit its weak point**, so the scoring and the level generator should both
+reward that.
+
+---
+
+## 2. Current state (2026-10-16)
+
+### 2.1 What works
+
+| Area | State | Where |
+|---|---|---|
+| Destruction core | Solid. Support graph, collapse on detach, stress lean/tremble, overload crumble, persistent rubble, glass, 13 unit tests. | `Scripts/Demolition/Core`, `DestructibleBuilding`, `BuildingBlock` |
+| Hand-made buildings | ~20 prefabs auto-scanned onto the grid. | `Prefabs/Buildings`, `TestBuildings`, `Sky's Prefabs` |
+| Code-built buildings | Supported via `Initialise` + `RegisterBlock`. Proven by `DemoBootstrap`'s procedural building. | `DemoBootstrap.CreateBuilding` |
+| Players | Two sprite prefabs: movement, jump feel, fists / axe / wrecking ball per-material damage, 3 dynamite, health. | `Scripts/Demolition/Player`, `Prefabs/Demolition` |
+| Scrolling camera | Stands still until a player touches the front trigger, then scrolls (+6 while pushed, 1.5 base). Follows the players' midpoint upward and zooms to frame both. | `CameraMovement`, `cameraSpeed`, `Main Camera 1.prefab` |
+| Level assembly | `Level 1` chains 10 random parts from a list of 13, then an end part. Building slots in the parts spawn a random hand-made building. | `TerrainGenerator`, `BuildingGenerator`, `Prefabs/Generator` |
+| Run end | Run ends when every player is permanently dead. End menu shows Retry / Quit. | `EndMenu`, `PlayerHealth.Kill` |
+| Menus | Main menu (solo/co-op, play, tutorial), pause (Esc / Start). | `UI/` |
+| Art & audio | Pixel art at 32 px/unit (player sheets, object set, tile sets), 8 sound clips, 2 music tracks. | `Sprites/`, `Animations/`, `Palettes/`, `Sounds/` |
+
+### 2.2 Gaps against the core loop
+
+| Loop element | Gap |
+|---|---|
+| **Finish** | No finish line or win state. `levelPart_End` is a decorative trailer tilemap, and the camera scrolls straight past it. |
+| **"Short timespan"** | No timer, no par time, no time bonus. |
+| **Score** | A flat +10 per block destroyed by damage. **Blocks that collapse and survive as rubble score nothing**, so hitting a weak point (the system's best moment) pays less than grinding bricks. No per-player attribution. No level-wide destruction %; `DestroyedFraction` exists per building and is used only by the test-bench HUD. |
+| **Falling behind** | No 3-second countdown. The left trigger calls `PlayerHealth.Kill()` instantly. |
+| **Zoom down** | The camera never goes below its starting Y (`baseY`), so sewer parts are only framed by zooming out. |
+| **Tools & utilities** | Weapon pickups were deleted in the August migration. Weapons switch only with keyboard keys 1/2/3, so **gamepad players can't switch weapons at all**. Dynamite never refills. |
+| **Co-op input** | Player 2 needs a second gamepad. Keyboard + one gamepad doesn't work, because P1 merges the keyboard with gamepad 0. |
+| **Results / progression** | No results screen or saves. The hub (trailer with TV and door) has no behaviour and is never visited: `MainMenu.PlayGame` loads build index 3 (Level 1). The skill-shop canvas isn't in any scene. |
+| **Tutorial** | `Tutorial.cs` isn't attached anywhere, and its prompts refer to the deleted pickups. |
+| **Content** | One level type, one look, about 20 hand-made buildings. No pipeline to make more. |
+
+### 2.3 Debt and bugs found while mapping
+
+- **About 230 uncommitted changes** on `claude/demolition-men-physics-d52rzw`: the whole August
+  legacy-system migration (110 deletions, 84 modifications, 36 new files including
+  `Score.cs` and `Assets/Editor/`). The branch is also 15 commits ahead of `main` and
+  unmerged. A fresh clone of the branch **doesn't compile**, because `Score.cs` is untracked.
+- `cameraSpeed`: each player entering adds +6, so two players give +12. When one leaves, the
+  speed resets to 1.5 even if the other is still pushing.
+- The left kill trigger sits at `-1.2 × orthographicSize`. At 16:9 the visible half-width is
+  `1.78 × size`, so players die while still about 16% of the screen width inside the left
+  edge.
+- `TerrainGenerator` never despawns parts behind the camera, which is fine for 10 parts but
+  not for long levels. It also paces itself only against Player 1.
+- `GlobalVariables.FixedUpdate` calls `GameObject.Find` and `GetComponentInChildren` on every
+  physics tick.
+- Sprite import settings vary: 32 px/unit for most art, but some assets use 100, 64, 34, 150
+  or 6.
+- The stale `Demolition Men/Demolition Men/` snapshot is still tracked.
+
+---
+
+## 3. What v1.0 is
+
+**In scope**
+- The full loop: a 3-2-1 start, scrolling camera, a 3-second out-of-bounds countdown, a finish
+  line, a timer, scoring that rewards collapses, a results screen with a grade.
+- 1–2 local players with a join screen (keyboard and/or gamepads, any mix).
+- Fists, axe, wrecking ball and dynamite as **pickups**, plus 1–2 utilities (e.g. spring pad,
+  weight drop).
+- **3 themes × 3–4 campaign levels**, all generated from data (spec + seed), plus a
+  **daily seed** mode.
+- **Procedural buildings and levels**, with an **agentic content pipeline** producing themes,
+  level specs and coherent sprites.
+- The hub as level select, saves (best grade per level, unlocks), settings, juice (shake,
+  hit-stop, dust), and a Windows build.
+- A **skill shop** in the hub: banked run score buys player upgrades (D6).
+
+**Out of v1 (post-v1 backlog)**
+- Online co-op over **Netcode for GameObjects (NGO)**. The structure is ready for it (see
+  design doc §5), but it adds months (D4).
+- Online leaderboards, endless mode, player level editor.
+
+---
+
+## 4. Milestones
+
+Sizes are relative: **S** ≈ a few sessions, **M** ≈ 1–3 weeks part-time, **L** ≈ 3–6 weeks.
+The art-pipeline tooling in M4 is Python-only, so it can **run in parallel** with M2 and M3.
+
+```
+M0 Stabilize ─▶ M1 Core loop ─▶ M2 Building gen ─▶ M3 Level gen ─▶ M5 Agentic pipeline ─▶ M6 Ship v1.0
+                                   └──────── M4 Art pipeline (parallel) ───────┘
+```
+
+### M0 — Stabilize (S)
+- Commit the migration in logical commits (deletions / prefab migration / new scripts /
+  editor tools), then merge the branch into `main`.
+- Delete the stale `Demolition Men/Demolition Men/` copy.
+- Remove dead code (`PointsScript`, `Tutorial.cs` until it's rebuilt in M1).
+- Set every sprite to 32 px/unit (re-check prefab scales after).
+- Update design doc §2/§3 (they still describe `SimplePlayerController`).
+- **Done when:** `main` compiles from a fresh clone, EditMode tests pass, and Level 1 plays.
+
+### M1 — Core loop complete (M/L)
+The described game, playable start to finish with today's content.
+- **`RunManager`** state machine: `Intro → Countdown(3-2-1) → Playing → Finished | Failed →
+  Results`. It owns the timer and pause interplay. All run-end logic moves here; `EndMenu`
+  becomes a view.
+- **Finish line** in the end part. The run finishes when all living players have crossed;
+  a 5-second "last call" starts when the first one crosses.
+- **Camera v2**
+  - Out-of-bounds uses viewport math (`Camera.ViewportToWorldPoint`) instead of colliders.
+    A player left of the visible edge (or below the bottom) gets a **3-second countdown**,
+    shown as a big warning sign pinned to the screen edge at their height (it fits the
+    character's sign head). Getting back in cancels it.
+  - Front-edge speed-up is driven by "any player beyond X% of the screen", which fixes the
+    stacking bug.
+  - Camera rails per level segment (min/max Y) replace `baseY`, so the camera can follow
+    players down into sewers. Zoom framing stays as is.
+- **Co-op elimination (D1).** A player is *out* when the 3-second countdown runs out or
+  their health hits 0.
+  - First time out: they rejoin next to their partner after 5 s, with a score penalty.
+    This is their one free respawn.
+  - After that, they stay out until their partner collects a **Resurrect** pickup, which
+    brings them back next to the partner.
+  - The run ends when no player is alive, since a rejoin needs a living partner. Solo: out
+    ends the run.
+  - `PlayerHealth` needs a `Revive(position)` next to `Kill()`, and per-player respawn
+    bookkeeping lives in `RunManager`.
+- **Scoring v2.** Add a `RunStats` service in the `Demolition` assembly, with events
+  `BlockDestroyed` / `BlocksCollapsed(material, cause, playerIndex, chainSize)`.
+  - Points per material: tougher blocks are worth more.
+  - **Collapsed blocks score too**, credited to whoever destroyed the support.
+  - **Collapse chain multiplier:** one structural event that drops *n* blocks pays
+    `×(1 + n/20)`, capped at ×3.
+  - **Speed bonus** against par time: ×1.0 at par, up to ×1.5 at 60% of par.
+  - **Grade (S/A/B/C)** from the level-wide destruction %, summed over all buildings.
+  - `TakeDamage` needs a damage source for attribution (small API change).
+- **HUD:** timer, score, destruction %, per-player health, weapon icon, dynamite count,
+  out-of-bounds countdown.
+- **Results screen:** score breakdown per player, grade, Retry / Next / Hub.
+- **Pickups:** one `Pickup` component (weapon swap with limited uses, dynamite refill,
+  utilities, Resurrect). Resurrect only spawns in co-op and can only be collected while
+  the partner is out. Gamepad weapon cycle on the shoulder buttons. Keyboard hotkeys stay for debug.
+- **Join screen:** "press any button to join" assigns keyboard or a specific gamepad to
+  P1/P2. `PlayerInputReader` takes an assigned device instead of a fixed index.
+- **Tutorial** rebuilt with trigger-volume prompts for the current mechanics.
+- **Done when:** a 3-minute Level 1 can be finished solo and co-op. You can lose by falling
+  behind, recover inside 3 seconds, and see a grade. A weak-point collapse visibly
+  outscores grinding the same blocks.
+
+### M2 — Procedural buildings (M)
+Design in §5.1. Built on **today's sprites** first, to prove the system before any new art.
+- `BuildingSpec`, archetype grammar, `BuildingValidator` (uses `BuildingStructure`
+  directly), `BuildingBuilder` (spec → blocks through the existing `RegisterBlock` path),
+  autotiled sprite variants.
+- **Building Lab** editor window: archetype + seed → live preview, metrics, optional
+  "bake to prefab".
+- EditMode tests: every generated building stands at spawn, the baseline stress is under
+  tolerance, the same seed gives an identical spec hash, and weak points fall in the target
+  range.
+- **Done when:** 5 archetypes generate buildings that look at home next to the hand-made
+  ones, with 0 validator failures over 1,000 seeds.
+
+### M3 — Procedural levels (M)
+Design in §5.2.
+- `LevelSpec`, pacing grammar, segment library, traversal validator, `LevelBuilder` that
+  streams segments ahead of the camera and despawns them behind it. Replaces
+  `TerrainGenerator`.
+- **Bot playtester:** a scripted input source (`IPlayerInputSource`) drives a player
+  through a PlayMode test. It reports completion, time and destruction %, and calibrates
+  par times.
+- Level select backed by curated `{spec, seed}` pairs, plus the daily seed.
+- **Done when:** Level 1 is replaced by 3 generated levels the bot can complete, at a
+  stable 60 fps through the biggest collapse.
+
+### M4 — Art pipeline (L, can start alongside M2)
+Design in §6.
+- Style-bible schema, procedural tile generator, normalizer, QA and contact sheets.
+- Unity `AssetPostprocessor` enforcing import settings.
+- Proof: **re-skin Theme 1 (Town)** from the existing art as the anchor, then make
+  **Theme 2** with the pipeline.
+- **Done when:** a Theme 2 tile set, props and parallax background pass QA and look like
+  the same game as the demolition man sprite.
+
+### M5 — Agentic content pipeline (L)
+Design in §7.
+- Agent roles, artifacts, validators runnable from the command line, human gates.
+- Run it end to end to produce **Theme 3** with almost no hand work. Then use it to fill
+  the 3 × 3–4 campaign.
+- **Done when:** one pitch sentence becomes a playable, reviewed theme PR.
+
+### M6 — Meta, juice, ship (M/L)
+- Hub as level select (TV = theme/level select, door = start), unlocks by grade, JSON save in
+  `persistentDataPath`.
+- **Skill shop** in the hub (D6): run score is banked as cash and spent on upgrades, saved
+  with progress. Start with tuning values the player scripts already expose:
+  `PlayerCombat.damageMultiplier` and `DynamiteCount`, `PlayerHealth.maxHealth`,
+  `PlayerMotor.maxSpeed`. Reuse the unused `Canvas_Skillshop` prefab where it fits.
+- Juice: screen shake scaled to collapse size, hit-stop on heavy hits, dust clouds,
+  crack-overlay damage states, material-specific break sounds, a music track per theme.
+- Perf: merge large detached islands into one composite body (design doc Phase 2); profile
+  the worst collapse.
+- Settings (volume, rebinding, resolution, screen-shake toggle), Windows build, store page
+  assets (the art pipeline can make key art).
+
+### Post-v1
+Online co-op with NGO (replicate level id + seed + destroyed-cell sets; design doc §5),
+daily-seed leaderboards, endless mode, player level editor, more themes from the pipeline.
+
+---
+
+## 5. Procedural generation design
+
+**Principle: generate data, not scenes.** Generators turn a JSON spec plus a seed into a
+`BuildingSpec` / `LevelSpec`, which is validated by pure code and then instantiated. Agents
+and people edit specs, never prefab or scene YAML. Because the output is deterministic, a
+level is fully described by `{specId, seed}`. That gives shareable daily seeds for free and,
+later, netcode that only replicates the seed and the destroyed cells.
+
+### Code layout (proposed)
+```
+Assets/Scripts/Generation/          asmdef Demolition.Generation → references Demolition
+  Pcg32.cs                          own RNG: same seed → same output on every machine
+  Specs/BuildingSpec.cs             grid cell → {material, tileRole, anchor}; riders[]
+  Specs/LevelSpec.cs                segments[], ground profile, slots, camera rails, par
+  Buildings/BuildingGrammar.cs      archetype + seed → BuildingSpec
+  Buildings/BuildingValidator.cs    BuildingStructure checks + fun metrics
+  Levels/LevelGrammar.cs            pacing + seed → LevelSpec
+  Levels/TraversalValidator.cs      jump arcs derived from PlayerMotor tuning
+  Build/BuildingBuilder.cs          spec → BuildingBlocks via Initialise + RegisterBlock
+  Build/LevelBuilder.cs             spec → tilemap ground, buildings, pickups, finish
+Assets/Editor/Generation/           Building Lab window, JSON → ScriptableObject importer,
+                                    -executeMethod entry points for headless validation
+Assets/Content/<theme>/             theme.json, archetypes/*.json, levels/*.json, Sprites/
+tools/artpipe/                      Python art tooling (see §6)
+```
+Specs are JSON, read with `com.unity.nuget.newtonsoft-json` (Unity's `JsonUtility` can't do
+dictionaries or polymorphism). ScriptableObjects (`ThemeDef`, `MaterialTileset`) hold only
+the asset references that JSON can't.
+
+### 5.1 Buildings: grammar → validate → build
+1. **Massing.** The archetype picks width, floors and floor height, plus optional setbacks,
+   an L-shape, or a tower on a podium.
+2. **Skeleton.** A foundation row (anchors), `Support` columns every *k* cells, floor slabs
+   every *h* rows.
+3. **Envelope.** Walls, then window rhythm (Glass) and doors at ground level. This uses the
+   window rules `DemoBootstrap` already proved: no wall cell may rest on a pane.
+4. **Roof.** Flat cap, gable (45° rider planks, like the hand-made roofs), or a prop such as
+   a water tower or billboard.
+5. **Interior.** Stairs and platforms so players can climb, plus a background wall made of
+   `bg` riders.
+6. **Decor riders.** Signs, AC units, awnings, antennas. They're cosmetic and fall with
+   their host block.
+7. **Validate and score.**
+   - Every cell is supported at spawn, and the baseline overload stays under
+     `overloadTolerance`.
+   - **Weak-point profile:** for each structural cell, how many cells detach if it alone is
+     removed (a what-if `RemoveCells` on a cloned structure; `BuildingStructure` needs a
+     `Clone()`).
+   - The archetype sets targets, e.g. "1–3 weak points that each drop 30–80% of the
+     building". This is the knob that keeps generated buildings *fun to demolish*, not just
+     standing.
+8. Failures retry with the next seed offset, a bounded number of times.
+
+Visually, each block picks its sprite variant from a **4-neighbour mask** within its
+material (edges, corners, caps), so generated walls read as authored. Gameplay materials
+stay the 5 `BlockMaterial` values. A theme maps its own looks onto them; for example,
+"concrete" can use Brick stats with a concrete tile set.
+
+Example archetype (`Assets/Content/town/archetypes/rowhouse.json`):
+```json
+{
+  "id": "town.rowhouse",
+  "width": [6, 10], "floors": [2, 4], "floorHeight": 3,
+  "structure": { "columnSpacing": [3, 5], "column": "Support", "slab": "Wood" },
+  "envelope":  { "wall": "Brick", "window": "Glass", "windowRhythm": "2-1", "door": "ground" },
+  "roof": ["flat", "gable"],
+  "decor": ["chimney", "satellite_dish", "awning"],
+  "targets": { "weakPoints": [1, 3], "cascade": [0.3, 0.8] }
+}
+```
+
+### 5.2 Levels: pacing → segments → build
+- A level spec gives the theme, length, seed, scroll speed and **pacing**: a sequence of
+  segment types with an intensity curve (build-up, peaks, breathers).
+- **Segment library:** `start`, `street`, `cluster:n` (n buildings), `gap` (jump), `tower`
+  (vertical climb, camera zooms), `sewer` (camera rail dips), `gate` (a wall that must be
+  broken to pass: forced destruction), `hazard-yard`, `breather`, `finish`.
+- Segments keep today's contract: they connect at an entry/exit ground height, like the
+  current `EndPosition`. Ground comes from theme tiles on a Tilemap. Buildings fill the
+  slots from the theme's archetypes, weighted by intensity.
+- **Validation:**
+  - The traversal validator checks every gap and ledge against jump arcs computed from
+    `PlayerMotor`'s `maxSpeed` / `jumpImpulse` / gravity.
+  - The total destructible cell count and weak-point count fall in a target band.
+  - The bot run completes under the camera speed.
+- **Runtime:** a level is generated at load from `{spec, seed}`, with no baking. Segments
+  stream in ahead of the camera and are destroyed once they're behind the kill edge, so
+  long levels stay cheap.
+
+Example level (`Assets/Content/town/levels/town-03.json`):
+```json
+{
+  "id": "town-03", "theme": "town", "seed": 48213,
+  "length": 420, "scrollSpeed": 1.6, "parTime": 150,
+  "pacing": ["start", "street", "cluster:2", "gap", "tower", "breather",
+             "sewer", "cluster:3", "gate", "finish"],
+  "pickups": { "dynamite": 4, "axe": 1, "wreckingBall": 1, "resurrect": 1 }
+}
+```
+
+---
+
+## 6. Art pipeline
+
+The goal is coherent pixel art without a human artist. The reliable approach is to **split
+the work by what each method does well**, and push *everything* through the same normalizer
+and QA gate.
+
+| Asset kind | Method | Why |
+|---|---|---|
+| Material tiles (brick, concrete, metal, wood, glass, girder) + autotile edges | **Procedural, code-drawn** (Python) from palette ramps | Tileable, on-palette and consistent by construction. Agents write these generators well. |
+| Damage cracks (3 stages), rubble chunks, dust, UI frames | Procedural | Shared across materials; cheap, big feel. |
+| Props, signs, vehicles, water towers, key art | **AI image generation**, then normalize | Needs variety and character, and is forgiving of small inconsistencies. |
+| Parallax backgrounds (3–4 layers per theme) | AI generation + normalize + desaturate/value-shift per layer | Big, low-detail, sits behind gameplay. Reuses the unused `Parralyx.cs`. |
+| Player characters | **Keep the existing hand-drawn sheets.** P2 / skins via palette swap. | The warning-sign demolition man *is* the style anchor. |
+
+**Style bible** (one per theme, machine-readable `style.json` plus a short `style-bible.md`):
+- 32 px/unit, pixel art, point filtering.
+- A **master palette** (~32–48 colours) shared by all themes; each theme uses a subset plus
+  2–3 accent colours, so themes still read as one game. Each material gets a 3–4 step
+  ramp.
+- Light from the top-left. 1 px outline in the darkest ramp colour on foreground objects
+  only. Backgrounds have no outline, lower contrast and cooler values.
+- Reference sheet: the existing object set and player sheet are attached to every
+  generation request.
+
+**Tooling (`tools/artpipe/`, Python + Pillow + numpy)**
+- `tiles.py`: material generators (running-bond brick with mortar and per-brick tone
+  jitter, panelled metal with rivets, plank wood with grain, glass with a diagonal
+  highlight, X-truss girders), their 16 autotile variants, crack overlays.
+- `normalize.py`: any image → target grid (nearest/box downscale), palette quantize (nearest
+  in CIELAB), hard alpha threshold, foreground outline pass, trim and pivot.
+- `qa.py`: 100% palette compliance, no semi-transparent pixels, pixel-grid integrity, tile
+  seam continuity, foreground/background contrast, and a **contact sheet** next to the
+  reference art for visual review.
+- Unity side: an `AssetPostprocessor` sets import settings for anything under
+  `Assets/Content/**/Sprites` (32 PPU, Point, no compression, pivot rules by name), plus one
+  SpriteAtlas per theme.
+
+**Generators:** the project already has Unity AI (`com.unity.ai.assistant`), and the Unity
+MCP server exposes asset-generation tools, so start there because it's already wired into
+the editor. Fall back to an open pixel-art model via Hugging Face. Check commercial-use terms
+for whichever model ships art. AI output is **never** used raw: always normalize → QA →
+human pick from 3–4 candidates.
+
+---
+
+## 7. Agentic content pipeline
+
+Each stage is an agent role that writes **files in the repo**, runs **validators it can't
+argue with**, and stops at a **human gate**. The repo is the shared memory, and a PR is the
+review unit (one branch per theme).
+
+```
+pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
+                                    Artist ─────┼─▶ Integrator ─▶ [gate: play + merge PR]
+                                    Level designer ┘
+```
+
+| Role | Writes | Automatic checks | Human gate |
+|---|---|---|---|
+| **Theme director** | `theme.json`, `style.json`, `style-bible.md`, archetype list, hazard/prop list, asset manifest | Schema valid; palette contrast and ramp checks | ✅ Approve concept + palette (the one gate that matters most) |
+| **Architect** | `archetypes/*.json` + preview contact sheet | `BuildingValidator` over 1,000 seeds: stands, stress baseline, weak points in target | Glance at the sheet |
+| **Artist** | Sprites listed in the manifest | `normalize` → `qa` → critique loop (looks at the contact sheet next to the reference and the bible checklist, retries with notes) | ✅ Pick candidates for hero assets |
+| **Level designer** | `levels/*.json` | Level generation + traversal + bot run: completable, par time, destruction potential in band | ✅ Play it |
+| **Integrator** | ScriptableObjects, imports, PR | `dotnet build`, EditMode tests, PlayMode smoke (spawn the level, simulate, no exceptions, fps budget), screenshots via the Unity MCP camera capture | ✅ Merge |
+
+**How it runs**
+- Each role is a Claude Code subagent (`.claude/agents/<role>.md`) with a skill holding its
+  checklist, chained by a workflow script. Any stage can be re-run alone, because it reads
+  and writes files.
+- Validators are command-line entry points so agents get hard pass/fail:
+  - Unity: `-executeMethod Demolition.Generation.Cli.Validate <theme>`, which writes a JSON
+    report.
+  - Art: `python tools/artpipe/qa.py`.
+  - Batch mode only works with the editor closed. When it's open, the agent goes through
+    the Unity MCP server (run command, test runner, console logs) instead.
+- Candidate and scratch art lives outside `Assets/` (`content-work/<theme>/`), so Unity
+  never imports rejected files.
+- **Order matters:** the pipeline is only as good as the generators it feeds. Building it
+  before M2/M3 exist would just produce prompts with nothing to run them through.
+
+---
+
+## 8. Decisions needed
+
+| # | Question | Recommendation |
+|---|---|---|
+| D1 | Co-op: is a player who falls behind (or dies) out for the whole run? | **Decided:** one free rejoin at the partner after 5 s (score penalty). After that, out until the partner collects a Resurrect pickup. Details in M1. |
+| D2 | When does a level finish? | When all living players cross the finish line, with a 5 s "last call" after the first crosses. |
+| D3 | Destruction vs speed weighting | Destruction-led score with collapse credit and chain multiplier; speed as a ×1.0–1.5 multiplier against par (§M1). |
+| D4 | Online multiplayer in v1? | **Decided:** post-v1, using Netcode for GameObjects (NGO), not Fishnet. Local co-op first. |
+| D5 | Campaign levels: baked scenes or generated at load? | **Generated at load from `{spec, seed}`.** Bake only if a level needs hand polish. |
+| D6 | Skill shop / upgrades in v1? | **Decided:** yes, in v1 (M6). |
+| D7 | Art anchor | Keep the existing demolition man and object set as Theme 1 (Town) and as the reference for every generated theme. |
+| D8 | Image generator | Unity AI first (already in the project and the MCP). Check commercial terms before shipping its output. |
+| D9 | Target platform | PC (Windows; Steam Deck-friendly controls and performance). |
+
+---
+
+## 9. Risks
+
+| Risk | Mitigation |
+|---|---|
+| AI art drifts off-style | Procedural for everything tileable, palette lock + normalizer, reference sheet in every request, human gates on hero assets. |
+| Generated buildings feel samey | Archetype variety, weak-point targets, curated seeds for the campaign. Generators run in the Building Lab so a human can taste them quickly. |
+| Many blocks per level hurt perf | Standing blocks are static (cheap), segments stream and despawn, falling cap, composite debris (M6), a profiling gate in M3. |
+| Scope creep (online, shop, editor) | The v1 fence in §3. Post-v1 items wait. |
+| Losing the uncommitted migration | M0 first. |
+| Pixel shimmer with continuous zoom | Point filtering and integer-ish zoom snapping. `com.unity.2d.pixel-perfect` is installed if it becomes a problem. Low priority. |
+
+---
+
+## 10. Next five tasks
+
+1. **M0:** commit the migration in logical commits, merge to `main`, remove the stale copy.
+2. **`RunManager` + finish line + timer** in Level 1.
+3. **Camera v2:** viewport out-of-bounds with the 3-second countdown, the speed-up fix,
+   camera rails.
+4. **Scoring v2** with collapse credit and chain multiplier, and the results screen.
+5. **`BuildingSpec` + grammar + validator** with EditMode tests, behind the Building Lab
+   window, using today's sprites.
