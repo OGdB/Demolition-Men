@@ -64,11 +64,16 @@ namespace Demolition.Run
                 finished ? TextAlignmentOptions.Left : TextAlignmentOptions.Center, new Vector2(900f, 420f));
             body.text = lines.ToString();
 
-            Button retry = UiFactory.Button(root, "RETRY", centre, new Vector2(-180f, -300f), new Vector2(300f, 80f), _run.Retry);
-            UiFactory.Button(root, "MENU", centre, new Vector2(180f, -300f), new Vector2(300f, 80f), _run.QuitToMenu);
+            bool next = finished && _run.HasNextLevel;
+            var size = new Vector2(300f, 80f);
+            Button first = null;
+            if (next)
+                first = UiFactory.Button(root, "NEXT", centre, new Vector2(-360f, -300f), size, _run.NextLevel);
+            Button retry = UiFactory.Button(root, "RETRY", centre, new Vector2(next ? 0f : -180f, -300f), size, _run.Retry);
+            UiFactory.Button(root, "MENU", centre, new Vector2(next ? 360f : 180f, -300f), size, _run.QuitToMenu);
 
             if (EventSystem.current != null)
-                EventSystem.current.SetSelectedGameObject(retry.gameObject);
+                EventSystem.current.SetSelectedGameObject((first != null ? first : retry).gameObject);
         }
     }
 }

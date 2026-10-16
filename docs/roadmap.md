@@ -118,7 +118,7 @@ M0 Stabilize ─▶ M1 Core loop ─▶ M2 Building gen ─▶ M3 Level gen ─�
   prefabs for art that M4 replaces; the M4 import rules enforce 32 px/unit on new art.
 - **Done when:** `main` compiles from a fresh clone, EditMode tests pass, and Level 1 plays.
 
-### M1 — Core loop complete (M/L) — in progress
+### M1 — Core loop complete (M/L) — ✅ built, awaiting a hands-on playtest
 The described game, playable start to finish with today's content. Code lives in
 `Scripts/Demolition/Run/` (see the Run loop section of `CLAUDE.md`).
 - ✅ **`RunController`** + `RunState` model: `Countdown(3-2-1) → Playing → Finished | Failed`,
@@ -157,7 +157,10 @@ The described game, playable start to finish with today's content. Code lives in
   Start / Enter. Joined devices go to `Session`; each player then reads only their own
   device (keyboard + one gamepad works). Replaces the single/co-op and keyboard/controller
   menu steps. Starting a level directly in the editor keeps the default input.
-- **Tutorial** rebuilt with trigger-volume prompts for the current mechanics, plus a finish.
+- ✅ **Tutorial** rebuilt: `TutorialPrompt` markers show one hint each in the bottom bar as
+  the front player passes them (move/jump, hit, axe + weapon switching, supports, dynamite,
+  keep up, finish). An axe and dynamite sit where the hints teach them, the camera
+  scrolls slower (0.9), par is 90 s, and the results screen's NEXT goes to Level 1.
 - **Done when:** a 3-minute Level 1 can be finished solo and co-op. You can lose by falling
   behind, recover inside 3 seconds, and see a grade. A weak-point collapse visibly
   outscores grinding the same blocks.

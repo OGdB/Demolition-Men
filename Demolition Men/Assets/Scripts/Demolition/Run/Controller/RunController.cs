@@ -35,6 +35,8 @@ namespace Demolition.Run
         [Tooltip("How far below the bottom of the screen (viewport units) still counts as in bounds.")]
         [SerializeField] private float bottomMargin = 0.1f;
         [SerializeField] private string menuScene = "MainMenu";
+        [Tooltip("Scene the results screen's Next button loads; empty hides the button.")]
+        [SerializeField] private string nextScene;
 
         private readonly List<Player> _players = new List<Player>();
         private ScrollCamera _camera;
@@ -59,6 +61,10 @@ namespace Demolition.Run
 
         /// <summary>Points just awarded: player (-1 for none), points, world position.</summary>
         public event Action<int, int, Vector3> Scored;
+        /// <summary>A tutorial hint to show: message, seconds.</summary>
+        public event Action<string, float> PromptShown;
+
+        public bool HasNextLevel => !string.IsNullOrEmpty(nextScene);
 
         private void OnEnable()
         {
@@ -140,15 +146,18 @@ namespace Demolition.Run
                 return;
 
             FinishLine finish = FinishLine.Active;
+            float frontX = float.MinValue;
             for (int i = 0; i < _players.Count; i++)
             {
                 if (State.Status(i) != PlayerStatus.Alive)
                     continue;
                 Vector3 pos = _players[i].Transform.position;
+                frontX = Mathf.Max(frontX, pos.x);
                 State.SetInBounds(i, IsInBounds(pos));
                 if (finish != null && pos.x >= finish.X)
                     State.ReportCrossedFinish(i);
             }
+            ShowReachedPrompts(frontX);
 
             if (_camera != null && finish != null)
                 _camera.StopX = finish.X;
@@ -165,12 +174,30 @@ namespace Demolition.Run
             return vp.x >= 0f && vp.y >= -bottomMargin;
         }
 
+        // Several hints reached at once (a fast player): only the furthest one is current.
+        private void ShowReachedPrompts(float frontX)
+        {
+            TutorialPrompt furthest = null;
+            foreach (TutorialPrompt prompt in TutorialPrompt.All)
+            {
+                if (prompt.Shown || frontX < prompt.X)
+                    continue;
+                prompt.Shown = true;
+                if (furthest == null || prompt.X > furthest.X)
+                    furthest = prompt;
+            }
+            if (furthest != null)
+                PromptShown?.Invoke(furthest.Message, furthest.Duration);
+        }
+
         /// <summary>A player collected a Resurrect pickup. False if nobody needed it.</summary>
         public bool TryResurrect(int collector) => State.TryResurrect(collector);
 
         public void Retry() => LoadScene(SceneManager.GetActiveScene().name);
 
         public void QuitToMenu() => LoadScene(menuScene);
+
+        public void NextLevel() => LoadScene(nextScene);
 
         private static void LoadScene(string scene)
         {

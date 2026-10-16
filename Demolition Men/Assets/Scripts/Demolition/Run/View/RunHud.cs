@@ -42,6 +42,8 @@ namespace Demolition.Run
         private TextMeshProUGUI _par;
         private TextMeshProUGUI _destruction;
         private TextMeshProUGUI _center;
+        private TextMeshProUGUI _prompt;
+        private float _promptUntil;
         private readonly List<PlayerPanel> _panels = new List<PlayerPanel>();
         private readonly List<Popup> _popups = new List<Popup>();
 
@@ -63,18 +65,31 @@ namespace Demolition.Run
             _center = UiFactory.Text(_root, "Center", new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), 140f,
                 TextAlignmentOptions.Center, new Vector2(1400f, 200f));
 
+            _prompt = UiFactory.Text(_root, "Prompt", new Vector2(0.5f, 0f), new Vector2(0f, 45f), 34f,
+                TextAlignmentOptions.Center, new Vector2(1800f, 60f));
+            _prompt.color = new Color(1f, 0.85f, 0.3f);
+
             for (int i = 0; i < _run.Players.Count; i++)
                 _panels.Add(BuildPanel(i));
             for (int i = 0; i < 24; i++)
                 _popups.Add(BuildPopup());
 
             _run.Scored += OnScored;
+            _run.PromptShown += OnPrompt;
         }
 
         private void OnDestroy()
         {
-            if (_run != null)
-                _run.Scored -= OnScored;
+            if (_run == null)
+                return;
+            _run.Scored -= OnScored;
+            _run.PromptShown -= OnPrompt;
+        }
+
+        private void OnPrompt(string message, float seconds)
+        {
+            _prompt.text = message;
+            _promptUntil = Time.time + seconds;
         }
 
         private PlayerPanel BuildPanel(int index)
@@ -127,6 +142,7 @@ namespace Demolition.Run
             _timer.text = FormatTime(state.Elapsed);
             _destruction.text = $"DESTRUCTION {Mathf.FloorToInt(_run.DestroyedFraction * 100f)}%";
             _center.text = CenterText(state);
+            _prompt.gameObject.SetActive(Time.time < _promptUntil && !state.IsOver);
 
             for (int i = 0; i < _panels.Count; i++)
                 UpdatePanel(i, state);
