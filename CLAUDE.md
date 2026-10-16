@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Demolition Men/` — the Unity project (Unity **6000.4.9f1**, 2D, built-in render pipeline). All code lives under `Demolition Men/Assets/`.
 - `docs/building-destruction-design.md` — design rationale for the destruction system ("Option C" support-graph), the NGO (Netcode for GameObjects) networking plan, and the PlayMode manual test checklist.
 - `docs/roadmap.md` — the plan to v1.0: current-state gap analysis, milestones M0–M6, the procedural building/level generation design, the art pipeline and the agentic content pipeline, plus the design decisions. Check it before starting feature work.
-- The `*.csproj` files and `Library/`, `Temp/`, `Logs/`, `UserSettings/` are Unity-generated or per-user and gitignored. `Demolition Men.slnx` scopes the solution to the four project assemblies.
+- The `*.csproj` / `*.slnx` files and `Library/`, `Temp/`, `Logs/`, `UserSettings/` are Unity-generated or per-user and gitignored. Unity regenerates `Demolition Men.slnx` (the four project assemblies) when the editor opens the project.
 
 ## Commands
 
@@ -34,7 +34,7 @@ Build scene order: MainMenu → Tutorial → HubWorld → Level 1.
 ## Assemblies and the dependency boundary
 
 - `Assets/Scripts/Demolition/Demolition.asmdef` → assembly **`Demolition`**: the destruction system, players, health, score. References only `Unity.InputSystem`. Any other package used from this folder must be added to the asmdef's `references` or it won't compile (even though Assembly-CSharp sees it).
-- Everything else in `Assets/Scripts/` (Camera, UI, Generations, `GlobalVariables`) → **Assembly-CSharp**, which references `Demolition` — never the reverse.
+- Everything else in `Assets/Scripts/` (Camera, Menu, UI, Generations, `GlobalVariables`) → **Assembly-CSharp**, which references `Demolition` — never the reverse.
 
 Because `Demolition` can't see Assembly-CSharp, cross-boundary state is pushed in from the outside:
 - Score: `Demolition.Score.Value` is the source of truth (`BuildingBlock` awards +10 per destroyed block); `GlobalVariables.score` is a proxy property so legacy UI keeps its contract.
@@ -46,9 +46,9 @@ Players are located at runtime **by GameObject name** `"Player_1"` / `"Player_2"
 
 Three layers; read `docs/building-destruction-design.md` for the why.
 
-1. **`Core/BuildingStructure.cs`** — pure C#, no MonoBehaviour/physics. Cells on an integer grid, anchors, 4-neighbour flood-fill from anchors. `RemoveCells()` returns every cell that lost its path to ground. `ComputeStress()` is a two-pass heuristic (carried cells → cantilever/span/hanging, then pillar columns sum load and moment) that yields per-cell `Stress/Lean/Drift/Overload`. Fragile cells (glass) are held by neighbours but support never flows through them and they carry no load.
-2. **`DestructibleBuilding.cs`** — owns one structure plus the live blocks. On `OnBlockDestroyed` it removes the block's cells, calls `BeginFalling()` on detached blocks (capped by `maxSimultaneousFalling`; overflow is destroyed without simulation), then recomputes stress. A stress **baseline** captured at `Start` is subtracted so intact buildings show no strain. Supports overloaded past baseline + `overloadTolerance` take crumble damage in `Update`, through the normal `TakeDamage` path.
-3. **`BuildingBlock.cs`** — per-block lifecycle: **Static** while supported → **Dynamic** while falling (strips any leftover `Joint2D`, damages players it lands on, takes self-damage on hard landings, glass shatters on contact) → **Static rubble** once settled.
+1. **`Building/Model/BuildingStructure.cs`** — pure C#, no MonoBehaviour/physics. Cells on an integer grid, anchors, 4-neighbour flood-fill from anchors. `RemoveCells()` returns every cell that lost its path to ground. `ComputeStress()` is a two-pass heuristic (carried cells → cantilever/span/hanging, then pillar columns sum load and moment) that yields per-cell `Stress/Lean/Drift/Overload`. Fragile cells (glass) are held by neighbours but support never flows through them and they carry no load.
+2. **`Building/Controller/DestructibleBuilding.cs`** — owns one structure plus the live blocks. On `OnBlockDestroyed` it removes the block's cells, calls `BeginFalling()` on detached blocks (capped by `maxSimultaneousFalling`; overflow is destroyed without simulation), then recomputes stress. A stress **baseline** captured at `Start` is subtracted so intact buildings show no strain. Supports overloaded past baseline + `overloadTolerance` take crumble damage in `Update`, through the normal `TakeDamage` path.
+3. **`Building/Controller/BuildingBlock.cs`** — per-block lifecycle: **Static** while supported → **Dynamic** while falling (strips any leftover `Joint2D`, damages players it lands on, takes self-damage on hard landings, glass shatters on contact) → **Static rubble** once settled.
 
 Invariants to preserve:
 - Standing blocks stay `RigidbodyType2D.Static`; only detached debris is ever dynamic. Don't add forces/joints to standing structure — this is the core perf/stability decision.
@@ -72,7 +72,7 @@ Code-driven alternative (`DemoBootstrap`): call `BuildingBlock.Initialise` + `De
 
 ## Players
 
-`Scripts/Demolition/Player/`: `PlayerInputReader` (Input System; merged gamepad + keyboard per player index), `PlayerMotor` (impulse movement, better-jump gravity), `PlayerCombat` (per-weapon × per-material damage profiles, `Physics2D.OverlapCircleAll` hits), `Dynamite`. Prefabs: `Prefabs/Demolition/Player_1`, `Player_2`, `Dynamite`. The same scripts drive the primitive no-art player in `DemoBootstrap`.
+`Scripts/Demolition/Player/Controller/`: `PlayerHealth`, `PlayerInputReader` (Input System; merged gamepad + keyboard per player index), `PlayerMotor` (impulse movement, better-jump gravity), `PlayerCombat` (per-weapon × per-material damage profiles, `Physics2D.OverlapCircleAll` hits), `Dynamite`. Prefabs: `Prefabs/Demolition/Player_1`, `Player_2`, `Dynamite`. The same scripts drive the primitive no-art player in `DemoBootstrap`.
 
 The original sprite art is reused through a **name contract** that fails silently if broken:
 - Animator parameters: `Speed`, `InAir`, `IsPunching`, `IsAxeing`, `IsWrecking`.
@@ -81,7 +81,7 @@ The original sprite art is reused through a **name contract** that fails silentl
 ## Code structure (MVC)
 
 The project follows Model–View–Controller. Keep the structure clean: no person-named folders, no scratch files in `Assets/`, delete dead code instead of leaving it around.
-- **Model** — plain C# state and rules. No MonoBehaviour, no scene access, unit-testable in EditMode. Example: `Core/BuildingStructure`.
+- **Model** — plain C# state and rules. No MonoBehaviour, no scene access, unit-testable in EditMode. Example: `Building/Model/BuildingStructure`.
 - **View** — MonoBehaviours that only present: sprites, animation, HUD, particles, audio, camera framing. They read models or listen to events and never change game state.
 - **Controller** — MonoBehaviours that turn input and events into model changes and tell views what to show. Example: `DestructibleBuilding`.
 - Folders go feature first, then layer: `Scripts/<Feature>/Model|View|Controller/`. New code uses this layout; existing scripts move into it (with their `.meta`) when a milestone touches them. Don't restructure untouched code.
