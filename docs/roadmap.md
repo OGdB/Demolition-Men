@@ -454,7 +454,7 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D6 | Skill shop / upgrades in v1? | **Decided:** yes, in v1 (M6). |
 | D7 | Art anchor | Keep the existing demolition man and object set as Theme 1 (Town) and as the reference for every generated theme. |
 | D8 | Image generator | Unity AI first (already in the project and the MCP). Check commercial terms before shipping its output. |
-| D9 | Target platform | **Decided (2026-10-17):** PC (Windows, Steam Deck), TV (gamepads, couch co-op) and phones/tablets in landscape (touch). One build of the UI for all: code-built uGUI through `UiFactory`, safe area, HUD size setting. |
+| D9 | Target platform | **Decided (2026-10-17):** PC (Windows, Steam Deck), TV (gamepads, couch co-op) and phones/tablets in landscape (touch). WebGL (browser) added later the same day, online play included (`docs/multiplayer.md` D19). One build of the UI for all: code-built uGUI through `UiFactory`, safe area, HUD size setting. |
 | D10 | Business model | **Decided (2026-10-17):** free, with ads on phones only (interstitials between runs, opt-in rewarded "2x cash"); a "remove ads" purchase later. See `docs/monetization.md`. |
 
 ---
