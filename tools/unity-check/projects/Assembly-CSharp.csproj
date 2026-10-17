@@ -3,5 +3,14 @@
   <Reference Include="$(UnityCheckHome)/out/UnityEngine.UI/UnityEngine.UI.dll" Private="false" />
   <Reference Include="$(UnityCheckHome)/out/Unity.TextMeshPro/Unity.TextMeshPro.dll" Private="false" />
   <Reference Include="$(UnityCheckHome)/out/Unity.InputSystem/Unity.InputSystem.dll" Private="false" />
-  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" /></ItemGroup>
+  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/com.unity.collections/package/Unity.Collections.LowLevel.ILSupport/Unity.Collections.LowLevel.ILSupport.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/com.unity.burst/package/Unity.Burst.Unsafe.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Mathematics/Unity.Mathematics.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Burst/Unity.Burst.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Collections/Unity.Collections.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Networking.Transport/Unity.Networking.Transport.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Netcode.Runtime/Unity.Netcode.Runtime.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/colyseus.nativewebsocket/colyseus.nativewebsocket.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition.Online/Demolition.Online.dll" Private="false" /></ItemGroup>
 </Project>

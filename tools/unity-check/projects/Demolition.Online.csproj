@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Online/Controller is its own asmdef (Demolition.Online); Online/Model stays in Demolition.
+       References mirror Demolition.Online.asmdef: keep them in step. -->
+  <ItemGroup><Compile Include="$(ProjectAssets)/Scripts/Demolition/Online/Controller/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Collections/Unity.Collections.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Netcode.Runtime/Unity.Netcode.Runtime.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/colyseus.nativewebsocket/colyseus.nativewebsocket.dll" Private="false" /></ItemGroup>
+</Project>

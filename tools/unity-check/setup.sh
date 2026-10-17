@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 # One-time setup for compile-checking the Unity project without the Unity editor
 # (cloud agents, CI). Installs the .NET 8 SDK, fetches Unity 6000.4 reference assemblies
-# (stubs: they compile, they don't run) and builds the Input System and uGUI/TMP packages
-# from source against them. Everything lands in $UNITY_CHECK_HOME (default ~/.unity-check).
+# (stubs: they compile, they don't run) and the package sources check.sh builds against them:
+# Input System, uGUI/TMP, Netcode for GameObjects with its Transport/Collections/Burst/Mathematics,
+# NativeWebSocket. Everything lands in $UNITY_CHECK_HOME (default ~/.unity-check).
 set -euo pipefail
 HOME_DIR="${UNITY_CHECK_HOME:-$HOME/.unity-check}"
 UNITY_MODULES_VERSION="${UNITY_MODULES_VERSION:-6000.4.9}"
 INPUTSYSTEM_VERSION="${INPUTSYSTEM_VERSION:-1.19.0}"
 UGUI_VERSION="${UGUI_VERSION:-3.0.0-exp.4}"
+NGO_VERSION="${NGO_VERSION:-2.13.3}"
+TRANSPORT_VERSION="${TRANSPORT_VERSION:-2.6.0}"   # pinned by NGO
+# Burst and Mathematics as Packages/packages-lock.json resolves them (UPM takes the highest
+# version any package asks for). Collections is a builtin 6.4.0 in the 6000.4 editor, not on
+# the registry: its latest 2.x is the nearest cut.
+BURST_VERSION="${BURST_VERSION:-1.8.29}"
+MATHEMATICS_VERSION="${MATHEMATICS_VERSION:-1.3.3}"
+COLLECTIONS_VERSION="${COLLECTIONS_VERSION:-2.7.1}"
+NATIVEWEBSOCKET_COMMIT="${NATIVEWEBSOCKET_COMMIT:-c612a4fef60f2ae57614b73202d2d261ba56aa3e}" # upm-2, 2.0.7
 mkdir -p "$HOME_DIR"
 cd "$HOME_DIR"
 
@@ -35,6 +45,17 @@ fetch() { # package version
 }
 fetch com.unity.inputsystem "$INPUTSYSTEM_VERSION"
 fetch com.unity.ugui "$UGUI_VERSION"
+fetch com.unity.netcode.gameobjects "$NGO_VERSION"
+fetch com.unity.transport "$TRANSPORT_VERSION"
+fetch com.unity.collections "$COLLECTIONS_VERSION"
+fetch com.unity.burst "$BURST_VERSION"
+fetch com.unity.mathematics "$MATHEMATICS_VERSION"
+if [ ! -d NativeWebSocket ]; then
+  git init -q NativeWebSocket.tmp
+  git -C NativeWebSocket.tmp fetch -q --depth 1 https://github.com/endel/NativeWebSocket.git "$NATIVEWEBSOCKET_COMMIT"
+  git -C NativeWebSocket.tmp -c advice.detachedHead=false checkout -q FETCH_HEAD
+  mv NativeWebSocket.tmp NativeWebSocket
+fi
 
 # The registry's uGUI is a newer cut than the editor-bundled one; three spots need patching
 # for it to compile against 6000.4 (only the UI Toolkit bridge and a TMP name clash).

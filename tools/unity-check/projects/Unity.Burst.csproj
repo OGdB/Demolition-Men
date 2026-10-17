@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Runtime/Editor joins Unity.Burst through an asmref; its code is behind UNITY_EDITOR. -->
+  <ItemGroup><Compile Include="$(UnityCheckHome)/com.unity.burst/package/Runtime/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/com.unity.burst/package/Unity.Burst.Unsafe.dll" Private="false" /></ItemGroup>
+</Project>

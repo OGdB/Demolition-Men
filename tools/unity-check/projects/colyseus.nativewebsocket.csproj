@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- UNITY_WEBGL is not defined, so this is the standalone (System.Net.WebSockets) variant. -->
+  <ItemGroup><Compile Include="$(UnityCheckHome)/NativeWebSocket/WebSocket/*.cs" /></ItemGroup>
+</Project>

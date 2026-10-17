@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><ExtraDefines>UNITY_2022_2_14F1_OR_NEWER;UNITY_2022_2_16F1_OR_NEWER</ExtraDefines></PropertyGroup>
+  <ItemGroup><Compile Include="$(UnityCheckHome)/com.unity.collections/package/Unity.Collections/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/com.unity.collections/package/Unity.Collections.LowLevel.ILSupport/Unity.Collections.LowLevel.ILSupport.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/com.unity.burst/package/Unity.Burst.Unsafe.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Burst/Unity.Burst.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Mathematics/Unity.Mathematics.dll" Private="false" /></ItemGroup>
+</Project>

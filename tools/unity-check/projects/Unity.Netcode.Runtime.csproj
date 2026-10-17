@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The asmdef's versionDefines that hold for 6000.4.9 with the animation/physics/physics2d modules
+       (no Multiplayer Tools, no Multiplayer Services). -->
+  <PropertyGroup><ExtraDefines>UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT;COM_UNITY_MODULES_ANIMATION;COM_UNITY_MODULES_PHYSICS;COM_UNITY_MODULES_PHYSICS2D;COM_UNITY_MODULES_PHYSICS2D_LINEAR;HOSTNAME_RESOLUTION_AVAILABLE;UNITY_6000_3_0A6_OR_HIGHER;SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE;SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION;NGO_FINDOBJECTS_NOSORTING</ExtraDefines></PropertyGroup>
+  <ItemGroup><Compile Include="$(UnityCheckHome)/com.unity.netcode.gameobjects/package/Runtime/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/com.unity.collections/package/Unity.Collections.LowLevel.ILSupport/Unity.Collections.LowLevel.ILSupport.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/com.unity.burst/package/Unity.Burst.Unsafe.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Burst/Unity.Burst.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Mathematics/Unity.Mathematics.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Collections/Unity.Collections.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Networking.Transport/Unity.Networking.Transport.dll" Private="false" /></ItemGroup>
+</Project>

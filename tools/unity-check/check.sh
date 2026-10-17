@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile-check the project's runtime assemblies (Demolition, Assembly-CSharp) against
+# Compile-check the project's runtime assemblies (Demolition, Demolition.Online, Assembly-CSharp) against
 # Unity's reference assemblies, then run the EditMode model tests on plain .NET.
 #   tools/unity-check/check.sh            build + tests
 #   tools/unity-check/check.sh build      build only
@@ -23,12 +23,14 @@ build() { # project
 
 rc=0
 if [ "$mode" = all ] || [ "$mode" = build ]; then
-  for p in UnityEngine.UI Unity.TextMeshPro Unity.InputSystem; do
+  for p in UnityEngine.UI Unity.TextMeshPro Unity.InputSystem Unity.Mathematics Unity.Burst Unity.Collections \
+           Unity.Networking.Transport Unity.Netcode.Runtime colyseus.nativewebsocket; do
     dll="$UNITY_CHECK_HOME/out/$p/$p.dll"
     # Cached; rebuilt when its project or the TMP shim changed since.
     { [ -f "$dll" ] && [ "$dll" -nt "$HERE/projects/$p.csproj" ] && [ "$dll" -nt "$HERE/TmpCompat.cs" ]; } || build "$p" || exit 1
   done
   build Demolition || rc=1
+  [ $rc -eq 0 ] && { build Demolition.Online || rc=1; }
   [ $rc -eq 0 ] && { build Assembly-CSharp || rc=1; }
   [ $rc -eq 0 ] && { build Demolition.EditorDefines || rc=1; }
   [ $rc -eq 0 ] && { build Assembly-CSharp-Editor || rc=1; }

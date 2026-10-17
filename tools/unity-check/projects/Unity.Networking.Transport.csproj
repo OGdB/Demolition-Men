@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><ExtraDefines>HOSTNAME_RESOLUTION_AVAILABLE;DONT_FRAGMENT_BIT_AVAILABLE</ExtraDefines></PropertyGroup>
+  <ItemGroup><Compile Include="$(UnityCheckHome)/com.unity.transport/package/Runtime/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/com.unity.collections/package/Unity.Collections.LowLevel.ILSupport/Unity.Collections.LowLevel.ILSupport.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/com.unity.burst/package/Unity.Burst.Unsafe.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Burst/Unity.Burst.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Mathematics/Unity.Mathematics.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.Collections/Unity.Collections.dll" Private="false" /></ItemGroup>
+</Project>

@@ -1,0 +1,6 @@
+<Project>
+  <!-- After the project body: the props file is read before a project sets its ExtraDefines. -->
+  <PropertyGroup Condition="'$(ExtraDefines)' != ''">
+    <DefineConstants>$(DefineConstants);$(ExtraDefines)</DefineConstants>
+  </PropertyGroup>
+</Project>
