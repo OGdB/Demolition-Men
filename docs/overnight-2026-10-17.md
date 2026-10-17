@@ -47,16 +47,17 @@ Unity yet** — the checklist below is the first playtest.
 ## How it was checked
 
 - `tools/unity-check/check.sh`: Demolition, Assembly-CSharp, editor scripts, the
-  `UNITY_EDITOR` build and PlayMode tests compile; 171 EditMode model tests pass (buildings
+  `UNITY_EDITOR` build and PlayMode tests compile; 172 EditMode model tests pass (buildings
   and levels of all three themes over many seeds, save/shop/ads policy, input sources, sounds).
 - `tools/unity-check/refs.py --since 52d7051`: every GUID and fileID in the hand-edited
   scenes, prefabs and assets resolves.
-- Two review passes by a separate agent read the code and YAML for runtime-only bugs.
+- Three review passes by separate agents read the code and YAML for runtime-only bugs.
   The first found 12 issues, all fixed in `bbd4eeb`; the important one was that
   Touchscreen was missing from the Input System's supported devices, so nothing touch would
   have worked on a phone. The second pass found 13 more (fixed in `5a7440a`), e.g. the
   shared particle system could be culled off-screen, and the bot's one-frame jumps could
-  fall between physics steps. Both reviewers flagged things only a real run can settle:
+  fall between physics steps. A third pass on those fixes found 11 smaller ones (fixed in
+  `a19ada3`), including a bot jump that could stay held forever. Both reviewers flagged things only a real run can settle:
   particle visibility, HUD text overlaps on tablets, and audio loudness during big
   collapses.
 
