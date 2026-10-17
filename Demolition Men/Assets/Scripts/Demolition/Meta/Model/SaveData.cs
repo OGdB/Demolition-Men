@@ -15,6 +15,11 @@ namespace Demolition.Meta
         public int touchControls;
         public float touchScale = 1f;
         public float touchOpacity = 0.55f;
+        /// <summary>In-run HUD size; 0 = automatic (bigger on phones).</summary>
+        public float hudScale;
+
+        /// <summary>The HUD size to use on this device.</summary>
+        public float HudScale(bool mobile) => hudScale > 0f ? hudScale : mobile ? 1.3f : 1f;
     }
 
     /// <summary>Best result on one level.</summary>

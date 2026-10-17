@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Demolition.Meta;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -69,8 +70,8 @@ namespace Demolition.Run
 
         private void Start()
         {
-            Canvas canvas = UiFactory.Canvas(transform, "HUD", 10);
-            _root = (RectTransform)canvas.transform;
+            Canvas canvas = UiFactory.Canvas(transform, "HUD", 10, Profile.Data.settings.HudScale(Platform.IsMobile));
+            _root = UiFactory.SafeArea(canvas.transform);
 
             var top = new Vector2(0.5f, 1f);
             _timer = UiFactory.Text(_root, "Timer", top, new Vector2(0f, -10f), 56f, TextAlignmentOptions.Center);

@@ -24,7 +24,8 @@ namespace Demolition
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
         }
 
-        public static Canvas Canvas(Transform parent, string name, int sortingOrder)
+        /// <param name="scale">Bigger than 1 makes everything on the canvas bigger (phones, TVs).</param>
+        public static Canvas Canvas(Transform parent, string name, int sortingOrder, float scale = 1f)
         {
             var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             go.transform.SetParent(parent, false);
@@ -33,7 +34,7 @@ namespace Demolition
             canvas.sortingOrder = sortingOrder;
             var scaler = go.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = new Vector2(1920f, 1080f) / Mathf.Max(0.5f, scale);
             scaler.matchWidthOrHeight = 0.5f;
             return canvas;
         }
@@ -81,6 +82,7 @@ namespace Demolition
         public static RectTransform SafeArea(Transform canvas)
         {
             RectTransform rt = Stretch(canvas, "SafeArea");
+            rt.pivot = new Vector2(0.5f, 0.5f); // local points are centre-relative, like the canvas's own
             rt.gameObject.AddComponent<SafeAreaFitter>();
             return rt;
         }

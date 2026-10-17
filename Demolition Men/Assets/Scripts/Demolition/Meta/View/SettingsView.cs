@@ -70,10 +70,12 @@ namespace Demolition.Meta
             title.text = "SETTINGS";
             title.color = new Color(1f, 0.85f, 0.3f);
 
-            float y = 260f;
+            float y = 290f;
             Button first = Stepper(root, ref y, "VOLUME", () => Percent(s.masterVolume), d => s.masterVolume = Step(s.masterVolume, d, 0.1f, 0f, 1f));
             Stepper(root, ref y, "MUSIC", () => Percent(s.musicVolume), d => s.musicVolume = Step(s.musicVolume, d, 0.1f, 0f, 1f));
             Toggle(root, ref y, "SCREEN SHAKE", () => s.screenShake ? "ON" : "OFF", () => s.screenShake = !s.screenShake);
+            Stepper(root, ref y, "HUD SIZE", () => s.hudScale > 0f ? Percent(s.hudScale) : "AUTO",
+                d => s.hudScale = s.hudScale <= 0f && d < 0 ? 0f : Step(s.hudScale <= 0f ? s.HudScale(Platform.IsMobile) : s.hudScale, d, 0.1f, 0.8f, 1.6f));
             Toggle(root, ref y, "TOUCH CONTROLS", () => TouchModes[Mathf.Clamp(s.touchControls, 0, 2)], () => s.touchControls = (s.touchControls + 1) % 3);
             Stepper(root, ref y, "BUTTON SIZE", () => Percent(s.touchScale), d => s.touchScale = Step(s.touchScale, d, 0.1f, 0.6f, 1.6f));
             Stepper(root, ref y, "BUTTON OPACITY", () => Percent(s.touchOpacity), d => s.touchOpacity = Step(s.touchOpacity, d, 0.1f, 0.2f, 1f));
@@ -92,7 +94,7 @@ namespace Demolition.Meta
             TextMeshProUGUI shown = UiFactory.Text(root, label + " Value", centre, new Vector2(290f, y), 40f, TextAlignmentOptions.Center, new Vector2(200f, 80f));
             UiFactory.Button(root, "+", centre, new Vector2(450f, y), new Vector2(90f, 80f), () => Changed(() => change(1)));
             _refresh += () => shown.text = value();
-            y -= 100f;
+            y -= 92f;
             return minus;
         }
 
@@ -102,7 +104,7 @@ namespace Demolition.Meta
             Button button = UiFactory.Button(root, "Toggle", new Vector2(0.5f, 0.5f), new Vector2(290f, y), new Vector2(410f, 80f), () => Changed(toggle));
             TextMeshProUGUI shown = button.GetComponentInChildren<TextMeshProUGUI>();
             _refresh += () => shown.text = value();
-            y -= 100f;
+            y -= 92f;
         }
 
         private static TextMeshProUGUI Row(RectTransform root, float y, string label)

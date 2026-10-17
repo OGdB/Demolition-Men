@@ -734,6 +734,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: DYNAMITE  [X] / (B)  -  throw it at the base of a building
   duration: 6
+  touchMessage: DYNAMITE  tap TNT  -  throw it at the base of a building
 --- !u!1001 &410537503
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1856,6 +1857,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: Grab the AXE  -  switch weapons with [Q] [E] / (LB) (RB)
   duration: 6
+  touchMessage: Grab the AXE  -  tap SWAP to switch weapons
 --- !u!1 &925040993
 GameObject:
   m_ObjectHideFlags: 0
@@ -2403,6 +2405,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: HIT  hold [Z] / (X)  -  smash your way through!
   duration: 6
+  touchMessage: HIT  hold HIT  -  smash your way through!
 --- !u!50 &1123219455 stripped
 Rigidbody2D:
   m_CorrespondingSourceObject: {fileID: 3045864645810956019, guid: eb553efe8038082469faaf7f2f982d19,
@@ -115203,6 +115206,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: MOVE  [A] [D] / stick        JUMP  [SPACE] / (A)  - hold to jump higher
   duration: 6
+  touchMessage: MOVE  drag on the left        JUMP  hold JUMP to jump higher
 --- !u!1 &1879748805
 GameObject:
   m_ObjectHideFlags: 0

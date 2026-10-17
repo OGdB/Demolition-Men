@@ -46,7 +46,7 @@ namespace Demolition
         private void Build()
         {
             TouchInputSource source = TouchInputSource.Shared;
-            Canvas canvas = UiFactory.Canvas(transform, "TouchControls", 15);
+            Canvas canvas = UiFactory.Canvas(transform, "TouchControls", 15, 1.1f);
             _root = canvas.gameObject;
             _group = _root.AddComponent<CanvasGroup>();
             RectTransform safe = UiFactory.SafeArea(canvas.transform);
