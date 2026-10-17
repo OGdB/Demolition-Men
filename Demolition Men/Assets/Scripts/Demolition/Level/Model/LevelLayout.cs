@@ -5,6 +5,10 @@ namespace Demolition.Levels
 {
     public enum SegmentKind { Start, Street, Cluster, Tower, Gap, Hill, Sewer, Gate, Breather, Finish, Islands, Plateau }
 
+    /// <summary>Street dressing, cosmetic only; each theme draws its own (a Town lamp post,
+    /// a Port dock light...).</summary>
+    public enum DecorKind { Lamp, Fence, Bush, Bin, Sign }
+
     /// <summary>Columns [X0, X1) of the level built from one pacing token; the unit the
     /// builder streams in and out.</summary>
     public sealed class LevelSegment
@@ -21,6 +25,19 @@ namespace Demolition.Levels
         public int X;
         public int GroundY;
         public BuildingSpec Spec;
+        public int Segment;
+
+        /// <summary>A street prop (crates, a car, gas tanks, a container), not a building.</summary>
+        public bool IsProp => Spec.Archetype.StartsWith(LevelGrammar.PropPrefix, System.StringComparison.Ordinal);
+    }
+
+    /// <summary>One piece of street dressing standing on column <see cref="X"/>'s ground.</summary>
+    public sealed class DecorPlacement
+    {
+        public DecorKind Kind;
+        public int X;
+        public int GroundY;
+        public int Variant;
         public int Segment;
     }
 
@@ -51,6 +68,7 @@ namespace Demolition.Levels
         public List<LevelSegment> Segments { get; } = new List<LevelSegment>();
         public List<BuildingPlacement> Buildings { get; } = new List<BuildingPlacement>();
         public List<PickupPlacement> Pickups { get; } = new List<PickupPlacement>();
+        public List<DecorPlacement> Decor { get; } = new List<DecorPlacement>();
         public int SpawnX { get; set; }
         public int FinishX { get; set; }
         /// <summary>How many times the grammar re-rolled to pass the traversal check.</summary>

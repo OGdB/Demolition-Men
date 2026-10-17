@@ -68,6 +68,12 @@ public static class LevelDump
                 s.Append(k > 0 ? "," : "").Append($"[{interior[k].Cell.x},{interior[k].Cell.y},{(interior[k].UnderCeiling ? 1 : 0)}]");
             s.Append("]}");
         }
+        s.Append("],\"decor\":[");
+        for (int i = 0; i < layout.Decor.Count; i++)
+        {
+            DecorPlacement d = layout.Decor[i];
+            s.Append(i > 0 ? "," : "").Append($"[\"{d.Kind}\",{d.X},{d.GroundY},{d.Variant}]");
+        }
         s.Append("],\"pickups\":[");
         for (int i = 0; i < layout.Pickups.Count; i++)
         {

@@ -39,7 +39,14 @@ KINDS = [
     ("BrickCap", ["brick_cap"]),
     ("Support", ["support"]),
     ("Chimney", ["chimney"]),
+    ("Crate", ["crate"]),
+    ("Car", ["car"]),
+    ("Barrel", ["barrel"]),
+    ("Container", ["container"]),
 ]
+PROP_KINDS = KINDS[12:]
+# DecorKind enum order (Scripts/Demolition/Level/Model/LevelLayout.cs) -> sprite file.
+DECOR = ["lamp", "fence", "bush", "bin", "sign"]
 SORTING = {"Glass": 1}  # the window back draws one below the pane
 # Parallax backdrop layers, far to near: (file, parallax, bottom above the street in units).
 BACKDROP = [("backdrop_far", 0.9, -0.5), ("backdrop_mid", 0.75, -0.5), ("backdrop_near", 0.55, -0.5)]
@@ -110,15 +117,42 @@ def tileset(theme, theme_dir):
     lines = [HEADER, f"  m_Script: {{fileID: 11500000, guid: {script_guid('Generation/View/BuildingTileset.cs')}, type: 3}}\n",
              f"  m_Name: {theme}Tileset\n  m_EditorClassIdentifier: Demolition::Demolition.Generation.BuildingTileset\n  entries:\n"]
     for kind, (name, sprites) in enumerate(KINDS):
-        lines.append(f"  - kind: {kind}\n    sprites:\n")
-        lines += [f"    - {sprite_ref(theme_dir, s)}\n" for s in sprites]
-        lines.append("    tint: {r: 1, g: 1, b: 1, a: 1}\n    rotation: 0\n    scale: {x: 1, y: 1}\n"
-                     f"    offset: {{x: 0, y: 0}}\n    sortingOrder: {SORTING.get(name, 0)}\n")
+        lines.append(entry(kind, [sprite_ref(theme_dir, s) for s in sprites], SORTING.get(name, 0)))
     lines.append(f"  windowBack: {sprite_ref(theme_dir, 'window_back')}\n  windowBackTint: {{r: 1, g: 1, b: 1, a: 1}}\n")
     lines.append(f"  interior: {sprite_ref(theme_dir, 'interior')}\n  interiorTop: {sprite_ref(theme_dir, 'interior_top')}\n")
     path = os.path.join(theme_dir, f"{theme}Tileset.asset")
     write(path, "".join(lines))
     return f"{{fileID: 11400000, guid: {ensure_meta(path, 'asset')}, type: 2}}"
+
+
+def entry(kind, sprites_refs, order=0):
+    return (f"  - kind: {kind}\n    sprites:\n" + "".join(f"    - {r}\n" for r in sprites_refs)
+            + "    tint: {r: 1, g: 1, b: 1, a: 1}\n    rotation: 0\n    scale: {x: 1, y: 1}\n"
+            f"    offset: {{x: 0, y: 0}}\n    sortingOrder: {order}\n")
+
+
+def decor_block(theme_dir):
+    """The LevelTheme `decor` list for whichever street dressing sprites exist."""
+    out = ["  decor:\n"]
+    for kind, name in enumerate(DECOR):
+        if os.path.exists(os.path.join(theme_dir, "Sprites", name + ".png")):
+            out.append(f"  - kind: {kind}\n    sprites:\n    - {sprite_ref(theme_dir, name)}\n")
+    return "".join(out) if len(out) > 1 else "  decor: []\n"
+
+
+def update_street(theme, theme_dir):
+    """Hand-made themes (Town): refresh the decor list and add missing prop kinds to the tileset."""
+    path = os.path.join(theme_dir, f"{theme}Theme.asset")
+    text = re.sub(r"  decor:(?: \[\]\n|\n(?:  - kind:.*\n(?:    .*\n)*)*)", "", open(path).read())
+    write(path, text.rstrip("\n") + "\n" + decor_block(theme_dir))
+    path = os.path.join(theme_dir, f"{theme}Tileset.asset")
+    text = open(path).read()
+    for offset, (name, sprites) in enumerate(PROP_KINDS):
+        kind = len(KINDS) - len(PROP_KINDS) + offset
+        if f"\n  - kind: {kind}\n" not in text:
+            text = text.replace("  windowBack:", entry(kind, [sprite_ref(theme_dir, s) for s in sprites]) + "  windowBack:", 1)
+    write(path, text)
+    print(f"{theme}: decor and props refreshed")
 
 
 def text_refs(folder):
@@ -155,11 +189,16 @@ def main():
     ap.add_argument("--display", help="name shown in the level select (default: THEME)")
     ap.add_argument("--music", default="Assets/Sounds/Game Music.mp3", help="project-relative AudioClip path")
     ap.add_argument("--backdrop-only", action="store_true", help="only refresh the backdrop list of an existing theme asset")
+    ap.add_argument("--street-only", action="store_true",
+                    help="only refresh the decor list and add missing prop kinds (hand-made themes like Town)")
     args = ap.parse_args()
     theme = args.theme
     theme_dir = os.path.join(ASSETS, "Content", theme)
     if args.backdrop_only:
         update_backdrop(theme, theme_dir)
+        return
+    if args.street_only:
+        update_street(theme, theme_dir)
         return
     style_path = os.path.join(os.path.dirname(__file__), "themes", theme.lower() + ".json")
     style = json.load(open(style_path)) if os.path.exists(style_path) else {}
@@ -180,7 +219,7 @@ def main():
             f"  displayName: {args.display or theme.upper()}\n  groundTop: {top}\n  groundFill: {fill}\n  tileset: {tiles}\n",
             "  archetypes:\n", *archetypes, "  levels:\n", *levels,
             f"  sky: {colour(sky)}\n  backdropTint: {colour(tint)}\n", backdrop_block(theme_dir),
-            f"  music: {{fileID: 8300000, guid: {music}, type: 3}}\n"]
+            f"  music: {{fileID: 8300000, guid: {music}, type: 3}}\n", decor_block(theme_dir)]
     path = os.path.join(theme_dir, f"{theme}Theme.asset")
     write(path, "".join(body))
     print(f"{theme}: theme {ensure_meta(path, 'asset')}, {len(archetypes)} archetypes, {len(levels)} levels")

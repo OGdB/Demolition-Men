@@ -26,7 +26,8 @@ PPU = 16           # preview pixels per world unit (the art is 32)
 STRIP = 70         # world units per strip
 GROUND_DEPTH = 8   # LevelBuilder.GroundDepth
 KINDS = ["Brick", "BrickTall", "Concrete", "Wood", "Glass", "Door", "Plank", "MetalTruss", "Beam", "BrickCap",
-         "Support", "Chimney"]
+         "Support", "Chimney", "Crate", "Car", "Barrel", "Container"]
+DECOR = ["Lamp", "Fence", "Bush", "Bin", "Sign"]
 PICKUPS = {"Dynamite": ((220, 60, 40), "D"), "Axe": ((90, 160, 230), "A"), "WreckingBall": ((120, 120, 140), "W"),
            "Resurrect": ((90, 210, 110), "R")}
 
@@ -110,6 +111,10 @@ def load_theme(name):
         "backdrop": [],
         "tiles": {},
     }
+    theme["decor"] = {}
+    m = re.search(r"\n  decor:\n((?:  - kind:.*\n(?:    .*\n)*)*)", asset)
+    for entry in re.split(r"  - kind: ", m.group(1))[1:] if m else []:
+        theme["decor"][DECOR[int(entry.split("\n", 1)[0])]] = [sprite(*r) for r in ref(entry)]
     for layer in re.finditer(r"- sprite: (\{[^}]*\})\s+parallax: [\d.]+\s+bottom: (-?[\d.]+)", asset):
         theme["backdrop"].append((sprite(*ref(layer.group(1))[0]), float(layer.group(2))))
     tileset = open(guid_index()[ref(re.search(r"tileset: .*", asset).group(0))[0][1]], encoding="utf-8").read()
@@ -211,6 +216,13 @@ def render(level):
             lp = lip(x)
             for y in range(bottom, max(lp, street)):
                 c.draw(theme["fill"], x + 0.5, y + 0.5, tint=(0.06, 0.05, 0.08) if y < lp else (0.55, 0.55, 0.6), size=(1, 1))
+
+    # Street dressing, standing on the ground behind the buildings (LevelBuilder.Spawn).
+    for kind, x, y, variant in level.get("decor", []):
+        sprites = theme["decor"].get(kind)
+        if sprites:
+            spr = sprites[variant % len(sprites)]
+            c.draw(spr, x + 0.5, y + spr[2][1] * spr[0].height / spr[1])  # pivot up from the ground
 
     # Buildings: the back wall (BuildingInterior), then each block's visual centred on its
     # rect (BuildingBuilder + BuildingTileset.Dress).

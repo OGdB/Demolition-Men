@@ -109,6 +109,38 @@ MonoBehaviour:
     scale: {x: 1, y: 1}
     offset: {x: 0, y: 0}
     sortingOrder: 0
+  - kind: 12
+    sprites:
+    - {fileID: 21300000, guid: 752b97a7369a4f368bea48d6afa6f2b3, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 13
+    sprites:
+    - {fileID: 21300000, guid: 5b89ff74ea854b15aeaee0ef438390d4, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 14
+    sprites:
+    - {fileID: 21300000, guid: f3f66f059cc14a2ab04ac0009aacd75b, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 15
+    sprites:
+    - {fileID: 21300000, guid: 5ddd8cf3e308449b9f817121ecf765ac, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
   windowBack: {fileID: 21300000, guid: 224e610f21124a04b9ff5d47c219f260, type: 3}
   windowBackTint: {r: 1, g: 1, b: 1, a: 1}
   interior: {fileID: 21300000, guid: cbeb79e3d7234a91a4e540e4ab28864c, type: 3}

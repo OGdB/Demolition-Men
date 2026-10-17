@@ -39,3 +39,19 @@ MonoBehaviour:
     parallax: 0.55
     bottom: -0.5
   music: {fileID: 8300000, guid: 828023a63bc96a54287b6c5834991490, type: 3}
+  decor:
+  - kind: 0
+    sprites:
+    - {fileID: 21300000, guid: e84fc3b34c2845359dbc8ee21de95b44, type: 3}
+  - kind: 1
+    sprites:
+    - {fileID: 21300000, guid: 48439471f1cc455e95a770b197de926c, type: 3}
+  - kind: 2
+    sprites:
+    - {fileID: 21300000, guid: b7d67572d6e54fc6a5c546d2c914bdf8, type: 3}
+  - kind: 3
+    sprites:
+    - {fileID: 21300000, guid: da1137af88244d1e8b7939535aca5630, type: 3}
+  - kind: 4
+    sprites:
+    - {fileID: 21300000, guid: 7b4f37c953884d7eb57ccbd64467c799, type: 3}

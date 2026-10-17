@@ -34,6 +34,8 @@ namespace Demolition.Levels
         public GameObject backdropPrefab;
         public GameObject runPrefab;
         public Pickup pickupPrefab;
+        [Tooltip("The stick of dynamite a gas tank goes off as (its blast and sound; nobody throws it).")]
+        public GameObject dynamitePrefab;
 
         [Header("Online")]
         [Tooltip("The co-op relay (server/relay). ws://localhost:5080/ws for one run with dotnet run.")]

@@ -115,7 +115,7 @@ namespace Demolition.Tests
             {
                 LevelLayout layout = Designed(new[] { "start", "islands:3", "finish" }, seed);
                 LevelSegment islands = layout.Segments.First(s => s.Kind == SegmentKind.Islands);
-                var inside = layout.Buildings.Where(b => b.Segment == layout.Segments.IndexOf(islands)).ToList();
+                var inside = layout.Buildings.Where(b => !b.IsProp && b.Segment == layout.Segments.IndexOf(islands)).ToList();
                 Assert.AreEqual(3, inside.Count, $"seed {seed}");
                 foreach (BuildingPlacement b in inside)
                 {
@@ -136,7 +136,7 @@ namespace Demolition.Tests
             {
                 LevelLayout layout = Designed(new[] { "start", "plateau", "finish" }, seed);
                 int street = layout.GroundAt(layout.SpawnX);
-                BuildingPlacement b = layout.Buildings.Single();
+                BuildingPlacement b = layout.Buildings.Single(p => !p.IsProp);
                 Assert.Greater(b.GroundY, street, $"seed {seed}");
                 Assert.AreEqual(street, layout.GroundAt(layout.FinishX), $"seed {seed}");
             }
@@ -153,6 +153,72 @@ namespace Demolition.Tests
                     Assert.IsTrue(layout.Buildings.Any(b => p.X < b.X && p.X >= b.X - LevelGrammar.WeaponLeadIn),
                         $"seed {seed}: {p.Kind} at {p.X} isn't just before a building");
             }
+        }
+
+        [Test]
+        public void Clusters_AreTerraces_WallToWall()
+        {
+            for (int seed = 0; seed < 20; seed++)
+            {
+                LevelLayout layout = Designed(new[] { "start", "cluster:3", "finish" }, seed, new PickupBudget());
+                var row = layout.Buildings.Where(b => !b.IsProp).ToList();
+                Assert.AreEqual(3, row.Count, $"seed {seed}");
+                for (int i = 1; i < row.Count; i++)
+                    Assert.AreEqual(row[i - 1].X + row[i - 1].Spec.Width, row[i].X, $"seed {seed}: building {i} not wall to wall");
+            }
+        }
+
+        [Test]
+        public void Props_StandClear_OnFlatGround_AwayFromTheStartAndTheFinish([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            int total = 0;
+            for (int seed = 0; seed < 10; seed++)
+            {
+                LevelLayout layout = LevelGrammar.Generate(spec.WithSeed(spec.seed + seed, spec.id), ArchetypesFor(path));
+                var props = layout.Buildings.Where(b => b.IsProp).ToList();
+                total += props.Count;
+                foreach (BuildingPlacement p in props)
+                {
+                    Assert.Greater(p.X, layout.SpawnX + 6, $"{spec.id}: {p.Spec.Archetype} at the start");
+                    Assert.Less(p.X + p.Spec.Width, layout.FinishX - 1, $"{spec.id}: {p.Spec.Archetype} on the finish");
+                    for (int x = p.X - 1; x <= p.X + p.Spec.Width; x++)
+                        Assert.AreEqual(p.GroundY, layout.GroundAt(x), $"{spec.id}: {p.Spec.Archetype} at {p.X} needs flat ground and a free column either side");
+                    foreach (BuildingPlacement other in layout.Buildings)
+                        if (other != p)
+                            Assert.IsTrue(other.X + other.Spec.Width < p.X || other.X > p.X + p.Spec.Width,
+                                $"{spec.id}: {p.Spec.Archetype} at {p.X} touches {other.Spec.Archetype} at {other.X}");
+                }
+                foreach (PickupPlacement pickup in layout.Pickups)
+                    Assert.IsFalse(props.Any(p => pickup.X > p.X && pickup.X < p.X + p.Spec.Width && pickup.Y < p.GroundY + p.Spec.Height),
+                        $"{spec.id}: {pickup.Kind} inside a prop");
+            }
+            Assert.GreaterOrEqual(total, 15, $"{spec.id}: too few props over 10 seeds");
+        }
+
+        [Test]
+        public void Decor_StandsOnTheGround_NeverInsideABuildingOrProp([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            LevelLayout layout = LevelGrammar.Generate(spec, ArchetypesFor(path));
+            Assert.Greater(layout.Decor.Count(d => d.Kind == DecorKind.Lamp), 3, spec.id);
+            foreach (DecorPlacement d in layout.Decor)
+            {
+                Assert.AreEqual(layout.GroundAt(d.X), d.GroundY, $"{spec.id}: {d.Kind} at {d.X} floats or sinks");
+                Assert.IsFalse(layout.Buildings.Any(b => d.X >= b.X && d.X < b.X + b.Spec.Width), $"{spec.id}: {d.Kind} at {d.X} inside a building");
+            }
+        }
+
+        [Test]
+        public void Props_FollowTheSpec_AndContainersComeOnlyWhenAsked()
+        {
+            var spec = new LevelSpec { id = "test", seed = 3, pacing = new[] { "start", "breather", "breather", "breather", "finish" } };
+            string town = Path.Combine(ContentFolder, "Town", "Levels", "town-01.json");
+            Assert.IsFalse(LevelGrammar.Generate(spec, ArchetypesFor(town)).Buildings.Any(b => b.Spec.Archetype == "prop.container"));
+            spec.props = new[] { "container" };
+            var props = LevelGrammar.Generate(spec, ArchetypesFor(town)).Buildings.Where(b => b.IsProp).ToList();
+            Assert.Greater(props.Count, 0);
+            Assert.IsTrue(props.All(b => b.Spec.Archetype == "prop.container"));
         }
 
         [Test]

@@ -110,6 +110,12 @@ namespace Demolition
         /// <summary>Authoring (generated buildings): set the material before the block is registered.</summary>
         public void SetMaterial(BlockMaterial mat) => material = mat;
 
+        /// <summary>Authoring: health other than the material's default (props); &lt;= 0 keeps the default.</summary>
+        public void SetMaxHealth(float health) => maxHealth = health;
+
+        /// <summary>Goes off like dynamite when destroyed (a gas tank), credited to whoever destroyed it.</summary>
+        public bool Explosive { get; set; }
+
         /// <summary>Code-driven registration (bootstrap/tests): one cell, explicit material.</summary>
         public void Initialise(DestructibleBuilding building, Vector2Int coord, BlockMaterial mat)
         {
@@ -314,6 +320,9 @@ namespace Demolition
             }
             if (_building != null)
                 _building.OnBlockDestroyed(this);
+            if (Explosive)
+                Dynamite.Detonate(Levels.GameConfig.Instance != null ? Levels.GameConfig.Instance.dynamitePrefab : null,
+                    transform.position, LastInstigator);
             Vanish();
         }
 

@@ -29,6 +29,25 @@ namespace Demolition.Levels
         [Tooltip("Far to near. Empty = the shared backdrop prefab, tinted.")]
         public BackdropLayer[] backdrop = new BackdropLayer[0];
         public AudioClip music;
+        [Header("Street")]
+        [Tooltip("Cosmetic dressing per kind (lamp posts, fences, bushes, bins, signs). A kind with no sprites is left out.")]
+        public DecorEntry[] decor = new DecorEntry[0];
+
+        /// <summary>The sprite for one piece of dressing, or null if the theme has none of that kind.</summary>
+        public Sprite Decor(DecorKind kind, int variant)
+        {
+            foreach (DecorEntry entry in decor)
+                if (entry.kind == kind && entry.sprites.Length > 0)
+                    return entry.sprites[variant % entry.sprites.Length];
+            return null;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class DecorEntry
+    {
+        public DecorKind kind;
+        public Sprite[] sprites = new Sprite[0];
     }
 
     /// <summary>One parallax layer of a theme's backdrop: a horizontally tileable picture.</summary>

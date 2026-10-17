@@ -12,5 +12,6 @@
     "wreckingBall": 2,
     "resurrect": 1
   },
+  "props": ["crate", "car", "barrel", "container"],
   "archetypes": []
 }

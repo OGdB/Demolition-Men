@@ -43,6 +43,8 @@ namespace Demolition.Generation
 
                 var block = go.AddComponent<BuildingBlock>();
                 block.SetMaterial(b.Material);
+                block.SetMaxHealth(TileKinds.Health(b.Kind));
+                block.Explosive = TileKinds.Explosive(b.Kind);
                 if (!register)
                     continue;
                 coords.Clear();

@@ -20,6 +20,9 @@ namespace Demolition.Levels
         private const float KeepBehind = 25f;
         /// <summary>Solid ground below the lowest surface, so pits and sewers have walls.</summary>
         private const int GroundDepth = 8;
+        /// <summary>Street dressing sorts with the building back walls, a hair in front of them.</summary>
+        private const int DecorOrder = -1;
+        private const float DecorDepth = -0.02f;
 
         private LevelLayout _layout;
         private LevelTheme _theme;
@@ -236,6 +239,22 @@ namespace Demolition.Levels
                 Pickup pickup = Instantiate(_pickupPrefab, transform.position + new Vector3(placement.X, placement.Y, 0f), Quaternion.identity, root);
                 pickup.Configure(placement.Kind, placement.Amount);
                 pickup.NetIndex = p;
+            }
+
+            foreach (DecorPlacement decor in _layout.Decor)
+            {
+                if (decor.Segment != index)
+                    continue;
+                Sprite sprite = _theme.Decor(decor.Kind, decor.Variant);
+                if (sprite == null)
+                    continue;
+                var go = new GameObject(decor.Kind.ToString(), typeof(SpriteRenderer));
+                go.transform.SetParent(root, false);
+                // Standing on the ground, behind the players and the blocks (cosmetic: no collider).
+                go.transform.localPosition = new Vector3(decor.X + 0.5f, decor.GroundY + sprite.bounds.extents.y - sprite.bounds.center.y, DecorDepth);
+                var sr = go.GetComponent<SpriteRenderer>();
+                sr.sprite = sprite;
+                sr.sortingOrder = DecorOrder;
             }
 
             if (_layout.FinishX >= segment.X0 && _layout.FinishX < segment.X1)

@@ -30,6 +30,16 @@ SPRITES = {
     "window_back": ((32, 64), "x", False),
     "interior":    ((32, 32), "xy", False),
     "interior_top": ((32, 32), "x", False),
+    # street props (breakable) and dressing (cosmetic)
+    "crate":       ((32, 32), "", True),
+    "car":         ((64, 32), "", True),
+    "barrel":      ((32, 32), "", True),
+    "container":   ((96, 64), "", True),
+    "lamp":        ((32, 96), "", True),
+    "fence":       ((32, 32), "x", True),
+    "bush":        ((32, 32), "", True),
+    "bin":         ((32, 32), "", True),
+    "sign":        ((32, 64), "", True),
     "ground_top":  ((32, 32), "x", True),
     "ground_fill": ((32, 32), "xy", True),
     "backdrop_far":  ((512, 192), "x", False),
@@ -599,6 +609,264 @@ def chimney(t, rng, w=32, h=32):
     return a
 
 
+# --- street props ----------------------------------------------------------------------
+
+def disc(mask, cx, cy, r):
+    yy, xx = np.mgrid[0:mask.shape[0], 0:mask.shape[1]]
+    mask |= (xx - cx + 0.5) ** 2 + (yy - cy + 0.5) ** 2 <= r * r
+    return mask
+
+
+def crate(t, rng, w=32, h=32):
+    """A wooden crate: framed planks with a diagonal brace."""
+    r = palette.ramp(t, t["materials"]["crate"]["ramp"])
+    a = canvas(w, h)
+    rect(a, 1, 2, w - 1, h, r[0])
+    wood_planks(r, rng, a, 4, h - 4, w, joints=0, outline_rows=False)  # whole planks only: put() wraps
+    for y in range(4, h - 4, 8):
+        rect(a, 2, y, w - 2, y + 1, r[1])
+    for k in range(w - 8):  # brace from bottom-left to top-right
+        x, y = 4 + k, h - 5 - k * (h - 9) // (w - 8)
+        rect(a, x, y - 1, x + 2, y + 2, r[2])
+        put(a, x, y - 1, r[3], wrap=False)
+        put(a, x + 1, y + 2, r[1], wrap=False)
+    for x0, y0, x1, y1 in ((1, 2, w - 1, 6), (1, h - 4, w - 1, h), (1, 2, 5, h), (w - 5, 2, w - 1, h)):  # frame
+        rect(a, x0, y0, x1, y1, r[2])
+    rect(a, 2, 3, w - 2, 4, r[3])
+    rect(a, 2, 3, 3, h - 1, r[3])
+    for x, y in ((3, 4), (w - 4, 4), (3, h - 3), (w - 4, h - 3)):  # nails
+        put(a, x, y, r[0], wrap=False)
+    outline(a, r[0])
+    return a
+
+
+def outline(a, c):
+    """1 px outline around the opaque shape (on its outermost opaque pixels)."""
+    m = a[:, :, 3] > 0
+    pad = np.pad(m, 1)
+    edge = m & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+    a[edge] = (*c, 255)
+
+
+def car(t, rng, w=64, h=32):
+    """A parked car, facing right: lit body, cabin windows, two wheels."""
+    m = t["materials"]["car"]
+    body, glass_r, trim = palette.ramp(t, m["body"]), palette.ramp(t, m["glass"]), palette.ramp(t, m["trim"])
+    tyre = palette.ramp(t, m["tyre"])
+    mask = np.zeros((h, w), bool)
+    mask[15:27, 2:62] = True                       # body
+    mask[13:15, 6:58] = True
+    for y in range(4, 13):                         # cabin, sloped front and back
+        inset = (13 - y) // 2
+        mask[y, 16 + inset:46 - inset * 2] = True
+    a = shade(mask, body)
+    for x0, x1 in ((19, 30), (32, 42)):            # side windows
+        for y in range(6, 13):
+            inset = (13 - y) // 2
+            lo, hi = max(x0, 17 + inset), min(x1, 45 - inset * 2)
+            rect(a, lo, y, hi, y + 1, glass_r[1])
+        rect(a, max(x0, 19), 7, min(x1, 40), 8, step(glass_r, 3))
+    rect(a, 2, 19, 62, 20, body[1])                # waist line
+    rect(a, 3, 24, 62, 26, trim[1])                # bumper line
+    rect(a, 3, 24, 62, 25, step(trim, 3))
+    rect(a, 58, 16, 61, 19, palette.ramp(t, m["light"])[-1])   # headlight
+    rect(a, 2, 16, 4, 19, palette.ramp(t, m["light"])[1])      # tail light
+    for cx in (15, 49):                            # wheels
+        wheel = disc(np.zeros((h, w), bool), cx, 26, 6)
+        a[wheel] = (*tyre[0], 255)
+        hub = disc(np.zeros((h, w), bool), cx, 26, 3)
+        a[hub] = (*step(trim, 2), 255)
+        put(a, cx - 1, 25, step(trim, 3), wrap=False)
+    outline(a, body[0])
+    return a
+
+
+def barrel(t, rng, w=32, h=32):
+    """A gas tank: a drum lit from the left with two bands and a warning flame."""
+    m = t["materials"]["barrel"]
+    r, band = palette.ramp(t, m["ramp"]), palette.ramp(t, m["band"])
+    a = canvas(w, h)
+    hi = step(r, 3)
+    shades = [r[0], r[1], hi, hi, r[2], r[2], r[2], r[2], r[2], r[2], r[1], r[2], r[1], r[1], r[1], r[0]]
+    x0 = 8
+    for i, c in enumerate(shades):                 # cylinder columns
+        rect(a, x0 + i, 3, x0 + i + 1, h, c)
+    rect(a, x0, 2, x0 + 16, 4, r[1])              # rim
+    rect(a, x0 + 1, 2, x0 + 15, 3, step(r, 3))
+    for y in (8, 24):                              # bands
+        rect(a, x0, y, x0 + 16, y + 2, band[1])
+        rect(a, x0 + 1, y, x0 + 4, y + 1, step(band, 3))
+    for dy, (lo, hi) in enumerate(((15, 17), (14, 17), (13, 18), (13, 19), (14, 19), (14, 18))):  # flame
+        rect(a, lo, 13 + dy, hi, 14 + dy, step(band, 3))
+    rect(a, 15, 16, 17, 18, band[1])
+    outline(a, r[0])
+    return a
+
+
+def container(t, rng, w=96, h=64):
+    """A shipping container's long side: ribbed steel between corner posts and rails."""
+    r = palette.ramp(t, t["materials"]["container"]["ramp"])
+    a = canvas(w, h)
+    rect(a, 0, 0, w, h, r[2])
+    for x in range(6, w - 6, 6):                   # ribs, lit on their left flank
+        rect(a, x, 6, x + 1, h - 6, r[3])
+        rect(a, x + 3, 6, x + 5, h - 6, r[1])
+    for y0 in (0, h - 6):                          # top and bottom rails
+        rect(a, 0, y0, w, y0 + 6, r[1])
+        rect(a, 0, y0 + 1, w, y0 + 2, step(r, 3))
+    for x0 in (0, w - 6):                          # corner posts and castings
+        rect(a, x0, 0, x0 + 6, h, r[1])
+        rect(a, x0 + 1, 0, x0 + 2, h, step(r, 3))
+        for y0 in (1, h - 5):
+            rect(a, x0 + 1, y0, x0 + 5, y0 + 4, r[0])
+            put(a, x0 + 2, y0 + 1, r[2], wrap=False)
+    speckle(a, rng, np.pad(np.ones((h - 14, w - 14), bool), ((7, 7), (7, 7))), [(r[1], 0.03), (r[0], 0.01)])
+    for _ in range(rng.integers(2, 5)):            # rust runs from the top rail
+        x, y = rng.integers(8, w - 8), 6
+        for k in range(rng.integers(4, 14)):
+            put(a, x, y + k, r[0] if k % 3 else r[1], wrap=False)
+    outline(a, r[0])
+    return a
+
+
+# --- street dressing (cosmetic) ---------------------------------------------------------
+
+def lamp(t, rng, w=32, h=96):
+    """A street lamp: base, pole, an arm reaching right and a lit head."""
+    m = t["materials"]["lamp"]
+    pole, light = palette.ramp(t, m["pole"]), palette.ramp(t, m["light"])
+    mask = np.zeros((h, w), bool)
+    mask[h - 6:h, 11:21] = True                    # base
+    mask[12:h - 6, 14:18] = True                   # pole
+    mask[10:14, 14:28] = True                      # arm
+    mask[13:17, 22:30] = True                      # head
+    a = shade(mask, pole)
+    rect(a, 23, 16, 29, 18, step(light, 3))        # the light under the head
+    rect(a, 24, 18, 28, 19, light[1])
+    if m.get("tube"):                              # a neon ring on the pole
+        neon_tube(a, 14, 40, 18, 64, light)
+    outline(a, pole[0])
+    return a
+
+
+def fence(t, rng, w=32, h=32):
+    """One tileable section of fence: picket, chain-link or rail."""
+    m = t["materials"]["fence"]
+    r = palette.ramp(t, m["ramp"])
+    a = canvas(w, h)
+    style = m["style"]
+    if style == "picket":
+        mask = np.zeros((h, w), bool)
+        for x in range(2, w, 8):                   # pickets with pointed tops
+            mask[12:h, x:x + 5] = True
+            mask[10:12, x + 1:x + 4] = True
+            mask[9, x + 2] = True
+        mask[16:19, :] = True                      # rails
+        mask[25:28, :] = True
+        a = shade(mask, r, edges=(True, True, False, False))
+    elif style == "chain":
+        rect(a, 0, 8, w, 10, r[1])                 # top rail
+        rect(a, 0, 8, w, 9, step(r, 3))
+        for y in range(10, h):                     # diamond mesh
+            for x in range(w):
+                if (x + y) % 6 == 0 or (x - y) % 6 == 0:
+                    a[y, x] = (*r[2], 255)
+        rect(a, 14, 6, 18, h, r[1])                # post
+        rect(a, 14, 6, 15, h, step(r, 3))
+    else:  # rail
+        for y0 in (12, 22):
+            rect(a, 0, y0, w, y0 + 3, r[2])
+            rect(a, 0, y0, w, y0 + 1, step(r, 3))
+            rect(a, 0, y0 + 2, w, y0 + 3, r[0])
+        rect(a, 14, 10, 18, h, r[1])
+        rect(a, 14, 10, 15, h, step(r, 3))
+        rect(a, 17, 10, 18, h, r[0])
+        if m.get("trim"):
+            neon_tube(a, 0, 17, w, 20, palette.ramp(t, m["trim"]))
+    return a
+
+
+def bush(t, rng, w=32, h=32):
+    """Ground clutter: a hedge, a stack of tyres or bin bags."""
+    m = t["materials"]["bush"]
+    r = palette.ramp(t, m["ramp"])
+    style = m["style"]
+    mask = np.zeros((h, w), bool)
+    if style == "hedge":
+        for cx, cy, rad in ((10, 20, 8), (20, 17, 9), (26, 23, 6), (6, 25, 6)):
+            disc(mask, cx, cy, rad)
+        mask[25:, 2:30] = True
+        a = shade(mask, r, edges=(True, False, True, True))
+        speckle(a, rng, mask & (a[:, :, :3] == step(r, 2)).all(-1), [(step(r, 3), 0.12), (r[1], 0.12)])
+    elif style == "tires":
+        for y0 in (h - 8, h - 15, h - 22):
+            mask[y0:y0 + 7, 6:26] = True
+        a = shade(mask, r, edges=(True, False, True, True))
+        for y0 in (h - 8, h - 15, h - 22):
+            rect(a, 6, y0, 26, y0 + 1, r[0])
+            rect(a, 12, y0 + 2, 20, y0 + 4, r[0])  # the hole
+    else:  # bags
+        for cx, cy, rad in ((10, 24, 8), (22, 23, 8), (16, 15, 7)):
+            disc(mask, cx, cy, rad)
+        mask[h - 4:, 3:29] = True
+        a = shade(mask, r, edges=(True, False, True, True))
+        for x, y in ((15, 8), (16, 8), (21, 15), (9, 16)):  # tied tops
+            put(a, x, y, step(r, 3), wrap=False)
+    outline(a, r[0])
+    return a
+
+
+def bin_(t, rng, w=32, h=32):
+    """A small kerbside thing: a dustbin, a bollard or a hydrant."""
+    m = t["materials"]["bin"]
+    r = palette.ramp(t, m["ramp"])
+    style = m["style"]
+    mask = np.zeros((h, w), bool)
+    if style == "can":
+        mask[12:h, 9:23] = True
+        mask[9:12, 8:24] = True
+        mask[7:9, 14:18] = True
+    elif style == "bollard":
+        mask[14:h, 11:21] = True
+        mask[11:14, 10:22] = True
+    else:  # hydrant
+        mask[12:h, 11:21] = True
+        mask[9:12, 12:20] = True
+        mask[15:19, 7:25] = True
+        mask[h - 3:h, 9:23] = True
+    a = shade(mask, r, edges=(True, False, True, True))
+    if style == "can":
+        for y in (16, 22, 28):
+            rect(a, 10, y, 22, y + 1, r[1])
+    elif style == "bollard":
+        band = palette.ramp(t, m["band"])
+        rect(a, 11, 18, 21, 21, step(band, 3))
+    outline(a, r[0])
+    return a
+
+
+def sign(t, rng, w=32, h=64):
+    """A sign on a post: a plain board, or a neon board."""
+    m = t["materials"]["sign"]
+    post, face = palette.ramp(t, m["post"]), palette.ramp(t, m["face"])
+    mask = np.zeros((h, w), bool)
+    mask[20:h, 14:18] = True
+    mask[2:22, 4:28] = True
+    a = shade(mask, post)
+    rect(a, 6, 4, 26, 20, face[1])
+    rect(a, 6, 4, 26, 5, step(face, 3))
+    if m.get("style") == "neon":
+        neon_tube(a, 6, 4, 26, 7, face)
+        neon_tube(a, 6, 17, 26, 20, face)
+        for x in range(9, 24, 4):
+            rect(a, x, 10, x + 2, 14, step(face, 2))
+    else:
+        rect(a, 13, 8, 19, 16, step(face, 3))     # a symbol
+        rect(a, 15, 10, 17, 14, face[0])
+    outline(a, post[0])
+    return a
+
+
 # --- ground ----------------------------------------------------------------------------
 
 def ground_mass(r, rng, a, y0, y1, row_offset, blocks):
@@ -699,6 +967,15 @@ GENERATORS = {
     "window_back": window_back,
     "interior": interior,
     "interior_top": lambda t, g: interior(t, g, top=True),
+    "crate": crate,
+    "car": car,
+    "barrel": barrel,
+    "container": container,
+    "lamp": lamp,
+    "fence": fence,
+    "bush": bush,
+    "bin": bin_,
+    "sign": sign,
     "ground_top": ground_top,
     "ground_fill": ground_fill,
     "backdrop_far": lambda t, g: backdrop(t, g, "far"),

@@ -227,9 +227,12 @@ Art and level review, 2026-10-17 (`content-work/levels/*.png`, drawn headless by
   street. New segments `islands:n` (a pit and a landing strip between buildings) and
   `plateau` (a building on high ground); weapons spawn just before a building; every
   campaign level uses them (more buildings and cells in most levels).
-- Still open: street props and set pieces (cars, containers, cranes), a sky gradient,
-  Town's near-black ground fill, theme-specific archetypes (Port containers, Neon
-  billboards).
+- Street dressing (same day): clusters are terraces (wall to wall); breakable props
+  (crate piles, cars, rows of gas tanks that set each other off, Port containers) and
+  cosmetic decor (lamp posts, fences that join neighbouring buildings, hedges / tyres /
+  bags, bins, signs), all generated per theme.
+- Still open: set pieces (cranes, billboards), a sky gradient, Town's near-black ground
+  fill, theme-specific archetypes.
 
 Original plan (design in §6):
 - Style-bible schema, procedural tile generator, normalizer, QA and contact sheets.

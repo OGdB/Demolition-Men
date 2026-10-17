@@ -25,6 +25,7 @@ namespace Demolition
         [SerializeField] private float effectLifetime = 2f;
 
         private PlayerCombat _owner;
+        private int _instigator = -1; // credited when no thrower owns the stick (a gas tank's blast)
         private Rigidbody2D _rb;
         private Animator _anim;
         private AudioSource _audio;
@@ -45,6 +46,19 @@ namespace Demolition
         {
             transform.position = position;
             Explode();
+        }
+
+        /// <summary>A blast nobody threw (a gas tank going up), credited to <paramref name="instigator"/>.
+        /// Online, a client's blast is only the show: the host's reaches it as cells.</summary>
+        public static void Detonate(GameObject prefab, Vector3 position, int instigator)
+        {
+            GameObject go = prefab != null ? Instantiate(prefab, position, Quaternion.identity) : CreatePrimitive(position);
+            var dynamite = go.GetComponent<Dynamite>();
+            if (dynamite == null)
+                dynamite = go.AddComponent<Dynamite>();
+            dynamite._instigator = instigator;
+            dynamite.Cosmetic = NetRole.IsClient;
+            dynamite.ExplodeAt(position);
         }
 
         public void Init(PlayerCombat owner, Collider2D[] ignoreColliders)
@@ -109,7 +123,7 @@ namespace Demolition
                 {
                     var block = hit != null ? hit.GetComponentInParent<BuildingBlock>() : null;
                     if (block != null && damaged.Add(block))
-                        block.TakeDamage(damage, _owner != null ? _owner.PlayerIndex : -1);
+                        block.TakeDamage(damage, _owner != null ? _owner.PlayerIndex : _instigator);
                 }
             }
 

@@ -31,12 +31,14 @@ namespace Demolition.Levels
         public float parTime;
         /// <summary>Camera auto-scroll speed (units/s) once pushed.</summary>
         public float scrollSpeed = 1.5f;
-        /// <summary>Segment tokens: start, street, cluster:n, tower, gap, hill, sewer,
-        /// gate, breather, finish.</summary>
+        /// <summary>Segment tokens: start, street, cluster:n, islands:n, tower, gap, hill,
+        /// plateau, sewer, gate, breather, finish.</summary>
         public string[] pacing = { "start", "street", "cluster:2", "finish" };
         public PickupBudget pickups = new PickupBudget();
         /// <summary>Archetype ids allowed in this level; empty = all of the theme's.</summary>
         public string[] archetypes = new string[0];
+        /// <summary>Breakable street props: crate, car, barrel, container. Empty = crate, car, barrel.</summary>
+        public string[] props = new string[0];
 
         public static LevelSpec FromJson(string json) => JsonUtility.FromJson<LevelSpec>(json);
 

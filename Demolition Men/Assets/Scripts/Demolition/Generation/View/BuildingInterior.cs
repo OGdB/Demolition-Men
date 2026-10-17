@@ -21,10 +21,13 @@ namespace Demolition.Generation
 
         public static void Build(DestructibleBuilding building, BuildingSpec spec, BuildingTileset tileset)
         {
+            List<InteriorCell> cells = spec.Interior();
+            if (cells.Count == 0)
+                return; // a prop, a gate: no rooms
             var interior = building.gameObject.AddComponent<BuildingInterior>();
             var root = new GameObject("Interior").transform;
             root.SetParent(building.transform, false);
-            foreach (InteriorCell cell in spec.Interior())
+            foreach (InteriorCell cell in cells)
             {
                 var go = new GameObject("Wall");
                 go.transform.SetParent(root, false);

@@ -17,6 +17,14 @@ namespace Demolition.Levels
         public const int MaxAttempts = 16;
         /// <summary>Widest pit the grammar digs (the validator still checks it).</summary>
         public const int MaxPit = 3;
+        /// <summary>Archetype prefix of street props (see <see cref="BuildingPlacement.IsProp"/>).</summary>
+        public const string PropPrefix = "prop.";
+        /// <summary>Breakable props a level uses when its spec names none.</summary>
+        public static readonly string[] DefaultProps = { "crate", "car", "barrel" };
+        /// <summary>Chance that a free stretch of street gets a prop, and then each further one.</summary>
+        public const float PropChance = 0.65f;
+        /// <summary>Widest stretch of street between two buildings that gets a fence along it.</summary>
+        public const int MaxFencedGap = 8;
 
         private struct Spot
         {
@@ -91,13 +99,11 @@ namespace Demolition.Levels
                         Flat(layout, rng.Range(3, 5), height, spots, index);
                         break;
                     case SegmentKind.Cluster:
+                        // A terrace: the buildings stand wall to wall, like a row of houses.
                         Flat(layout, 3, height, spots, index);
                         for (int b = 0; b < Mathf.Max(1, count); b++)
-                        {
                             PlaceBuilding(layout, rng, Pick(archetypes, rng, progress, false), height, index, spots);
-                            Flat(layout, 2, height, spots, index);
-                        }
-                        Flat(layout, 2, height, spots, index);
+                        Flat(layout, 3, height, spots, index);
                         break;
                     case SegmentKind.Tower:
                         Flat(layout, 4, height, spots, index);
@@ -153,6 +159,7 @@ namespace Demolition.Levels
                 layout.Segments.Add(segment);
             }
 
+            Dress(layout, seed, spots);
             SpendPickups(layout, rng, spots);
             return layout;
         }
@@ -292,6 +299,160 @@ namespace Demolition.Levels
             return spec;
         }
 
+        // ---------------- Street dressing ----------------
+
+        // Breakable props and cosmetic decor in the gaps the course leaves. Their own random
+        // stream: dressing never changes the course the traversal check passed.
+        private static void Dress(LevelLayout layout, int seed, List<Spot> spots)
+        {
+            var rng = new Pcg32(unchecked(seed * 7919 + 0x5EED));
+            var solid = new bool[layout.Width];   // footprints: no decor here
+            var taken = new bool[layout.Width];   // footprints plus their margins: no prop here
+            foreach (BuildingPlacement b in layout.Buildings)
+            {
+                Mark(solid, taken, b.X, b.Spec.Width);
+                for (int x = Mathf.Max(0, b.X - 2); x < b.X; x++)
+                    taken[x] = true; // its doorstep: nothing blocks the wall, and the weapon spot stays
+            }
+            Mark(null, taken, layout.SpawnX - 3, 10);   // room to start
+            Mark(null, taken, layout.FinishX - 2, 5);   // the finish line stays clear
+
+            // Each free stretch of flat street: props with a free column either side.
+            List<string> kinds = PropKinds(layout.Spec);
+            for (int x = layout.SpawnX; kinds.Count > 0 && x < layout.FinishX;)
+            {
+                int ground = layout.GroundAt(x);
+                int end = x;
+                while (end < layout.FinishX && !taken[end] && ground != LevelLayout.NoGround && layout.GroundAt(end) == ground)
+                    end++;
+                for (int cursor = x; end - cursor >= 3 && rng.Chance(PropChance);)
+                {
+                    BuildingSpec prop = Prop(kinds[rng.Range(0, kinds.Count - 1)], rng);
+                    int room = end - cursor - prop.Width - 2;
+                    if (room < 0)
+                        break;
+                    int px = cursor + 1 + rng.Range(0, room);
+                    layout.Buildings.Add(new BuildingPlacement { X = px, GroundY = ground, Spec = prop, Segment = SegmentAt(layout, px) });
+                    Mark(solid, taken, px, prop.Width);
+                    spots.RemoveAll(s => !s.Roof && s.X > px - 1f && s.X < px + prop.Width + 1f);
+                    cursor = px + prop.Width;
+                }
+                x = Mathf.Max(end, x + 1);
+            }
+            layout.Buildings.Sort((a, b) => a.X.CompareTo(b.X)); // left to right: the online index order
+
+            // A fence along any short stretch of street between two buildings ties them together.
+            BuildingPlacement left = null;
+            foreach (BuildingPlacement b in layout.Buildings)
+            {
+                if (b.IsProp)
+                    continue;
+                int from = left != null ? left.X + left.Spec.Width : int.MaxValue, gap = b.X - from;
+                if (left != null && gap > 0 && gap <= MaxFencedGap && left.GroundY == b.GroundY)
+                {
+                    bool level = true;
+                    for (int x = from; x < b.X; x++)
+                        level &= layout.GroundAt(x) == b.GroundY;
+                    for (int x = from; level && x < b.X; x++)
+                        if (!solid[x])
+                        {
+                            AddDecor(layout, rng, DecorKind.Fence, x, b.GroundY);
+                            solid[x] = true; // dressed
+                        }
+                }
+                left = b;
+            }
+
+            int nextLamp = 0;
+            for (int x = 0; x < layout.Width; x++)
+            {
+                int ground = layout.GroundAt(x);
+                if (ground == LevelLayout.NoGround || solid[x] || Mathf.Abs(x - layout.FinishX) <= 1)
+                    continue;
+                if (x >= nextLamp)
+                {
+                    AddDecor(layout, rng, DecorKind.Lamp, x, ground);
+                    nextLamp = x + rng.Range(9, 13);
+                }
+                else if (rng.Chance(0.25f))
+                {
+                    var kind = (DecorKind)rng.Range((int)DecorKind.Fence, (int)DecorKind.Sign);
+                    for (int run = kind == DecorKind.Fence ? rng.Range(2, 4) : 1; run > 0; run--, x++)
+                    {
+                        if (x >= layout.Width || solid[x] || layout.GroundAt(x) != ground)
+                            break;
+                        AddDecor(layout, rng, kind, x, ground);
+                    }
+                }
+            }
+        }
+
+        private static List<string> PropKinds(LevelSpec spec)
+        {
+            var kinds = new List<string>();
+            foreach (string name in spec.props != null && spec.props.Length > 0 ? spec.props : DefaultProps)
+                if (Array.IndexOf(new[] { "crate", "car", "barrel", "container" }, name) >= 0)
+                    kinds.Add(name);
+            return kinds;
+        }
+
+        /// <summary>One street prop as a tiny building: a pile of crates, a car, a row of gas
+        /// tanks (they set each other off), a container (sometimes two stacked).</summary>
+        public static BuildingSpec Prop(string name, Pcg32 rng)
+        {
+            var spec = new BuildingSpec(PropPrefix + name, (int)rng.Next());
+            switch (name)
+            {
+                case "crate":
+                    int crates = rng.Range(1, 3);
+                    for (int i = 0; i < crates; i++)
+                        spec.TryPlace(TileKind.Crate, i, 0, (int)(rng.Next() & 0xFF));
+                    for (int i = 0; i < crates - 1; i++)
+                        if (rng.Chance(0.6f))
+                            spec.TryPlace(TileKind.Crate, i, 1, (int)(rng.Next() & 0xFF));
+                    break;
+                case "barrel":
+                    for (int i = 0, n = rng.Range(1, 3); i < n; i++)
+                        spec.TryPlace(TileKind.Barrel, i, 0, (int)(rng.Next() & 0xFF));
+                    break;
+                case "car":
+                    spec.TryPlace(TileKind.Car, 0, 0, (int)(rng.Next() & 0xFF));
+                    break;
+                default: // container
+                    spec.TryPlace(TileKind.Container, 0, 0, (int)(rng.Next() & 0xFF));
+                    if (rng.Chance(0.35f))
+                        spec.TryPlace(TileKind.Container, 0, 2, (int)(rng.Next() & 0xFF));
+                    break;
+            }
+            return spec;
+        }
+
+        private static void Mark(bool[] solid, bool[] taken, int x0, int width)
+        {
+            for (int x = x0 - 1; x <= x0 + width; x++)
+            {
+                if (x < 0 || x >= taken.Length)
+                    continue;
+                taken[x] = true;
+                if (solid != null && x >= x0 && x < x0 + width)
+                    solid[x] = true;
+            }
+        }
+
+        private static int SegmentAt(LevelLayout layout, int x)
+        {
+            for (int i = 0; i < layout.Segments.Count; i++)
+                if (x >= layout.Segments[i].X0 && x < layout.Segments[i].X1)
+                    return i;
+            return Mathf.Max(0, layout.Segments.Count - 1);
+        }
+
+        private static void AddDecor(LevelLayout layout, Pcg32 rng, DecorKind kind, int x, int ground) =>
+            layout.Decor.Add(new DecorPlacement
+            {
+                Kind = kind, X = x, GroundY = ground, Variant = (int)(rng.Next() & 0xFF), Segment = SegmentAt(layout, x),
+            });
+
         // ---------------- Pickups ----------------
 
         private static void SpendPickups(LevelLayout layout, Pcg32 rng, List<Spot> spots)
@@ -310,7 +471,7 @@ namespace Demolition.Levels
         private static bool JustBeforeBuilding(LevelLayout layout, Spot spot)
         {
             foreach (BuildingPlacement b in layout.Buildings)
-                if (spot.X < b.X && spot.X >= b.X - WeaponLeadIn)
+                if (!b.IsProp && spot.X < b.X && spot.X >= b.X - WeaponLeadIn)
                     return true;
             return false;
         }
