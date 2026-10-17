@@ -105,6 +105,10 @@ public class JoinScreen : MonoBehaviour
     {
         Session.Clear();
         menuPanel.SetActive(true);
+        // Gamepads need something selected to navigate from: the scene's first choice (Play).
+        EventSystem events = EventSystem.current;
+        if (events != null)
+            events.SetSelectedGameObject(events.firstSelectedGameObject);
     }
 
     // Switch panels a frame later, so the press that closed the lobby doesn't also

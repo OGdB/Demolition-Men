@@ -64,6 +64,8 @@ namespace Demolition.Levels
             // Placed before the scroll camera reads its floor: the street sits at the bottom.
             go.transform.position = new Vector3(spawn.x + size * 0.6f, ground - GroundShown + size, -10f);
             cam.backgroundColor = theme.sky;
+            foreach (SpriteRenderer sr in go.GetComponentsInChildren<SpriteRenderer>())
+                sr.color *= theme.backdropTint; // the sky sprites riding on the camera
             var scroll = go.GetComponent<ScrollCamera>();
             if (scroll != null)
             {

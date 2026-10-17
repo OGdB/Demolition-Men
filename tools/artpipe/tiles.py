@@ -233,7 +233,7 @@ def wood(t, rng, w=32, h=32):
     r = palette.ramp(t, t["materials"]["wood"]["ramp"])
     a = canvas(w, h)
     wood_planks(r, rng, a, 0, h, w)
-    return a
+    return np.roll(a, 4, axis=0)  # board seams off the tile edge
 
 
 # --- openings --------------------------------------------------------------------------
