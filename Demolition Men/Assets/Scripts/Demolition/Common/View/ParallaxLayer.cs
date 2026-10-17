@@ -18,11 +18,20 @@ namespace Demolition
 
         private float _length;
         private float _start;
+        private float _wrapLength;
+
+        /// <summary>Set up from code: how much it follows the camera, and the distance after
+        /// which its picture repeats (a tiled sprite; 0 = the sprite's own width).</summary>
+        public void Configure(float effect, float wrapLength)
+        {
+            parallaxEffect = Mathf.Clamp01(effect);
+            _wrapLength = wrapLength;
+        }
 
         private void Start()
         {
             _start = transform.position.x;
-            _length = GetComponent<SpriteRenderer>().bounds.size.x;
+            _length = _wrapLength > 0f ? _wrapLength : GetComponent<SpriteRenderer>().bounds.size.x;
         }
 
         private void LateUpdate()

@@ -29,4 +29,5 @@ MonoBehaviour:
   - {fileID: 4900000, guid: 4b997ea5de8e439abf0d708c50d0690a, type: 3}
   sky: {r: 0.53, g: 0.75, b: 0.92, a: 1}
   backdropTint: {r: 1, g: 1, b: 1, a: 1}
+  backdrop: []
   music: {fileID: 8300000, guid: 828023a63bc96a54287b6c5834991490, type: 3}

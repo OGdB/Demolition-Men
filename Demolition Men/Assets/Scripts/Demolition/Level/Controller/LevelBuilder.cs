@@ -91,7 +91,8 @@ namespace Demolition.Levels
             var map = new GameObject("Tilemap", typeof(Tilemap), typeof(TilemapRenderer));
             map.transform.SetParent(grid.transform, false);
             var tilemap = map.GetComponent<Tilemap>();
-            map.GetComponent<TilemapRenderer>().sortingOrder = -10;
+            // Same order as the hand-made level parts: in front of the sky (-5) and backdrop (-3..-1).
+            map.GetComponent<TilemapRenderer>().sortingOrder = 0;
 
             int bottom = _layout.LowestGround - GroundDepth;
             for (int x = 0; x < _layout.Width; x++)

@@ -75,13 +75,41 @@ namespace Demolition.Levels
             }
         }
 
+        /// <summary>One repeat of a backdrop layer's wrap: wider than the widest camera view.</summary>
+        private const float BackdropPeriod = 160f;
+
         private static void SpawnBackdrop(GameConfig config, LevelTheme theme, float x, float ground)
         {
+            if (theme.backdrop != null && theme.backdrop.Length > 0)
+            {
+                var root = new GameObject("Backdrop").transform;
+                for (int i = 0; i < theme.backdrop.Length; i++)
+                    SpawnBackdropLayer(theme.backdrop[i], root, x, ground, -3 + i);
+                return;
+            }
             if (config.backdropPrefab == null)
                 return;
             GameObject backdrop = Instantiate(config.backdropPrefab, new Vector3(x, ground + BackdropHeight, 0f), Quaternion.identity);
             foreach (SpriteRenderer sr in backdrop.GetComponentsInChildren<SpriteRenderer>())
                 sr.color *= theme.backdropTint;
+        }
+
+        // A tiled strip three wrap periods wide, so the view is always covered while it wraps.
+        private static void SpawnBackdropLayer(BackdropLayer layer, Transform root, float x, float ground, int order)
+        {
+            if (layer.sprite == null)
+                return;
+            var go = new GameObject(layer.sprite.name, typeof(SpriteRenderer));
+            go.transform.SetParent(root, false);
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.sprite = layer.sprite;
+            sr.drawMode = SpriteDrawMode.Tiled;
+            Vector2 tile = layer.sprite.bounds.size;
+            float period = Mathf.Ceil(BackdropPeriod / tile.x) * tile.x;
+            sr.size = new Vector2(period * 3f, tile.y);
+            sr.sortingOrder = order;
+            go.transform.position = new Vector3(x, ground + layer.bottom + tile.y * 0.5f, 0f);
+            go.AddComponent<ParallaxLayer>().Configure(layer.parallax, period);
         }
 
         private static int SpawnPlayers(GameConfig config, Vector3 spawn)

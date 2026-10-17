@@ -41,6 +41,8 @@ KINDS = [
     ("Chimney", ["chimney"]),
 ]
 SORTING = {"Glass": 1}  # the window back draws one below the pane
+# Parallax backdrop layers, far to near: (file, parallax, bottom above the street in units).
+BACKDROP = [("backdrop_far", 0.9, 1.5), ("backdrop_mid", 0.75, 0.5), ("backdrop_near", 0.55, -0.5)]
 
 HEADER = "%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!114 &11400000\nMonoBehaviour:\n" \
          "  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n  m_PrefabInstance: {fileID: 0}\n" \
@@ -124,14 +126,39 @@ def text_refs(folder):
     return refs
 
 
+def backdrop_block(theme_dir):
+    """The LevelTheme `backdrop` list for whichever backdrop sprites exist (empty if none)."""
+    layers = [b for b in BACKDROP if os.path.exists(os.path.join(theme_dir, "Sprites", b[0] + ".png"))]
+    if not layers:
+        return "  backdrop: []\n"
+    out = ["  backdrop:\n"]
+    for name, parallax, bottom in layers:
+        out.append(f"  - sprite: {sprite_ref(theme_dir, name)}\n    parallax: {parallax}\n    bottom: {bottom}\n")
+    return "".join(out)
+
+
+def update_backdrop(theme, theme_dir):
+    """Only refresh the backdrop list of an existing theme asset (hand-made themes like Town)."""
+    path = os.path.join(theme_dir, f"{theme}Theme.asset")
+    text = open(path).read()
+    text = re.sub(r"  backdrop:(?: \[\]\n|\n(?:  - sprite:.*\n(?:    .*\n)*)*)", "", text)
+    text = text.replace("  music:", backdrop_block(theme_dir) + "  music:", 1)
+    write(path, text)
+    print(f"{theme}: backdrop refreshed")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("theme")
     ap.add_argument("--display", help="name shown in the level select (default: THEME)")
     ap.add_argument("--music", default="Assets/Sounds/Game Music.mp3", help="project-relative AudioClip path")
+    ap.add_argument("--backdrop-only", action="store_true", help="only refresh the backdrop list of an existing theme asset")
     args = ap.parse_args()
     theme = args.theme
     theme_dir = os.path.join(ASSETS, "Content", theme)
+    if args.backdrop_only:
+        update_backdrop(theme, theme_dir)
+        return
     style_path = os.path.join(os.path.dirname(__file__), "themes", theme.lower() + ".json")
     style = json.load(open(style_path)) if os.path.exists(style_path) else {}
     sky = style.get("sky", [0.55, 0.75, 0.9])
@@ -150,7 +177,7 @@ def main():
             f"  m_Name: {theme}Theme\n  m_EditorClassIdentifier: Demolition::Demolition.Levels.LevelTheme\n",
             f"  displayName: {args.display or theme.upper()}\n  groundTop: {top}\n  groundFill: {fill}\n  tileset: {tiles}\n",
             "  archetypes:\n", *archetypes, "  levels:\n", *levels,
-            f"  sky: {colour(sky)}\n  backdropTint: {colour(tint)}\n",
+            f"  sky: {colour(sky)}\n  backdropTint: {colour(tint)}\n", backdrop_block(theme_dir),
             f"  music: {{fileID: 8300000, guid: {music}, type: 3}}\n"]
     path = os.path.join(theme_dir, f"{theme}Theme.asset")
     write(path, "".join(body))
