@@ -28,17 +28,15 @@ done
 
 src=$(cd "$(dirname "$0")/.." && pwd)
 
-echo "==> Checking DNS for $domain"
-ip=$( (getent ahostsv4 "$domain" 2>/dev/null || true) | awk 'NR == 1 { print $1 }')
-if [ -z "$ip" ] && command -v dig >/dev/null; then ip=$(dig +short A "$domain" | tail -n 1); fi
-[ -n "$ip" ] || die "$domain has no A record yet. Add one pointing at the VPS, wait for it to resolve, then re-run: Caddy can't get a certificate without it."
-
 echo "==> Connecting to $target"
-# Last line only: login scripts may print a banner first.
-info=$(ssh "$target" 'echo "$(mktemp -d) $(hostname -I)"' | tail -n 1)
-stage=${info%% *}
+# The VPS resolves the name: Git Bash on Windows has no getent or dig. Last line only:
+# login scripts may print a banner first.
+# shellcheck disable=SC2029 # $domain (validated above) goes into the remote command on purpose
+info=$(ssh "$target" "echo \$(mktemp -d) \$(getent ahostsv4 $domain | awk 'NR == 1 { print \$1 }' | grep . || echo none) \$(hostname -I)" | tail -n 1)
+read -r stage ip addresses <<<"$info"
 [[ $stage == /tmp/* ]] || die "unexpected answer from $target: $info"
-[[ " ${info#* } " == *" $ip "* ]] || echo "warning: $domain points at $ip, which isn't an address of this VPS (${info#* }). Fine for a floating IP; otherwise fix the A record."
+[ "$ip" != none ] || die "$domain has no A record yet. Add one pointing at the VPS, wait for it to resolve, then re-run: Caddy can't get a certificate without it."
+[[ " $addresses " == *" $ip "* ]] || echo "warning: $domain points at $ip, which isn't an address of this VPS ($addresses). Fine for a floating IP; otherwise fix the A record."
 
 echo "==> Uploading the sources (the VPS builds the image)"
 # shellcheck disable=SC2029 # $stage is the VPS's own path, expanded here on purpose

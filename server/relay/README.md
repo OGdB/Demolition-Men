@@ -103,6 +103,9 @@ Before the first deploy:
 server/relay/deploy/deploy.sh root@138.201.155.228 relay.oeds.space
 ```
 
+On Windows, run it from Git Bash (or WSL), not PowerShell: PowerShell doesn't run `.sh`
+files, so nothing happens there.
+
 What it does:
 1. Checks that the name resolves, then uploads the sources to a temporary folder.
 2. On the VPS (`install.sh`, as root): checks that the `caddy` container runs on `web` and
