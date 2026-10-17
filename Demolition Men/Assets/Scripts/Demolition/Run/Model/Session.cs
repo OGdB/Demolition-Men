@@ -32,6 +32,8 @@ namespace Demolition.Run
         /// <summary>Remove a device; later players move up a slot.</summary>
         public static void Leave(InputDevice device) => _devices.Remove(device);
 
+        public static bool IsJoined(InputDevice device) => _devices.Contains(device);
+
         public static void Clear() => _devices.Clear();
     }
 }

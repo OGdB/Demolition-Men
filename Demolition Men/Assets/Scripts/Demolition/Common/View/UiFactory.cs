@@ -248,10 +248,13 @@ namespace Demolition
 
         public static float EaseOut(float t) => 1f - (1f - t) * (1f - t) * (1f - t);
 
-        /// <summary>Any key, click, tap or main gamepad button this frame: skips an intro or a reveal.</summary>
-        public static bool AnyPress()
+        /// <summary>A confirm or back press, a click or a tap this frame: skips an intro or a
+        /// reveal. Not any key, so attack keys mashed at the end of a run don't skip it.</summary>
+        public static bool SkipPressed()
         {
-            if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
+            Keyboard kb = Keyboard.current;
+            if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame
+                || kb.spaceKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame))
                 return true;
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
                 return true;

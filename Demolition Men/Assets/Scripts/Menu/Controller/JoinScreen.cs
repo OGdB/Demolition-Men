@@ -11,8 +11,8 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// "Press to join" lobby under the title, before the level select (the training yard on a
 /// new profile's first play). Any keyboard or gamepad joins with A / Space and leaves with
-/// B / Esc; Start / Enter continues once someone has joined. B / Esc with nobody joined is
-/// "back", which the menu turns into the quit question. On a phone the touchscreen joins as
+/// B / Esc; Start / Enter continues once someone has joined. B / Esc from a device that
+/// hasn't joined is "back", which the menu turns into the quit question. On a phone the touchscreen joins as
 /// player 1 straight away and the on-screen START button continues (a gamepad can still
 /// join as player 2). Joined devices go to <see cref="Session"/>, which the run uses to
 /// give each player their own device.
@@ -59,7 +59,9 @@ public class JoinScreen : MonoBehaviour
             }
             else if (LeavePressed(device))
             {
-                if (Session.PlayerCount == 0)
+                // A joined device leaves; any other (nobody joined, a phone's touch-joined
+                // player, Android back) asks to quit.
+                if (!Session.IsJoined(device))
                 {
                     _back?.Invoke();
                     return;

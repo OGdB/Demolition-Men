@@ -66,7 +66,8 @@ namespace Demolition
         private void Build()
         {
             TouchInputSource source = TouchInputSource.Shared;
-            Canvas canvas = UiFactory.Canvas(transform, "TouchControls", 15, 1.1f);
+            // 1.25 under the canvas's Expand matching keeps the old size on 20:9 phones and 4:3 tablets.
+            Canvas canvas = UiFactory.Canvas(transform, "TouchControls", 15, 1.25f);
             _root = canvas.gameObject;
             _group = _root.AddComponent<CanvasGroup>();
             RectTransform safe = UiFactory.SafeArea(canvas.transform);

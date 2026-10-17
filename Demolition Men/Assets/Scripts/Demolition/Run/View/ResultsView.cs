@@ -21,8 +21,10 @@ namespace Demolition.Run
 
         /// <summary>Jump buttons double as Submit: don't let a held jump skip the results.</summary>
         private const float InputDelay = 0.6f;
-        /// <summary>The press that ended the run must not skip the reveal too.</summary>
-        private const float SkipDelay = 0.3f;
+        /// <summary>Attack and jump mashed across the finish must not skip the reveal.</summary>
+        private const float SkipDelay = 1f;
+        /// <summary>A skip press must not land on a button that wakes right under it.</summary>
+        private const float WakeDelay = 0.4f;
         private const float MeterWidth = 1000f;
 
         private RunController _run;
@@ -32,6 +34,7 @@ namespace Demolition.Run
         private bool _revealed;
         private bool _skip;
         private float _shownAt;
+        private float _revealedAt;
         private CanvasGroup _group;
         private RectTransform _content;
         private Button _first;
@@ -56,13 +59,14 @@ namespace Demolition.Run
                 Show();
             if (!_shown)
                 return;
-            if (!_revealed && Time.unscaledTime >= _shownAt + SkipDelay && UiFactory.AnyPress())
+            if (!_revealed && Time.unscaledTime >= _shownAt + SkipDelay && UiFactory.SkipPressed())
                 _skip = true;
             // Its own flag: a modal ad turning the group off must not count as "not woken yet".
-            if (_revealed && !_woken && !_leaving && Time.unscaledTime >= _shownAt + InputDelay)
+            if (_revealed && !_woken && !_leaving && Time.unscaledTime >= Mathf.Max(_shownAt + InputDelay, _revealedAt + WakeDelay))
             {
                 _woken = true;
                 _group.interactable = true;
+                _group.blocksRaycasts = true;
                 if (EventSystem.current != null)
                     EventSystem.current.SetSelectedGameObject(_first.gameObject);
             }
@@ -88,6 +92,7 @@ namespace Demolition.Run
             var root = (RectTransform)canvas.transform;
             _group = canvas.gameObject.AddComponent<CanvasGroup>();
             _group.interactable = false;
+            _group.blocksRaycasts = false; // a tap that skips the reveal must not press the button under it
             UiFactory.Image(UiFactory.Stretch(root, "Dim"), "Background", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.7f))
                 .rectTransform.anchorMax = Vector2.one;
             _content = UiFactory.Stretch(root, "Content");
@@ -160,9 +165,11 @@ namespace Demolition.Run
             for (int star = 0; star < RunScore.MaxStars; star++)
             {
                 float at = RunScore.StarThreshold(star);
-                UiFactory.Image(frame.transform, "Tick " + star, new Vector2(at, 0.5f), Vector2.zero, new Vector2(4f, height + 12f), Color.white);
+                UiFactory.Image(frame.transform, "Tick " + star, new Vector2(at, 0.5f), Vector2.zero, new Vector2(4f, height + 12f), Color.white)
+                    .rectTransform.pivot = new Vector2(0.5f, 0.5f);
                 TextMeshProUGUI mark = UiFactory.Text(frame.transform, "Mark " + star, new Vector2(at, 0.5f), new Vector2(0f, -height * 0.5f - 22f), 26f,
                     TextAlignmentOptions.Center, new Vector2(100f, 32f));
+                mark.rectTransform.pivot = new Vector2(0.5f, 0.5f);
                 mark.text = $"{Mathf.RoundToInt(at * 100f)}%";
                 mark.color = new Color(0.75f, 0.75f, 0.78f);
             }
@@ -193,7 +200,7 @@ namespace Demolition.Run
 
         private IEnumerator Reveal(bool finished)
         {
-            float destroyed = Mathf.Clamp01(_run.DestroyedFraction);
+            float destroyed = _run.BankedFraction;
             int stars = finished ? RunScore.Stars(RunScore.GradeFor(destroyed)) : 0;
 
             yield return Tween(0.25f, t =>
@@ -236,7 +243,7 @@ namespace Demolition.Run
             while (lit < stars)
                 StartCoroutine(PopStar(lit++));
 
-            int total = _run.FinalScore;
+            int total = _run.BankedScore;
             int cash = _run.Reward.Cash;
             float lastCoin = 0f;
             yield return Tween(cash > 0 ? 0.8f : 0.5f, t =>
@@ -263,6 +270,7 @@ namespace Demolition.Run
                     UiAudio.Slam();
             }
             _revealed = true;
+            _revealedAt = Time.unscaledTime;
         }
 
         private IEnumerator PopStar(int index)
@@ -296,7 +304,7 @@ namespace Demolition.Run
             _bank.text = $"BANK ${Profile.Data.cash:N0}";
         }
 
-        private void ShowCash() => ShowCount(_run.FinalScore, _run.Reward.Cash);
+        private void ShowCash() => ShowCount(_run.BankedScore, _run.Reward.Cash);
 
         private void DoubleCash()
         {

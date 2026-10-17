@@ -34,7 +34,7 @@ public class TitleView : MonoBehaviour
 
     private void Update()
     {
-        if (_title != null && UiFactory.AnyPress())
+        if (_title != null && UiFactory.SkipPressed())
             _skip = true;
     }
 

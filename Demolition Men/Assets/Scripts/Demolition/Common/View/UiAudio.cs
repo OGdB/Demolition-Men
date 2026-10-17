@@ -6,10 +6,12 @@ namespace Demolition
     /// Menu and results sounds: metal ticks and clanks for buttons, slams for titles, a
     /// rising chime per star. Clips are synthesised once (<see cref="SynthSound"/>) and play
     /// on a few persistent 2D voices that ignore the pause, since menus open over a paused run.
+    /// Each sound takes a free voice of its own: re-pitching a voice would bend whatever it
+    /// still plays (a star's chime under the meter's ticks).
     /// </summary>
     public static class UiAudio
     {
-        private const int Voices = 6;
+        private const int Voices = 8;
         private const float Volume = 0.55f;
 
         private static AudioSource[] _voices;
@@ -55,10 +57,22 @@ namespace Demolition
         {
             if (!Ready())
                 return;
-            AudioSource voice = _voices[_next];
+            AudioSource voice = _voices[_next]; // all busy: cut the oldest
+            for (int i = 0; i < Voices; i++)
+            {
+                AudioSource candidate = _voices[(_next + i) % Voices];
+                if (!candidate.isPlaying)
+                {
+                    voice = candidate;
+                    _next = (_next + i) % Voices;
+                    break;
+                }
+            }
             _next = (_next + 1) % Voices;
+            voice.clip = clip;
             voice.pitch = pitch;
-            voice.PlayOneShot(clip, Volume * loudness);
+            voice.volume = Volume * loudness;
+            voice.Play();
         }
 
         private static bool Ready()

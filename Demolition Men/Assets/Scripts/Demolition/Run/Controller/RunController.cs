@@ -75,6 +75,11 @@ namespace Demolition.Run
         /// <summary>What the profile got from this run, once it is over.</summary>
         public RunReward Reward { get; private set; }
 
+        /// <summary>Destruction and score as banked when the run ended; the results show these,
+        /// so debris still falling afterwards can't light a star the profile never recorded.</summary>
+        public float BankedFraction { get; private set; }
+        public int BankedScore { get; private set; }
+
         public int FinalScore => State.Phase == RunPhase.Finished
             ? Score.FinalTotal(State.Elapsed, parTime)
             : Score.Total;
@@ -265,7 +270,9 @@ namespace Demolition.Run
         private void Bank()
         {
             bool finished = State.Phase == RunPhase.Finished;
-            Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(DestroyedFraction), FinalScore, State.Elapsed);
+            BankedFraction = DestroyedFraction;
+            BankedScore = FinalScore;
+            Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(BankedFraction), BankedScore, State.Elapsed);
             Profile.Save();
             Ended?.Invoke();
         }
