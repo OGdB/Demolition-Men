@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8264117050012345601}
   - component: {fileID: 8264117050012345602}
   - component: {fileID: 8264117050012345603}
+  - component: {fileID: 8264117050012345604}
   m_Layer: 0
   m_Name: Run
   m_TagString: Untagged
@@ -127,3 +128,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1aef4c8b55a4c238f66af7715df15e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.TouchControls
+--- !u!114 &8264117050012345604
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4490347013378689099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a86e8b4e43348068d20ce6cde43fd79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.Run.RunJuice
+  bigCollapse: 40
+  maxCollapseShake: 0.75
+  hitStopCells: 12
+  hitStopSeconds: 0.07
+  hitStopTimeScale: 0.05

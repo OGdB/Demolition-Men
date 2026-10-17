@@ -31,6 +31,9 @@ namespace Demolition
 
         private static readonly int BoomParam = Animator.StringToHash("boom");
 
+        /// <summary>A stick went off here (screen shake and other feedback).</summary>
+        public static event System.Action<Vector3> Exploded;
+
         public void Init(PlayerCombat owner, Collider2D[] ignoreColliders)
         {
             _owner = owner;
@@ -76,6 +79,7 @@ namespace Demolition
 
             if (_audio != null)
                 _audio.Play();
+            Exploded?.Invoke(transform.position);
 
             var damaged = new HashSet<BuildingBlock>();
             foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect * 0.5f))

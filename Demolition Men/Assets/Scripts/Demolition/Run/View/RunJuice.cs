@@ -1,0 +1,76 @@
+using UnityEngine;
+
+namespace Demolition.Run
+{
+    /// <summary>
+    /// Feel, not rules: screen shake scaled to what came down, and a few frames of
+    /// hit-stop when a big collapse starts, so weak-point hits land with weight.
+    /// </summary>
+    public sealed class RunJuice : MonoBehaviour
+    {
+        [Tooltip("Collapsed cells at which shake and hit-stop reach full strength.")]
+        [SerializeField] private int bigCollapse = 40;
+        [SerializeField] private float maxCollapseShake = 0.75f;
+        [Tooltip("Cells a collapse needs before it freezes time for a moment.")]
+        [SerializeField] private int hitStopCells = 12;
+        [SerializeField] private float hitStopSeconds = 0.07f;
+        [SerializeField, Range(0f, 1f)] private float hitStopTimeScale = 0.05f;
+
+        private float _hitStopUntil = -1f;
+
+        private void OnEnable()
+        {
+            DestructionEvents.Collapsed += OnCollapsed;
+            DestructionEvents.BlockDestroyed += OnBlockDestroyed;
+            Dynamite.Exploded += OnExploded;
+        }
+
+        private void OnDisable()
+        {
+            DestructionEvents.Collapsed -= OnCollapsed;
+            DestructionEvents.BlockDestroyed -= OnBlockDestroyed;
+            Dynamite.Exploded -= OnExploded;
+            EndHitStop();
+        }
+
+        private void Update()
+        {
+            if (_hitStopUntil >= 0f && Time.unscaledTime >= _hitStopUntil)
+                EndHitStop();
+        }
+
+        private void OnCollapsed(CollapseInfo info)
+        {
+            float strength = Mathf.Clamp01(info.Cells.Count / (float)bigCollapse);
+            CameraShake.Add(0.15f + strength * (maxCollapseShake - 0.15f));
+            Particles.Burst(info.Position, new Color(0.75f, 0.7f, 0.6f, 0.8f), 10 + info.Cells.Count / 2, 2.5f, 0.35f, 1.1f);
+            if (info.Cells.Count >= hitStopCells)
+                HitStop(hitStopSeconds * (0.6f + strength));
+        }
+
+        private void OnBlockDestroyed(BlockDestroyedInfo info)
+        {
+            bool heavy = info.Material == BlockMaterial.Support || info.Material == BlockMaterial.Metal;
+            CameraShake.Add(heavy ? 0.12f : 0.035f);
+        }
+
+        private void OnExploded(Vector3 position) => CameraShake.Add(0.5f);
+
+        private void HitStop(float seconds)
+        {
+            if (PauseController.IsPaused)
+                return;
+            _hitStopUntil = Time.unscaledTime + seconds;
+            Time.timeScale = hitStopTimeScale;
+        }
+
+        private void EndHitStop()
+        {
+            if (_hitStopUntil < 0f)
+                return;
+            _hitStopUntil = -1f;
+            if (!PauseController.IsPaused)
+                Time.timeScale = 1f;
+        }
+    }
+}
