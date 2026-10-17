@@ -69,6 +69,16 @@ namespace Demolition
         [SerializeField] private DamageProfile axeDamage = new DamageProfile(70f, 40f, 20f, 25f, 25f);
         [SerializeField] private DamageProfile wreckingDamage = new DamageProfile(45f, 65f, 40f, 25f, 50f);
 
+        [Header("Headbutt")]
+        [Tooltip("Jumping head-first into a block damages it: fist damage times this.")]
+        [SerializeField] private float headbuttFactor = 2f;
+        [Tooltip("Upward speed below which hitting a block from below does nothing.")]
+        [SerializeField] private float headbuttMinSpeed = 3f;
+        [Tooltip("Upward speed at which a headbutt does its full damage.")]
+        [SerializeField] private float headbuttFullSpeed = 12f;
+        [Tooltip("Contact this high above the feet counts as the head.")]
+        [SerializeField] private float headHeight = 1.2f;
+
         [Header("No-animator fallback")]
         [Tooltip("Swing cadence when there is no Animator to fire applyDamage events.")]
         [SerializeField] private float fallbackSwingInterval = 0.35f;
@@ -89,6 +99,9 @@ namespace Demolition
 
         private PlayerInputReader _input;
         private PlayerMotor _motor;
+        private Rigidbody2D _rb;
+        // Upward speed before this physics step resolved its contacts; 0 once the jump headbutted.
+        private float _riseSpeed;
         private Animator _anim;
         private AudioSource _audio;
         private bool _canDynamite = true;
@@ -119,6 +132,7 @@ namespace Demolition
         {
             _input = GetComponent<PlayerInputReader>();
             _motor = GetComponent<PlayerMotor>();
+            _rb = GetComponent<Rigidbody2D>();
             _anim = GetComponent<Animator>();
             _audio = GetComponent<AudioSource>();
         }
@@ -192,6 +206,28 @@ namespace Demolition
 
             if (hitAnything && weapon != WeaponType.Fists && --_uses[(int)weapon] <= 0)
                 weapon = WeaponType.Fists;
+        }
+
+        private void FixedUpdate() => _riseSpeed = _rb != null ? _rb.linearVelocity.y : 0f;
+
+        // Jumping into a standing block from below damages it (one block per jump), harder the
+        // faster the jump was still rising. Glass is the motor's job: it shatters on any touch.
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            // Collision messages reach disabled components too (countdown, out of play).
+            if (!isActiveAndEnabled || _riseSpeed < headbuttMinSpeed)
+                return;
+            var block = collision.collider.GetComponentInParent<BuildingBlock>();
+            if (block == null || block.IsFalling || block.Material == BlockMaterial.Glass)
+                return;
+            ContactPoint2D contact = collision.GetContact(0);
+            if (Mathf.Abs(contact.normal.y) < 0.7f || contact.point.y < transform.position.y + headHeight)
+                return; // a wall at the side, or the feet
+            float strength = Mathf.Clamp01(_riseSpeed / headbuttFullSpeed);
+            _riseSpeed = 0f;
+            block.TakeDamage(fistDamage.For(block.Material) * headbuttFactor * strength * damageMultiplier, _input.PlayerIndex);
+            if (hitSound != null && _audio != null)
+                _audio.PlayOneShot(hitSound);
         }
 
         /// <summary>Pick up a weapon: add landed hits and switch to it.</summary>

@@ -21,6 +21,8 @@ namespace Demolition
         [SerializeField] private bool explodeOnContact = true;
         [Tooltip("Optional explosion prefab, spawned by the Effect animation event.")]
         [SerializeField] private GameObject effect;
+        [Tooltip("Seconds before the spawned effect is removed (its particle system loops).")]
+        [SerializeField] private float effectLifetime = 2f;
 
         private PlayerCombat _owner;
         private Rigidbody2D _rb;
@@ -101,7 +103,7 @@ namespace Demolition
                 rb.AddForce(dir * pushForce, ForceMode2D.Impulse);
             }
 
-            if (_anim != null)
+            if (_anim != null && _anim.runtimeAnimatorController != null)
             {
                 // Explosion.anim takes over: it fires Effect, then destroyDynamite.
                 _anim.SetBool(BoomParam, true);
@@ -109,6 +111,7 @@ namespace Demolition
             }
             else
             {
+                Effect();
                 Particles.Burst(transform.position, new Color(1f, 0.6f, 0.15f), 24, 7f, 0.2f, 0.6f);
                 var sr = GetComponentInChildren<SpriteRenderer>();
                 if (sr != null)
@@ -121,7 +124,7 @@ namespace Demolition
         private void Effect()
         {
             if (effect != null)
-                Instantiate(effect, transform.position, Quaternion.identity);
+                Destroy(Instantiate(effect, transform.position, Quaternion.identity), effectLifetime);
         }
 
         // Animation event (Explosion.anim): last frame — return the "one at a time" token.
