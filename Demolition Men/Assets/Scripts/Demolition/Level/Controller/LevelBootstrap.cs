@@ -90,7 +90,7 @@ namespace Demolition.Levels
             {
                 var root = new GameObject("Backdrop").transform;
                 for (int i = 0; i < theme.backdrop.Length; i++)
-                    SpawnBackdropLayer(theme.backdrop[i], root, x, ground, -3 + i);
+                    SpawnBackdropLayer(theme.backdrop[i], root, x, ground, i - theme.backdrop.Length - 1);
                 return;
             }
             if (config.backdropPrefab == null)
@@ -100,7 +100,8 @@ namespace Demolition.Levels
                 sr.color *= theme.backdropTint;
         }
 
-        // A tiled strip three wrap periods wide, so the view is always covered while it wraps.
+        // A tiled strip four wrap periods wide: the view (up to aspect 4 at max zoom) stays
+        // covered however far it has drifted before the next wrap.
         private static void SpawnBackdropLayer(BackdropLayer layer, Transform root, float x, float ground, int order)
         {
             if (layer.sprite == null)
@@ -112,7 +113,7 @@ namespace Demolition.Levels
             sr.drawMode = SpriteDrawMode.Tiled;
             Vector2 tile = layer.sprite.bounds.size;
             float period = Mathf.Ceil(BackdropPeriod / tile.x) * tile.x;
-            sr.size = new Vector2(period * 3f, tile.y);
+            sr.size = new Vector2(period * 4f, tile.y);
             sr.sortingOrder = order;
             go.transform.position = new Vector3(x, ground + layer.bottom + tile.y * 0.5f, 0f);
             go.AddComponent<ParallaxLayer>().Configure(layer.parallax, period);

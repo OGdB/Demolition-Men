@@ -113,6 +113,20 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void HudScale_IsCappedSoTheHudFitsTheScreen()
+        {
+            var auto = new GameSettings();
+            Assert.AreEqual(1f, auto.HudScale(false, 16f / 9f), 0.11f, "desktop 16:9 stays ~100%");
+            Assert.Less(auto.HudScale(true, 20f / 9f), 1.3f, "phone AUTO is capped on 20:9");
+            Assert.Greater(auto.HudScale(true, 20f / 9f), 1.15f);
+            Assert.Less(auto.HudScale(false, 4f / 3f), 1f, "4:3 shrinks below 100%");
+            var big = new GameSettings { hudScale = 1.6f };
+            float aspect = 16f / 9f;
+            float canvasWidth = Mathf.Sqrt(aspect * 1920f * 1080f) / big.HudScale(false, aspect);
+            Assert.GreaterOrEqual(canvasWidth, GameSettings.MinHudWidth - 0.5f);
+        }
+
+        [Test]
         public void InputFrames_Merge()
         {
             var a = new PlayerInputFrame { Move = new Vector2(1f, 0f), JumpPressed = true, WeaponCycle = 0 };

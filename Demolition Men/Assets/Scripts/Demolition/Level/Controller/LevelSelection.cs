@@ -92,7 +92,7 @@ namespace Demolition.Levels
         }
 
         /// <summary>Key the Level Lab writes before entering play mode (statics don't survive
-        /// the domain reload): "levelId|seed|bot". Read only in the editor.</summary>
+        /// the domain reload): "levelId|seed|bot|utcTicks". Read only in the editor.</summary>
         public const string EditorRequestKey = "Demolition.LevelLab.Request";
 
 #if UNITY_EDITOR
@@ -103,6 +103,10 @@ namespace Demolition.Levels
                 return false;
             UnityEngine.PlayerPrefs.DeleteKey(EditorRequestKey);
             string[] parts = request.Split('|');
+            // Written right before entering play mode; an old one is from a start that failed.
+            if (parts.Length < 4 || !long.TryParse(parts[3], out long ticks)
+                || (DateTime.UtcNow - new DateTime(ticks, DateTimeKind.Utc)).TotalSeconds > 60)
+                return false;
             foreach (CampaignLevel level in GameConfig.Instance.Campaign)
             {
                 if (level.Spec.id != parts[0])

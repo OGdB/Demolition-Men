@@ -206,7 +206,7 @@ public class LevelLab : EditorWindow
         }
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             return;
-        PlayerPrefs.SetString(LevelSelection.EditorRequestKey, $"{Load(path).id}|{_seed}|{(bot ? "bot" : "")}");
+        PlayerPrefs.SetString(LevelSelection.EditorRequestKey, $"{Load(path).id}|{_seed}|{(bot ? "bot" : "")}|{System.DateTime.UtcNow.Ticks}");
         PlayerPrefs.Save();
         EditorSceneManager.OpenScene("Assets/Scenes/Run.unity");
         EditorApplication.isPlaying = true;

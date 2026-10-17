@@ -19,6 +19,9 @@ namespace Demolition
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[4];
         private float _jumpUntil;
 
+        // A new jump only once the last one has been let go for a moment (a fresh press edge).
+        private bool CanArmJump => Time.time >= _jumpUntil + 0.05f;
+
         private readonly ScriptedInputSource _source = new ScriptedInputSource();
         private PlayerMotor _motor;
         private PlayerCombat _combat;
@@ -41,7 +44,7 @@ namespace Demolition
             Vector2 feet = transform.position;
             BuildingBlock block = BlockAhead(feet);
             bool attack = block != null;
-            if (_motor.IsGrounded && !attack && (StepAhead(feet) || PitAhead(feet)))
+            if (CanArmJump && _motor.IsGrounded && !attack && (StepAhead(feet) || PitAhead(feet)))
                 _jumpUntil = Time.time + JumpHold;
 
             if (feet.x > _progressX + 0.5f)
@@ -49,7 +52,7 @@ namespace Demolition
                 _progressX = feet.x;
                 _progressTime = Time.time;
             }
-            else if (Time.time - _progressTime > StuckSeconds && _motor.IsGrounded)
+            else if (Time.time - _progressTime > StuckSeconds && _motor.IsGrounded && CanArmJump)
             {
                 _jumpUntil = Time.time + JumpHold;
                 _progressTime = Time.time;

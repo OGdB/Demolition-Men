@@ -54,6 +54,7 @@ namespace Demolition.Run
 
         private RunController _run;
         private CanvasScaler _scaler;
+        private Vector2Int _appliedFor;
         private RectTransform _root;
         private TextMeshProUGUI _timer;
         private RectTransform _meterFill;
@@ -100,18 +101,20 @@ namespace Demolition.Run
             Pickup.Collected += OnPickup;
         }
 
-        // The HUD size setting, capped so the player panels and the meter never collide on
-        // narrow screens: the canvas stays at least MinCanvasWidth units wide.
-        private const float MinCanvasWidth = 1750f;
-
+        // The HUD size setting, capped by the safe area's shape (GameSettings.HudScale).
         private void ApplyScale()
         {
             if (_scaler == null)
                 return;
-            float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : 16f / 9f;
-            float widest = Mathf.Sqrt(aspect * 1920f * 1080f) / MinCanvasWidth;
-            float scale = Mathf.Min(Profile.Data.settings.HudScale(Platform.IsMobile), widest);
+            _appliedFor = new Vector2Int(Screen.width, Screen.height);
+            float scale = Profile.Data.settings.HudScale(Platform.IsMobile, SafeAspect());
             _scaler.referenceResolution = new Vector2(1920f, 1080f) / Mathf.Max(0.5f, scale);
+        }
+
+        public static float SafeAspect()
+        {
+            Rect safe = Screen.safeArea;
+            return safe.height > 0f ? safe.width / safe.height : 16f / 9f;
         }
 
         private void OnDestroy()
@@ -232,6 +235,8 @@ namespace Demolition.Run
         {
             if (_root == null)
                 return;
+            if (_appliedFor.x != Screen.width || _appliedFor.y != Screen.height)
+                ApplyScale(); // resized window, rotated phone
             RunState state = _run.State;
 
             _timer.text = FormatTime(state.Elapsed);

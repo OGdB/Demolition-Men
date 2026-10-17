@@ -1,4 +1,5 @@
 using System;
+using Demolition.Run;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -77,7 +78,7 @@ namespace Demolition.Meta
             Button first = Stepper(root, ref y, "VOLUME", () => Percent(s.masterVolume), d => s.masterVolume = Step(s.masterVolume, d, 0.1f, 0f, 1f));
             Stepper(root, ref y, "MUSIC", () => Percent(s.musicVolume), d => s.musicVolume = Step(s.musicVolume, d, 0.1f, 0f, 1f));
             Toggle(root, ref y, "SCREEN SHAKE", () => s.screenShake ? "ON" : "OFF", () => s.screenShake = !s.screenShake);
-            Stepper(root, ref y, "HUD SIZE", () => s.hudScale > 0f ? Percent(s.hudScale) : "AUTO",
+            Stepper(root, ref y, "HUD SIZE", () => s.hudScale > 0f ? Percent(s.HudScale(Platform.IsMobile, RunHud.SafeAspect())) : "AUTO",
                 d => s.hudScale = HudStep(s, d));
             Toggle(root, ref y, "TOUCH CONTROLS", () => TouchModes[Mathf.Clamp(s.touchControls, 0, 2)], () => s.touchControls = (s.touchControls + 1) % 3);
             Stepper(root, ref y, "BUTTON SIZE", () => Percent(s.touchScale), d => s.touchScale = Step(s.touchScale, d, 0.1f, 0.6f, 1.6f));
@@ -126,13 +127,15 @@ namespace Demolition.Meta
 
         // AUTO (0) sits below the smallest size: "-" at 80% goes back to AUTO, "+" from AUTO
         // starts one step above the automatic size.
+        // Never past what this screen fits, so the shown size is the size you get.
         private static float HudStep(GameSettings s, int direction)
         {
+            float max = Mathf.Max(0.8f, GameSettings.HudScaleCap(RunHud.SafeAspect()));
             if (s.hudScale <= 0f)
-                return direction < 0 ? 0f : Step(s.HudScale(Platform.IsMobile), 1, 0.1f, 0.8f, 1.6f);
+                return direction < 0 ? 0f : Step(s.HudScale(Platform.IsMobile, RunHud.SafeAspect()), 1, 0.1f, 0.8f, max);
             if (direction < 0 && s.hudScale <= 0.8f)
                 return 0f;
-            return Step(s.hudScale, direction, 0.1f, 0.8f, 1.6f);
+            return Step(Mathf.Min(s.hudScale, max), direction, 0.1f, 0.8f, max);
         }
 
         private static float Step(float value, int direction, float step, float min, float max) =>

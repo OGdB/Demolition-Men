@@ -20,6 +20,7 @@ namespace Demolition.Run
         private static AudioClip _rumble;
         private AudioSource[] _voices;
         private AudioSource _rumbleVoice;
+        private float _rumbleSize;
         private int _next;
         private int _frame;
         private int _playedThisFrame;
@@ -82,6 +83,9 @@ namespace Demolition.Run
         {
             // Its own source: re-pitching a shared voice would bend a rumble still playing.
             float size = Mathf.Clamp01(info.Cells.Count / 40f);
+            if (_rumbleVoice.isPlaying && size <= _rumbleSize)
+                return; // a chain of collapses: the bigger rumble keeps going
+            _rumbleSize = size;
             _rumbleVoice.Stop();
             _rumbleVoice.pitch = Mathf.Lerp(1.2f, 0.7f, size);
             _rumbleVoice.PlayOneShot(_rumble, volume * (0.5f + 0.5f * size));

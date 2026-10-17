@@ -104,6 +104,8 @@ namespace Demolition.Levels
                     tilemap.SetTile(new Vector3Int(x, y, 0), y == top - 1 ? _theme.groundTop : _theme.groundFill);
             }
 
+            BuildBackWall(grid.transform, bottom);
+
             var body = map.AddComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Static;
             var collider = map.AddComponent<TilemapCollider2D>();
@@ -111,6 +113,25 @@ namespace Demolition.Levels
             // Solid polygons, not outline edges: anything spawned or knocked inside the
             // ground surface is pushed out instead of falling through a hollow shell.
             map.AddComponent<CompositeCollider2D>().geometryType = CompositeCollider2D.GeometryType.Polygons;
+        }
+
+        // Pits and sewer trenches cut below the street would show sky (the skyline starts at
+        // the street): a darker, collider-free wall of fill tiles closes them from behind.
+        private void BuildBackWall(Transform grid, int bottom)
+        {
+            int street = _layout.GroundAt(_layout.SpawnX);
+            var go = new GameObject("BackWall", typeof(Tilemap), typeof(TilemapRenderer));
+            go.transform.SetParent(grid, false);
+            var tilemap = go.GetComponent<Tilemap>();
+            tilemap.color = new Color(0.55f, 0.55f, 0.6f);
+            go.GetComponent<TilemapRenderer>().sortingOrder = -1;
+            for (int x = 0; x < _layout.Width; x++)
+            {
+                int top = _layout.Ground[x];
+                int from = top == LevelLayout.NoGround ? bottom : top;
+                for (int y = from; y < street; y++)
+                    tilemap.SetTile(new Vector3Int(x, y, 0), _theme.groundFill);
+            }
         }
 
         // Invisible walls before the start and after the end: nobody walks off the level.

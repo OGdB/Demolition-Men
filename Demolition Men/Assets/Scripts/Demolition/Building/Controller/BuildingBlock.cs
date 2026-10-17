@@ -203,6 +203,35 @@ namespace Demolition
             RefreshCracks(damageFrac);
         }
 
+        private static readonly Dictionary<Sprite, bool> _opaqueSprites = new Dictionary<Sprite, bool>();
+        private static readonly List<Vector2> _shapePoints = new List<Vector2>();
+
+        // Opaque = its physics outline (traced from the pixels on import) fills its rectangle.
+        private static bool IsOpaque(Sprite sprite)
+        {
+            if (sprite == null)
+                return true;
+            if (_opaqueSprites.TryGetValue(sprite, out bool opaque))
+                return opaque;
+            float area = 0f;
+            int shapes = sprite.GetPhysicsShapeCount();
+            for (int i = 0; i < shapes; i++)
+            {
+                sprite.GetPhysicsShape(i, _shapePoints);
+                float twice = 0f; // shoelace formula
+                for (int p = 0; p < _shapePoints.Count; p++)
+                {
+                    Vector2 a = _shapePoints[p], b = _shapePoints[(p + 1) % _shapePoints.Count];
+                    twice += a.x * b.y - b.x * a.y;
+                }
+                area += Mathf.Abs(twice) * 0.5f;
+            }
+            Vector2 size = sprite.bounds.size;
+            opaque = shapes == 0 || area >= size.x * size.y * 0.95f;
+            _opaqueSprites[sprite] = opaque;
+            return opaque;
+        }
+
         // Cracks on top of the darkening: stage 1..3 as health drops, never healing. A child
         // of the visual, so it leans with the sprite.
         private void RefreshCracks(float healthFraction)
@@ -213,27 +242,29 @@ namespace Demolition
             _crackStage = stage;
             if (_cracks == null)
             {
-                // Clipped to the block's own sprite by a mask on the visual, so cracks never
-                // float over transparent parts (planks, trusses, thin columns). Same sorting
-                // order as the visual, a hair closer to the camera; the mask's range covers
-                // only that order.
+                // Same sorting order as the visual, a hair closer to the camera. Sprites with
+                // see-through parts (planks, trusses, thin columns) clip the cracks with a mask
+                // on a child (one Renderer per GameObject); its range covers only that order.
                 int order = _sr.sortingOrder;
-                // On a child: a GameObject holds one Renderer, and the visual has its SpriteRenderer.
-                var maskGo = new GameObject("CrackMask");
-                maskGo.transform.SetParent(_visual, false);
-                var mask = maskGo.AddComponent<SpriteMask>();
-                mask.sprite = _sr.sprite;
-                mask.isCustomRangeActive = true;
-                mask.frontSortingLayerID = mask.backSortingLayerID = _sr.sortingLayerID;
-                mask.frontSortingOrder = order;
-                mask.backSortingOrder = order - 1;
+                bool masked = !IsOpaque(_sr.sprite);
+                if (masked)
+                {
+                    var maskGo = new GameObject("CrackMask");
+                    maskGo.transform.SetParent(_visual, false);
+                    var mask = maskGo.AddComponent<SpriteMask>();
+                    mask.sprite = _sr.sprite;
+                    mask.isCustomRangeActive = true;
+                    mask.frontSortingLayerID = mask.backSortingLayerID = _sr.sortingLayerID;
+                    mask.frontSortingOrder = order;
+                    mask.backSortingOrder = order - 1;
+                }
 
                 var go = new GameObject("Cracks");
                 go.transform.SetParent(_visual, false);
                 _cracks = go.AddComponent<SpriteRenderer>();
                 _cracks.sortingLayerID = _sr.sortingLayerID;
                 _cracks.sortingOrder = order;
-                _cracks.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
+                _cracks.maskInteraction = masked ? SpriteMaskInteraction.VisibleInsideMask : SpriteMaskInteraction.None;
                 Bounds bounds = _sr.sprite != null ? _sr.sprite.bounds : new Bounds(Vector3.zero, Vector3.one);
                 go.transform.localPosition = bounds.center + new Vector3(0f, 0f, -0.01f);
                 go.transform.localScale = new Vector3(bounds.size.x, bounds.size.y, 1f);
