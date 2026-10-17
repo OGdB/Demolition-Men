@@ -9,6 +9,7 @@ import zlib
 import numpy as np
 
 import palette
+from backdrops import backdrop
 
 # name: (size w x h, tileable axes, foreground). Shared with qa.py.
 SPRITES = {
@@ -29,6 +30,9 @@ SPRITES = {
     "window_back": ((32, 64), "x", False),
     "ground_top":  ((32, 32), "x", True),
     "ground_fill": ((32, 32), "xy", True),
+    "backdrop_far":  ((512, 192), "x", False),
+    "backdrop_mid":  ((512, 192), "x", False),
+    "backdrop_near": ((512, 192), "x", False),
 }
 
 
@@ -643,8 +647,16 @@ GENERATORS = {
     "window_back": window_back,
     "ground_top": ground_top,
     "ground_fill": ground_fill,
+    "backdrop_far": lambda t, g: backdrop(t, g, "far"),
+    "backdrop_mid": lambda t, g: backdrop(t, g, "mid"),
+    "backdrop_near": lambda t, g: backdrop(t, g, "near"),
 }
 assert GENERATORS.keys() == SPRITES.keys()
+
+
+def theme_sprites(theme):
+    """Sprites a theme builds: its "sprites" list, or all of them."""
+    return theme.get("sprites", list(SPRITES))
 
 
 def generate(theme, name):

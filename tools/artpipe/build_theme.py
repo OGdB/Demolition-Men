@@ -16,7 +16,7 @@ sys.dont_write_bytecode = True  # no __pycache__ next to the tools
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import qa  # noqa: E402
 from normalize import load_theme  # noqa: E402
-from tiles import SPRITES, generate  # noqa: E402
+from tiles import generate, theme_sprites  # noqa: E402
 
 META_TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sprite.meta.template")
 FOLDER_META = """fileFormatVersion: 2
@@ -55,7 +55,7 @@ def build(theme_name):
     ensure_folder(out)
     with open(META_TEMPLATE, encoding="utf-8") as f:
         template = f.read()
-    for sprite in SPRITES:
+    for sprite in theme_sprites(theme):
         png = os.path.join(out, sprite + ".png")
         Image.fromarray(generate(theme, sprite), "RGBA").save(png)
         guid = write_meta(png + ".meta", template)

@@ -42,7 +42,8 @@ KINDS = [
 ]
 SORTING = {"Glass": 1}  # the window back draws one below the pane
 # Parallax backdrop layers, far to near: (file, parallax, bottom above the street in units).
-BACKDROP = [("backdrop_far", 0.9, 1.5), ("backdrop_mid", 0.75, 0.5), ("backdrop_near", 0.55, -0.5)]
+BACKDROP = [("backdrop_far", 0.9, -0.5), ("backdrop_mid", 0.75, -0.5), ("backdrop_near", 0.55, -0.5)]
+# All start at the street line: a far layer raised above a nearer one would show sky under it.
 
 HEADER = "%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!114 &11400000\nMonoBehaviour:\n" \
          "  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n  m_PrefabInstance: {fileID: 0}\n" \

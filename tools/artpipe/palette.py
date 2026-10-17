@@ -26,6 +26,12 @@ RAMPS = {
     # Night materials.
     "night":      [(24, 18, 40), (44, 34, 70), (68, 56, 104), (102, 88, 144)],
     "nightglass": [(14, 18, 46), (28, 42, 90), (52, 80, 146)],
+    # Backdrop haze, one per sky: no outlines, and the farther a parallax layer, the
+    # higher its steps (closer to the sky colour, lower contrast). Night haze also goes
+    # lighter with distance (city glow).
+    "haze_town":  [(52, 78, 116), (68, 100, 144), (86, 124, 170), (104, 148, 196), (120, 170, 218)],
+    "haze_port":  [(66, 90, 104), (88, 114, 128), (110, 140, 152), (132, 164, 176), (150, 186, 196)],
+    "haze_neon":  [(12, 8, 26), (26, 18, 48), (36, 27, 66), (48, 37, 86), (62, 50, 108)],
 }
 
 MASTER = [c for ramp in RAMPS.values() for c in ramp]

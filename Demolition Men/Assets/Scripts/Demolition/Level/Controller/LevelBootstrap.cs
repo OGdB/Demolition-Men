@@ -65,8 +65,14 @@ namespace Demolition.Levels
             float x = Mathf.Max(spawn.x + size * 0.6f, size * cam.aspect - 0.5f); // no void left of the level
             go.transform.position = new Vector3(x, ground - GroundShown + size, -10f);
             cam.backgroundColor = theme.sky;
+            // The sky sprites riding on the camera: tinted for the shared backdrop, hidden when
+            // the theme brings its own layers (painted against its flat sky colour).
+            bool ownBackdrop = theme.backdrop != null && theme.backdrop.Length > 0;
             foreach (SpriteRenderer sr in go.GetComponentsInChildren<SpriteRenderer>())
-                sr.color *= theme.backdropTint; // the sky sprites riding on the camera
+            {
+                sr.enabled = !ownBackdrop;
+                sr.color *= theme.backdropTint;
+            }
             var scroll = go.GetComponent<ScrollCamera>();
             if (scroll != null)
             {

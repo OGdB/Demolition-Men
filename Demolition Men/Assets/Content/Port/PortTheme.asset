@@ -28,4 +28,14 @@ MonoBehaviour:
   - {fileID: 4900000, guid: 6ffdf3e70fa84b13b0af555ed5ab6e19, type: 3}
   sky: {r: 0.66, g: 0.8, b: 0.84, a: 1}
   backdropTint: {r: 0.82, g: 0.9, b: 0.92, a: 1}
+  backdrop:
+  - sprite: {fileID: 21300000, guid: b2543d18bdb845f2a409470eebe7a142, type: 3}
+    parallax: 0.9
+    bottom: -0.5
+  - sprite: {fileID: 21300000, guid: 7dac6b143a5f4f9fa39bb2712a69801a, type: 3}
+    parallax: 0.75
+    bottom: -0.5
+  - sprite: {fileID: 21300000, guid: 917a3c42f18845c89679702e20c93c27, type: 3}
+    parallax: 0.55
+    bottom: -0.5
   music: {fileID: 8300000, guid: 828023a63bc96a54287b6c5834991490, type: 3}

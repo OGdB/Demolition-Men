@@ -1,0 +1,13 @@
+{
+  "name": "Town",
+  "pitch": "Suburbs by day. Building tiles come from the hand-drawn object set; the pipeline only makes the backdrops.",
+  "seed": 6303,
+  "ramps": ["haze_town"],
+  "accents": [],
+  "sky": [0.53, 0.75, 0.92],
+  "backdrop_tint": [1, 1, 1],
+  "sprites": ["backdrop_far", "backdrop_mid", "backdrop_near"],
+  "materials": {
+    "backdrop": {"style": "town", "ramp": "haze_town"}
+  }
+}

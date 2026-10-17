@@ -9,8 +9,9 @@ python tools/artpipe/normalize.py in.png out.png --theme Port --size 32x32 --out
 python tools/artpipe/palette.py              # print the master palette
 ```
 
-- `palette.py`: master palette (49 colours, 13 ramps, dark to light). Step 0 is the outline/mortar colour. Light comes from the top-left.
+- `palette.py`: master palette (64 colours, 16 ramps, including one backdrop haze ramp per sky, dark to light). Step 0 is the outline/mortar colour. Light comes from the top-left.
 - `themes/<theme>.json`: the style. It lists the ramps the theme may use (`ramps` + `accents`), the seed, the sky and backdrop tint suggestions, and per-material ramp and style choices.
+- `backdrops.py`: three parallax layers per theme (`backdrop_far/mid/near.png`, 512x192). They are seamless left/right silhouettes in the theme's haze ramp, with no outline; farther layers sit lighter and closer to the sky. A theme JSON can limit what it builds with `sprites` (Town only builds the backdrops; its tiles stay hand-drawn).
 - `tiles.py`: one generator per sprite, plus `SPRITES` (size, tile axes, foreground). The same seed always gives the same pixels. Tileable sprites draw with wrap-around, and their joints sit away from the tile edge.
 - `build_theme.py`: writes `Demolition Men/Assets/Content/<Theme>/Sprites/*.png`. It adds a `.meta` (from `sprite.meta.template`: single sprite, 32 PPU, point filter, no compression) and folder metas only where none exist, so GUIDs survive regeneration.
 - `qa.py` checks:
