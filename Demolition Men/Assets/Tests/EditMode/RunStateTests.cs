@@ -164,5 +164,40 @@ namespace Demolition.Tests
 
             Assert.AreEqual(PlayerStatus.Alive, state.Status(0));
         }
+
+        [Test]
+        public void Client_MirrorsTheHostsSnapshots_WithTheSameEvents()
+        {
+            var host = Playing(2);
+            var client = new RunState(2, RunRules.Default);
+            var clientEvents = new System.Collections.Generic.List<string>();
+            client.PhaseChanged += p => clientEvents.Add("phase " + p);
+            client.PlayerOut += (p, rejoin) => clientEvents.Add($"out {p} {rejoin}");
+            client.PlayerRejoined += p => clientEvents.Add("rejoin " + p);
+
+            client.ApplySnapshot(host.Snapshot());
+            Assert.AreEqual(RunPhase.Playing, client.Phase);
+
+            host.ReportDepleted(1); // free respawn: rejoining
+            client.ApplySnapshot(host.Snapshot());
+            Step(host, RunRules.Default.rejoinDelay + 0.2f);
+            client.ApplySnapshot(host.Snapshot());
+            host.ReportDepleted(1); // second time: out for good
+            client.ApplySnapshot(host.Snapshot());
+            host.ReportDepleted(0); // nobody left: failed
+            client.ApplySnapshot(host.Snapshot());
+
+            CollectionAssert.AreEqual(new[] { "phase Playing", "out 1 True", "rejoin 1", "out 1 False", "out 0 True", "phase Failed" }, clientEvents);
+            Assert.AreEqual(host.Elapsed, client.Elapsed);
+            for (int i = 0; i < 2; i++)
+            {
+                Assert.AreEqual(host.Status(i), client.Status(i));
+                Assert.AreEqual(host.HasFreeRespawn(i), client.HasFreeRespawn(i));
+            }
+
+            var score = new RunScore(2);
+            score.Restore(new[] { 120, 45 }, 7);
+            Assert.AreEqual(172, score.Total);
+        }
     }
 }

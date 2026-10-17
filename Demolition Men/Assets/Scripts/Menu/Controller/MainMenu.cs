@@ -1,5 +1,7 @@
-﻿using Demolition.Levels;
+﻿using Demolition;
+using Demolition.Levels;
 using Demolition.Meta;
+using Demolition.Online;
 using Demolition.Run;
 using UnityEngine;
 
@@ -23,10 +25,21 @@ public class MainMenu : MonoBehaviour
 
     private void Start()
     {
+        // Online between runs: the host picks the next level, the client waits for it.
+        if (NetRole.IsOnline)
+        {
+            _title.ShowRisen();
+            if (NetRole.IsHost)
+                LevelSelectView.Open(LeaveOnline);
+            else
+                OnlineView.OpenWaiting(LeaveOnline);
+            return;
+        }
         if (LevelSelection.ReturnToLevelSelect && Session.PlayerCount > 0)
         {
             _title.ShowRisen();
             LevelSelectView.Open(OpenLobby);
+            ShowEndedSession();
             return;
         }
         Session.Clear();
@@ -34,6 +47,31 @@ public class MainMenu : MonoBehaviour
     }
 
     private void OpenLobby() => _join.Open(AskQuit);
+
+    private void LeaveOnline()
+    {
+        OnlineSession.Leave();
+        OpenLobby();
+    }
+
+    // An online session that ended mid-run brought this device back here: say why.
+    private static void ShowEndedSession()
+    {
+        string reason = OnlineSession.TakeEndReason();
+        if (reason != null)
+            NoticeView.Show("ONLINE GAME OVER", reason);
+    }
+
+    private void OnEnable() => OnlineSession.Ended += OnSessionEnded;
+
+    private void OnDisable() => OnlineSession.Ended -= OnSessionEnded;
+
+    // The host in the level select when the client leaves: tell it (the client's own view shows it).
+    private void OnSessionEnded(string reason)
+    {
+        if (!OnlineView.IsOpen)
+            NoticeView.Show("ONLINE GAME OVER", OnlineSession.TakeEndReason() ?? reason);
+    }
 
     private static void AskQuit() => QuitView.Open(Quit);
 

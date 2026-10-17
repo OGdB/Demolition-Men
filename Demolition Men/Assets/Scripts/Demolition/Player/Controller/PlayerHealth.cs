@@ -45,8 +45,23 @@ namespace Demolition
         {
             IsProxy = true;
             SetInPlay(!IsDead);
+            var input = GetComponent<PlayerInputReader>();
+            if (input != null)
+                input.enabled = false;
             if (_rb != null)
                 _rb.bodyType = RigidbodyType2D.Kinematic; // local debris still bounces off it
+        }
+
+        /// <summary>A proxy's health, as its owner reports it. Reaching 0 raises <see cref="Depleted"/>
+        /// on the host, whose run decides what happens.</summary>
+        public void SetProxyHealth(float health)
+        {
+            if (!IsProxy || IsDead)
+                return;
+            bool wasAlive = Current > 0f;
+            Current = Mathf.Clamp(health, 0f, maxHealth);
+            if (wasAlive && Current <= 0f && ManagedByRun)
+                Depleted?.Invoke(this);
         }
 
         private Rigidbody2D _rb;

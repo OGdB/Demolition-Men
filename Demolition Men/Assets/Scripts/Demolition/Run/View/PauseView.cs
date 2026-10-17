@@ -52,9 +52,10 @@ namespace Demolition.Run
 
             var size = new Vector2(480f, 96f);
             _resume = UiFactory.Button(root, "RESUME", centre, new Vector2(0f, 120f), size, () => _pause.SetPaused(false));
-            UiFactory.Button(root, "RESTART", centre, new Vector2(0f, 0f), size, _run.Retry);
+            // Online only the host restarts (for both); the client's MENU leaves the session.
+            UiFactory.Button(root, "RESTART", centre, new Vector2(0f, 0f), size, _run.Retry).interactable = !NetRole.IsClient;
             UiFactory.Button(root, "SETTINGS", centre, new Vector2(0f, -120f), size, () => SettingsView.Open(transform));
-            UiFactory.Button(root, "MENU", centre, new Vector2(0f, -240f), size, _run.QuitToMenu);
+            UiFactory.Button(root, NetRole.IsClient ? "LEAVE" : "MENU", centre, new Vector2(0f, -240f), size, _run.QuitToMenu);
         }
     }
 }

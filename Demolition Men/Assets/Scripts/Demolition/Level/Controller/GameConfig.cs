@@ -35,6 +35,12 @@ namespace Demolition.Levels
         public GameObject runPrefab;
         public Pickup pickupPrefab;
 
+        [Header("Online")]
+        [Tooltip("The co-op relay (server/relay). ws://localhost:5080/ws for one run with dotnet run.")]
+        public string relayUrl = "wss://relay.oeds.space/ws";
+        [Tooltip("Player_1 and Player_2 with NetworkObject, NetworkTransform and NetPlayer: Tools ▸ Demolition ▸ Online ▸ Build Network Prefabs.")]
+        public GameObject[] netPlayerPrefabs = new GameObject[0];
+
         [Header("Campaign")]
         public LevelTheme[] themes = new LevelTheme[0];
 

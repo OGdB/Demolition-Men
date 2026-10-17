@@ -3,6 +3,7 @@ using System.Collections;
 using Demolition;
 using Demolition.Levels;
 using Demolition.Meta;
+using Demolition.Online;
 using Demolition.Run;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -39,7 +40,7 @@ public class JoinScreen : MonoBehaviour
             Session.Join(Touchscreen.current);
         _open = true;
         _openedFrame = Time.frameCount;
-        _view.Show(true, Continue);
+        _view.Show(true, Continue, GoOnline);
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
     }
@@ -89,6 +90,13 @@ public class JoinScreen : MonoBehaviour
             return;
         }
         StartCoroutine(Close(() => LevelSelectView.Open(() => Open(_back))));
+    }
+
+    private void GoOnline()
+    {
+        if (_open && Session.PlayerCount == 1)
+            StartCoroutine(Close(() => OnlineView.Open(() => Open(_back),
+                () => LevelSelectView.Open(() => { OnlineSession.Leave(); Open(_back); }))));
     }
 
     // Switch panels a frame later, so the press that closed the lobby doesn't also

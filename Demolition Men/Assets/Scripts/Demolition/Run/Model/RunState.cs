@@ -6,6 +6,20 @@ namespace Demolition.Run
 
     public enum PlayerStatus { Alive, Rejoining, Out }
 
+    /// <summary>The host's run state as an online client takes it (docs/multiplayer.md §2).</summary>
+    public struct RunSnapshot
+    {
+        public RunPhase Phase;
+        public float Countdown;
+        public float Elapsed;
+        public float LastCall;
+        public PlayerStatus[] Status;
+        public float[] OutOfBounds;
+        public float[] Rejoin;
+        public bool[] Crossed;
+        public bool[] FreeRespawnUsed;
+    }
+
     [Serializable]
     public struct RunRules
     {
@@ -92,6 +106,52 @@ namespace Demolition.Run
         }
 
         public void SetInBounds(int player, bool inBounds) => _slots[player].InBounds = inBounds;
+
+        /// <summary>Host: the state an online client mirrors.</summary>
+        public RunSnapshot Snapshot()
+        {
+            int n = _slots.Length;
+            var s = new RunSnapshot
+            {
+                Phase = Phase, Countdown = Countdown, Elapsed = Elapsed, LastCall = LastCallRemaining,
+                Status = new PlayerStatus[n], OutOfBounds = new float[n], Rejoin = new float[n],
+                Crossed = new bool[n], FreeRespawnUsed = new bool[n],
+            };
+            for (int i = 0; i < n; i++)
+            {
+                s.Status[i] = _slots[i].Status;
+                s.OutOfBounds[i] = _slots[i].OutOfBounds;
+                s.Rejoin[i] = _slots[i].Rejoin;
+                s.Crossed[i] = _slots[i].Crossed;
+                s.FreeRespawnUsed[i] = _slots[i].FreeRespawnUsed;
+            }
+            return s;
+        }
+
+        /// <summary>Online client: take the host's state instead of ticking the rules, raising
+        /// the same events the host's run raised (players first, then the phase).</summary>
+        public void ApplySnapshot(RunSnapshot s)
+        {
+            Countdown = s.Countdown;
+            Elapsed = s.Elapsed;
+            LastCallRemaining = s.LastCall;
+            for (int i = 0; i < _slots.Length && i < s.Status.Length; i++)
+            {
+                Slot slot = _slots[i];
+                PlayerStatus was = slot.Status;
+                slot.Status = s.Status[i];
+                slot.OutOfBounds = s.OutOfBounds[i];
+                slot.Rejoin = s.Rejoin[i];
+                slot.Crossed = s.Crossed[i];
+                slot.FreeRespawnUsed = s.FreeRespawnUsed[i];
+                if (was == PlayerStatus.Alive && slot.Status != PlayerStatus.Alive)
+                    PlayerOut?.Invoke(i, slot.Status == PlayerStatus.Rejoining);
+                else if (was != PlayerStatus.Alive && slot.Status == PlayerStatus.Alive)
+                    PlayerRejoined?.Invoke(i);
+            }
+            if (s.Phase != Phase)
+                SetPhase(s.Phase);
+        }
 
         public void Tick(float dt)
         {

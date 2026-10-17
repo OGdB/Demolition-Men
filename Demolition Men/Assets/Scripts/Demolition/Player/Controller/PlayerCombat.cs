@@ -280,9 +280,28 @@ namespace Demolition
                 dynamite = go.AddComponent<Dynamite>();
             dynamite.Init(this, GetComponents<Collider2D>());
 
+            var force = new Vector2(throwForce * facing, throwForce / 3f);
             var rb = go.GetComponent<Rigidbody2D>();
             if (rb != null)
-                rb.AddForce(new Vector2(throwForce * facing, throwForce / 3f));
+                rb.AddForce(force);
+            NetRole.DynamiteThrown?.Invoke(dynamite, force);
+        }
+
+        /// <summary>Online: fly a harmless copy of the other device's stick (<see cref="Dynamite.Cosmetic"/>).</summary>
+        public Dynamite ThrowCosmeticDynamite(Vector3 position, Vector2 force)
+        {
+            GameObject go = dynamitePrefab != null
+                ? Instantiate(dynamitePrefab, position, Quaternion.identity)
+                : Dynamite.CreatePrimitive(position);
+            var dynamite = go.GetComponent<Dynamite>();
+            if (dynamite == null)
+                dynamite = go.AddComponent<Dynamite>();
+            dynamite.Cosmetic = true;
+            dynamite.Init(null, GetComponents<Collider2D>());
+            var rb = go.GetComponent<Rigidbody2D>();
+            if (rb != null)
+                rb.AddForce(force);
+            return dynamite;
         }
 
         /// <summary>Called by the thrown dynamite once it has finished exploding.</summary>

@@ -36,14 +36,24 @@ namespace Demolition.Levels
 
         public static void PlayDaily(DateTime date)
         {
+            SelectDaily(date);
+            Load(GameConfig.Instance);
+        }
+
+        /// <summary>The daily of this date, without loading it (an online client follows the host's choice).</summary>
+        public static void SelectDaily(DateTime date)
+        {
             GameConfig config = GameConfig.Instance;
             CampaignLevel template = DailyTemplate(config, date);
             CampaignIndex = -1;
+            DailyDate = date.Date;
             Spec = template.Spec.WithSeed(Daily.Seed(date), Daily.Id(date));
             Spec.name = "DAILY " + date.ToString("yyyy-MM-dd");
             Theme = template.Theme;
-            Load(config);
         }
+
+        /// <summary>The date of the selected daily.</summary>
+        public static DateTime DailyDate { get; private set; }
 
         /// <summary>The campaign level after the current one, or null at the end (or in the daily).</summary>
         public static Action NextAction()

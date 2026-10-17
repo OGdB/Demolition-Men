@@ -63,6 +63,14 @@ namespace Demolition.Run
             return points;
         }
 
+        /// <summary>Online client: take the host's points.</summary>
+        public void Restore(int[] points, int unattributed)
+        {
+            for (int i = 0; i < _points.Length && i < points.Length; i++)
+                _points[i] = points[i];
+            Unattributed = unattributed;
+        }
+
         public void ApplyPenalty(int player, int amount)
         {
             if (IsPlayer(player))

@@ -179,6 +179,16 @@ namespace Demolition.Run
         {
             var centre = new Vector2(0.5f, 0.5f);
             var size = new Vector2(280f, 90f);
+            if (NetRole.IsClient)
+            {
+                // Online the host picks NEXT / RETRY / MENU and this device follows; MENU here leaves.
+                TextMeshProUGUI waiting = UiFactory.Text(_content, "HostPicks", centre, new Vector2(-330f, -350f), 34f,
+                    TextAlignmentOptions.Center, new Vector2(560f, 90f), outlined: true);
+                waiting.text = "THE HOST PICKS\nWHAT'S NEXT";
+                _first = UiFactory.Button(_content, "SHOP", centre, new Vector2(160f, -350f), size, () => ShopView.Open(transform, ShowCash));
+                UiFactory.Button(_content, "LEAVE", centre, new Vector2(470f, -350f), size, () => Leave(_run.QuitToMenu));
+                return;
+            }
             bool next = finished && _run.HasNextLevel;
             float x = next ? -465f : -310f;
             Button first = null;

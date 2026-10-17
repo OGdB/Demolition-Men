@@ -65,10 +65,15 @@ namespace Demolition.Run
         {
             get
             {
+                if (NetRole.IsClient && NetFraction >= 0f)
+                    return NetFraction; // the host's count: it has every building's latest state
                 int total = Mathf.Max(_totalCells, _plannedCells);
                 return total == 0 ? 0f : Mathf.Clamp01((float)_removedCells / total);
             }
         }
+
+        /// <summary>Online client: the host's <see cref="DestroyedFraction"/>, -1 until it arrives.</summary>
+        public float NetFraction { get; set; } = -1f;
 
         public string LevelId => string.IsNullOrEmpty(levelId) ? SceneManager.GetActiveScene().name : levelId;
 
@@ -148,7 +153,8 @@ namespace Demolition.Run
 
         private void FindPlayers()
         {
-            int wanted = Session.PlayerCount > 0 ? Session.PlayerCount : PlayerNames.Length;
+            // Online each device has one local player, and both players are in the run.
+            int wanted = NetRole.IsOnline ? PlayerNames.Length : Session.PlayerCount > 0 ? Session.PlayerCount : PlayerNames.Length;
             for (int i = 0; i < PlayerNames.Length; i++)
             {
                 GameObject go = GameObject.Find(PlayerNames[i]);
@@ -171,7 +177,8 @@ namespace Demolition.Run
                 var input = go.GetComponent<PlayerInputReader>();
                 player.Input = input;
                 input.PlayerIndex = player.Index;
-                input.AssignDevice(Session.DeviceFor(player.Index));
+                input.AssignDevice(!NetRole.IsOnline ? Session.DeviceFor(player.Index)
+                    : player.Index == NetRole.LocalPlayer ? Session.DeviceFor(0) : null);
                 player.Health.ManagedByRun = true;
                 player.Health.Depleted += OnDepleted;
                 PlayerUpgrades.Apply(player, Profile.Data);
@@ -239,6 +246,8 @@ namespace Demolition.Run
 
         public void QuitToMenu()
         {
+            if (NetRole.IsClient)
+                NetRole.Leave?.Invoke(); // the host keeps choosing for the session; this device leaves it
             LevelSelection.ReturnToLevelSelect = true;
             LoadScene(menuScene);
         }
@@ -255,6 +264,8 @@ namespace Demolition.Run
         {
             Time.timeScale = 1f;
             AudioListener.pause = false;
+            if (NetRole.LoadScene != null && NetRole.LoadScene(scene))
+                return; // online host: both devices load it
             SceneManager.LoadScene(scene);
         }
 

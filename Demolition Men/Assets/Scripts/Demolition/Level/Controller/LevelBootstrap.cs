@@ -1,3 +1,4 @@
+using System.Collections;
 using Demolition.Meta;
 using Demolition.Run;
 using UnityEngine;
@@ -49,12 +50,29 @@ namespace Demolition.Levels
             level.Build(layout, theme, config.pickupPrefab, players > 1 || NetRole.IsOnline);
             if (scroll != null)
                 scroll.LowestGround = level.LowestGroundBetween; // show trench floors before the drop
+            NetRole.LevelBuilt?.Invoke(layout);
 
+            // Online the players arrive over the network; the run finds them by name when it wakes.
+            if (NetRole.IsOnline)
+                StartCoroutine(StartRunWhenPlayersExist(config, spec, layout));
+            else
+                StartRun(config, spec, layout);
+
+            SpawnMusic(theme);
+        }
+
+        private static void StartRun(GameConfig config, LevelSpec spec, LevelLayout layout)
+        {
             var run = Instantiate(config.runPrefab).GetComponent<RunController>();
             run.name = "Run";
             run.Configure(spec.id, layout.Par, layout.TotalCells, LevelSelection.NextAction());
+        }
 
-            SpawnMusic(theme);
+        private static IEnumerator StartRunWhenPlayersExist(GameConfig config, LevelSpec spec, LevelLayout layout)
+        {
+            while (GameObject.Find("Player_1") == null || GameObject.Find("Player_2") == null)
+                yield return null;
+            StartRun(config, spec, layout);
         }
 
         private static ScrollCamera SpawnCamera(GameConfig config, LevelTheme theme, LevelSpec spec, Vector3 spawn, float ground)

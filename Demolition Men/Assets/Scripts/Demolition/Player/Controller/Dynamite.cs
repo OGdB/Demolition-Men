@@ -37,8 +37,15 @@ namespace Demolition
         public static event System.Action<Vector3> Exploded;
 
         /// <summary>Online, a copy flown for the other device's player: it looks and sounds the
-        /// same but damages nothing (the thrower's device sends the damage).</summary>
+        /// same but damages nothing (the thrower's device sends the damage), and goes off when
+        /// the thrower's stick does (<see cref="ExplodeAt"/>), not on its own fuse.</summary>
         public bool Cosmetic { get; set; }
+
+        public void ExplodeAt(Vector3 position)
+        {
+            transform.position = position;
+            Explode();
+        }
 
         public void Init(PlayerCombat owner, Collider2D[] ignoreColliders)
         {
@@ -64,13 +71,19 @@ namespace Demolition
             if (_exploded)
                 return;
             _fuse -= Time.fixedDeltaTime;
+            if (Cosmetic)
+            {
+                if (_fuse < -2f * fuseTime)
+                    Destroy(gameObject); // its thrower's Exploded never came (they left)
+                return;
+            }
             if (_fuse <= 0f)
                 Explode();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (explodeOnContact && !_exploded && other.GetComponentInParent<BuildingBlock>() != null)
+            if (explodeOnContact && !_exploded && !Cosmetic && other.GetComponentInParent<BuildingBlock>() != null)
                 Explode();
         }
 
@@ -86,6 +99,8 @@ namespace Demolition
             if (_audio != null)
                 _audio.Play();
             Exploded?.Invoke(transform.position);
+            if (!Cosmetic)
+                NetRole.DynamiteExploded?.Invoke(this);
 
             var damaged = new HashSet<BuildingBlock>();
             if (!Cosmetic)

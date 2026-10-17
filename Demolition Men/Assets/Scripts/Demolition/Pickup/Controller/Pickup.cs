@@ -91,8 +91,27 @@ namespace Demolition
             }
             if (!TryApply(combat))
                 return;
+            if (NetRole.IsHost)
+                NetRole.PickupTaken?.Invoke(this, combat.PlayerIndex);
+            Remove(combat);
+        }
+
+        /// <summary>Online: the host granted this pickup to <paramref name="collector"/>. Its
+        /// effect applies on the collector's own device; a Resurrect was already decided by the host.</summary>
+        public void Take(PlayerCombat collector, bool local)
+        {
+            if (_collected)
+                return;
+            if (local && collector != null && kind != PickupKind.Resurrect)
+                TryApply(collector);
+            Remove(collector);
+        }
+
+        private void Remove(PlayerCombat collector)
+        {
             _collected = true;
-            Collected?.Invoke(combat, kind, amount);
+            if (collector != null)
+                Collected?.Invoke(collector, kind, amount);
             Particles.Burst(transform.position, new Color(1f, 0.9f, 0.4f), 14, 4f, 0.12f, 0.5f);
             Destroy(gameObject);
         }

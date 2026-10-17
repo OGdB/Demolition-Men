@@ -119,9 +119,12 @@ namespace Demolition.Meta
             UiFactory.Button(root, "SETTINGS", centre, new Vector2(350f, row), size, () => SettingsView.Open(transform));
             UiFactory.Button(root, "BACK", centre, new Vector2(700f, row), size, Close);
 
+            if (NetRole.IsOnline)
+                training.gameObject.SetActive(false); // training is local only
+
             Refresh();
             if (_first == null)
-                _first = training;
+                _first = NetRole.IsOnline ? daily : training;
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(_first.gameObject);
         }

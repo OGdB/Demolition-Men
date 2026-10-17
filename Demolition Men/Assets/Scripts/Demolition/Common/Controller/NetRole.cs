@@ -1,4 +1,5 @@
 using System;
+using Demolition.Levels;
 using UnityEngine;
 
 namespace Demolition
@@ -17,6 +18,27 @@ namespace Demolition
         public static bool IsOnline => Mode != NetMode.Offline;
         public static bool IsHost => Mode == NetMode.Host;
         public static bool IsClient => Mode == NetMode.Client;
+
+        /// <summary>Index of this device's player online (host 0, client 1); -1 offline.</summary>
+        public static int LocalPlayer => Mode == NetMode.Host ? 0 : Mode == NetMode.Client ? 1 : -1;
+
+        /// <summary>Host: load a scene on both devices. True if it took the load over.</summary>
+        public static Func<string, bool> LoadScene;
+
+        /// <summary>Client: leave the session (MENU on the results screen).</summary>
+        public static Action Leave;
+
+        /// <summary>Both: the run scene generated its level (hash check, then the run's sync starts).</summary>
+        public static Action<LevelLayout> LevelBuilt;
+
+        /// <summary>Host: a player collected a pickup here; tell the client it's gone.</summary>
+        public static Action<Pickup, int> PickupTaken;
+
+        /// <summary>This device's player threw a stick (with this force); the other device flies a copy.</summary>
+        public static Action<Dynamite, Vector2> DynamiteThrown;
+
+        /// <summary>This device's stick went off.</summary>
+        public static Action<Dynamite> DynamiteExploded;
 
         /// <summary>Client: its player hit a standing block for this much; send a DamageRequest
         /// instead of applying it (the instigator is the sender's connection).</summary>

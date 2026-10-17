@@ -103,9 +103,43 @@ namespace Demolition
 
         /// <summary>Index in <c>LevelLayout.Buildings</c> (set by <c>LevelBuilder</c>), -1 for a
         /// hand-made building. Online messages address buildings by it.</summary>
-        public int NetIndex { get; set; } = -1;
+        public int NetIndex
+        {
+            get => _netIndex;
+            set
+            {
+                _netIndex = value;
+                if (value >= 0)
+                    _byNetIndex[value] = this;
+            }
+        }
+
+        private int _netIndex = -1;
+        private static readonly Dictionary<int, DestructibleBuilding> _byNetIndex = new Dictionary<int, DestructibleBuilding>();
+
+        /// <summary>A building of the current level that is loaded on this device.</summary>
+        public static bool TryGetByNetIndex(int index, out DestructibleBuilding building) =>
+            _byNetIndex.TryGetValue(index, out building) && building != null;
+
+        public static IEnumerable<DestructibleBuilding> Loaded => _byNetIndex.Values;
 
         public bool TryGetBlock(Vector2Int cell, out BuildingBlock block) => _blocks.TryGetValue(cell, out block);
+
+        /// <summary>Order-free hash of the standing cells: online, both devices compare it
+        /// to catch a desync (docs/multiplayer.md §3).</summary>
+        public int StandingHash()
+        {
+            int hash = 0;
+            foreach (Vector2Int cell in _structure.Cells)
+                hash += (cell.x * 73856093) ^ (cell.y * 19349663);
+            return hash;
+        }
+
+        private void OnDestroy()
+        {
+            if (_netIndex >= 0 && _byNetIndex.TryGetValue(_netIndex, out DestructibleBuilding registered) && registered == this)
+                _byNetIndex.Remove(_netIndex);
+        }
 
         /// <summary>Detached blocks burst into dust instead of falling (gates that must
         /// clear the street, not pile up in it).</summary>

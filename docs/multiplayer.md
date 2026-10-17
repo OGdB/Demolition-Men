@@ -1,9 +1,11 @@
 # Online co-op plan
 
-**Status (2026-10-17):** O1 (seams) is in: `NetRole`, `NetPacking` and the §5 guards, with
-offline play unchanged. The relay (§8) is written and tested in `server/relay/`, with a
-deploy script for the VPS; it has not been deployed yet. Nothing in the game connects yet.
-Online stays post-v1 (roadmap D4).
+**Status (2026-10-17):** O1 (seams) is in. The relay (§8) runs on the VPS at
+`wss://relay.oeds.space/ws`. O2 code is in: NGO 2.13.3, NativeWebSocket and Multiplayer Play
+Mode installed, `RelayTransport`, `OnlineSession`, `NetPlayer`, `RunNet`, `OnlineView`. It
+compiles against the real packages, but it has not run in the editor yet: O2's "done when"
+(§7) is still open. What was built differs from the first plan where §2, §3, §5 and §6 say
+"as built". Online stays post-v1 (roadmap D4).
 
 Two players on two devices play one run together: PC, phone or a browser (WebGL), in any
 mix. This doc picks the topology, says exactly what crosses the wire and who decides what,
@@ -69,9 +71,9 @@ Two rules:
 | Overload crumble | host | `CellHealth`, like any other damage |
 | Pickups | host | client asks (`Claim`), host grants first come (`Taken`) |
 | Dynamite flight | owner | `Thrown {pos, vel}` and `Exploded {pos}`; the other device flies a cosmetic copy |
-| Run phase, countdown, timers | host | phase byte + the server tick it started on; timers come from NGO's shared clock |
-| Score, multiplier, grade | host | `NetworkVariable`s, sent on change; final result in one message |
-| Out of bounds, rejoin, resurrect | host | `RunState` on the host; a command to the owner (`Kill`, `Revive(pos)`) |
+| Run phase, countdown, timers | host | `State` snapshot, 10 per second (as built: no tick-stamped phase) |
+| Score, multiplier, grade | host | points per player in the `State` snapshot; the client grades its own copy of the score and banks it |
+| Out of bounds, rejoin, resurrect | host | `RunState` on the host; its snapshot replays the same `PlayerOut` / `PlayerRejoined` events in the client's `RunController`, which kills and revives as offline (as built: no `Kill` / `Revive` commands) |
 | Cash, records, unlocks | each player's own profile | each device banks the host's final result into its own `profile.json` |
 
 ## 3. What crosses the wire
@@ -80,8 +82,8 @@ Two rules:
 
 1. **Send decisions, not simulation.** Cell health and events, never block transforms,
    debris or rubble. Everything the models can derive is derived on each device.
-2. **Few NetworkObjects.** One per player and one `RunNet` per run. Never one per building,
-   block, pickup or stick of dynamite. NGO checks every spawned object for changes each
+2. **Few NetworkObjects.** One per player. `RunNet` uses named messages only, so it is not a
+   NetworkObject at all (as built). Never one per building, block, pickup or stick of dynamite. NGO checks every spawned object for changes each
    tick, so this saves CPU as well as spawn messages.
 3. **Change-only.** `NetworkVariable`s send only when they change. Nothing is polled.
 4. **One batch per tick.** The host gathers every cell that changed during a tick and sends
@@ -109,14 +111,19 @@ Two rules:
 | `CellHealth` batch | host → client | per cell: building, cell, health 7 bits + instigator 1 bit ≈ 4 B | once per tick, only if something changed |
 | `Claim` / `Taken` | client → host / host → all | pickup index (+ player) | per pickup |
 | `Thrown` / `Exploded` | owner → others | position (+ velocity) | per stick of dynamite |
-| Phase | host → client | phase byte + start tick | ≈ 5 per run |
-| Score | host → client | points per player, multiplier | on change |
-| `Kill` / `Revive` | host → owner | position | rare |
-| Start, results | host → client | level, seed, hash / final score, grade, time | once per run |
-| Desync check (dev builds) | host → client | hash of the standing cells | every 5 s and at the finish |
+| `Ready` | client → host | nothing | once per run, when the client's Run scene is up |
+| `State` | host → client | layout hash, phase, countdown, elapsed, last call, destroyed fraction, per player status bits + timers + points, unattributed points ≈ 40 B | 10 per second |
+| Start | host → client | campaign level index or daily date | once per run, before NGO loads the scene |
+| `Check` (dev builds) | host → client | hash of the standing cells per loaded building | every 5 s |
 
 A punch that breaks a wall costs about 10 bytes. A dynamite blast that damages 15 blocks
-costs about 60 bytes, once. The steady cost is the two player transforms.
+costs about 60 bytes, once. The steady cost is the two player transforms and the `State`
+snapshot (about 400 B/s; as built it replaces the phase, score and command messages, so a
+lost or late message never leaves the client's run in the wrong phase).
+
+As built, the named messages are `DM.Ready`, `DM.Cells`, `DM.Damage`, `DM.Claim`, `DM.Taken`,
+`DM.Thrown`, `DM.Blast`, `DM.State`, `DM.Check`, all sent reliable and sequenced. The host
+caps a client's `DM.Damage` at 1000 per hit and always credits it to player 2.
 
 ### Budget
 
@@ -170,18 +177,28 @@ the client skips the validators.
     delivery mode becomes reliable and ordered (TCP). shortcut: unreliable sends are never
     dropped when the connection backs up; add that if the remote player lags on bad links.
     The relay closes a paired room after 60 s without binary data (WebSocket pings don't
-    count), so the transport sends an empty binary message about every 20 s and ignores
-    empty ones it receives. The protocol and close codes are in `server/relay/README.md`.
-    Look at the community WebSocket transport for NGO (OpenUPM
-    `com.community.netcode.transport.websocket`) before writing it from scratch.
+    count). As built, every binary message starts with a kind byte (data, ping, pong, drop):
+    a ping every second measures the round trip for NGO and keeps the room open, and drop
+    is how the host kicks the client. Relay text messages start with a letter, so they never
+    collide with a kind byte. The relay's close code becomes the reason the menu shows. The
+    protocol and close codes are in `server/relay/README.md`.
   - `OnlineSession` — the NetworkManager (tick rate 20, connection approval carrying
-    `Application.version`), host and join.
-  - `RunNet` — one NetworkBehaviour per run, spawned by the host: start message, cell
-    batches, damage requests, pickups, phase and score, player commands, desync check.
-  - `NetPlayer` — on both player prefabs: owner-authority transform, pose and health
-    variables, turns a non-owned player into a proxy.
+    `Application.version`, one client), host and join; added at runtime, so no scene holds
+    it. It fills the `NetRole` hooks, sends the start message before NGO loads the Run
+    scene, spawns the network players with ownership and ends the session (back to the menu
+    with the reason) when either side leaves.
+  - `RunNet` — as built a plain MonoBehaviour per run, created when the level is built, that
+    speaks NGO named messages (see §3): cell batches, damage requests, pickups, dynamite, the
+    `State` snapshot, the desync check.
+  - `NetPlayer` — on the network player prefabs `Prefabs/Online/NetPlayer_1/2` (variants of
+    the player prefabs, made by Tools ▸ Demolition ▸ Online ▸ Build Network Prefabs, which
+    also fills `GameConfig.netPlayerPrefabs`): owner-authority `NetworkTransform`, pose and
+    health variables, turns a non-owned player into a proxy and names both `Player_1` /
+    `Player_2`.
 - Menu: `OnlineView` in `Scripts/Menu/View/`, built through `UiFactory`.
-- NativeWebSocket: installed by UPM git URL, pinned to a tag.
+- NativeWebSocket: installed by UPM git URL, pinned to commit `c612a4f` (2.0.7).
+- The relay URL is `GameConfig.relayUrl` (`wss://relay.oeds.space/ws`; `ws://localhost:5080/ws`
+  for a relay started with `dotnet run`).
 
 `server/relay/` at the repo root, outside the Unity project: the relay (§8).
 
@@ -196,15 +213,17 @@ Seams in the existing code (all in O1; offline nothing changes):
 | `Pickup` | client: send a claim instead of collecting. Pickup index = index in `LevelLayout.Pickups`. |
 | `Dynamite` | a copy flown for the other player is cosmetic: no damage. |
 | `PlayerCombat`, `PlayerMotor`, `PlayerHealth` | off on a proxy; a proxy ignores damage. Guard `applyDamage` explicitly: animation events reach disabled components. |
-| `RunController` | client mode: no `RunState` tick and no scoring; phase, timers, score and player status come from `RunNet`; banks the host's result. |
+| `RunController` | client mode: no `RunState` tick and no scoring; phase, timers, score and player status come from `RunNet` (`RunState.ApplySnapshot`, `RunScore.Restore`, `NetFraction`); banks the host's result. |
 | `LevelBootstrap` | online: the host network-spawns the players; the client spawns none. Every device names them `Player_1` / `Player_2` (the name contract). |
 | `PauseController` | online: the menu is an overlay, `Time.timeScale` stays 1. |
 | `AdManager.BetweenRuns` | no ads while connected (D16). |
 
 O1 put in the guards: a client doesn't tick `RunState`, doesn't score and doesn't report
-depletion. `RunNet` brings the setters it needs to push phase, timers, score and the host's
-result into the client's `RunController` in O2, along with finding network-spawned players
-after `RunController.Awake`. Cell indices use `BuildingSpec.Width` from the layout.
+depletion. O2 added `RunState.Snapshot` / `ApplySnapshot` (the client fires the same events
+as the host), `RunScore.Restore`, the `NetRole` hooks `LoadScene`, `Leave`, `LevelBuilt`,
+`PickupTaken`, `DynamiteThrown`, `DynamiteExploded` and `LocalPlayer`, and
+`DestructibleBuilding.TryGetByNetIndex`. Online, `LevelBootstrap` waits for both network
+players before it starts the run. Cell indices use `BuildingSpec.Width` from the layout.
 
 ## 6. Flow
 
@@ -213,10 +232,15 @@ Main menu → join screen (local devices, as today) → **ONLINE** → `OnlineVi
 - **JOIN** takes the code from an on-screen keypad (touch, gamepad and keyboard).
 
 Then the host's level select opens: the host's unlocks decide. The client sees "host is
-choosing" and can open its shop. The host picks a level; `RunNet` sends the start message;
-NGO scene management loads the Run scene on both; the countdown starts on a host tick.
-On the results screen the host picks NEXT, RETRY or MENU, and the client follows. MENU on the
-client leaves the session. Each player banks the run into its own profile.
+choosing" and can open its shop. The host picks a level; `OnlineSession` sends the start
+message; NGO scene management loads the Run scene on both; the host spawns both players;
+the countdown runs on the host and reaches the client in the `State` snapshot.
+On the results screen the host picks NEXT, RETRY or MENU, and the client follows (it sees
+"the host picks what's next", SHOP and LEAVE). LEAVE on the client, or MENU's leave in the
+pause menu, ends the session. Each player banks the run into its own profile.
+
+As built, either player leaving ends the session for both, with the reason on screen; O4
+lets the host play on.
 
 Online: campaign and daily levels. Tutorial and training stay local. One player per device.
 
@@ -225,10 +249,18 @@ Online: campaign and daily levels. Tutorial and training stay local. One player 
 | | Milestone | Done when |
 |---|---|---|
 | **O1** | **Seams**: §5 table, `NetPacking`, no packages installed | Offline play unchanged; all tests pass; new tests: `NetPacking` round trips, and two structures fed the same `CellHealth` stream end with the same standing cells. |
-| **O2** | **Netcode against a local relay**: install NGO, Multiplayer Play Mode and NativeWebSocket; write `RelayTransport` and the relay (`server/relay/`, run with `dotnet run` on the dev machine); `RunNet`, `NetPlayer`, the client mode of `RunController` | Two Multiplayer Play Mode players finish a generated level together through the local relay, and the desync check passes. It still plays with 150 ms delay and 3 % loss added by a network simulator on the socket (e.g. clumsy on Windows). Every campaign level and 365 daily seeds give the same hash on PC, on an Android phone and in WebGL. Pin NGO and NativeWebSocket. |
+| **O2** | **Netcode against a local relay**: install NGO, Multiplayer Play Mode and NativeWebSocket; write `RelayTransport` and the relay (`server/relay/`, run with `dotnet run` on the dev machine); `RunNet`, `NetPlayer`, the client mode of `RunController`. *Code in and pinned (NGO 2.13.3, NativeWebSocket c612a4f); the play tests below are open.* | Two Multiplayer Play Mode players finish a generated level together through the local relay, and the desync check passes. It still plays with 150 ms delay and 3 % loss added by a network simulator on the socket (e.g. clumsy on Windows). Every campaign level and 365 daily seeds give the same hash on PC, on an Android phone and in WebGL. Pin NGO and NativeWebSocket. |
 | **O3** | **Deploy and join codes**: the relay on the VPS behind TLS with the §8 limits, `OnlineView`, a WebGL build on a free HTTPS host (e.g. itch.io) | A phone on mobile data, a PC and a browser tab can each host and join each other through the VPS with a code, and finish a level. |
 | **O4** | **Hardening** | The host leaves: the client gets a message and the menu. The client leaves: the host plays on, P2 is out. The relay is down: a clear message, local play unaffected. A phone app or a browser tab sent to the background (browsers throttle hidden tabs, so a hidden host stalls), timeouts, a version mismatch message. The privacy policy says the relay sees players' IP addresses (`monetization.md` checklist). A soak test with `BotPilot` driving both players. |
 | **O5** | **Optional** | A UDP leg for native builds if TCP hitches show up in playtests: LiteNetLib in the transport, and the relay bridges UDP and WebSocket peers. LAN without internet for native builds only (a browser can't host a LAN game): `com.easysee.networkdiscovery` with UnityTransport. |
+
+Open in O2, to check in the first two-player test:
+- Run Tools ▸ Demolition ▸ Online ▸ Build Network Prefabs once after the packages import.
+- Score popups only show on the device that scored; the proxy's weapon and TNT count are not
+  sent, so the other player's HUD line shows its defaults.
+- `LevelBuilder` streams segments by each device's own camera. If the players drift apart, a
+  building can be loaded on one device only; cells for an unloaded building are dropped, and
+  the desync check names it.
 
 ## 8. The relay on the VPS
 

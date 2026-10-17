@@ -14,11 +14,14 @@ public class JoinView : MonoBehaviour
     private CanvasGroup _group;
     private readonly TextMeshProUGUI[] _slots = new TextMeshProUGUI[Session.MaxPlayers];
     private Button _start;
+    private Button _online;
     private System.Action _continue;
+    private System.Action _goOnline;
 
-    public void Show(bool visible, System.Action onContinue)
+    public void Show(bool visible, System.Action onContinue, System.Action onOnline = null)
     {
         _continue = onContinue;
+        _goOnline = onOnline;
         if (_root == null)
             Build();
         _root.SetActive(visible);
@@ -46,7 +49,8 @@ public class JoinView : MonoBehaviour
         hint.text = "JOIN: A / SPACE     LEAVE: B / ESC     PLAY: START / ENTER";
         hint.color = new Color(0.8f, 0.8f, 0.82f);
 
-        _start = UiFactory.Button(root, "START", centre, new Vector2(0f, -310f), new Vector2(360f, 100f), () => _continue?.Invoke());
+        _start = UiFactory.Button(root, "START", centre, new Vector2(-200f, -310f), new Vector2(360f, 100f), () => _continue?.Invoke());
+        _online = UiFactory.Button(root, "ONLINE", centre, new Vector2(200f, -310f), new Vector2(360f, 100f), () => _goOnline?.Invoke());
     }
 
     private void LateUpdate()
@@ -62,6 +66,7 @@ public class JoinView : MonoBehaviour
             _slots[i].color = device != null ? UiFactory.Gold : Color.white;
         }
         _start.interactable = Session.PlayerCount > 0;
+        _online.interactable = Session.PlayerCount == 1; // one player per device online
     }
 
     private static string DeviceName(InputDevice device)

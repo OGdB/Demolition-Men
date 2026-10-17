@@ -1,0 +1,19 @@
+{
+    "name": "Demolition.Online",
+    "rootNamespace": "Demolition.Online",
+    "references": [
+        "Demolition",
+        "Unity.Netcode.Runtime",
+        "Unity.Collections",
+        "colyseus.nativewebsocket"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
