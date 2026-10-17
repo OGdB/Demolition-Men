@@ -42,11 +42,11 @@ namespace Demolition.Levels
 
             ScrollCamera scroll = SpawnCamera(config, theme, spec, spawn, ground);
             SpawnBackdrop(config, theme, spawn.x, ground);
-            int players = SpawnPlayers(config, spawn);
+            int players = NetRole.IsOnline ? NetRole.SpawnPlayers?.Invoke(spawn) ?? 0 : SpawnPlayers(config, spawn);
             UiFactory.EnsureEventSystem();
 
             var level = new GameObject("Level").AddComponent<LevelBuilder>();
-            level.Build(layout, theme, config.pickupPrefab, players > 1);
+            level.Build(layout, theme, config.pickupPrefab, players > 1 || NetRole.IsOnline);
             if (scroll != null)
                 scroll.LowestGround = level.LowestGroundBetween; // show trench floors before the drop
 

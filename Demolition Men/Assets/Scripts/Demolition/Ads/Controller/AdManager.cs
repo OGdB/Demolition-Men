@@ -50,7 +50,8 @@ namespace Demolition.Ads
         public static void BetweenRuns(Action then)
         {
             SaveData save = Profile.Data;
-            bool due = Enabled && Service.IsInterstitialReady && AdPolicy.InterstitialDue(save.runsPlayed, save.runsSinceAd,
+            // Never while connected: an ad pauses the app and the other device times out (D16).
+            bool due = !NetRole.IsOnline && Enabled && Service.IsInterstitialReady && AdPolicy.InterstitialDue(save.runsPlayed, save.runsSinceAd,
                 Time.unscaledTime - _lastInterstitial, save.adsRemoved);
             if (!due)
             {

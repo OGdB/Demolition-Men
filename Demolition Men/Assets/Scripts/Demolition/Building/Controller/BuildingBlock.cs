@@ -55,6 +55,8 @@ namespace Demolition
         public float Stress { get; private set; }
         /// <summary>Player who last damaged this block, -1 if none.</summary>
         public int LastInstigator { get; private set; } = -1;
+        public DestructibleBuilding Building => _building;
+        public float HealthFraction => _resolvedMaxHealth > 0f ? Mathf.Clamp01(_health / _resolvedMaxHealth) : 0f;
 
         private readonly List<Vector2Int> _coords = new List<Vector2Int>();
         private DestructibleBuilding _building;
@@ -88,6 +90,9 @@ namespace Demolition
         /// <summary>Registered with a building (loose, unregistered blocks still take
         /// damage and die; they just trigger no structural collapse).</summary>
         public bool IsRegistered => _building != null;
+
+        // Part of the standing structure, which online the host decides for both screens.
+        private bool IsStanding => _building != null && _coords.Count > 0 && !IsFalling && !IsRubble;
 
         private void Awake()
         {
@@ -170,15 +175,36 @@ namespace Demolition
             if (_destroyed || amount <= 0f)
                 return;
 
+            // Chips of debris + progressive darkening as the block weakens.
+            Particles.Burst(transform.position, BlockMaterialInfo.Tint(material), 5, 3f, 0.1f, 0.4f);
+            if (NetRole.IsClient && IsStanding)
+            {
+                // The host applies it and answers with the new health (ApplyNetHealth).
+                NetRole.RequestDamage?.Invoke(this, amount);
+                return;
+            }
+
             if (instigator >= 0)
                 LastInstigator = instigator;
             _health -= amount;
-
-            // Chips of debris + progressive darkening as the block weakens.
-            Particles.Burst(transform.position, BlockMaterialInfo.Tint(material), 5, 3f, 0.1f, 0.4f);
             RefreshColor();
+            if (NetRole.IsHost && IsStanding)
+                NetRole.BlockHealthChanged?.Invoke(this);
 
             if (_health <= 0f)
+                Destroyed();
+        }
+
+        /// <summary>Client: the host's health for this block (fraction of its maximum). At 0
+        /// it is destroyed through the normal path, so the same cells detach as on the host.</summary>
+        public void ApplyNetHealth(float fraction, int instigator)
+        {
+            if (_destroyed)
+                return;
+            LastInstigator = instigator;
+            _health = Mathf.Min(_health, fraction * _resolvedMaxHealth); // never heals: the tint stays monotonic
+            RefreshColor();
+            if (fraction <= 0f)
                 Destroyed();
         }
 

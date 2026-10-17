@@ -36,6 +36,10 @@ namespace Demolition
         /// <summary>A stick went off here (screen shake and other feedback).</summary>
         public static event System.Action<Vector3> Exploded;
 
+        /// <summary>Online, a copy flown for the other device's player: it looks and sounds the
+        /// same but damages nothing (the thrower's device sends the damage).</summary>
+        public bool Cosmetic { get; set; }
+
         public void Init(PlayerCombat owner, Collider2D[] ignoreColliders)
         {
             _owner = owner;
@@ -84,11 +88,14 @@ namespace Demolition
             Exploded?.Invoke(transform.position);
 
             var damaged = new HashSet<BuildingBlock>();
-            foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect * 0.5f))
+            if (!Cosmetic)
             {
-                var block = hit != null ? hit.GetComponentInParent<BuildingBlock>() : null;
-                if (block != null && damaged.Add(block))
-                    block.TakeDamage(damage, _owner != null ? _owner.PlayerIndex : -1);
+                foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect * 0.5f))
+                {
+                    var block = hit != null ? hit.GetComponentInParent<BuildingBlock>() : null;
+                    if (block != null && damaged.Add(block))
+                        block.TakeDamage(damage, _owner != null ? _owner.PlayerIndex : -1);
+                }
             }
 
             foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect))

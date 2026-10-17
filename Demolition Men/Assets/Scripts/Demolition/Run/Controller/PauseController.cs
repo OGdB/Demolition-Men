@@ -54,8 +54,11 @@ namespace Demolition.Run
             IsPaused = paused;
             if (!paused)
                 _resumedFrame = Time.frameCount;
-            Time.timeScale = paused ? 0f : 1f;
-            AudioListener.pause = paused;
+            if (!NetRole.IsOnline) // online the run goes on under the menu (docs/multiplayer.md D17)
+            {
+                Time.timeScale = paused ? 0f : 1f;
+                AudioListener.pause = paused;
+            }
             Changed?.Invoke(paused);
         }
 

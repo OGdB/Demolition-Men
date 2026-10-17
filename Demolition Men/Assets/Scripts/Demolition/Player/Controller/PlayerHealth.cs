@@ -37,6 +37,18 @@ namespace Demolition
         /// <summary>Health reached 0 while <see cref="ManagedByRun"/>.</summary>
         public event System.Action<PlayerHealth> Depleted;
 
+        /// <summary>Online, the other device's player: the network moves it and its owner
+        /// decides its health, so it takes no input, no local damage and no local forces.</summary>
+        public bool IsProxy { get; private set; }
+
+        public void MakeProxy()
+        {
+            IsProxy = true;
+            SetInPlay(!IsDead);
+            if (_rb != null)
+                _rb.bodyType = RigidbodyType2D.Kinematic; // local debris still bounces off it
+        }
+
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
         private AudioSource _audio;
@@ -92,16 +104,16 @@ namespace Demolition
         private void SetInPlay(bool inPlay)
         {
             var motor = GetComponent<PlayerMotor>();
-            if (motor != null) motor.enabled = inPlay;
+            if (motor != null) motor.enabled = inPlay && !IsProxy;
             var combat = GetComponent<PlayerCombat>();
-            if (combat != null) combat.enabled = inPlay;
+            if (combat != null) combat.enabled = inPlay && !IsProxy;
             if (_rb != null) _rb.simulated = inPlay;
             if (_sr != null) _sr.enabled = inPlay;
         }
 
         public void TakeDamage(float amount)
         {
-            if (IsDead || amount <= 0f || Time.time < _invulnUntil)
+            if (IsProxy || IsDead || amount <= 0f || Time.time < _invulnUntil)
                 return;
 
             Current = Mathf.Max(0f, Current - Mathf.Min(amount, maxDamagePerHit));

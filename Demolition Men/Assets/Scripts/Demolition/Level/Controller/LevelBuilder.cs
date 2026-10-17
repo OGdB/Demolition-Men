@@ -215,22 +215,26 @@ namespace Demolition.Levels
             var root = new GameObject($"Segment {index} {segment.Kind}").transform;
             root.SetParent(transform, false);
 
-            foreach (BuildingPlacement placement in _layout.Buildings)
+            for (int b = 0; b < _layout.Buildings.Count; b++)
             {
+                BuildingPlacement placement = _layout.Buildings[b];
                 if (placement.Segment != index)
                     continue;
                 DestructibleBuilding building = BuildingBuilder.Build(placement.Spec, _theme.tileset,
                     transform.position + new Vector3(placement.X, placement.GroundY, 0f), root);
+                building.NetIndex = b;
                 if (placement.Spec.Archetype == "gate")
                     building.CrumbleDetached = true;
             }
 
-            foreach (PickupPlacement placement in _layout.Pickups)
+            for (int p = 0; p < _layout.Pickups.Count; p++)
             {
+                PickupPlacement placement = _layout.Pickups[p];
                 if (placement.Segment != index || _pickupPrefab == null || (placement.Kind == PickupKind.Resurrect && !_coop))
                     continue;
                 Pickup pickup = Instantiate(_pickupPrefab, transform.position + new Vector3(placement.X, placement.Y, 0f), Quaternion.identity, root);
                 pickup.Configure(placement.Kind, placement.Amount);
+                pickup.NetIndex = p;
             }
 
             if (_layout.FinishX >= segment.X0 && _layout.FinishX < segment.X1)

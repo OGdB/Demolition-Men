@@ -192,6 +192,8 @@ namespace Demolition.Run
                     continue;
                 Vector3 pos = _players[i].Transform.position;
                 frontX = Mathf.Max(frontX, pos.x);
+                if (NetRole.IsClient)
+                    continue; // online, the host's RunState decides
                 State.SetInBounds(i, IsInBounds(pos));
                 if (finish != null && pos.x >= finish.X)
                     State.ReportCrossedFinish(i);
@@ -201,7 +203,8 @@ namespace Demolition.Run
             if (_camera != null && finish != null)
                 _camera.StopX = finish.X;
 
-            State.Tick(Time.deltaTime);
+            if (!NetRole.IsClient)
+                State.Tick(Time.deltaTime);
         }
 
         private bool IsInBounds(Vector3 position)
@@ -311,6 +314,8 @@ namespace Demolition.Run
 
         private void OnDepleted(PlayerHealth health)
         {
+            if (NetRole.IsClient)
+                return; // the host hears it through the player's health and decides
             for (int i = 0; i < _players.Count; i++)
                 if (_players[i].Health == health)
                     State.ReportDepleted(i);
@@ -322,8 +327,9 @@ namespace Demolition.Run
             {
                 if (State.Status(i) != PlayerStatus.Alive)
                     continue;
-                _players[i].Motor.enabled = enabled;
-                _players[i].Combat.enabled = enabled;
+                bool local = !_players[i].Health.IsProxy;
+                _players[i].Motor.enabled = enabled && local;
+                _players[i].Combat.enabled = enabled && local;
             }
         }
 
@@ -344,9 +350,10 @@ namespace Demolition.Run
 
         private void OnStandingCellsRemoved(int cells) => _removedCells += cells;
 
+        // Online only the host scores; a client shows the host's score.
         private void OnBlockDestroyed(BlockDestroyedInfo info)
         {
-            if (State.Phase != RunPhase.Playing)
+            if (State.Phase != RunPhase.Playing || NetRole.IsClient)
                 return;
             int points = Score.AddDestroyed(info.Instigator, info.Material, info.Cells);
             Scored?.Invoke(info.Instigator, points, info.Position);
@@ -354,7 +361,7 @@ namespace Demolition.Run
 
         private void OnCollapsed(CollapseInfo info)
         {
-            if (State.Phase != RunPhase.Playing)
+            if (State.Phase != RunPhase.Playing || NetRole.IsClient)
                 return;
             int points = Score.AddCollapse(info.Instigator, info.Cells);
             Scored?.Invoke(info.Instigator, points, info.Position);

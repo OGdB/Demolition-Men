@@ -101,6 +101,12 @@ namespace Demolition
 
         public int StandingBlockCount => _structure.CellCount;
 
+        /// <summary>Index in <c>LevelLayout.Buildings</c> (set by <c>LevelBuilder</c>), -1 for a
+        /// hand-made building. Online messages address buildings by it.</summary>
+        public int NetIndex { get; set; } = -1;
+
+        public bool TryGetBlock(Vector2Int cell, out BuildingBlock block) => _blocks.TryGetValue(cell, out block);
+
         /// <summary>Detached blocks burst into dust instead of falling (gates that must
         /// clear the street, not pile up in it).</summary>
         public bool CrumbleDetached { get; set; }
@@ -171,7 +177,8 @@ namespace Demolition
 
         private void Update()
         {
-            if (_crumbling.Count == 0)
+            // Online, overload crumble is the host's damage like any other.
+            if (_crumbling.Count == 0 || NetRole.IsClient)
             {
                 _crumbleTimer = 0f;
                 return;

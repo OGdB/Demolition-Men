@@ -23,8 +23,11 @@ namespace Demolition
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
         private float _fallSpeed;
         private bool _collected;
+        private bool _claimed;
 
         public PickupKind Kind => kind;
+        /// <summary>Index in <c>LevelLayout.Pickups</c> (set by <c>LevelBuilder</c>), -1 for a placed one.</summary>
+        public int NetIndex { get; set; } = -1;
 
         /// <summary>Someone collected a pickup: who, what, how much.</summary>
         public static event Action<PlayerCombat, PickupKind, int> Collected;
@@ -75,7 +78,18 @@ namespace Demolition
             if (_collected)
                 return;
             var combat = other.GetComponentInParent<PlayerCombat>();
-            if (combat == null || !combat.isActiveAndEnabled || !TryApply(combat))
+            if (combat == null || !combat.isActiveAndEnabled)
+                return;
+            if (NetRole.IsClient)
+            {
+                // The host grants pickups first come; ask once, Taken settles it.
+                // shortcut: claims even when it can't be used (dynamite full); check that first when O2 wires Taken.
+                if (!_claimed)
+                    NetRole.ClaimPickup?.Invoke(this);
+                _claimed = true;
+                return;
+            }
+            if (!TryApply(combat))
                 return;
             _collected = true;
             Collected?.Invoke(combat, kind, amount);

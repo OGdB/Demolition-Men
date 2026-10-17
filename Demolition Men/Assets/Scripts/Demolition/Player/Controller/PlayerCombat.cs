@@ -176,6 +176,8 @@ namespace Demolition
         // Punching/Axing/Wrecking clips — the animation decides when a swing lands.
         private void applyDamage()
         {
+            if (!isActiveAndEnabled)
+                return; // animation events reach disabled components: a proxy's or a stopped player's swing
             Vector2 origin = AttackOrigin;
 
             if (showSwingFlash)

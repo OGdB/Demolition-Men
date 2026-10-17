@@ -1,7 +1,7 @@
 # Online co-op plan
 
-**Status:** plan only, nothing wired (2026-10-17). Online stays post-v1 (roadmap D4), but
-milestone O1 is offline-only and can land any time.
+**Status (2026-10-17):** O1 (seams) is in: `NetRole`, `NetPacking` and the §5 guards, with
+offline play unchanged. Nothing networked runs yet. Online stays post-v1 (roadmap D4).
 
 Two players on two devices play one run together: PC, phone or a browser (WebGL), in any
 mix. This doc picks the topology, says exactly what crosses the wire and who decides what,
@@ -195,6 +195,11 @@ Seams in the existing code (all in O1; offline nothing changes):
 | `LevelBootstrap` | online: the host network-spawns the players; the client spawns none. Every device names them `Player_1` / `Player_2` (the name contract). |
 | `PauseController` | online: the menu is an overlay, `Time.timeScale` stays 1. |
 | `AdManager.BetweenRuns` | no ads while connected (D16). |
+
+O1 put in the guards: a client doesn't tick `RunState`, doesn't score and doesn't report
+depletion. `RunNet` brings the setters it needs to push phase, timers, score and the host's
+result into the client's `RunController` in O2, along with finding network-spawned players
+after `RunController.Awake`. Cell indices use `BuildingSpec.Width` from the layout.
 
 ## 6. Flow
 
