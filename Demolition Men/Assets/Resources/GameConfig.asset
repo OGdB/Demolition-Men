@@ -18,10 +18,18 @@ MonoBehaviour:
   playerPrefabs:
   - {fileID: 1000000, guid: 9d26f4a8c1e35b07d2f4a6c8e0b31266, type: 3}
   - {fileID: 1000000, guid: 4f71c2e8a5d90b36c8e0a2f4d6b81477, type: 3}
-  cameraPrefab: {fileID: 8139280650448620089, guid: 32d08bf8a1630b846b13e6493a21b7d4, type: 3}
-  backdropPrefab: {fileID: 6252603579039168776, guid: ee6cbffd1e7c92c47941c49af376a644, type: 3}
-  runPrefab: {fileID: 4490347013378689099, guid: 7228fe0a25471a24091ffe903db71fce, type: 3}
-  pickupPrefab: {fileID: 5921544143652039461, guid: 3de564e561acff847a5392084ea8bdf3, type: 3}
+  cameraPrefab: {fileID: 8139280650448620089, guid: 32d08bf8a1630b846b13e6493a21b7d4,
+    type: 3}
+  backdropPrefab: {fileID: 6252603579039168776, guid: ee6cbffd1e7c92c47941c49af376a644,
+    type: 3}
+  runPrefab: {fileID: 4490347013378689099, guid: 7228fe0a25471a24091ffe903db71fce,
+    type: 3}
+  pickupPrefab: {fileID: 5921544143652039461, guid: 3de564e561acff847a5392084ea8bdf3,
+    type: 3}
+  relayUrl: wss://relay.oeds.space/ws
+  netPlayerPrefabs:
+  - {fileID: 3340135010435384464, guid: eacffbae758f43547a20dcba438652c1, type: 3}
+  - {fileID: 2432208475913318491, guid: c12019bd2d123734a9772052c22b4fa2, type: 3}
   themes:
   - {fileID: 11400000, guid: ce467a8e5a484d429e80e8189e8966a6, type: 2}
   - {fileID: 11400000, guid: cb593af4ecb0425fa21c7a443b424d71, type: 2}
