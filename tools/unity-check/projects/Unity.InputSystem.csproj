@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Include="$(UnityCheckHome)/com.unity.inputsystem/package/InputSystem/**/*.cs" Exclude="$(UnityCheckHome)/com.unity.inputsystem/package/InputSystem/Plugins/InputForUI/**" />
+  <Reference Include="$(UnityCheckHome)/out/UnityEngine.UI/UnityEngine.UI.dll" Private="false" /></ItemGroup>
+</Project>

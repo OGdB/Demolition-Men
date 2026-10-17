@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Editor scripts against an older UnityEditor.dll (Unity3D.SDK 2021.1): APIs newer than
+       that are reported as errors here even though the 6000.4 editor has them. -->
+  <PropertyGroup><ExtraDefines>UNITY_EDITOR</ExtraDefines></PropertyGroup>
+  <ItemGroup><Compile Include="$(ProjectAssets)/Editor/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/editor/sdk/lib/UnityEditor.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/UnityEngine.UI/UnityEngine.UI.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.TextMeshPro/Unity.TextMeshPro.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.InputSystem/Unity.InputSystem.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Assembly-CSharp/Assembly-CSharp.dll" Private="false" /></ItemGroup>
+</Project>

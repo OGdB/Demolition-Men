@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Include="$(UnityCheckHome)/com.unity.ugui/package/Runtime/TMP/**/*.cs" />
+  <Compile Include="../TmpCompat.cs" />
+  <Reference Include="$(UnityCheckHome)/out/UnityEngine.UI/UnityEngine.UI.dll" Private="false" /></ItemGroup>
+</Project>

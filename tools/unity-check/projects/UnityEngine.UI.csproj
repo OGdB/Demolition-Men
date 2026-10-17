@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Include="$(UnityCheckHome)/com.unity.ugui/package/Runtime/UGUI/**/*.cs" Exclude="$(UnityCheckHome)/com.unity.ugui/package/Runtime/UGUI/EventSystem/UIElements/Panel*.cs" /></ItemGroup>
+</Project>

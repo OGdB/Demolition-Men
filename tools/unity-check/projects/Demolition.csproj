@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Include="$(ProjectAssets)/Scripts/Demolition/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/out/UnityEngine.UI/UnityEngine.UI.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.TextMeshPro/Unity.TextMeshPro.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Unity.InputSystem/Unity.InputSystem.dll" Private="false" /></ItemGroup>
+</Project>

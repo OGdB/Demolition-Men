@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure models + EditMode tests on plain .NET, with UnityShim.cs standing in for UnityEngine. -->
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><UnityRefs>false</UnityRefs><DefineConstants>MODEL_TESTS</DefineConstants></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../TestMain.cs;../UnityShim.cs" />
+    <Compile Include="$(ProjectAssets)/Scripts/Demolition/**/Model/**/*.cs" Exclude="$(ProjectAssets)/Scripts/Demolition/Run/Model/Session.cs" />
+    <Compile Include="$(ProjectAssets)/Tests/EditMode/**/*.cs" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnitLite" Version="3.14.0" />
+  </ItemGroup>
+</Project>
