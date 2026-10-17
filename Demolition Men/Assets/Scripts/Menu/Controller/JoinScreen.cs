@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Demolition;
 using Demolition.Levels;
@@ -8,53 +9,46 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// "Press to join" lobby between the main menu and the level select (the training yard
-/// on a new profile's first play). Any keyboard or
-/// gamepad joins with A / Space and leaves with B / Esc; Start / Enter continues once
-/// someone has joined. On a phone the touchscreen joins as player 1 straight away and the
-/// on-screen START / BACK buttons drive the lobby (a gamepad can still join as player 2).
-/// Joined devices go to <see cref="Session"/>, which the run uses to give each player
-/// their own device.
+/// "Press to join" lobby under the title, before the level select (the training yard on a
+/// new profile's first play). Any keyboard or gamepad joins with A / Space and leaves with
+/// B / Esc; Start / Enter continues once someone has joined. B / Esc with nobody joined is
+/// "back", which the menu turns into the quit question. On a phone the touchscreen joins as
+/// player 1 straight away and the on-screen START button continues (a gamepad can still
+/// join as player 2). Joined devices go to <see cref="Session"/>, which the run uses to
+/// give each player their own device.
 /// </summary>
 [RequireComponent(typeof(JoinView))]
 public class JoinScreen : MonoBehaviour
 {
-    [Tooltip("Shown again when the lobby or the level select is closed.")]
-    [SerializeField] private GameObject menuPanel;
-
     private JoinView _view;
+    private Action _back;
     private bool _open;
+    private int _openedFrame;
 
     private void Awake()
     {
         _view = GetComponent<JoinView>();
     }
 
-    // Back from a run: straight to the level select with the same players.
-    private void Start()
+    /// <summary>Show the lobby; players already joined stay joined (back from the level select).</summary>
+    /// <param name="back">B / Esc with nobody joined.</param>
+    public void Open(Action back)
     {
-        if (LevelSelection.ReturnToLevelSelect && Session.PlayerCount > 0)
-        {
-            menuPanel.SetActive(false);
-            LevelSelectView.Open(BackToMenu);
-        }
-    }
-
-    /// <summary>Called by the menu's Play button.</summary>
-    public void Open()
-    {
-        Session.Clear();
+        _back = back;
         if (Platform.IsTouch && Touchscreen.current != null)
             Session.Join(Touchscreen.current);
         _open = true;
-        _view.Show(true, Continue, Back);
+        _openedFrame = Time.frameCount;
+        _view.Show(true, Continue);
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
     }
 
     private void Update()
     {
-        if (!_open)
+        // Not on the frame it opened: the press that skipped the title or closed the level
+        // select must not also join or leave someone.
+        if (!_open || Time.frameCount == _openedFrame || QuitView.IsOpen)
             return;
 
         foreach (InputDevice device in InputSystem.devices)
@@ -67,7 +61,7 @@ public class JoinScreen : MonoBehaviour
             {
                 if (Session.PlayerCount == 0)
                 {
-                    Back();
+                    _back?.Invoke();
                     return;
                 }
                 Session.Leave(device);
@@ -92,31 +86,15 @@ public class JoinScreen : MonoBehaviour
             RunController.LoadScene(GameConfig.Instance.tutorialScene);
             return;
         }
-        StartCoroutine(Close(() => LevelSelectView.Open(BackToMenu)));
-    }
-
-    private void Back()
-    {
-        if (_open)
-            StartCoroutine(Close(BackToMenu));
-    }
-
-    private void BackToMenu()
-    {
-        Session.Clear();
-        menuPanel.SetActive(true);
-        // Gamepads need something selected to navigate from: the scene's first choice (Play).
-        EventSystem events = EventSystem.current;
-        if (events != null)
-            events.SetSelectedGameObject(events.firstSelectedGameObject);
+        StartCoroutine(Close(() => LevelSelectView.Open(() => Open(_back))));
     }
 
     // Switch panels a frame later, so the press that closed the lobby doesn't also
     // press whatever is selected next.
-    private IEnumerator Close(System.Action then)
+    private IEnumerator Close(Action then)
     {
         _open = false;
-        _view.Show(false, null, null);
+        _view.Show(false, null);
         yield return null;
         then();
     }

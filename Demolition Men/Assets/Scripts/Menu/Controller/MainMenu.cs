@@ -1,61 +1,43 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using Demolition.Levels;
+using Demolition.Meta;
+using Demolition.Run;
 using UnityEngine;
-using UnityEngine.UI;
 
+/// <summary>
+/// The title screen: the game's name slams into the middle of the screen and rises to the
+/// top (<see cref="TitleView"/>), then the join lobby opens by itself. Back from a run it
+/// goes straight to the level select. There is no quit button: Esc (B on a gamepad, back
+/// on Android) with nobody joined asks whether to quit.
+/// </summary>
+[RequireComponent(typeof(JoinScreen))]
 public class MainMenu : MonoBehaviour
 {
-    public GameObject p1;
-    public GameObject p2;
+    private JoinScreen _join;
+    private TitleView _title;
 
-    public GameObject[] buttons;
-
-    public Color NormalColor;
-    public Color HighLightColor;
-    public Color PressedColor;
-
-    public AudioClip clickSound;
-    private AudioSource audioSource;
-
-    void Start()
+    private void Awake()
     {
-        for (int i = 0; i < buttons.Length; i++)
+        _join = GetComponent<JoinScreen>();
+        _title = gameObject.AddComponent<TitleView>();
+    }
+
+    private void Start()
+    {
+        if (LevelSelection.ReturnToLevelSelect && Session.PlayerCount > 0)
         {
-                Button buttonComponent = buttons[i].GetComponent<Button>();
-                // Colors
-                ColorBlock colors = buttonComponent.colors;
-                colors.normalColor = NormalColor;
-                colors.highlightedColor = HighLightColor;
-                colors.pressedColor = PressedColor;
-                colors.selectedColor = HighLightColor;
-                buttonComponent.colors = colors;
-                // Sound
-                AudioSource audioSource = buttons[i].AddComponent<AudioSource>();
-                audioSource.clip = clickSound;
-                buttonComponent.onClick.AddListener(OnButtonClick);
+            _title.ShowRisen();
+            LevelSelectView.Open(OpenLobby);
+            return;
         }
+        Session.Clear();
+        _title.PlayIntro(OpenLobby);
     }
 
-    void Update()
-    {
-        /* CONTROLLER BUTTONS
-         * Button buttonSelected == array[0];
-         * 
-         * If joystick.y > 0 go up in the array (++), else (--). If .length is reached go back to =0.
-         * 
-         
-         */
-    }
+    private void OpenLobby() => _join.Open(AskQuit);
 
-    private void OnButtonClick()
-    {
-        if (audioSource != null)
-        {
-            audioSource.Play();
-        }
-    }
+    private static void AskQuit() => QuitView.Open(Quit);
 
-    public void QuitGame()
+    private static void Quit()
     {
         Application.Quit();
 #if UNITY_EDITOR
