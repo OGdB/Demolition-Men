@@ -3,7 +3,7 @@ using Demolition.Generation;
 
 namespace Demolition.Levels
 {
-    public enum SegmentKind { Start, Street, Cluster, Tower, Gap, Hill, Sewer, Gate, Breather, Finish }
+    public enum SegmentKind { Start, Street, Cluster, Tower, Gap, Hill, Sewer, Gate, Breather, Finish, Islands, Plateau }
 
     /// <summary>Columns [X0, X1) of the level built from one pacing token; the unit the
     /// builder streams in and out.</summary>

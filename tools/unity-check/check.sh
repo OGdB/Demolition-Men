@@ -4,6 +4,8 @@
 #   tools/unity-check/check.sh            build + tests
 #   tools/unity-check/check.sh build      build only
 #   tools/unity-check/check.sh test -- --where "class == Demolition.Tests.MetaTests"
+#   tools/unity-check/check.sh levels [level-id...]   dump generated layouts to content-work/levels
+#                                                     (tools/artpipe/level_preview.py draws them)
 # Run setup.sh once first. Editor scripts build against an older UnityEditor.dll.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -41,5 +43,9 @@ if [ "$mode" = all ] || [ "$mode" = test ]; then
   out=$(cd "$HERE/../../Demolition Men" && dotnet "$UNITY_CHECK_HOME/out/ModelTests/ModelTests.dll" --noresult --labels=Off "$@" 2>&1)
   echo "$out" | sed -n '/Errors, Failures/,/^Run Settings/p;/^Test Run Summary/,/Failed Tests/p'
   echo "$out" | grep -q "Overall result: Passed" || rc=1
+fi
+if [ "$mode" = levels ]; then
+  build ModelTests || exit 1
+  (cd "$HERE/../../Demolition Men" && dotnet "$UNITY_CHECK_HOME/out/ModelTests/ModelTests.dll" dump-levels "$HERE/../../content-work/levels" "$@") || rc=1
 fi
 exit $rc

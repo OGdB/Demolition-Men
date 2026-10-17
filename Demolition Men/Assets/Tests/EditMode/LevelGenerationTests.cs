@@ -101,6 +101,60 @@ namespace Demolition.Tests
             Assert.AreEqual(42f, layout.Par);
         }
 
+        private static LevelLayout Designed(string[] pacing, int seed, PickupBudget pickups = null)
+        {
+            string town = Path.Combine(ContentFolder, "Town", "Levels", "town-01.json");
+            var spec = new LevelSpec { id = "test", seed = seed, pacing = pacing, pickups = pickups ?? new PickupBudget() };
+            return LevelGrammar.Generate(spec, ArchetypesFor(town));
+        }
+
+        [Test]
+        public void Islands_PutAPitAndALandingStripBetweenBuildings()
+        {
+            for (int seed = 0; seed < 20; seed++)
+            {
+                LevelLayout layout = Designed(new[] { "start", "islands:3", "finish" }, seed);
+                LevelSegment islands = layout.Segments.First(s => s.Kind == SegmentKind.Islands);
+                var inside = layout.Buildings.Where(b => b.Segment == layout.Segments.IndexOf(islands)).ToList();
+                Assert.AreEqual(3, inside.Count, $"seed {seed}");
+                foreach (BuildingPlacement b in inside)
+                {
+                    int end = b.X + b.Spec.Width;
+                    Assert.AreNotEqual(LevelLayout.NoGround, layout.GroundAt(end), $"seed {seed}: a ledge after the building");
+                    Assert.AreEqual(LevelLayout.NoGround, layout.GroundAt(end + 1), $"seed {seed}: then a pit");
+                }
+                for (int i = 1; i < inside.Count; i++)
+                    for (int x = inside[i].X - 2; x < inside[i].X; x++)
+                        Assert.AreNotEqual(LevelLayout.NoGround, layout.GroundAt(x), $"seed {seed}: landing strip before building {i}");
+            }
+        }
+
+        [Test]
+        public void Plateau_PutsABuildingOnHighGround_AndComesBackDown()
+        {
+            for (int seed = 0; seed < 20; seed++)
+            {
+                LevelLayout layout = Designed(new[] { "start", "plateau", "finish" }, seed);
+                int street = layout.GroundAt(layout.SpawnX);
+                BuildingPlacement b = layout.Buildings.Single();
+                Assert.Greater(b.GroundY, street, $"seed {seed}");
+                Assert.AreEqual(street, layout.GroundAt(layout.FinishX), $"seed {seed}");
+            }
+        }
+
+        [Test]
+        public void Weapons_WaitJustBeforeABuilding_WhenTheirSliceHasOne()
+        {
+            var weapons = new PickupBudget { dynamite = 0, axe = 1, wreckingBall = 1, resurrect = 0 };
+            for (int seed = 0; seed < 20; seed++)
+            {
+                LevelLayout layout = Designed(new[] { "start", "street", "breather", "cluster:2", "finish" }, seed, weapons);
+                foreach (PickupPlacement p in layout.Pickups)
+                    Assert.IsTrue(layout.Buildings.Any(b => p.X < b.X && p.X >= b.X - LevelGrammar.WeaponLeadIn),
+                        $"seed {seed}: {p.Kind} at {p.X} isn't just before a building");
+            }
+        }
+
         [Test]
         public void Jump_ClearsTheGrammarsWidestPit_AndTwoCellSteps()
         {

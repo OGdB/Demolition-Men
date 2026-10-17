@@ -115,6 +115,7 @@ def tileset(theme, theme_dir):
         lines.append("    tint: {r: 1, g: 1, b: 1, a: 1}\n    rotation: 0\n    scale: {x: 1, y: 1}\n"
                      f"    offset: {{x: 0, y: 0}}\n    sortingOrder: {SORTING.get(name, 0)}\n")
     lines.append(f"  windowBack: {sprite_ref(theme_dir, 'window_back')}\n  windowBackTint: {{r: 1, g: 1, b: 1, a: 1}}\n")
+    lines.append(f"  interior: {sprite_ref(theme_dir, 'interior')}\n  interiorTop: {sprite_ref(theme_dir, 'interior_top')}\n")
     path = os.path.join(theme_dir, f"{theme}Tileset.asset")
     write(path, "".join(lines))
     return f"{{fileID: 11400000, guid: {ensure_meta(path, 'asset')}, type: 2}}"

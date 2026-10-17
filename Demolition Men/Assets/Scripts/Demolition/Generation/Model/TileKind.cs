@@ -78,5 +78,10 @@ namespace Demolition.Generation
 
         /// <summary>Interior supports are trigger colliders: players walk through, hits still land.</summary>
         public static bool WalkThrough(TileKind kind) => kind == TileKind.Support;
+
+        /// <summary>Kinds whose sprite leaves part of the cell open (a thin column, a floor
+        /// board, a lattice): the building's back wall shows through them.</summary>
+        public static bool SeeThrough(TileKind kind) =>
+            kind == TileKind.Support || kind == TileKind.Plank || kind == TileKind.MetalTruss;
     }
 }

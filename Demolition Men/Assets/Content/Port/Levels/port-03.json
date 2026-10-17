@@ -5,7 +5,7 @@
   "seed": 5313,
   "parTime": 0,
   "scrollSpeed": 1.8,
-  "pacing": ["start", "street", "sewer", "cluster:3", "gap", "tower", "gate", "finish"],
+  "pacing": ["start", "street", "sewer", "islands:3", "tower", "gate", "finish"],
   "pickups": {
     "dynamite": 6,
     "axe": 2,

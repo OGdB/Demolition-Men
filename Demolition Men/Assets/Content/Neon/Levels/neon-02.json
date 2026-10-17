@@ -5,7 +5,7 @@
   "seed": 7207,
   "parTime": 0,
   "scrollSpeed": 1.9,
-  "pacing": ["start", "cluster:3", "hill", "gap", "tower", "breather", "cluster:2", "finish"],
+  "pacing": ["start", "cluster:3", "plateau", "gap", "tower", "breather", "islands:2", "finish"],
   "pickups": {
     "dynamite": 6,
     "axe": 1,

@@ -28,6 +28,8 @@ SPRITES = {
     "support":     ((32, 32), "y", True),
     "chimney":     ((32, 32), "", True),
     "window_back": ((32, 64), "x", False),
+    "interior":    ((32, 32), "xy", False),
+    "interior_top": ((32, 32), "x", False),
     "ground_top":  ((32, 32), "x", True),
     "ground_fill": ((32, 32), "xy", True),
     "backdrop_far":  ((512, 192), "x", False),
@@ -318,7 +320,8 @@ def door(t, rng, w=32, h=64):
         k = palette.ramp(t, m["handle"])
         rect(a, x1 - 6, 40, x1 - 4, 44, k[1])
         put(a, x1 - 6, 40, k[2], wrap=False)
-        neon_tube(a, 1, 1, w - 1, 4, palette.ramp(t, m["sign"]))
+        if m.get("sign"):
+            neon_tube(a, 1, 1, w - 1, 4, palette.ramp(t, m["sign"]))
     return a
 
 
@@ -361,6 +364,49 @@ def window_back(t, rng, w=32, h=64):
         acc = palette.ramp(t, m["accent"])
         rect(a, 2, 13, 5, 15, acc[3])    # distant work lamp
         rect(a, 2, 15, 5, 16, acc[1])
+    return a
+
+
+def interior(t, rng, w=32, h=32, top=False):
+    """A building's back wall, behind open rooms (BuildingInterior): background, so no
+    outline, low contrast and darker than the walls in front. 'wallpaper': stripes with a
+    small motif; 'blocks': dark cast blocks; 'boards': vertical panelling. `top` adds the
+    shadow a ceiling casts on the wall right under it."""
+    m = t["materials"]["interior"]
+    r = palette.ramp(t, m["ramp"])
+    base, line = r[m.get("base", 1)], r[m.get("pattern", 0)]
+    a = canvas(w, h)
+    rect(a, 0, 0, w, h, base)
+    style = m["style"]
+    if style == "wallpaper":
+        for x in range(3, w, 8):
+            rect(a, x, 0, x + 1, h, line)
+        for y in range(4, h, 16):  # a small diamond between the stripes, offset each row
+            for x in range(7 if (y // 16) % 2 == 0 else 3, w, 8):
+                if (x // 8) % 2 == (y // 16) % 2:
+                    for dx, dy in ((0, -1), (-1, 0), (1, 0), (0, 1)):
+                        put(a, x + dx, y + dy, line)
+    elif style == "blocks":
+        for y in range(0, h, 8):
+            rect(a, 0, y, w, y + 1, line)
+            off = 0 if (y // 8) % 2 == 0 else 8
+            for x in range(off, w + off, 16):
+                rect(a, x % w, y, x % w + 1, y + 8, line)
+        speckle(a, rng, np.ones((h, w), bool), [(line, 0.04)])
+        a = np.roll(a, (3, 5), axis=(0, 1))
+    else:  # boards
+        for x in range(0, w, 8):
+            rect(a, x, 0, x + 1, h, line)
+        for _ in range(rng.integers(3, 6)):
+            gx, gy = rng.integers(0, w // 8) * 8 + rng.integers(2, 7), rng.integers(0, h)
+            for k in range(rng.integers(3, 8)):
+                put(a, gx, gy + k, line)
+        a = np.roll(a, 4, axis=1)
+    if top:
+        shadow = r[0] if m.get("pattern", 0) != 0 else line
+        rect(a, 0, 0, w, 3, shadow)
+        for x in range(0, w, 2):  # dithered edge of the shadow
+            put(a, x, 3, shadow, wrap=False)
     return a
 
 
@@ -457,7 +503,11 @@ def brick_cap(t, rng, w=64, h=32):
     speckle(a, rng, np.pad(np.ones((4, w), bool), ((2, h - 6), (0, 0))), [(c[1], 0.08)])
     # trim band
     rect(a, 0, 8, w, 9, wr[0])
-    if m["trim"] == "hazard":
+    if not m.get("trim"):  # a plain cornice band
+        rect(a, 0, 9, w, 13, c[1])
+        rect(a, 0, 9, w, 10, c[3])
+        rect(a, 0, 12, w, 13, wr[0])
+    elif m["trim"] == "hazard":
         st, dk = palette.ramp(t, m["stripe"]), palette.ramp(t, m["stripe_dark"])
         hazard_stripes(a, 0, 9, w, 13, st[3], dk[1], width=4)
     else:
@@ -529,8 +579,10 @@ def chimney(t, rng, w=32, h=32):
     else:
         speckle(a, rng, np.pad(np.ones((h - 11, 10), bool), ((10, 1), (11, 11))), [(r[1], 0.12), (r[3], 0.04)])
         rect(a, 10, 9, 22, 10, r[0])
-    band = m["band"]
-    if band == "hazard":
+    band = m.get("band")
+    if not band:
+        rect(a, 9, 9, 23, 10, r[0])  # just the lip's shadow
+    elif band == "hazard":
         st, dk = palette.ramp(t, m["stripe"]), palette.ramp(t, m["stripe_dark"])
         rect(a, 9, 15, 23, 16, r[0])
         hazard_stripes(a, 10, 16, 22, 21, st[3], dk[1])
@@ -645,6 +697,8 @@ GENERATORS = {
     "support": support,
     "chimney": chimney,
     "window_back": window_back,
+    "interior": interior,
+    "interior_top": lambda t, g: interior(t, g, top=True),
     "ground_top": ground_top,
     "ground_fill": ground_fill,
     "backdrop_far": lambda t, g: backdrop(t, g, "far"),
@@ -661,7 +715,8 @@ def theme_sprites(theme):
 
 def generate(theme, name):
     """One sprite of a theme as an RGBA array; same theme seed + name, same pixels."""
-    rng = np.random.default_rng([theme["seed"], zlib.crc32(name.encode())])
+    seed = theme.get("seeds", {}).get(name, theme["seed"])  # a per-sprite override re-rolls one sprite only
+    rng = np.random.default_rng([seed, zlib.crc32(name.encode())])
     a = GENERATORS[name](theme, rng)
     (w, h), _, _ = SPRITES[name]
     assert a.shape == (h, w, 4), (name, a.shape)

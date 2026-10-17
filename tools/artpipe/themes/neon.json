@@ -13,6 +13,7 @@
     "glass": {"frame": "steel", "pane": "nightglass", "highlights": [["cyan", 2], ["magenta", 1]]},
     "door": {"style": "panel", "frame": "steel", "leaf": "night", "window": "warm", "handle": "cyan", "sign": "magenta"},
     "window_back": {"style": "lit", "ramp": "warm"},
+    "interior": {"style": "wallpaper", "ramp": "night", "base": 1, "pattern": 0},
     "plank": {"style": "slab", "ramp": "night", "trim": "cyan"},
     "truss": {"ramp": "steel", "rivet": "cyan"},
     "beam": {"ramp": "night", "trim": "magenta"},

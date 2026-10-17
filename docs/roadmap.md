@@ -189,8 +189,8 @@ Design in §5.1. Built on **today's sprites**. Code in `Scripts/Demolition/Gener
 
 ### M3 — Procedural levels (M) — ✅ built 2026-10-17, awaiting a hands-on playtest
 Design in §5.2. Code in `Scripts/Demolition/Level/` (see the Levels section of `CLAUDE.md`).
-- ✅ `LevelSpec` (JSON), `LevelGrammar` (pacing tokens: start, street, cluster:n, tower,
-  gap, hill, sewer, gate, breather, finish), `LevelLayout`, `TraversalValidator` (replays
+- ✅ `LevelSpec` (JSON), `LevelGrammar` (pacing tokens: start, street, cluster:n,
+  islands:n, tower, gap, hill, plateau, sewer, gate, breather, finish), `LevelLayout`, `TraversalValidator` (replays
   the player's jump physics; the grammar re-rolls derived seeds until it passes).
 - ✅ `LevelBuilder`: ground tilemap up front, buildings/pickups/finish streamed in per
   segment ahead of the camera and despawned behind it. The **Run scene** holds only
@@ -210,7 +210,26 @@ Built: `tools/artpipe` (master palette, procedural tile generators, normalizer, 
 contact sheets, `unity_theme.py` writing tiles/tileset/theme assets), the
 `ContentSpriteImporter` AssetPostprocessor, and two themes made with it — **Port** and
 **Neon**, 17 sprites each, 4 archetypes and 4 levels each. Not yet: autotile edge variants,
-per-theme parallax backdrops (the Town backdrop is tinted per theme), SpriteAtlas.
+SpriteAtlas, street props.
+
+Art and level review, 2026-10-17 (`content-work/levels/*.png`, drawn headless by
+`tools/artpipe/level_preview.py`):
+- Generated buildings showed the sky through every room, so they read as scaffolding.
+  Now each theme has a back wall (`interior`, `interior_top` with the ceiling's shadow)
+  that `BuildingInterior` draws behind open and see-through cells; a piece crumbles when
+  the block cell it hangs from goes.
+- Town's tileset borrowed object-set sprites that didn't fit: pre-cracked rebar slabs as
+  concrete, a pole as the door, a log as the beam, a brick corner as the chimney, darkened
+  brick behind the glass. The pipeline now draws those (plus wood siding, floors, the room
+  behind the glass and the back wall) in the object set's ramps; the red brick, brown
+  trusses, glass columns and supports stay hand-drawn.
+- Levels were mostly flat street with 4–9 buildings: long walks, buildings always on the
+  street. New segments `islands:n` (a pit and a landing strip between buildings) and
+  `plateau` (a building on high ground); weapons spawn just before a building; every
+  campaign level uses them (more buildings and cells in most levels).
+- Still open: street props and set pieces (cars, containers, cranes), a sky gradient,
+  Town's near-black ground fill, theme-specific archetypes (Port containers, Neon
+  billboards).
 
 Original plan (design in §6):
 - Style-bible schema, procedural tile generator, normalizer, QA and contact sheets.
@@ -332,9 +351,11 @@ Example archetype (`Assets/Content/town/archetypes/rowhouse.json`):
 ### 5.2 Levels: pacing → segments → build
 - A level spec gives the theme, length, seed, scroll speed and **pacing**: a sequence of
   segment types with an intensity curve (build-up, peaks, breathers).
-- **Segment library:** `start`, `street`, `cluster:n` (n buildings), `gap` (jump), `tower`
-  (vertical climb, camera zooms), `sewer` (camera rail dips), `gate` (a wall that must be
-  broken to pass: forced destruction), `hazard-yard`, `breather`, `finish`.
+- **Segment library:** `start`, `street`, `cluster:n` (n buildings), `islands:n` (n
+  buildings with a pit and a landing strip between each), `gap` (jump), `tower`
+  (vertical climb, camera zooms), `hill`, `plateau` (a building on high ground), `sewer`
+  (camera rail dips), `gate` (a wall that must be broken to pass: forced destruction),
+  `breather`, `finish`. Not built: `hazard-yard`.
 - Segments keep today's contract: they connect at an entry/exit ground height, like the
   current `EndPosition`. Ground comes from theme tiles on a Tilemap. Buildings fill the
   slots from the theme's archetypes, weighted by intensity.

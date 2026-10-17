@@ -27,6 +27,16 @@ namespace Demolition.Generation
     /// A generated building as data: blocks on a cell grid with (0,0) at the bottom-left,
     /// ground row y = 0. Turned into GameObjects by the builder; judged by the validator.
     /// </summary>
+    /// <summary>One cell of a building's back wall (see <see cref="BuildingSpec.Interior"/>).</summary>
+    public struct InteriorCell
+    {
+        public Vector2Int Cell;
+        /// <summary>The block cell it hangs from: when that cell goes, this piece of wall goes.</summary>
+        public Vector2Int Host;
+        /// <summary>Right under a ceiling (draws the ceiling's shadow).</summary>
+        public bool UnderCeiling;
+    }
+
     public sealed class BuildingSpec
     {
         private readonly Dictionary<Vector2Int, SpecBlock> _occupied = new Dictionary<Vector2Int, SpecBlock>();
@@ -65,6 +75,48 @@ namespace Demolition.Generation
             Width = Mathf.Max(Width, block.Rect.xMax);
             Height = Mathf.Max(Height, block.Rect.yMax);
             return true;
+        }
+
+        /// <summary>Where the back wall shows: every open or see-through cell between a row's
+        /// outermost blocks. An open cell hangs from the nearest block above it (its ceiling;
+        /// below if there is none), a see-through cell from its own block.</summary>
+        public List<InteriorCell> Interior()
+        {
+            var cells = new List<InteriorCell>();
+            for (int y = 0; y < Height; y++)
+            {
+                int min = int.MaxValue, max = int.MinValue;
+                for (int x = 0; x < Width; x++)
+                    if (!IsFree(x, y))
+                    {
+                        min = Mathf.Min(min, x);
+                        max = Mathf.Max(max, x);
+                    }
+                for (int x = min + 1; x < max; x++)
+                {
+                    var cell = new Vector2Int(x, y);
+                    SpecBlock block = At(cell);
+                    if (block != null && !TileKinds.SeeThrough(block.Kind))
+                        continue;
+                    Vector2Int host = cell;
+                    if (block == null && !TryFind(x, y, 1, out host) && !TryFind(x, y, -1, out host))
+                        continue;
+                    cells.Add(new InteriorCell { Cell = cell, Host = host, UnderCeiling = y + 1 < Height && !IsFree(x, y + 1) });
+                }
+            }
+            return cells;
+        }
+
+        private bool TryFind(int x, int y, int dy, out Vector2Int found)
+        {
+            for (int yy = y + dy; yy >= 0 && yy < Height; yy += dy)
+                if (!IsFree(x, yy))
+                {
+                    found = new Vector2Int(x, yy);
+                    return true;
+                }
+            found = default;
+            return false;
         }
 
         /// <summary>The structural model the game will run on this building.</summary>

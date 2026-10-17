@@ -13,6 +13,7 @@
     "glass": {"frame": "steel", "pane": "sea", "highlights": [["sea", 3], ["concrete", 3]]},
     "door": {"style": "shutter", "frame": "concrete", "leaf": "sea", "stripe": "hazard", "stripe_dark": "asphalt"},
     "window_back": {"style": "dark", "ramp": "asphalt", "accent": "hazard"},
+    "interior": {"style": "blocks", "ramp": "concrete", "base": 1, "pattern": 0},
     "plank": {"style": "boards", "ramp": "wood"},
     "truss": {"ramp": "hazard", "rivet": "steel"},
     "beam": {"ramp": "steel", "stain": true},

@@ -128,6 +128,10 @@ namespace Demolition
 
         public bool TryGetBlock(Vector2Int cell, out BuildingBlock block) => _blocks.TryGetValue(cell, out block);
 
+        /// <summary>Cells that just left the standing structure (destroyed, or detached and
+        /// falling). Cosmetics hung on them (the back wall) go with them.</summary>
+        public event System.Action<List<Vector2Int>> CellsRemoved;
+
         /// <summary>Order-free hash of the standing cells: online, both devices compare it
         /// to catch a desync (docs/multiplayer.md §3).</summary>
         public int StandingHash()
@@ -197,6 +201,8 @@ namespace Demolition
         private void DropUnsupported()
         {
             List<Vector2Int> loose = _structure.RemoveUnsupported();
+            if (loose.Count > 0)
+                CellsRemoved?.Invoke(loose);
             for (int i = 0; i < loose.Count; i++)
             {
                 if (!_blocks.TryGetValue(loose[i], out BuildingBlock block))
@@ -485,6 +491,12 @@ namespace Demolition
                     removed++;
 
             List<Vector2Int> detached = _structure.RemoveCells(block.Coords);
+            if (CellsRemoved != null)
+            {
+                var gone = new List<Vector2Int>(block.Coords);
+                gone.AddRange(detached);
+                CellsRemoved(gone);
+            }
 
             // Group detached cells into distinct blocks (a rigid block's cells always
             // detach together).

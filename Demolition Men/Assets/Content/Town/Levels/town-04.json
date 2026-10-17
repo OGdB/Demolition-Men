@@ -5,7 +5,7 @@
   "seed": 4421,
   "parTime": 0,
   "scrollSpeed": 1.8,
-  "pacing": ["start", "street", "tower", "gap", "cluster:3", "hill", "tower", "gate", "breather", "cluster:2", "finish"],
+  "pacing": ["start", "street", "tower", "islands:3", "plateau", "tower", "gate", "breather", "cluster:2", "finish"],
   "pickups": { "dynamite": 6, "axe": 2, "wreckingBall": 1, "resurrect": 1 },
   "archetypes": []
 }

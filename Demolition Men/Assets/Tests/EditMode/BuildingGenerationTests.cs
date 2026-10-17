@@ -19,6 +19,29 @@ namespace Demolition.Tests
         private static BuildingArchetype Load(string path) => BuildingArchetype.FromJson(File.ReadAllText(path));
 
         [Test]
+        public void Interior_FillsOpenAndSeeThroughCells_HungFromTheCeiling()
+        {
+            var spec = new BuildingSpec("test", 1);
+            for (int y = 0; y < 3; y++)
+            {
+                spec.TryPlace(TileKind.Brick, 0, y);
+                spec.TryPlace(TileKind.Brick, 3, y);
+            }
+            spec.TryPlace(TileKind.Support, 1, 1);
+            for (int x = 0; x < 4; x++)
+                spec.TryPlace(TileKind.Brick, x, 3);
+            spec.TryPlace(TileKind.Chimney, 1, 4);
+
+            var interior = spec.Interior().ToDictionary(c => c.Cell);
+            Assert.AreEqual(6, interior.Count, "x 1..2, rows 0..2: nothing outside the walls, none on the roof");
+            Assert.AreEqual(new Vector2Int(2, 3), interior[new Vector2Int(2, 0)].Host, "an open cell hangs from its ceiling");
+            Assert.AreEqual(new Vector2Int(1, 1), interior[new Vector2Int(1, 1)].Host, "a see-through cell hangs from its own block");
+            Assert.AreEqual(new Vector2Int(1, 1), interior[new Vector2Int(1, 0)].Host, "the support is the ceiling of the cell below it");
+            Assert.IsTrue(interior[new Vector2Int(2, 2)].UnderCeiling);
+            Assert.IsFalse(interior[new Vector2Int(2, 1)].UnderCeiling);
+        }
+
+        [Test]
         public void EveryArchetype_StandsAndMeetsTargets_Over200Seeds([ValueSource(nameof(Archetypes))] string path)
         {
             BuildingArchetype archetype = Load(path);

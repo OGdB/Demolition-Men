@@ -130,6 +130,8 @@ def mock_street(sprites, theme):
             place(walls[(x * 5 + y + 1) % 3], x, y + 1)
     for x in range(1, 7):
         place("plank", x, 2)
+    place("interior", 5, 0)
+    place("interior_top", 5, 1)
     place("support", 5, 0)
     place("support", 5, 1)
     place("door", 2, 0)

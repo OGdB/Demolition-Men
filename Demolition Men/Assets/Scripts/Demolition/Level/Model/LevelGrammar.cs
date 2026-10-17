@@ -114,6 +114,24 @@ namespace Demolition.Levels
                     case SegmentKind.Hill:
                         height = Hill(layout, rng, height, maxRise, spots, index);
                         break;
+                    case SegmentKind.Plateau:
+                        height = Plateau(layout, rng, Pick(archetypes, rng, progress, false), height, maxRise, index, spots);
+                        break;
+                    case SegmentKind.Islands:
+                        Flat(layout, 3, height, spots, index);
+                        for (int b = 0; b < Mathf.Max(1, count); b++)
+                        {
+                            PlaceBuilding(layout, rng, Pick(archetypes, rng, progress, false), height, index, spots);
+                            // A ledge, a pit and a landing strip: the next building's wall never
+                            // stands at the pit's edge, and debris falls out of the street.
+                            Flat(layout, 1, height, spots, index);
+                            Pit(layout, rng.Range(2, MaxPit));
+                            if (rng.Chance(0.3f))
+                                height += rng.Chance(0.5f) ? 1 : -1;
+                            Flat(layout, 2, height, spots, index);
+                        }
+                        Flat(layout, 1, height, spots, index);
+                        break;
                     case SegmentKind.Sewer:
                         height = Sewer(layout, rng, height, spots, index);
                         break;
@@ -191,6 +209,28 @@ namespace Demolition.Levels
             return top;
         }
 
+        // Steps up to a building standing on the high ground, and back down past it.
+        private static int Plateau(LevelLayout layout, Pcg32 rng, BuildingArchetype archetype, int height, int maxRise,
+            int segment, List<Spot> spots)
+        {
+            Flat(layout, 2, height, spots, segment);
+            int top = height;
+            for (int s = 0, steps = rng.Range(1, 2); s < steps; s++)
+            {
+                top += rng.Range(1, maxRise);
+                Flat(layout, 3, top, spots, segment);
+            }
+            Flat(layout, 2, top, spots, segment);
+            PlaceBuilding(layout, rng, archetype, top, segment, spots);
+            Flat(layout, 3, top, spots, segment);
+            while (top > height)
+            {
+                top = Mathf.Max(height, top - rng.Range(1, maxRise));
+                Flat(layout, 3, top, spots, segment);
+            }
+            return top;
+        }
+
         // A trench below street level: one-cell steps down, a stretch at the bottom, steps up.
         private static int Sewer(LevelLayout layout, Pcg32 rng, int height, List<Spot> spots, int segment)
         {
@@ -258,14 +298,27 @@ namespace Demolition.Levels
         {
             PickupBudget budget = layout.Spec.pickups ?? new PickupBudget();
             var free = new List<Spot>(spots);
-            Place(layout, rng, free, PickupKind.Axe, 25, budget.axe, roofs: false);
-            Place(layout, rng, free, PickupKind.WreckingBall, 20, budget.wreckingBall, roofs: false);
-            Place(layout, rng, free, PickupKind.Resurrect, 1, budget.resurrect, roofs: false);
-            Place(layout, rng, free, PickupKind.Dynamite, 2, budget.dynamite, roofs: true);
+            Place(layout, rng, free, PickupKind.Axe, 25, budget.axe, roofs: false, nearBuilding: true);
+            Place(layout, rng, free, PickupKind.WreckingBall, 20, budget.wreckingBall, roofs: false, nearBuilding: true);
+            Place(layout, rng, free, PickupKind.Resurrect, 1, budget.resurrect, roofs: false, nearBuilding: false);
+            Place(layout, rng, free, PickupKind.Dynamite, 2, budget.dynamite, roofs: true, nearBuilding: false);
+        }
+
+        /// <summary>Columns before a building where a weapon still reads as "for this one".</summary>
+        public const int WeaponLeadIn = 6;
+
+        private static bool JustBeforeBuilding(LevelLayout layout, Spot spot)
+        {
+            foreach (BuildingPlacement b in layout.Buildings)
+                if (spot.X < b.X && spot.X >= b.X - WeaponLeadIn)
+                    return true;
+            return false;
         }
 
         // Spread evenly: the n-th pickup comes from the n-th slice of the remaining spots.
-        private static void Place(LevelLayout layout, Pcg32 rng, List<Spot> free, PickupKind kind, int amount, int count, bool roofs)
+        // Weapons take a spot just before a building in their slice when there is one.
+        private static void Place(LevelLayout layout, Pcg32 rng, List<Spot> free, PickupKind kind, int amount, int count, bool roofs,
+            bool nearBuilding)
         {
             for (int n = 0; n < count; n++)
             {
@@ -277,7 +330,13 @@ namespace Demolition.Levels
                     return;
                 int sliceStart = candidates.Count * n / count;
                 int sliceEnd = Mathf.Max(sliceStart, candidates.Count * (n + 1) / count - 1);
-                int pick = candidates[rng.Range(sliceStart, sliceEnd)];
+                var preferred = new List<int>();
+                for (int c = sliceStart; nearBuilding && c <= sliceEnd; c++)
+                    if (JustBeforeBuilding(layout, free[candidates[c]]))
+                        preferred.Add(candidates[c]);
+                int pick = preferred.Count > 0
+                    ? preferred[rng.Range(0, preferred.Count - 1)]
+                    : candidates[rng.Range(sliceStart, sliceEnd)];
                 Spot spot = free[pick];
                 free.RemoveAt(pick);
                 layout.Pickups.Add(new PickupPlacement { X = spot.X, Y = spot.Y, Kind = kind, Amount = amount, Segment = spot.Segment });

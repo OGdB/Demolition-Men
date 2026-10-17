@@ -50,6 +50,8 @@ namespace Demolition.Generation
                 block.Initialise(building, coords);
                 building.RegisterBlock(block, coords, b.Anchor);
             }
+            if (tileset != null && tileset.Interior != null)
+                BuildingInterior.Build(building, spec, tileset);
             return building;
         }
     }

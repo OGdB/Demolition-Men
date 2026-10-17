@@ -1,13 +1,25 @@
 {
   "name": "Town",
-  "pitch": "Suburbs by day. Building tiles come from the hand-drawn object set; the pipeline only makes the backdrops.",
+  "pitch": "Suburbs by day. Red brick, brown trusses and glass columns come from the hand-drawn object set; the pipeline makes the backdrops and, in the object set's colours, the pieces it lacks (concrete, wood, doors, floors, beams, chimneys, rooms behind the glass and the back walls).",
   "seed": 6303,
-  "ramps": ["haze_town"],
-  "accents": [],
+  "seeds": {"wood": 6304},
+  "ramps": ["brick", "wood", "steel", "concrete", "haze_town"],
+  "accents": ["warm", "sea"],
   "sky": [0.53, 0.75, 0.92],
   "backdrop_tint": [1, 1, 1],
-  "sprites": ["backdrop_far", "backdrop_mid", "backdrop_near"],
+  "sprites": ["backdrop_far", "backdrop_mid", "backdrop_near", "concrete", "wood", "door", "plank", "beam", "chimney",
+              "window_back", "interior", "interior_top"],
   "materials": {
+    "wall": {"style": "brick", "ramp": "brick"},
+    "concrete": {"ramp": "concrete"},
+    "wood": {"ramp": "wood"},
+    "door": {"style": "panel", "frame": "concrete", "leaf": "wood", "window": "warm", "handle": "steel"},
+    "window_back": {"style": "lit", "ramp": "warm"},
+    "interior": {"style": "wallpaper", "ramp": "concrete", "base": 1, "pattern": 0},
+    "plank": {"style": "boards", "ramp": "wood"},
+    "beam": {"ramp": "steel", "stain": true},
+    "cap": {"ramp": "concrete"},
+    "chimney": {"style": "stack", "ramp": "brick"},
     "backdrop": {"style": "town", "ramp": "haze_town"}
   }
 }
