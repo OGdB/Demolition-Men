@@ -1,53 +1,52 @@
 #!/usr/bin/env bash
-# Deploys or updates the relay on a Debian/Ubuntu VPS behind Caddy (TLS by Let's Encrypt).
-# Run from the dev machine; safe to re-run, and re-running is how you update.
-#   deploy.sh <ssh-target> <domain> [--email you@example.org] [--firewall]
+# Deploys or updates the relay as a Docker container behind the VPS's existing Caddy
+# container. Run from the dev machine; safe to re-run, and re-running is how you update.
+#   deploy.sh <ssh-target> <domain> [--network web] [--caddy caddy] [--caddyfile /opt/portainer/Caddyfile]
 set -euo pipefail
 
 die() { echo "error: $*" >&2; exit 1; }
-usage() { die "usage: $0 <ssh-target> <domain> [--email you@example.org] [--firewall]"; }
+usage() { die "usage: $0 <ssh-target> <domain> [--network web] [--caddy caddy] [--caddyfile /opt/portainer/Caddyfile]"; }
 
 [ $# -ge 2 ] || usage
 target=$1 domain=$2
 shift 2
-email="" firewall=0
+network=web caddy=caddy caddyfile=/opt/portainer/Caddyfile
 while [ $# -gt 0 ]; do
+  [ $# -ge 2 ] || usage
   case $1 in
-    --email) [ $# -ge 2 ] || usage; email=$2; shift 2 ;;
-    --firewall) firewall=1; shift ;;
+    --network) network=$2 ;;
+    --caddy) caddy=$2 ;;
+    --caddyfile) caddyfile=$2 ;;
     *) usage ;;
   esac
+  shift 2
 done
-# Both end up in the Caddyfile and on a remote command line.
+# All of these end up in the Caddyfile or on a remote command line.
 [[ $domain =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ && $domain == *.* ]] || die "not a domain name: $domain"
-[[ -z $email || $email =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+$ ]] || die "not an email address: $email"
+[[ $network =~ ^[A-Za-z0-9_.-]+$ && $caddy =~ ^[A-Za-z0-9_.-]+$ ]] || die "bad network or container name"
+[[ $caddyfile =~ ^/[A-Za-z0-9_./-]+$ ]] || die "bad Caddyfile path: $caddyfile"
 
-here=$(cd "$(dirname "$0")" && pwd)
-export PATH="$HOME/.dotnet:$PATH"
-command -v dotnet >/dev/null || die "building the relay needs the .NET 10 SDK: https://dot.net"
+src=$(cd "$(dirname "$0")/.." && pwd)
+
+echo "==> Checking DNS for $domain"
+ip=$( (getent ahostsv4 "$domain" 2>/dev/null || true) | awk 'NR == 1 { print $1 }')
+if [ -z "$ip" ] && command -v dig >/dev/null; then ip=$(dig +short A "$domain" | tail -n 1); fi
+[ -n "$ip" ] || die "$domain has no A record yet. Add one pointing at the VPS, wait for it to resolve, then re-run: Caddy can't get a certificate without it."
 
 echo "==> Connecting to $target"
 # Last line only: login scripts may print a banner first.
-info=$(ssh "$target" 'echo "$(uname -m) ${SSH_CONNECTION##* } $(mktemp -d)"' | tail -n 1)
-read -r arch ssh_port stage <<<"$info"
-[[ $ssh_port =~ ^[0-9]+$ && $stage == /* ]] || die "unexpected answer from $target: $info"
-case $arch in
-  x86_64) rid=linux-x64 ;;
-  aarch64 | arm64) rid=linux-arm64 ;;
-  *) die "unsupported CPU architecture on the VPS: $arch" ;;
-esac
+info=$(ssh "$target" 'echo "$(mktemp -d) $(hostname -I)"' | tail -n 1)
+stage=${info%% *}
+[[ $stage == /tmp/* ]] || die "unexpected answer from $target: $info"
+[[ " ${info#* } " == *" $ip "* ]] || echo "warning: $domain points at $ip, which isn't an address of this VPS (${info#* }). Fine for a floating IP; otherwise fix the A record."
 
-echo "==> Building for $rid (self-contained: the VPS needs no .NET)"
-out=$(mktemp -d)
-trap 'rm -rf "$out"' EXIT
-dotnet publish "$here/../Relay/Relay.csproj" -c Release -r "$rid" --self-contained \
-  -p:PublishSingleFile=true -p:DebugType=None -o "$out" -nologo -v q
-
-echo "==> Uploading"
-scp -C -q "$out/Relay" "$out/appsettings.json" "$here/demolition-relay.service" "$here/install.sh" "$target:$stage/"
+echo "==> Uploading the sources (the VPS builds the image)"
+# shellcheck disable=SC2029 # $stage is the VPS's own path, expanded here on purpose
+tar -C "$src" --exclude=bin --exclude=obj -czf - Dockerfile .dockerignore compose.yaml Relay deploy/install.sh \
+  | ssh "$target" "tar -xzf - -C '$stage'"
 
 echo "==> Installing (sudo may ask for your password)"
-ssh -t "$target" sudo bash "$stage/install.sh" "$stage" "$domain" "$firewall" "$ssh_port" ${email:+"$email"}
+ssh -t "$target" sudo bash "$stage/deploy/install.sh" "$stage" "$domain" "$network" "$caddy" "$caddyfile"
 
 echo "==> Waiting for https://$domain/health (the first certificate can take a minute)"
 for _ in $(seq 30); do
@@ -57,4 +56,4 @@ for _ in $(seq 30); do
   fi
   sleep 2
 done
-die "no answer from https://$domain/health. Check that $domain points at the VPS and that ports 80 and 443 are open (also in the provider's firewall), then: ssh $target journalctl -u caddy -n 50"
+die "no answer from https://$domain/health. Check the A record, then the certificate: ssh $target docker logs --tail 50 $caddy"

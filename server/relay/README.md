@@ -6,7 +6,9 @@ code and never reads game data. Design: `docs/multiplayer.md` §8.
 ```
 Relay/            ASP.NET Core app (RelayServer.cs holds rooms, limits and forwarding)
 Relay.Tests/      xUnit tests against the app in memory
-deploy/           deploy.sh, rollback.sh, install.sh (runs on the VPS), the systemd unit
+Dockerfile        the image: built on the VPS, runs on the chiseled ASP.NET image as non-root
+compose.yaml      the container behind the VPS's existing Caddy container
+deploy/           deploy.sh, rollback.sh, install.sh (runs on the VPS)
 ```
 
 ## Local development
@@ -58,8 +60,8 @@ message every ~20 s and ignore empty messages on receive.
 ## Configuration
 
 `Relay/appsettings.json`, section `Relay`. Environment variables override it as
-`Relay__<Key>`. On the VPS put them in `/etc/demolition-relay.env` (deploys never touch it),
-one per line, then `sudo systemctl restart demolition-relay`.
+`Relay__<Key>`. On the VPS put them in `/opt/demolition-relay/relay.env` (deploys never touch
+it), one per line, then `cd /opt/demolition-relay && sudo docker compose up -d`.
 
 | Key | Default | |
 |---|---|---|
@@ -75,75 +77,69 @@ one per line, then `sudo systemctl restart demolition-relay`.
 | `KeepAliveInterval` / `KeepAliveTimeout` | 00:00:15 | WebSocket pings; a peer that doesn't answer is dropped. |
 | `AllowedOrigins` | empty (all) | Browser origins allowed to connect, e.g. `Relay__AllowedOrigins__0=https://html-classic.itch.zone`. Only checked when an `Origin` header is present: native clients send none. |
 
-The client IP comes from `X-Forwarded-For` only when the request comes from loopback (Caddy
-on the same box).
+| `TrustedProxyNetworks` | empty | CIDRs whose `X-Forwarded-For` is believed, besides loopback. The deploy sets it to the subnet of Caddy's Docker network. |
 
-## Deploy to a VPS
+The client IP comes from `X-Forwarded-For` only when the request comes from loopback or a
+`TrustedProxyNetworks` address. Get this wrong and every player shares the proxy's address:
+the per-IP limits then act on everyone at once (3 rooms in total).
 
-Prerequisites:
-- A Debian or Ubuntu VPS, and SSH access as a user with sudo. An SSH key saves you three
-  password prompts.
-- A domain name whose A record (and AAAA, if the VPS has IPv6) points at the VPS. A free
-  [DuckDNS](https://www.duckdns.org) subdomain (`yourname.duckdns.org`) works.
-- Ports 80 and 443 open at the hosting provider, and nothing else listening on them.
-- On your machine: bash (Linux, macOS, WSL or Git Bash), ssh, scp, curl and the .NET 10 SDK.
+## Deploy to the VPS
 
-```
-server/relay/deploy/deploy.sh admin@203.0.113.7 relay.example.org --email you@example.org --firewall
-```
+The relay runs as a Docker container behind the VPS's existing Caddy container: it joins
+Caddy's network (`web`), publishes no ports, and Caddy proxies `https://<domain>` to it and
+gets its certificate. The deploy is set up for this VPS: Caddy in a container named `caddy`,
+its Caddyfile at `/opt/portainer/Caddyfile` on the host (bind-mounted to
+`/etc/caddy/Caddyfile`), the `web` network. Flags change these.
 
-It builds a self-contained single binary for the VPS's CPU (the VPS needs no .NET), uploads
-it, then with sudo: creates the `relay` system user, installs to
-`/opt/demolition-relay/current` (the release before goes to `previous`), installs and starts
-`demolition-relay.service`, installs Caddy from its apt repository if missing and points
-`<domain>` at the relay in `/etc/caddy/conf.d/demolition-relay.caddy`. Caddy gets the Let's
-Encrypt certificate itself. At the end it waits for `https://<domain>/health` and prints
-the URL for the game: `wss://<domain>/ws`.
-
-- `--email` gives Let's Encrypt an address for expiry warnings. Optional.
-- `--firewall` enables ufw allowing only your SSH port, 80 and 443. Without it the firewall
-  is left alone.
-- It stops before changing anything if ports 80/443 belong to something other than Caddy.
-
-**Update:** run the same command again. **Roll back:** `server/relay/deploy/rollback.sh
-admin@203.0.113.7` swaps `current` and `previous` and restarts; running it again swaps back.
-
-**Logs:** `ssh admin@203.0.113.7 journalctl -u demolition-relay -f`. Once a minute, if anything
-happened: rooms open, peers, bytes/s in and out, and connections closed by reason.
-Certificate problems: `journalctl -u caddy`.
-
-### Behind nginx
-
-If nginx already owns 80/443, `deploy.sh` stops. Add this to the nginx `server` block for
-your domain (TLS stays nginx's job):
-
-```nginx
-location = /ws {
-    proxy_pass http://127.0.0.1:5080;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_read_timeout 1h;
-}
-location = /health { proxy_pass http://127.0.0.1:5080; }
-```
-
-Then install the service by hand (from `server/relay`, use `linux-arm64` on ARM):
+Before the first deploy:
+1. **DNS:** add an A record for the relay's name pointing at the VPS (for example
+   `relay.oeds.space → 138.201.155.228`) and wait until it resolves. There is no wildcard
+   record, and Caddy can't get a certificate for a name that doesn't resolve.
+2. **On your machine:** bash (Linux, macOS, WSL or Git Bash), ssh, tar and curl. The VPS
+   builds the image, so you don't need .NET locally to deploy.
+3. **On the VPS:** SSH as root or as a user with sudo; Docker with the compose plugin.
 
 ```
-dotnet publish Relay -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:DebugType=None -o publish
-scp publish/Relay publish/appsettings.json deploy/demolition-relay.service admin@vps:
-ssh -t admin@vps 'sudo useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin relay;
-  sudo install -d /opt/demolition-relay/current && sudo install -m 755 Relay /opt/demolition-relay/current/ &&
-  sudo install -m 644 appsettings.json /opt/demolition-relay/current/ &&
-  sudo install -m 644 demolition-relay.service /etc/systemd/system/ &&
-  sudo systemctl daemon-reload && sudo systemctl enable --now demolition-relay'
+server/relay/deploy/deploy.sh root@138.201.155.228 relay.oeds.space
 ```
+
+What it does:
+1. Checks that the name resolves, then uploads the sources to a temporary folder.
+2. On the VPS (`install.sh`, as root): checks that the `caddy` container runs on `web` and
+   mounts the Caddyfile, before changing anything.
+3. Copies the sources to `/opt/demolition-relay` and writes `.env` with `web`'s subnet (the
+   trusted proxy network). It tags the running image `demolition-relay:previous` and runs
+   `docker compose up -d --build`: container `demolition-relay`, read-only, all capabilities
+   dropped, 256 MB memory cap, log rotation.
+4. Checks that Caddy reaches `demolition-relay:5080/health` over `web`.
+5. If the Caddyfile has no block for the domain yet, it keeps a dated backup and appends:
+   ```
+   relay.oeds.space {
+   	reverse_proxy demolition-relay:5080 {
+   		stream_close_delay 30m
+   	}
+   }
+   ```
+   `stream_close_delay` stops a Caddy reload (for any of the sites) from cutting games in
+   progress. The block is appended in place, because the Caddyfile is bind-mounted into the
+   container by inode: a replaced file (`sed -i`, most editors) wouldn't show up inside it.
+   Caddy validates the result; if it refuses, the backup goes back.
+6. Reloads Caddy (`caddy reload`, no restart: the other sites keep running), then waits for
+   `https://<domain>/health` and prints the URL for the game: `wss://<domain>/ws`.
+
+**Update:** run the same command again. The Caddy block is only added once.
+**Roll back:** `server/relay/deploy/rollback.sh root@138.201.155.228` swaps the `latest` and
+`previous` images and restarts the container; running it again swaps back.
+**Logs:** `docker logs -f demolition-relay`. Once a minute, if anything happened: rooms open,
+peers, bytes/s in and out, connections closed by reason. Certificates: `docker logs caddy`.
+**Disk:** the first build pulls the .NET SDK image (about 900 MB) and keeps it as build cache;
+`docker builder prune` frees it.
+
+Flags: `--network web`, `--caddy caddy`, `--caddyfile /opt/portainer/Caddyfile`.
 
 ## Privacy
 
 The relay sees players' IP addresses: it has to, to talk to them, and it keys the rate limits
 on them in memory for a minute. It never logs IP addresses or join codes, and never reads
-the game data it forwards. Caddy keeps no access log unless you add one. The game's privacy
+the game data it forwards. The site block it adds to Caddy has no access log. The game's privacy
 policy should still say that the relay sees IP addresses (`docs/monetization.md` checklist).

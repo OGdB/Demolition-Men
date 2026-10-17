@@ -1,0 +1,4 @@
+**/bin
+**/obj
+Relay.Tests
+deploy

@@ -5,8 +5,13 @@ var app = WebApplication.CreateBuilder(args).Build();
 var options = app.Configuration.GetSection("Relay").Get<RelayOptions>() ?? new();
 var relay = new RelayServer(options, app.Logger);
 
-// The defaults trust X-Forwarded-For only from loopback: Caddy on the same box.
-app.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor });
+// X-Forwarded-For is trusted from loopback (a proxy on the same box) and from the networks
+// configured: a Caddy container's Docker network. Without it every player shares the
+// proxy's address, and the per-IP limits turn into global ones.
+var forwarded = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor };
+foreach (var network in options.TrustedProxyNetworks)
+    forwarded.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+app.UseForwardedHeaders(forwarded);
 app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = options.KeepAliveInterval,
@@ -34,4 +39,6 @@ public sealed class RelayOptions
     public TimeSpan KeepAliveInterval { get; set; } = TimeSpan.FromSeconds(15);
     public TimeSpan KeepAliveTimeout { get; set; } = TimeSpan.FromSeconds(15);
     public string[] AllowedOrigins { get; set; } = [];
+    /// CIDRs whose X-Forwarded-For is believed, besides loopback, e.g. "172.18.0.0/16".
+    public string[] TrustedProxyNetworks { get; set; } = [];
 }

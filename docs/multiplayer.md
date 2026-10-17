@@ -233,13 +233,15 @@ Online: campaign and daily levels. Tutorial and training stay local. One player 
 ## 8. The relay on the VPS
 
 An ASP.NET Core minimal app (current .NET LTS) in `server/relay/` with one WebSocket
-endpoint. It runs as a systemd service. It never runs game code or reads game data.
+endpoint. It runs as a Docker container behind the Caddy container that already fronts the
+VPS's other sites. It never runs game code or reads game data.
 
-**TLS is required.** A WebGL page served over HTTPS may only open `wss://`. Put Caddy in
-front: it gets and renews a Let's Encrypt certificate by itself and proxies WebSockets to
-the relay on localhost. A certificate needs a domain name: your own, or a free dynamic-DNS
-subdomain (DuckDNS, for example). The game connects by that hostname, so moving the VPS is
-only a DNS change.
+**TLS is required.** A WebGL page served over HTTPS may only open `wss://`. Caddy gets and
+renews the Let's Encrypt certificate for the relay's name (`relay.oeds.space`, its own A
+record) and proxies WebSockets to the container over the shared Docker network. The relay
+trusts `X-Forwarded-For` from that network only, so the per-IP limits see players, not
+Caddy. The game connects by the hostname, so moving the VPS is only a DNS change. Deploy:
+`server/relay/README.md`.
 
 1. **HOST** connects to `wss://<host>/ws?v=<protocol>&role=host`. The relay makes a room and
    replies with a 6-character code from an alphabet without look-alikes (no 0/O, 1/I).
@@ -262,8 +264,8 @@ Check both. 1 TB a month is about 30,000 match-hours.
   close the connection), handshake and idle timeouts, WebSocket keep-alive pings.
 - Connection and join attempts are rate-limited per IP, so codes can't be brute-forced.
 - Nagle off (`NoDelay`) on the relay's sockets, so small messages aren't held back.
-- It runs as a non-root user and restarts by itself (`Restart=always`). The firewall opens
-  only SSH, 80 (certificate renewal) and 443.
+- The container runs as a non-root user on a read-only filesystem with every capability
+  dropped and a memory cap, publishes no ports, and restarts by itself.
 - It logs room counts and bytes per second, not IP addresses.
 - Optional: an `Origin` allowlist (the domains that serve the WebGL build). That stops other
   websites from using the relay from a browser, not native clients.
@@ -299,7 +301,7 @@ Check both. 1 TB a month is about 30,000 match-hours.
 |---|---|
 | Float math in the generators differs between CPUs, so the devices build different levels | The hash check refuses the run; the O2 test; send the accepted seeds if it ever fires (§4). |
 | TCP holds back messages after a loss, so the remote player hitches on bad mobile links | Only the other player and the client's own collapses lag, never your own movement. Interpolation absorbs small gaps. The O5 UDP leg for native builds if playtests demand it. |
-| The VPS is down, or its traffic quota runs out | Online is unavailable with a clear message; local play is unaffected. systemd restarts the relay. |
+| The VPS is down, or its traffic quota runs out | Online is unavailable with a clear message; local play is unaffected. Docker restarts the relay. |
 | One VPS region adds latency for players far from it | Same as the TCP risk: only remote things lag. Accepted for a free service. |
 | Abuse of the relay's public endpoint | The §8 hardening list. |
 | A phone host goes to the background, or a browser host's tab is hidden | O4: the client gets a clear message; the run is short, so the loss is small. |

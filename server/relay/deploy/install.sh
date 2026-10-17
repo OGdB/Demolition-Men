@@ -1,111 +1,70 @@
 #!/usr/bin/env bash
-# Runs on the VPS as root; deploy.sh uploads it with the release and calls it:
-#   install.sh <staging-dir> <domain> <firewall 0|1> <ssh-port> [email]
-# Safe to re-run: every step checks first or overwrites.
+# Runs on the VPS as root; deploy.sh uploads the sources and calls it:
+#   install.sh <staging-dir> <domain> <network> <caddy-container> <caddyfile-on-host>
+# Safe to re-run: it rebuilds the image and adds the Caddy site only once.
 set -euo pipefail
-stage=$1 domain=$2 firewall=$3 ssh_port=$4 email=${5:-}
+stage=$1 domain=$2 network=$3 caddy=$4 caddyfile=$5
 app=/opt/demolition-relay
 trap 'rm -rf "$stage"' EXIT
-export DEBIAN_FRONTEND=noninteractive
 
 die() { echo "error: $*" >&2; exit 1; }
 
 # Checks first: nothing on the server changes until they pass.
-command -v ss >/dev/null || die "ss (iproute2) is missing; it is needed to see what holds ports 80/443"
-held=$(ss -Hltnp '( sport = :80 or sport = :443 )' | grep -o 'users:(("[^"]*"' | cut -d'"' -f2 | grep -vx caddy | sort -u | tr '\n' ' ' || true)
-if [ -n "$held" ]; then
-  cat >&2 <<EOF
-error: ports 80/443 are held by: $held
-Caddy needs them, so nothing was changed. To keep that server, proxy the relay through it.
-nginx, inside the server block for $domain (README: "Behind nginx"):
+command -v docker >/dev/null || die "docker is missing"
+docker compose version >/dev/null 2>&1 || die "the docker compose plugin is missing"
+[ "$(docker inspect -f '{{.State.Running}}' "$caddy" 2>/dev/null)" = true ] || die "the container '$caddy' isn't running"
+docker inspect -f '{{range $name, $_ := .NetworkSettings.Networks}}{{$name}} {{end}}' "$caddy" | grep -qw -- "$network" \
+  || die "'$caddy' isn't on the Docker network '$network' (--network)"
+subnet=$(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' "$network" | tr ' ' '\n' | grep -v ':' | head -n 1 || true)
+[ -n "$subnet" ] || die "the network '$network' has no IPv4 subnet"
+[ -f "$caddyfile" ] || die "$caddyfile not found (--caddyfile)"
+inner=$(docker inspect -f '{{range .Mounts}}{{if eq .Source "'"$caddyfile"'"}}{{.Destination}}{{end}}{{end}}' "$caddy")
+[ -n "$inner" ] || die "$caddyfile isn't mounted into '$caddy' (--caddyfile)"
 
-    location = /ws {
-        proxy_pass http://127.0.0.1:5080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header X-Forwarded-For \$remote_addr;
-        proxy_read_timeout 1h;
-    }
-    location = /health { proxy_pass http://127.0.0.1:5080; }
-EOF
-  exit 1
-fi
-if ! command -v caddy >/dev/null; then
-  # shellcheck source=/dev/null
-  . /etc/os-release
-  case " ${ID:-} ${ID_LIKE:-} " in
-    *" debian "* | *" ubuntu "*) ;;
-    *) die "Caddy is missing and this script installs it on Debian/Ubuntu only (found ${PRETTY_NAME:-unknown}). Install Caddy (https://caddyserver.com/docs/install), then re-run." ;;
-  esac
-fi
-
-echo "--> Installing the relay to $app"
-id relay >/dev/null 2>&1 || useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin relay
-# Owned by root, readable by relay. current/ becomes previous/ for rollback.sh.
+echo "--> Building and starting the relay container"
 install -d -m 755 "$app"
-rm -rf "$app/next"
-install -d -m 755 "$app/next"
-install -m 755 "$stage/Relay" "$app/next/Relay"
-install -m 644 "$stage/appsettings.json" "$app/next/appsettings.json"
-rm -rf "$app/previous"
-if [ -d "$app/current" ]; then mv "$app/current" "$app/previous"; fi
-mv "$app/next" "$app/current"
-install -m 644 "$stage/demolition-relay.service" /etc/systemd/system/demolition-relay.service
-
-if ! command -v caddy >/dev/null; then
-  echo "--> Installing Caddy from its apt repository"
-  apt-get update -q
-  apt-get install -y -q curl gnupg ca-certificates
-  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt > /etc/apt/sources.list.d/caddy-stable.list
-  chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
-  apt-get update -q
-  apt-get install -y -q caddy
+rm -rf "$app/Relay"
+cp -r "$stage/Dockerfile" "$stage/.dockerignore" "$stage/compose.yaml" "$stage/Relay" "$app/"
+printf 'RELAY_NETWORK=%s\nRELAY_TRUSTED_PROXY_NETWORK=%s\n' "$network" "$subnet" > "$app/.env"
+touch "$app/relay.env"
+# The image running now becomes :previous, for rollback.sh.
+if docker image inspect demolition-relay:latest >/dev/null 2>&1; then
+  docker image tag demolition-relay:latest demolition-relay:previous
 fi
+docker compose --project-directory "$app" up -d --build --remove-orphans
+docker image prune -f --filter label=org.opencontainers.image.title=demolition-relay >/dev/null
 
-echo "--> Configuring Caddy for $domain"
-install -d -m 755 /etc/caddy/conf.d
-{
-  echo "$domain {"
-  if [ -n "$email" ]; then printf '\ttls %s\n' "$email"; fi
-  printf '\treverse_proxy 127.0.0.1:5080\n'
-  echo "}"
-} > /etc/caddy/conf.d/demolition-relay.caddy
-caddyfile=/etc/caddy/Caddyfile
-import='import /etc/caddy/conf.d/*.caddy'
-# The stock file only serves /usr/share/caddy on :80; anything else is the owner's and only gets the import.
-content=$(sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$caddyfile" 2>/dev/null | grep -v '^$' | tr '\n' ' ' || true)
-if [ -z "$content" ] || [ "$content" = ':80 { root * /usr/share/caddy file_server } ' ]; then
-  if [ -f "$caddyfile" ] && [ ! -f "$caddyfile.orig" ]; then cp "$caddyfile" "$caddyfile.orig"; fi
-  echo "$import" > "$caddyfile"
-elif ! grep -qxF "$import" "$caddyfile"; then
-  printf '\n%s\n' "$import" >> "$caddyfile"
-fi
-caddy validate --adapter caddyfile --config "$caddyfile" >/dev/null 2>&1 \
-  || die "Caddy rejects $caddyfile. See: caddy validate --adapter caddyfile --config $caddyfile"
+echo "--> Checking that $caddy reaches the relay"
+for i in $(seq 15); do
+  if [ "$(docker exec "$caddy" wget -qO- -T 3 http://demolition-relay:5080/health 2>/dev/null)" = ok ]; then break; fi
+  [ "$i" -lt 15 ] || { docker logs --tail 30 demolition-relay >&2 || true; die "the relay doesn't answer on demolition-relay:5080. ../rollback.sh goes back to the previous image."; }
+  sleep 1
+done
 
-if [ "$firewall" = 1 ]; then
-  if command -v ufw >/dev/null; then
-    echo "--> warning: enabling ufw. Incoming traffic is allowed only on SSH port $ssh_port, 80 and 443."
-    ufw allow "$ssh_port/tcp"
-    ufw allow 80/tcp
-    ufw allow 443/tcp
-    ufw --force enable
-  else
-    echo "--> warning: --firewall given but ufw is not installed; the firewall is unchanged."
+if grep -qE "^[[:space:]]*${domain//./\\.}[[:space:],{]|^[[:space:]]*${domain//./\\.}$" "$caddyfile"; then
+  echo "--> $domain is already in $caddyfile; left as is"
+else
+  echo "--> Adding $domain to $caddyfile"
+  backup="$caddyfile.bak.$(date +%Y%m%d%H%M%S)"
+  cp -p "$caddyfile" "$backup"
+  # Append in place: the file is bind-mounted into the container by inode, so a
+  # replaced file (sed -i, most editors) would never show up inside it.
+  cat >> "$caddyfile" <<CADDY
+
+# Demolition Men co-op relay (server/relay in the game's repository)
+$domain {
+	reverse_proxy demolition-relay:5080 {
+		# A config reload closes proxied WebSockets after this delay: games in progress keep running.
+		stream_close_delay 30m
+	}
+}
+CADDY
+  if ! docker exec "$caddy" caddy validate --config "$inner" --adapter caddyfile >/dev/null 2>&1; then
+    cat "$backup" > "$caddyfile" # in place, same inode
+    die "Caddy rejected the new site, so $caddyfile is back as it was. See: docker exec $caddy caddy validate --config $inner --adapter caddyfile"
   fi
-elif command -v ufw >/dev/null && ufw status | grep -q 'Status: active'; then
-  echo "--> note: ufw is active; ports 80 and 443 must be allowed for the certificate and for players."
 fi
 
-echo "--> Starting"
-systemctl daemon-reload
-systemctl enable --quiet demolition-relay caddy
-systemctl restart demolition-relay
-systemctl reload-or-restart caddy
-sleep 2
-if ! systemctl is-active --quiet demolition-relay; then
-  journalctl -u demolition-relay -n 30 --no-pager >&2 || true
-  die "the relay did not start. deploy/rollback.sh goes back to the previous release."
-fi
+echo "--> Reloading Caddy"
+docker exec "$caddy" caddy reload --config "$inner" --adapter caddyfile \
+  || die "caddy reload failed (is its admin API off?). The site is in $caddyfile; restart the container to load it: docker restart $caddy"

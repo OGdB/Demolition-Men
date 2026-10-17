@@ -1,0 +1,28 @@
+# The relay behind the host's existing Caddy container: it joins Caddy's Docker network and
+# publishes no ports. deploy/install.sh writes the .env next to this file.
+name: demolition-relay
+services:
+  relay:
+    build: .
+    image: demolition-relay:latest
+    container_name: demolition-relay
+    restart: unless-stopped
+    expose: ["5080"]
+    env_file: relay.env # your overrides (Relay__MaxRooms=1000, ...); deploys never touch it
+    environment:
+      # Caddy's network: X-Forwarded-For from there carries the player's real address.
+      Relay__TrustedProxyNetworks__0: ${RELAY_TRUSTED_PROXY_NETWORK:?the subnet of the proxy network}
+    networks: [proxy]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+networks:
+  proxy:
+    name: ${RELAY_NETWORK:-web}
+    external: true
