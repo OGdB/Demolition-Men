@@ -147,17 +147,21 @@ Pure connectivity logic, no scene/physics/play loop. Covers:
 
 ## 5. Networking plan (Netcode for GameObjects) — designed in, not yet wired
 
-The reason C is the right base for netcode: **structural state is discrete and tiny.**
+The full plan (topology, messages, milestones O1–O5) is in `docs/multiplayer.md`. The short
+version: the reason C is the right base for netcode is that **structural state is discrete
+and tiny.**
 
-- **Server-authoritative grid.** Each `DestructibleBuilding` becomes a `NetworkBehaviour`
-  owning a **destroyed-set** (`NetworkList<ushort>`/bitset of cell indices). Blocks are grid
-  indices, **not** a `NetworkObject` each.
-- **Replicate events, not rigidbodies.** Punch → client request → server validates hit →
-  applies damage → broadcasts `{destroyedCellId, detachedCellIds, seed}`. Never stream falling
-  transforms (Unity Physics2D isn't cross-machine deterministic — see Appendix A).
-- **Debris is client-side visual**, spawned deterministically from `seed`. If falling blocks
-  must damage players, keep *that* collision authoritative but capped.
-- **Late-joiners** receive the destroyed-set and rebuild the standing wall.
+- **Host-authoritative grid.** Buildings stay plain MonoBehaviours, generated on each device
+  from the level seed. One `RunNet` behaviour addresses a cell as (building index, cell).
+  Blocks are grid indices, **not** a `NetworkObject` each.
+- **Replicate events, not rigidbodies.** Punch → client request → host applies damage →
+  broadcasts the changed cell health. Clients derive the detached cells themselves
+  (`RemoveCells` is deterministic). Never stream falling transforms (Unity Physics2D isn't
+  cross-machine deterministic — see Appendix A).
+- **Debris is each device's own**, with local physics and local random. A falling block
+  hurts a player when the hurt player's own device sees it land.
+- **Late-joiners** (if ever) receive the health of every damaged cell and rebuild the
+  standing wall.
 - **Local co-op** is one shared authoritative simulation — trivial on top of this.
 
 The current `OnBlockDestroyed` → `RemoveCell` → `BeginFalling` split maps cleanly onto this:
@@ -168,9 +172,9 @@ run locally.
 - **A level is `{specId, seed}`.** `LevelGrammar` (Pcg32 only) gives every machine the same
   ground, buildings (`BuildingSpec` hashes) and pickups; only the id and seed need sending.
   `LevelLayout.Hash()` can confirm both sides built the same level.
-- **Players act on `PlayerInputFrame`s** from an `IPlayerInputSource`. A network source
-  (owner sends frames, server applies them) slots in next to the device, touch and bot
-  sources without touching `PlayerMotor`/`PlayerCombat`.
+- **Players act on `PlayerInputFrame`s** from an `IPlayerInputSource`. The online plan does
+  not send frames: each device moves its own player and replicates the result, so nobody
+  waits a round trip to move (`docs/multiplayer.md` §2).
 - **Run rules are models** (`RunState`, `RunScore`): the host ticks them and replicates
   phase, timers and points; clients only render.
 - **Score attribution already carries a player index** through `TakeDamage(amount,
@@ -192,8 +196,8 @@ run locally.
    `Support` bears a lot, wood/glass little; overload *yields* even while connected → sagging
    and partial collapses before full detachment. Merge large detached islands into a single
    `CompositeCollider2D` body for cheaper, cleaner falls.
-4. **NGO (Phase 3, post-v1):** per-building destroyed-set `NetworkList` + collapse events with seed;
-   client-side debris; late-join reconstruction; authoritative punch validation.
+4. **NGO (Phase 3, post-v1):** host-authoritative cell health, per-device debris, owner-moved
+   players; milestones O1–O5 in `docs/multiplayer.md`.
 
 ---
 

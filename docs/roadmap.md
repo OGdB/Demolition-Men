@@ -93,7 +93,7 @@ reward that.
 
 **Out of v1 (post-v1 backlog)**
 - Online co-op over **Netcode for GameObjects (NGO)**. The structure is ready for it (see
-  design doc §5), but it adds months (D4).
+  design doc §5), but it adds months (D4). Plan: `docs/multiplayer.md`.
 - Online leaderboards, endless mode, player level editor.
 
 ---
@@ -259,7 +259,7 @@ Original plan:
   assets (the art pipeline can make key art).
 
 ### Post-v1
-Online co-op with NGO (replicate level id + seed + destroyed-cell sets; design doc §5),
+Online co-op with NGO (replicate level id + seed + cell health; `docs/multiplayer.md`),
 daily-seed leaderboards, endless mode, player level editor, more themes from the pipeline.
 
 ---
@@ -449,7 +449,7 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D1 | Co-op: is a player who falls behind (or dies) out for the whole run? | **Decided:** one free rejoin at the partner after 5 s (score penalty). After that, out until the partner collects a Resurrect pickup. Details in M1. |
 | D2 | When does a level finish? | When all living players cross the finish line, with a 5 s "last call" after the first crosses. |
 | D3 | Destruction vs speed weighting | Destruction-led score with collapse credit and chain multiplier; speed as a ×1.0–1.5 multiplier against par (§M1). |
-| D4 | Online multiplayer in v1? | **Decided:** post-v1, using Netcode for GameObjects (NGO), not Fishnet. Local co-op first. |
+| D4 | Online multiplayer in v1? | **Decided:** post-v1, using Netcode for GameObjects (NGO), not Fishnet. Local co-op first. Plan and its decisions (D11–D18): `docs/multiplayer.md`. |
 | D5 | Campaign levels: baked scenes or generated at load? | **Generated at load from `{spec, seed}`.** Bake only if a level needs hand polish. |
 | D6 | Skill shop / upgrades in v1? | **Decided:** yes, in v1 (M6). |
 | D7 | Art anchor | Keep the existing demolition man and object set as Theme 1 (Town) and as the reference for every generated theme. |
