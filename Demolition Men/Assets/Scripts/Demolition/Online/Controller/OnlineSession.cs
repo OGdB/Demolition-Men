@@ -15,8 +15,9 @@ namespace Demolition.Online
     /// object, NGO over the relay (<see cref="RelayTransport"/>), host or join by room code.
     /// The host's level choices load on both devices (NGO scene management, after a start
     /// message so the client builds the same level); the host network-spawns both players
-    /// once the client has loaded the run. Any end of the session goes back to the menu
-    /// with the reason (<see cref="TakeEndReason"/>).
+    /// once the client has loaded the run. Player 2 leaving mid-run lets the host play on
+    /// alone; any other end of the session goes back to the menu with the reason
+    /// (<see cref="TakeEndReason"/>).
     /// </summary>
     public sealed class OnlineSession : MonoBehaviour
     {
@@ -44,6 +45,7 @@ namespace Demolition.Online
         private RelayTransport _transport;
         private bool _host;
         private Vector3? _spawn;
+        private readonly List<NetworkObject> _players = new List<NetworkObject>();
         private bool _clientLoaded;
         private bool _ending;
 
@@ -133,10 +135,26 @@ namespace Demolition.Online
 
         private void OnClientDisconnected(ulong id)
         {
-            // shortcut: either player leaving ends the session for both; O4 lets the host play on.
-            if (_host && id == NetworkManager.ServerClientId)
+            if (!_host)
+            {
+                End(Reason());
                 return;
-            End(_host ? "PLAYER 2 LEFT" : Reason());
+            }
+            if (!IsConnected || id != Peer)
+                return; // the host itself, or a joiner it turned away (another version)
+            RunController run = RunController.Current;
+            if (run == null || !run.enabled)
+            {
+                End("PLAYER 2 LEFT");
+                return;
+            }
+            // Mid-run the host plays on alone: keep both players (shutting down would destroy
+            // the network's objects), end the session and take player 2 out of the run.
+            foreach (NetworkObject player in _players)
+                if (player != null && player.IsSpawned)
+                    player.Despawn(destroy: false);
+            End(null, playOn: true);
+            run.PlayerLeft(1);
         }
 
         private string Reason()
@@ -152,18 +170,20 @@ namespace Demolition.Online
                 case 4005: return "THE HOST LEFT";
                 case 4010: return "THE ROOM TIMED OUT";
                 case 4029: return "TOO MANY TRIES: WAIT A MINUTE";
-                case 0: return IsConnected ? "CONNECTION LOST" : "CAN'T REACH THE SERVER";
-                default: return "CONNECTION LOST";
+                default: return IsConnected ? "CONNECTION LOST" : "CAN'T REACH THE SERVER";
             }
         }
 
-        /// <summary>Stop the session. <paramref name="reason"/> null: the player left on purpose.</summary>
-        public void End(string reason)
+        /// <summary>Stop the session. <paramref name="reason"/> null: this device left on purpose
+        /// (whoever asked takes it where it goes next), otherwise back to the menu to show why.</summary>
+        /// <param name="playOn">The host keeps playing the run alone.</param>
+        public void End(string reason, bool playOn = false)
         {
             if (_ending)
                 return;
             _ending = true;
-            if (RunController.Current != null)
+            RunNet.Stop();
+            if (RunController.Current != null && !playOn)
                 RunController.Current.enabled = false; // its network players are about to go
             NetRole.Mode = NetMode.Offline;
             NetRole.LoadScene = null;
@@ -177,8 +197,9 @@ namespace Demolition.Online
             Destroy(gameObject);
 
             _endReason = reason;
-            if (reason != null)
-                Ended?.Invoke(reason);
+            if (reason == null)
+                return;
+            Ended?.Invoke(reason);
             // Mid-run or in the online menu: back to this device's own menu and level select.
             GameConfig config = GameConfig.Instance;
             if (SceneManager.GetActiveScene().name != config.menuScene)
@@ -202,6 +223,7 @@ namespace Demolition.Online
                 SendStart();
             _clientLoaded = false;
             _spawn = null;
+            _players.Clear();
             SceneEventProgressStatus status = _net.SceneManager.LoadScene(scene, LoadSceneMode.Single);
             if (status != SceneEventProgressStatus.Started)
                 Debug.LogWarning($"Online: loading {scene} didn't start ({status}).");
@@ -264,7 +286,10 @@ namespace Demolition.Online
             for (int i = 0; i < 2; i++)
             {
                 GameObject player = Instantiate(prefabs[i], _spawn.Value + new Vector3(-1.5f * i, 0f, 0f), Quaternion.identity);
-                player.GetComponent<NetworkObject>().SpawnWithOwnership(i == 0 ? NetworkManager.ServerClientId : Peer, destroyWithScene: true);
+                var networkObject = player.GetComponent<NetworkObject>();
+                networkObject.DontDestroyWithOwner = true; // player 2 leaving mid-run: the host still needs it (OnClientDisconnected)
+                networkObject.SpawnWithOwnership(i == 0 ? NetworkManager.ServerClientId : Peer, destroyWithScene: true);
+                _players.Add(networkObject);
             }
             _spawn = null;
         }

@@ -13,8 +13,10 @@ namespace Demolition.Online
     /// client sends what its own player does to them and mirrors the rest:
     /// <list type="bullet">
     /// <item>Damage: the client's hits on standing blocks go to the host (<c>DM.Damage</c>);
-    /// the host sends every changed cell once per tick (<c>DM.Cells</c>). Detaching follows on
-    /// each device from the same cells, debris is local.</item>
+    /// the host sends every changed cell once per tick (<c>DM.Cells</c>), then the points it
+    /// awarded for the score popups (<c>DM.Score</c>). Detaching follows on each device from the
+    /// same cells, debris is local. Cells of a building the client hasn't streamed in yet wait
+    /// until it has.</item>
     /// <item>Pickups: the client claims (<c>DM.Claim</c>), the host grants first come (<c>DM.Taken</c>).</item>
     /// <item>Dynamite: the thrower's device sends the throw and the blast (<c>DM.Thrown</c>,
     /// <c>DM.Blast</c>); the other flies a harmless copy.</item>
@@ -26,8 +28,9 @@ namespace Demolition.Online
     public sealed class RunNet : MonoBehaviour
     {
         private const string Ready = "DM.Ready", Cells = "DM.Cells", Damage = "DM.Damage", Claim = "DM.Claim",
-            Taken = "DM.Taken", Thrown = "DM.Thrown", Blast = "DM.Blast", State = "DM.State", Check = "DM.Check";
-        private static readonly string[] Names = { Ready, Cells, Damage, Claim, Taken, Thrown, Blast, State, Check };
+            Taken = "DM.Taken", Thrown = "DM.Thrown", Blast = "DM.Blast", State = "DM.State", Check = "DM.Check",
+            Score = "DM.Score";
+        private static readonly string[] Names = { Ready, Cells, Damage, Claim, Taken, Thrown, Blast, State, Check, Score };
         private const NetworkDelivery Reliable = NetworkDelivery.ReliableFragmentedSequenced;
         private const float CellsEvery = 0.05f, StateEvery = 0.1f, CheckEvery = 5f;
         private const float MaxDamage = 1000f; // one request can't flatten a building
@@ -43,6 +46,12 @@ namespace Demolition.Online
         private bool _hashChecked;
         private float _nextCells, _nextState, _nextCheck;
         private readonly List<(int building, int cell, byte health)> _changed = new List<(int, int, byte)>();
+        private readonly List<(int player, int points, Vector2 at)> _scored = new List<(int, int, Vector2)>();
+        private RunController _run;
+        // Client: the latest health of cells in buildings it hasn't streamed in yet (its camera
+        // trails the host's a little), applied once they are.
+        private readonly Dictionary<int, Dictionary<int, byte>> _pending = new Dictionary<int, Dictionary<int, byte>>();
+        private readonly List<int> _arrived = new List<int>();
         private readonly HashSet<int> _reportedDesync = new HashSet<int>();
         private readonly Dictionary<Dynamite, int> _ownSticks = new Dictionary<Dynamite, int>();
         private readonly Dictionary<int, Dynamite> _copies = new Dictionary<int, Dynamite>();
@@ -58,6 +67,16 @@ namespace Demolition.Online
                 Destroy(_current.gameObject);
             _current = new GameObject("RunNet").AddComponent<RunNet>();
             _current.Init(session, layout);
+        }
+
+        /// <summary>The session ended: stop syncing this run (the host may play on alone).</summary>
+        public static void Stop()
+        {
+            if (_current == null)
+                return;
+            RunNet net = _current;
+            net.Detach();
+            Destroy(net.gameObject);
         }
 
         private void Init(OnlineSession session, LevelLayout layout)
@@ -87,14 +106,20 @@ namespace Demolition.Online
                 messages.RegisterNamedMessageHandler(Taken, OnTaken);
                 messages.RegisterNamedMessageHandler(State, OnState);
                 messages.RegisterNamedMessageHandler(Check, OnCheck);
+                messages.RegisterNamedMessageHandler(Score, OnScore);
                 NetRole.RequestDamage = SendDamage;
                 NetRole.ClaimPickup = pickup => Send(Claim, writer => BytePacker.WriteValueBitPacked(writer, pickup.NetIndex));
                 Send(Ready, writer => { });
             }
         }
 
-        private void OnDestroy()
+        private void OnDestroy() => Detach();
+
+        private void Detach()
         {
+            if (_run != null)
+                _run.Scored -= OnScored;
+            _run = null;
             if (_current != this)
                 return; // replaced: the new one owns the handlers and hooks
             _current = null;
@@ -112,12 +137,25 @@ namespace Demolition.Online
         private void Update()
         {
             if (!_host)
+            {
+                if (_pending.Count > 0)
+                    ApplyPending();
                 return;
+            }
+            if (_run != RunController.Current)
+            {
+                if (_run != null)
+                    _run.Scored -= OnScored;
+                _run = RunController.Current;
+                if (_run != null)
+                    _run.Scored += OnScored;
+            }
             float now = Time.unscaledTime;
             if (now >= _nextCells)
             {
                 _nextCells = now + CellsEvery;
                 SendCells();
+                SendScores(); // after the cells: the block is gone when its points pop up
             }
             if (!_clientReady)
                 return;
@@ -227,11 +265,79 @@ namespace Demolition.Online
                 ByteUnpacker.ReadValueBitPacked(reader, out int building);
                 ByteUnpacker.ReadValueBitPacked(reader, out int cell);
                 reader.ReadValueSafe(out byte packed);
-                // A building this device hasn't streamed in (or out again) has nothing to update.
-                if (!TryGetBlock(building, cell, out BuildingBlock block))
+                if (building < 0 || building >= _layout.Buildings.Count)
                     continue;
-                NetPacking.UnpackCellHealth(packed, out int steps, out int instigator);
-                block.ApplyNetHealth(NetPacking.HealthFraction(steps), instigator);
+                if (DestructibleBuilding.TryGetByNetIndex(building, out DestructibleBuilding owner) && owner.IsReady && !_pending.ContainsKey(building))
+                {
+                    ApplyCell(building, cell, packed);
+                    continue;
+                }
+                // Not streamed in here yet: keep the latest (health only ever goes down).
+                if (!_pending.TryGetValue(building, out Dictionary<int, byte> cells))
+                    _pending[building] = cells = new Dictionary<int, byte>();
+                cells[cell] = packed;
+            }
+        }
+
+        private void ApplyCell(int building, int cell, byte packed)
+        {
+            if (!TryGetBlock(building, cell, out BuildingBlock block))
+                return; // already destroyed here
+            NetPacking.UnpackCellHealth(packed, out int steps, out int instigator);
+            block.ApplyNetHealth(NetPacking.HealthFraction(steps), instigator);
+        }
+
+        private void ApplyPending()
+        {
+            _arrived.Clear();
+            foreach (int building in _pending.Keys)
+                if (DestructibleBuilding.TryGetByNetIndex(building, out DestructibleBuilding owner) && owner.IsReady)
+                    _arrived.Add(building);
+            foreach (int building in _arrived)
+            {
+                Dictionary<int, byte> cells = _pending[building];
+                _pending.Remove(building);
+                foreach (KeyValuePair<int, byte> cell in cells)
+                    ApplyCell(building, cell.Key, cell.Value);
+            }
+        }
+
+        // ---------------- Score popups ----------------
+
+        private void OnScored(int player, int points, Vector3 at)
+        {
+            if (points > 0)
+                _scored.Add((player, points, at));
+        }
+
+        private void SendScores()
+        {
+            if (_scored.Count == 0)
+                return;
+            Send(Score, writer =>
+            {
+                BytePacker.WriteValueBitPacked(writer, _scored.Count);
+                foreach ((int player, int points, Vector2 at) in _scored)
+                {
+                    writer.WriteValueSafe((sbyte)player);
+                    BytePacker.WriteValueBitPacked(writer, points);
+                    writer.WriteValueSafe(at);
+                }
+            });
+            _scored.Clear();
+        }
+
+        private void OnScore(ulong sender, FastBufferReader reader)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out int count);
+            for (int i = 0; i < count; i++)
+            {
+                reader.ReadValueSafe(out sbyte player);
+                ByteUnpacker.ReadValueBitPacked(reader, out int points);
+                reader.ReadValueSafe(out Vector2 at);
+                RunController run = RunController.Current;
+                if (run != null)
+                    run.ShowScored(player, points, at);
             }
         }
 
@@ -281,6 +387,8 @@ namespace Demolition.Online
             Pickup pickup = FindPickup(index);
             if (pickup != null)
                 pickup.Take(Combat(player), local: player == NetRole.LocalPlayer);
+            else
+                Pickup.MarkTaken(index); // not streamed in here yet: it never will be
         }
 
         // ---------------- Dynamite ----------------
@@ -440,7 +548,7 @@ namespace Demolition.Online
             {
                 ByteUnpacker.ReadValueBitPacked(reader, out int index);
                 reader.ReadValueSafe(out int hash);
-                if (DestructibleBuilding.TryGetByNetIndex(index, out DestructibleBuilding building)
+                if (DestructibleBuilding.TryGetByNetIndex(index, out DestructibleBuilding building) && !_pending.ContainsKey(index)
                     && building.StandingHash() != hash && _reportedDesync.Add(index))
                     Debug.LogError($"Online desync: building {index} has different standing cells on the two devices.");
             }

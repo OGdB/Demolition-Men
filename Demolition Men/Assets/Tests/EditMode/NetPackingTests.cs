@@ -65,6 +65,18 @@ namespace Demolition.Tests
             }
         }
 
+        [Test]
+        public void Kit_RoundTrips_AndClamps()
+        {
+            foreach ((int weapon, int uses, int dynamite) in new[] { (0, 0, 0), (1, 7, 3), (2, NetPacking.MaxKitUses, NetPacking.MaxKitDynamite), (3, 1, 9) })
+            {
+                NetPacking.UnpackKit(NetPacking.PackKit(weapon, uses, dynamite), out int w, out int u, out int d);
+                Assert.AreEqual((weapon, uses, dynamite), (w, u, d));
+            }
+            NetPacking.UnpackKit(NetPacking.PackKit(0, -1, 5000), out _, out int fists, out int sticks);
+            Assert.AreEqual((0, NetPacking.MaxKitDynamite), (fists, sticks));
+        }
+
         // Two columns, three slabs between them and a balcony on the middle one: cutting a
         // column or a slab end drops whole pieces, so the stream exercises detachment.
         private const int Width = 10, Height = 10;

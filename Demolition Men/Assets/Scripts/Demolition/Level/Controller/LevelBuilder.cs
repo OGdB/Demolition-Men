@@ -49,6 +49,7 @@ namespace Demolition.Levels
             _coop = coop;
             _segments = new Transform[layout.Segments.Count];
             _despawned = new bool[layout.Segments.Count];
+            Pickup.ForgetTaken();
             BuildGround();
             BuildWalls();
         }
@@ -230,7 +231,7 @@ namespace Demolition.Levels
             for (int p = 0; p < _layout.Pickups.Count; p++)
             {
                 PickupPlacement placement = _layout.Pickups[p];
-                if (placement.Segment != index || _pickupPrefab == null || (placement.Kind == PickupKind.Resurrect && !_coop))
+                if (placement.Segment != index || _pickupPrefab == null || (placement.Kind == PickupKind.Resurrect && !_coop) || Pickup.WasTaken(p))
                     continue;
                 Pickup pickup = Instantiate(_pickupPrefab, transform.position + new Vector3(placement.X, placement.Y, 0f), Quaternion.identity, root);
                 pickup.Configure(placement.Kind, placement.Amount);

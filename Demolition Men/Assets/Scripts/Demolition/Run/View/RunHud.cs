@@ -289,7 +289,7 @@ namespace Demolition.Run
             if (status == PlayerStatus.Rejoining)
                 panel.Weapon.text = $"BACK IN {Mathf.CeilToInt(state.RejoinRemaining(index))}";
             else if (status == PlayerStatus.Out)
-                panel.Weapon.text = "OUT - FIND A RESURRECT";
+                panel.Weapon.text = state.HasLeft(index) ? "LEFT THE GAME" : "OUT - FIND A RESURRECT";
             else
                 panel.Weapon.text = WeaponName(player.Combat.Weapon) +
                                     (player.Combat.WeaponUses >= 0 ? " " + player.Combat.WeaponUses : string.Empty);
@@ -338,17 +338,19 @@ namespace Demolition.Run
             if (index < 0 || index >= _panels.Count)
                 return;
             RunController.Player player = _run.Players[index];
+            bool hints = !player.Health.IsProxy; // the other device's player: its controls aren't ours to show
             string switchKeys = player.Input != null && player.Input.Style == InputStyle.Touch
                 ? "TAP SWAP"
                 : Key(player, "Q", "LB", string.Empty) + " " + Key(player, "E", "RB", string.Empty);
             switch (kind)
             {
                 case PickupKind.Dynamite:
-                    _panels[index].Toast.text = $"+{amount} TNT   {Key(player, "X", "B", "TAP TNT")} TO THROW";
+                    _panels[index].Toast.text = $"+{amount} TNT" + (hints ? $"   {Key(player, "X", "B", "TAP TNT")} TO THROW" : string.Empty);
                     break;
                 case PickupKind.Axe:
                 case PickupKind.WreckingBall:
-                    _panels[index].Toast.text = $"{WeaponName(kind == PickupKind.Axe ? WeaponType.Axe : WeaponType.WreckingBall)} x{amount}   {switchKeys} TO SWITCH";
+                    _panels[index].Toast.text = $"{WeaponName(kind == PickupKind.Axe ? WeaponType.Axe : WeaponType.WreckingBall)} x{amount}" +
+                                                (hints ? $"   {switchKeys} TO SWITCH" : string.Empty);
                     break;
                 default:
                     _panels[index].Toast.text = "PARTNER RESURRECTED!";
@@ -370,6 +372,8 @@ namespace Demolition.Run
         /// button, or the name on the on-screen touch button.</summary>
         private static string Key(RunController.Player player, string keyboard, string gamepad, string touch)
         {
+            if (player.Health.IsProxy)
+                return string.Empty;
             switch (player.Input != null ? player.Input.Style : InputStyle.Keyboard)
             {
                 case InputStyle.Gamepad: return $"({gamepad})";

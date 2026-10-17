@@ -6,8 +6,9 @@ namespace Demolition.Online
     /// <summary>
     /// Online part of a player (on the NetPlayer_1/2 prefabs, next to <c>NetworkObject</c> and
     /// an owner-authority <c>NetworkTransform</c>). The owner's device plays it as usual and
-    /// publishes its pose and health as a byte each; on the other device it is a proxy
-    /// (<see cref="PlayerHealth.MakeProxy"/>) whose animator and health bar follow those bytes.
+    /// publishes its pose and health as a byte each, and its weapon, hits and dynamite; on the
+    /// other device it is a proxy (<see cref="PlayerHealth.MakeProxy"/>) whose animator, health
+    /// bar and HUD line follow those.
     /// Both devices name it Player_1 (the host's) or Player_2, which the run looks for.
     /// </summary>
     public sealed class NetPlayer : NetworkBehaviour
@@ -20,8 +21,10 @@ namespace Demolition.Online
 
         private readonly NetworkVariable<byte> _pose = new NetworkVariable<byte>(writePerm: NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<byte> _health = new NetworkVariable<byte>(255, writePerm: NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<int> _kit = new NetworkVariable<int>(writePerm: NetworkVariableWritePermission.Owner);
 
         private PlayerHealth _playerHealth;
+        private PlayerCombat _combat;
         private PlayerMotor _motor;
         private SpriteRenderer _sprite;
         private Animator _animator;
@@ -30,6 +33,7 @@ namespace Demolition.Online
         private void Awake()
         {
             _playerHealth = GetComponent<PlayerHealth>();
+            _combat = GetComponent<PlayerCombat>();
             _motor = GetComponent<PlayerMotor>();
             _sprite = GetComponentInChildren<SpriteRenderer>();
             _animator = GetComponent<Animator>();
@@ -62,6 +66,7 @@ namespace Demolition.Online
             int weapon = axe ? (int)WeaponType.Axe : wreck ? (int)WeaponType.WreckingBall : (int)WeaponType.Fists;
             _pose.Value = NetPacking.PackPose(_sprite == null || !_sprite.flipX, grounded, punch || axe || wreck, weapon);
             _health.Value = (byte)Mathf.RoundToInt(255f * Mathf.Clamp01(_playerHealth.Current / _playerHealth.Max));
+            _kit.Value = NetPacking.PackKit((int)_combat.Weapon, _combat.WeaponUses, _combat.DynamiteCount);
         }
 
         private void Follow()
@@ -80,6 +85,8 @@ namespace Demolition.Online
             }
             _lastPosition = transform.position;
             _playerHealth.SetProxyHealth(_health.Value / 255f * _playerHealth.Max);
+            NetPacking.UnpackKit(_kit.Value, out int kitWeapon, out int uses, out int dynamite);
+            _combat.ShowKit((WeaponType)kitWeapon, uses, dynamite);
         }
     }
 }

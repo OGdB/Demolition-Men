@@ -58,6 +58,7 @@ namespace Demolition.Run
             public float Rejoin;
             public bool FreeRespawnUsed;
             public bool Crossed;
+            public bool Left;
         }
 
         private readonly RunRules _rules;
@@ -87,7 +88,10 @@ namespace Demolition.Run
         public bool IsOver => Phase == RunPhase.Finished || Phase == RunPhase.Failed;
 
         public PlayerStatus Status(int player) => _slots[player].Status;
-        public bool HasFreeRespawn(int player) => PlayerCount > 1 && !_slots[player].FreeRespawnUsed;
+        /// <summary>A free rejoin needs a partner still in the game to rejoin next to.</summary>
+        public bool HasFreeRespawn(int player) => InGame > 1 && !_slots[player].FreeRespawnUsed;
+        /// <summary>Online: this player's device left the game.</summary>
+        public bool HasLeft(int player) => _slots[player].Left;
         /// <summary>Grace seconds left while out of bounds, -1 while in bounds.</summary>
         public float OutOfBoundsRemaining(int player) => _slots[player].OutOfBounds;
         public float RejoinRemaining(int player) => _slots[player].Rejoin;
@@ -102,6 +106,18 @@ namespace Demolition.Run
                     if (_slots[i].Status == PlayerStatus.Alive)
                         alive++;
                 return alive;
+            }
+        }
+
+        private int InGame
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < _slots.Length; i++)
+                    if (!_slots[i].Left)
+                        count++;
+                return count;
             }
         }
 
@@ -202,16 +218,41 @@ namespace Demolition.Run
         /// (or still waiting to rejoin). False if there is nobody to bring back.</summary>
         public bool TryResurrect(int collector)
         {
-            if (Phase != RunPhase.Playing || _slots[collector].Status != PlayerStatus.Alive)
+            int partner = ResurrectTarget(collector);
+            if (partner < 0)
                 return false;
+            Rejoin(partner);
+            return true;
+        }
+
+        /// <summary>Would a Resurrect collected now bring someone back?</summary>
+        public bool CanResurrect(int collector) => ResurrectTarget(collector) >= 0;
+
+        private int ResurrectTarget(int collector)
+        {
+            if (Phase != RunPhase.Playing || _slots[collector].Status != PlayerStatus.Alive)
+                return -1;
             for (int i = 0; i < _slots.Length; i++)
-            {
-                if (i == collector || _slots[i].Status == PlayerStatus.Alive)
-                    continue;
-                Rejoin(i);
-                return true;
-            }
-            return false;
+                if (i != collector && _slots[i].Status != PlayerStatus.Alive && !_slots[i].Left)
+                    return i;
+            return -1;
+        }
+
+        /// <summary>Online: the player's device left. Out for good: no rejoin, no Resurrect;
+        /// the others play on.</summary>
+        public void Leave(int player)
+        {
+            Slot slot = _slots[player];
+            if (slot.Left)
+                return;
+            slot.Left = true;
+            bool wasAlive = slot.Status == PlayerStatus.Alive;
+            slot.Status = PlayerStatus.Out;
+            slot.OutOfBounds = -1f;
+            slot.Rejoin = 0f;
+            if (wasAlive)
+                PlayerOut?.Invoke(player, false);
+            CheckEnd();
         }
 
         private void TickPlayer(int player, float dt)

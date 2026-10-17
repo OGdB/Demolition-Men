@@ -239,6 +239,18 @@ namespace Demolition.Run
                 PromptShown?.Invoke(furthest.Message, furthest.Duration);
         }
 
+        /// <summary>Online host: the other device left. Its player is out for good; the run goes on.</summary>
+        public void PlayerLeft(int index)
+        {
+            if (index < 0 || index >= _players.Count)
+                return;
+            State.Leave(index);
+            PromptShown?.Invoke($"PLAYER {index + 1} LEFT THE GAME", 3f);
+        }
+
+        /// <summary>Online client: show points the host awarded (the score itself arrives with the run state).</summary>
+        public void ShowScored(int player, int points, Vector3 at) => Scored?.Invoke(player, points, at);
+
         /// <summary>A player collected a Resurrect pickup. False if nobody needed it.</summary>
         public bool TryResurrect(int collector) => State.TryResurrect(collector);
 

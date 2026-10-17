@@ -166,6 +166,35 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Leave_IsOutForGood_AndThePartnerPlaysOnAlone()
+        {
+            var state = Playing(2);
+            var outs = new System.Collections.Generic.List<(int, bool)>();
+            state.PlayerOut += (p, rejoin) => outs.Add((p, rejoin));
+
+            state.Leave(1);
+            CollectionAssert.AreEqual(new[] { (1, false) }, outs);
+            Assert.AreEqual(PlayerStatus.Out, state.Status(1));
+            Assert.IsTrue(state.HasLeft(1));
+            Assert.AreEqual(RunPhase.Playing, state.Phase);
+            Assert.IsFalse(state.CanResurrect(0), "nobody to bring back");
+            Assert.IsFalse(state.TryResurrect(0));
+            Assert.IsFalse(state.HasFreeRespawn(0), "no partner to rejoin next to");
+
+            state.ReportCrossedFinish(0);
+            Assert.AreEqual(RunPhase.Finished, state.Phase, "the one left in the game finishing ends the run");
+        }
+
+        [Test]
+        public void Leave_WhileTheOtherIsOut_FailsTheRun()
+        {
+            var state = Playing(2);
+            state.ReportDepleted(0); // free respawn: rejoining
+            state.Leave(1);
+            Assert.AreEqual(RunPhase.Failed, state.Phase);
+        }
+
+        [Test]
         public void Client_MirrorsTheHostsSnapshots_WithTheSameEvents()
         {
             var host = Playing(2);

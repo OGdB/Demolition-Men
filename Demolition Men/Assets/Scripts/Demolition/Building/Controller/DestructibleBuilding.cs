@@ -123,6 +123,9 @@ namespace Demolition
 
         public static IEnumerable<DestructibleBuilding> Loaded => _byNetIndex.Values;
 
+        /// <summary>Started: its structure takes damage and detaches like any other.</summary>
+        public bool IsReady => _baseline != null;
+
         public bool TryGetBlock(Vector2Int cell, out BuildingBlock block) => _blocks.TryGetValue(cell, out block);
 
         /// <summary>Order-free hash of the standing cells: online, both devices compare it

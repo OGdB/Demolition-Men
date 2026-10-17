@@ -95,7 +95,10 @@ namespace Demolition.Online
                         _rtt = (ulong)Mathf.Max(0f, (now - BitConverter.ToSingle(data, 1)) * 1000f);
                         break;
                     case Kind.Drop:
-                        DisconnectLocalClient();
+                        // The host turned us away (its reason came just before): disconnect now,
+                        // closing the socket ourselves reports nothing.
+                        _events.Enqueue((NetworkEvent.Disconnect, ServerClientId, default, now));
+                        Close();
                         break;
                 }
                 return;

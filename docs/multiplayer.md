@@ -65,6 +65,7 @@ Two rules:
 | Player position | owner | `NetworkTransform` with owner authority, X/Y only, half floats, interpolated |
 | Player pose (facing, grounded, weapon, swinging) | owner | one byte, `NetworkVariable`, sent on change; drives the proxy's animator |
 | Player health | owner | one byte, `NetworkVariable`, sent on change |
+| Weapon, its hits left, dynamite | owner | one int (`NetPacking.PackKit`), `NetworkVariable`, sent on change; the proxy's HUD line shows it (as built) |
 | Damage to a standing block | owner finds the hit, host applies it | `DamageRequest` to host; host answers with `CellHealth` to all |
 | Detached cells, falling debris, rubble | each device | derived from `RemoveCells` (deterministic); debris uses local physics and local random |
 | Stress lean, tremble, demolition meter | each device | derived from the same structure state: 0 bytes |
@@ -107,6 +108,8 @@ Two rules:
 |---|---|---|---|
 | Player transform | owner → others | X, Y half floats | ≤ 20/s while moving |
 | Pose, health | owner → others | 1 byte each | on change |
+| Kit (weapon, hits, dynamite) | owner → others | 4 B | on change |
+| `Score` | host → client | per award: player, points, position ≈ 11 B | with the cell batch, only if points were awarded |
 | `DamageRequest` | client → host | building (varint), cell (varint), amount (half float) ≈ 5 B | per block a client hits |
 | `CellHealth` batch | host → client | per cell: building, cell, health 7 bits + instigator 1 bit ≈ 4 B | once per tick, only if something changed |
 | `Claim` / `Taken` | client → host / host → all | pickup index (+ player) | per pickup |
@@ -121,9 +124,17 @@ costs about 60 bytes, once. The steady cost is the two player transforms and the
 snapshot (about 400 B/s; as built it replaces the phase, score and command messages, so a
 lost or late message never leaves the client's run in the wrong phase).
 
-As built, the named messages are `DM.Ready`, `DM.Cells`, `DM.Damage`, `DM.Claim`, `DM.Taken`,
-`DM.Thrown`, `DM.Blast`, `DM.State`, `DM.Check`, all sent reliable and sequenced. The host
-caps a client's `DM.Damage` at 1000 per hit and always credits it to player 2.
+As built, the named messages are `DM.Ready`, `DM.Cells`, `DM.Score`, `DM.Damage`, `DM.Claim`,
+`DM.Taken`, `DM.Thrown`, `DM.Blast`, `DM.State`, `DM.Check`, all sent reliable and sequenced.
+The host caps a client's `DM.Damage` at 1000 per hit and always credits it to player 2.
+`DM.Score` follows the cells it scored, so the client's popup shows as the block goes.
+
+Each device streams level segments by its own camera, so a building can reach the client a
+moment after the host started damaging it: the client keeps the latest health of each cell of
+a building it hasn't loaded and applies it once the building has started. Pickups taken on
+either device are remembered for the level (`Pickup.WasTaken`), so streaming never brings one
+back. A client claims a pickup only if its player can use it now (dynamite not full, someone
+to resurrect) and asks again a second later if the host didn't answer.
 
 ### Budget
 
@@ -239,8 +250,12 @@ On the results screen the host picks NEXT, RETRY or MENU, and the client follows
 "the host picks what's next", SHOP and LEAVE). LEAVE on the client, or MENU's leave in the
 pause menu, ends the session. Each player banks the run into its own profile.
 
-As built, either player leaving ends the session for both, with the reason on screen; O4
-lets the host play on.
+Player 2 leaving mid-run lets the host play on: its players stay (spawned with
+`DontDestroyWithOwner`, then despawned without destroying), the session ends, and
+`RunState.Leave` takes player 2 out for good (no rejoin, no Resurrect, "LEFT THE GAME" on the
+HUD). The rest of the run and anything after it is offline. Outside a run, or when the host
+leaves, the session ends for both with the reason on screen. A joiner the host turns away
+(another version) gets the reason and leaves the host's room open.
 
 Online: campaign and daily levels. Tutorial and training stay local. One player per device.
 
@@ -251,16 +266,13 @@ Online: campaign and daily levels. Tutorial and training stay local. One player 
 | **O1** | **Seams**: §5 table, `NetPacking`, no packages installed | Offline play unchanged; all tests pass; new tests: `NetPacking` round trips, and two structures fed the same `CellHealth` stream end with the same standing cells. |
 | **O2** | **Netcode against a local relay**: install NGO, Multiplayer Play Mode and NativeWebSocket; write `RelayTransport` and the relay (`server/relay/`, run with `dotnet run` on the dev machine); `RunNet`, `NetPlayer`, the client mode of `RunController`. *Code in and pinned (NGO 2.13.3, NativeWebSocket c612a4f); the play tests below are open.* | Two Multiplayer Play Mode players finish a generated level together through the local relay, and the desync check passes. It still plays with 150 ms delay and 3 % loss added by a network simulator on the socket (e.g. clumsy on Windows). Every campaign level and 365 daily seeds give the same hash on PC, on an Android phone and in WebGL. Pin NGO and NativeWebSocket. |
 | **O3** | **Deploy and join codes**: the relay on the VPS behind TLS with the §8 limits, `OnlineView`, a WebGL build on a free HTTPS host (e.g. itch.io) | A phone on mobile data, a PC and a browser tab can each host and join each other through the VPS with a code, and finish a level. |
-| **O4** | **Hardening** | The host leaves: the client gets a message and the menu. The client leaves: the host plays on, P2 is out. The relay is down: a clear message, local play unaffected. A phone app or a browser tab sent to the background (browsers throttle hidden tabs, so a hidden host stalls), timeouts, a version mismatch message. The privacy policy says the relay sees players' IP addresses (`monetization.md` checklist). A soak test with `BotPilot` driving both players. |
+| **O4** | **Hardening** | The host leaves: the client gets a message and the menu. The client leaves: the host plays on, P2 is out *(both in since O2)*. The relay is down: a clear message, local play unaffected. A phone app or a browser tab sent to the background (browsers throttle hidden tabs, so a hidden host stalls), timeouts, a version mismatch message. The privacy policy says the relay sees players' IP addresses (`monetization.md` checklist). A soak test with `BotPilot` driving both players. |
 | **O5** | **Optional** | A UDP leg for native builds if TCP hitches show up in playtests: LiteNetLib in the transport, and the relay bridges UDP and WebSocket peers. LAN without internet for native builds only (a browser can't host a LAN game): `com.easysee.networkdiscovery` with UnityTransport. |
 
-Open in O2, to check in the first two-player test:
+Open in O2:
 - Run Tools ▸ Demolition ▸ Online ▸ Build Network Prefabs once after the packages import.
-- Score popups only show on the device that scored; the proxy's weapon and TNT count are not
-  sent, so the other player's HUD line shows its defaults.
-- `LevelBuilder` streams segments by each device's own camera. If the players drift apart, a
-  building can be loaded on one device only; cells for an unloaded building are dropped, and
-  the desync check names it.
+- A client's hit on a building the host hasn't streamed in yet is dropped (the host's camera
+  would have to trail the client's by the 30-unit look-ahead).
 
 ## 8. The relay on the VPS
 

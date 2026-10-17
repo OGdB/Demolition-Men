@@ -114,6 +114,7 @@ namespace Demolition
         /// <summary>Landed hits left on the current weapon, -1 for fists.</summary>
         public int WeaponUses => weapon == WeaponType.Fists ? -1 : _uses[(int)weapon];
         public int DynamiteCount { get => dynamiteCount; set => dynamiteCount = Mathf.Max(0, value); }
+        public bool DynamiteFull => dynamiteCount >= maxDynamite;
         public float DamageMultiplier { get => damageMultiplier; set => damageMultiplier = Mathf.Max(0f, value); }
         /// <summary>Picked-up weapons get this many times their hits (skill shop).</summary>
         public float WeaponHitMultiplier { get; set; } = 1f;
@@ -239,6 +240,15 @@ namespace Demolition
                 return;
             _uses[(int)type] += Mathf.Max(1, Mathf.RoundToInt(hits * WeaponHitMultiplier));
             weapon = type;
+        }
+
+        /// <summary>Online, a proxy: show what its owner carries (the owner's device decides it).</summary>
+        public void ShowKit(WeaponType type, int uses, int dynamite)
+        {
+            weapon = type;
+            if (type != WeaponType.Fists)
+                _uses[(int)type] = uses;
+            dynamiteCount = Mathf.Max(0, dynamite);
         }
 
         /// <returns>False when already carrying the maximum.</returns>

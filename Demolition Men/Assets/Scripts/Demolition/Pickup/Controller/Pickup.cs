@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Demolition.Run;
 using UnityEngine;
 
@@ -23,7 +24,10 @@ namespace Demolition
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
         private float _fallSpeed;
         private bool _collected;
-        private bool _claimed;
+        private float _claimAgainAt;
+
+        // Level pickups collected on either device this level: streaming must not bring one back.
+        private static readonly HashSet<int> _taken = new HashSet<int>();
 
         public PickupKind Kind => kind;
         /// <summary>Index in <c>LevelLayout.Pickups</c> (set by <c>LevelBuilder</c>), -1 for a placed one.</summary>
@@ -31,6 +35,18 @@ namespace Demolition
 
         /// <summary>Someone collected a pickup: who, what, how much.</summary>
         public static event Action<PlayerCombat, PickupKind, int> Collected;
+
+        public static bool WasTaken(int netIndex) => _taken.Contains(netIndex);
+
+        /// <summary>Online: a pickup this device hasn't streamed in yet was taken.</summary>
+        public static void MarkTaken(int netIndex)
+        {
+            if (netIndex >= 0)
+                _taken.Add(netIndex);
+        }
+
+        /// <summary>A new level is being built.</summary>
+        public static void ForgetTaken() => _taken.Clear();
 
         public void Configure(PickupKind pickupKind, int pickupAmount)
         {
@@ -82,11 +98,13 @@ namespace Demolition
                 return;
             if (NetRole.IsClient)
             {
-                // The host grants pickups first come; ask once, Taken settles it.
-                // shortcut: claims even when it can't be used (dynamite full); check that first when O2 wires Taken.
-                if (!_claimed)
+                // The host grants pickups first come and answers Taken; no answer (it was
+                // first, or the host's level hasn't streamed it in yet) asks again a second later.
+                if (Time.time >= _claimAgainAt && CanUse(combat))
+                {
+                    _claimAgainAt = Time.time + 1f;
                     NetRole.ClaimPickup?.Invoke(this);
-                _claimed = true;
+                }
                 return;
             }
             if (!TryApply(combat))
@@ -110,10 +128,25 @@ namespace Demolition
         private void Remove(PlayerCombat collector)
         {
             _collected = true;
+            MarkTaken(NetIndex);
             if (collector != null)
                 Collected?.Invoke(collector, kind, amount);
             Particles.Burst(transform.position, new Color(1f, 0.9f, 0.4f), 14, 4f, 0.12f, 0.5f);
             Destroy(gameObject);
+        }
+
+        // Client: only claim what its own player can use now (the host can't see its TNT).
+        private bool CanUse(PlayerCombat combat)
+        {
+            switch (kind)
+            {
+                case PickupKind.Dynamite:
+                    return !combat.DynamiteFull;
+                case PickupKind.Resurrect:
+                    return RunController.Current != null && RunController.Current.State.CanResurrect(combat.PlayerIndex);
+                default:
+                    return true;
+            }
         }
 
         private bool TryApply(PlayerCombat combat)
