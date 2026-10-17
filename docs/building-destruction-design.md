@@ -164,6 +164,18 @@ The current `OnBlockDestroyed` → `RemoveCell` → `BeginFalling` split maps cl
 `RemoveCell` is the authoritative discrete step; `BeginFalling` is the cosmetic step clients
 run locally.
 
+**Seams already in place (2026-10-17)** for when NGO is wired:
+- **A level is `{specId, seed}`.** `LevelGrammar` (Pcg32 only) gives every machine the same
+  ground, buildings (`BuildingSpec` hashes) and pickups; only the id and seed need sending.
+  `LevelLayout.Hash()` can confirm both sides built the same level.
+- **Players act on `PlayerInputFrame`s** from an `IPlayerInputSource`. A network source
+  (owner sends frames, server applies them) slots in next to the device, touch and bot
+  sources without touching `PlayerMotor`/`PlayerCombat`.
+- **Run rules are models** (`RunState`, `RunScore`): the host ticks them and replicates
+  phase, timers and points; clients only render.
+- **Score attribution already carries a player index** through `TakeDamage(amount,
+  instigator)` and `DestructionEvents`, which is what a server needs to credit remote players.
+
 ---
 
 ## 6. Roadmap

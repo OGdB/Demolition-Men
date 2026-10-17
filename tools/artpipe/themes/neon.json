@@ -1,0 +1,24 @@
+{
+  "name": "Neon",
+  "pitch": "Downtown at night: dark purple concrete and glass towers, magenta and cyan neon trims, warm lit windows.",
+  "seed": 8202,
+  "ramps": ["night", "nightglass", "asphalt", "steel"],
+  "accents": ["magenta", "cyan", "warm"],
+  "sky": [0.07, 0.05, 0.16],
+  "backdrop_tint": [0.42, 0.36, 0.66],
+  "materials": {
+    "wall": {"style": "block", "ramp": "night"},
+    "concrete": {"ramp": "night"},
+    "wood": {"ramp": "night"},
+    "glass": {"frame": "steel", "pane": "nightglass", "highlights": [["cyan", 2], ["magenta", 1]]},
+    "door": {"style": "panel", "frame": "steel", "leaf": "night", "window": "warm", "handle": "cyan", "sign": "magenta"},
+    "window_back": {"style": "lit", "ramp": "warm"},
+    "plank": {"style": "slab", "ramp": "night", "trim": "cyan"},
+    "truss": {"ramp": "steel", "rivet": "cyan"},
+    "beam": {"ramp": "night", "trim": "magenta"},
+    "cap": {"ramp": "steel", "trim": "magenta"},
+    "support": {"style": "pillar", "ramp": "night", "trim": "cyan"},
+    "chimney": {"style": "stack", "ramp": "night", "band": "cyan", "beacon": "magenta"},
+    "ground": {"style": "kerb", "top": "steel", "fill": "asphalt", "stud": "cyan"}
+  }
+}

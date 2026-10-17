@@ -9,7 +9,6 @@ import zlib
 import numpy as np
 
 import palette
-from normalize import outline
 
 # name: (size w x h, tileable axes, foreground). Shared with qa.py.
 SPRITES = {
@@ -647,5 +646,3 @@ def generate(theme, name):
     assert a.shape == (h, w, 4), (name, a.shape)
     return a
 
-
-__all__ = ["SPRITES", "generate", "outline"]

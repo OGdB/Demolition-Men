@@ -1,6 +1,7 @@
 # Demolition Men — Roadmap to v1.0
 
-**Status:** proposal · written 2026-10-16 from a full pass over the code, scenes and prefabs
+**Status:** in progress · written 2026-10-16 from a full pass over the code, scenes and prefabs ·
+updated 2026-10-17 after the overnight build (M3, most of M6, phones + TV, ads seam)
 **Supersedes:** the project-level parts of `building-destruction-design.md` §6 (its
 destruction-specific phases are folded in below).
 
@@ -186,17 +187,23 @@ Design in §5.1. Built on **today's sprites**. Code in `Scripts/Demolition/Gener
 - Deferred to M4: autotiled edge variants (the tileset has one sprite per kind; variants
   slot in per entry when the art pipeline makes them).
 
-### M3 — Procedural levels (M)
-Design in §5.2.
-- `LevelSpec`, pacing grammar, segment library, traversal validator, `LevelBuilder` that
-  streams segments ahead of the camera and despawns them behind it. Replaces
-  `TerrainGenerator`.
-- **Bot playtester:** a scripted input source (`IPlayerInputSource`) drives a player
-  through a PlayMode test. It reports completion, time and destruction %, and calibrates
-  par times.
-- Level select backed by curated `{spec, seed}` pairs, plus the daily seed.
-- **Done when:** Level 1 is replaced by 3 generated levels the bot can complete, at a
-  stable 60 fps through the biggest collapse.
+### M3 — Procedural levels (M) — ✅ built 2026-10-17, awaiting a hands-on playtest
+Design in §5.2. Code in `Scripts/Demolition/Level/` (see the Levels section of `CLAUDE.md`).
+- ✅ `LevelSpec` (JSON), `LevelGrammar` (pacing tokens: start, street, cluster:n, tower,
+  gap, hill, sewer, gate, breather, finish), `LevelLayout`, `TraversalValidator` (replays
+  the player's jump physics; the grammar re-rolls derived seeds until it passes).
+- ✅ `LevelBuilder`: ground tilemap up front, buildings/pickups/finish streamed in per
+  segment ahead of the camera and despawned behind it. The **Run scene** holds only
+  `LevelBootstrap`, which assembles the level from `Resources/GameConfig`. Replaces
+  `TerrainGenerator` (Level 1 stays in the project, out of the build).
+- ✅ **Bot playtester:** `BotPilot` drives a player through `ScriptedInputSource`;
+  `BotRunTests` (PlayMode) plays every campaign level to the finish. Par is now derived
+  from the course (time the auto-scroll takes from spawn to finish), not calibrated by hand.
+- ✅ Campaign: Town levels 1–4 (`Content/Town/Levels`), level select with unlocks, and a
+  **daily seed** that reuses a campaign level's pacing.
+- ✅ Level Lab (Tools ▸ Demolition ▸ Level Lab): preview, validate 100 seeds, play / play with bot.
+- **Still to check in the editor:** the bot finishes all levels; 60 fps through the
+  biggest collapse on a mid-range phone.
 
 ### M4 — Art pipeline (L, can start alongside M2)
 Design in §6.
@@ -214,7 +221,19 @@ Design in §7.
   the 3 × 3–4 campaign.
 - **Done when:** one pitch sentence becomes a playable, reviewed theme PR.
 
-### M6 — Meta, juice, ship (M/L)
+### M6 — Meta, juice, ship (M/L) — partly built 2026-10-17
+Built: JSON save in `persistentDataPath` (`Meta/`), unlocks in campaign order, the **skill
+shop** (power, hard hat, boots, TNT belt, tool grip; cash = score / 10, x1.25 for a
+finish), settings (volume, music, screen shake, HUD size, touch controls mode/size/opacity),
+code-built pause menu, results with cash and best-result badges, screen shake by collapse
+size, hit-stop, dust, pooled particles. **Decision change:** the level select is a menu
+overlay (`LevelSelectView`) instead of walking the hub — it has to work with a thumb on a
+phone and from a sofa with a gamepad; the hub scene stays for a later "home base".
+Still open from the list below: crack-overlay damage states, material break sounds and a
+music track per theme, composite debris, rebinding and resolution settings, builds and
+store assets.
+
+Original plan:
 - Hub as level select (TV = theme/level select, door = start), unlocks by grade, JSON save in
   `persistentDataPath`.
 - **Skill shop** in the hub (D6): run score is banked as cash and spent on upgrades, saved
@@ -424,7 +443,8 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D6 | Skill shop / upgrades in v1? | **Decided:** yes, in v1 (M6). |
 | D7 | Art anchor | Keep the existing demolition man and object set as Theme 1 (Town) and as the reference for every generated theme. |
 | D8 | Image generator | Unity AI first (already in the project and the MCP). Check commercial terms before shipping its output. |
-| D9 | Target platform | PC (Windows; Steam Deck-friendly controls and performance). |
+| D9 | Target platform | **Decided (2026-10-17):** PC (Windows, Steam Deck), TV (gamepads, couch co-op) and phones/tablets in landscape (touch). One build of the UI for all: code-built uGUI through `UiFactory`, safe area, HUD size setting. |
+| D10 | Business model | **Decided (2026-10-17):** free, with ads on phones only (interstitials between runs, opt-in rewarded "2x cash"); a "remove ads" purchase later. See `docs/monetization.md`. |
 
 ---
 
@@ -441,12 +461,12 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 
 ---
 
-## 10. Next five tasks
+## 10. Next five tasks (2026-10-17)
 
-1. **M0:** commit the migration in logical commits, merge to `main`, remove the stale copy.
-2. **`RunManager` + finish line + timer** in Level 1.
-3. **Camera v2:** viewport out-of-bounds with the 3-second countdown, the speed-up fix,
-   camera rails.
-4. **Scoring v2** with collapse credit and chain multiplier, and the results screen.
-5. **`BuildingSpec` + grammar + validator** with EditMode tests, behind the Building Lab
-   window, using today's sprites.
+1. **Playtest in the editor** the overnight work: Run scene levels (Level Lab ▸ Play), the
+   phone flow in the Device Simulator (touch controls, join, level select, results), the
+   PlayMode `BotRunTests`. Fix what the list in `docs/overnight-2026-10-17.md` turns up.
+2. **Tune** scroll speeds, upgrade costs and pickup budgets from those runs.
+3. **Ad network:** install LevelPlay (or AdMob), write the `IAdService` adapter, consent.
+4. **Builds:** Windows, Android (IL2CPP ARM64 is set), iOS; app icons and store pages.
+5. **Themes 2–3 polish** (art pipeline output) and a music track per theme.
