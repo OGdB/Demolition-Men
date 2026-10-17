@@ -10,7 +10,7 @@ Unity yet** — the checklist below is the first playtest.
 | Area | What you get | Where |
 |---|---|---|
 | Generated levels (M3) | Level spec JSON + seed → ground, buildings, pickups, finish; traversal validator replays the jump; segments stream in and out. A new **Run** scene builds the selected level from `Resources/GameConfig`. Campaign of 12 levels (Town, Port, Neon × 4) + a daily seed. Generation takes 3–35 ms per level on desktop .NET. | `Scripts/Demolition/Level/`, `Content/*/Levels/`, `Scenes/Run.unity` |
-| Art pipeline (M4) + themes | `tools/artpipe`: master palette, procedural tile generators, normaliser, QA + contact sheets, `unity_theme.py` writing tiles/tileset/theme assets. **Port** (rusty docks) and **Neon** (night downtown), 17 sprites each, 4 archetypes + 4 levels each. Import rules via `ContentSpriteImporter`. | `tools/artpipe`, `Content/Port`, `Content/Neon`, `content-work/*/contact.png` |
+| Art pipeline (M4) + themes | `tools/artpipe`: master palette, procedural tile generators, normaliser, QA + contact sheets, `unity_theme.py` writing tiles/tileset/theme assets. **Port** (rusty docks) and **Neon** (night downtown), 17 sprites each, 4 archetypes + 4 levels each; three-layer parallax skylines for Town, Port and Neon. Import rules via `ContentSpriteImporter`. | `tools/artpipe`, `Content/Port`, `Content/Neon`, `content-work/*/contact.png` |
 | Content agents (M5) | Theme director, architect, artist, level designer, integrator as Claude Code subagents ending in hard validators. Not run end to end yet. | `.claude/agents/` |
 | Phones (landscape) | Touch controls (floating stick, JUMP / HIT / TNT / SWAP, pause), safe area, HUD size (130% on phones), touch tutorial wording, landscape only, 60 fps, IL2CPP ARM64. | `Input/`, `Common/`, `RunHud`, ProjectSettings |
 | TV / PC | Every menu works with gamepad navigation, mouse and touch; Esc / B closes overlays; pause on Start / Esc / Android back. | `Meta/View/`, `Run/View/PauseView` |
@@ -69,7 +69,7 @@ Unity yet** — the checklist below is the first playtest.
 - `BotPilot` is simple (run, hit, jump, throw TNT at supports).
 - The scene `PauseMenu` canvases in Level 1 / HubWorld / Tutorial are dead UI now (their
   buttons pointed at nothing already); the code-built pause menu replaced them.
-- Port and Neon reuse the Town parallax backdrop (tinted) and the one gameplay music track.
+- All three themes share the one gameplay music track. With the new skylines, the camera's old sky gradient and sun are hidden in generated levels (flat theme sky colour instead); the Tutorial keeps them.
 - Unity will rewrite the generated sprites' `.meta` files on first import
   (`ContentSpriteImporter` sets full-rect meshes); commit that diff.
 
