@@ -69,6 +69,8 @@ namespace Demolition
         private float _health;
         private float _resolvedMaxHealth;
         private float _settleTimer;
+        // Settled once already: keeps the rubble dimming if it is knocked loose again.
+        private bool _wasRubble;
         private float _lastImpactTime = -999f;
         private bool _destroyed;
         // Points for this block were already awarded (collapse credit, or a cosmetic
@@ -197,7 +199,7 @@ namespace Demolition
             if (_sr == null)
                 return;
             float damageFrac = _resolvedMaxHealth > 0f ? Mathf.Clamp01(_health / _resolvedMaxHealth) : 1f;
-            float factor = (0.45f + 0.55f * damageFrac) * (IsRubble ? 0.7f : 1f);
+            float factor = (0.45f + 0.55f * damageFrac) * (_wasRubble ? 0.7f : 1f);
             _sr.color = new Color(
                 _baseColor.r * factor, _baseColor.g * factor, _baseColor.b * factor, _baseColor.a);
             RefreshCracks(damageFrac);
@@ -286,7 +288,61 @@ namespace Demolition
             }
             if (_building != null)
                 _building.OnBlockDestroyed(this);
+            Vanish();
+        }
+
+        /// <summary>Remove the block without the destruction effects (debris over the
+        /// falling cap, gates crumbling to dust), first waking any rubble it held up.</summary>
+        public void Vanish()
+        {
+            WakeRubbleAround();
             Destroy(gameObject);
+        }
+
+        // Shared scratch (main thread only): big collapses wake a lot without allocating.
+        private static readonly Collider2D[] _touching = new Collider2D[32];
+        private static readonly Queue<BuildingBlock> _toWake = new Queue<BuildingBlock>();
+
+        // Settled rubble is static and outside the support graph, so nothing else tells it
+        // that what it rests on (or is wedged against) has gone: wake the rubble this block
+        // may be holding up, then whatever those held up, breadth-first. Rubble lying beside
+        // or below on the same footing stays put, so breaking one block doesn't stir a pile.
+        private void WakeRubbleAround()
+        {
+            EnqueueTouchingRubble(this);
+            while (_toWake.Count > 0)
+            {
+                BuildingBlock rubble = _toWake.Dequeue();
+                if (rubble == null || !rubble.IsRubble)
+                    continue;
+                rubble.Wake();
+                EnqueueTouchingRubble(rubble);
+            }
+        }
+
+        private static void EnqueueTouchingRubble(BuildingBlock block)
+        {
+            var collider = block.GetComponent<Collider2D>();
+            if (collider == null)
+                return;
+            Bounds b = collider.bounds;
+            int count = Physics2D.OverlapBox(b.center, (Vector2)b.size + new Vector2(0.2f, 0.2f), 0f, ContactFilter2D.noFilter, _touching);
+            for (int i = 0; i < count; i++)
+            {
+                var other = _touching[i] != null ? _touching[i].GetComponentInParent<BuildingBlock>() : null;
+                if (other != null && other != block && other.IsRubble && _touching[i].bounds.min.y > b.min.y + 0.1f)
+                    _toWake.Enqueue(other);
+            }
+        }
+
+        // Rubble whose footing went: falls again until it settles somewhere else.
+        private void Wake()
+        {
+            IsRubble = false;
+            IsFalling = true;
+            _settleTimer = 0f;
+            _rb.bodyType = RigidbodyType2D.Dynamic;
+            _rb.gravityScale = 1f;
         }
 
         /// <summary>
@@ -358,6 +414,7 @@ namespace Demolition
             _rb.gravityScale = 1f;
             _rb.AddForce(new Vector2((Random.value - 0.5f) * detachImpulse, 0f), ForceMode2D.Impulse);
             _rb.AddTorque((Random.value - 0.5f) * detachImpulse);
+            WakeRubbleAround(); // debris that had settled on top comes down with it
         }
 
         private void FixedUpdate()
@@ -378,6 +435,7 @@ namespace Demolition
         {
             IsFalling = false;
             IsRubble = true;
+            _wasRubble = true;
             _rb.bodyType = RigidbodyType2D.Static; // leaves the solver; stays visible as debris
             RefreshColor();
         }

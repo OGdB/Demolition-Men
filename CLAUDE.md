@@ -83,7 +83,7 @@ Three layers; read `docs/building-destruction-design.md` for the why.
 
 1. **`Building/Model/BuildingStructure.cs`** — pure C#, no MonoBehaviour/physics. Cells on an integer grid, anchors, 4-neighbour flood-fill from anchors. `RemoveCells()` returns every cell that lost its path to ground. `ComputeStress()` is a two-pass heuristic (carried cells → cantilever/span/hanging, then pillar columns sum load and moment) that yields per-cell `Stress/Lean/Drift/Overload`. Fragile cells (glass) are held by neighbours but support never flows through them and they carry no load.
 2. **`Building/Controller/DestructibleBuilding.cs`** — owns one structure plus the live blocks. On `OnBlockDestroyed` it removes the block's cells, calls `BeginFalling()` on detached blocks (capped by `maxSimultaneousFalling`; overflow is destroyed without simulation), then recomputes stress. A stress **baseline** captured at `Start` is subtracted so intact buildings show no strain. Supports overloaded past baseline + `overloadTolerance` take crumble damage in `Update`, through the normal `TakeDamage` path.
-3. **`Building/Controller/BuildingBlock.cs`** — per-block lifecycle: **Static** while supported → **Dynamic** while falling (strips any leftover `Joint2D`, damages players it lands on, takes self-damage on hard landings, glass shatters on contact) → **Static rubble** once settled.
+3. **`Building/Controller/BuildingBlock.cs`** — per-block lifecycle: **Static** while supported → **Dynamic** while falling (strips any leftover `Joint2D`, damages players it lands on, takes self-damage on hard landings, glass shatters on contact) → **Static rubble** once settled. Rubble is outside the support graph, so a block that is destroyed, vanishes or starts falling wakes the rubble resting on or wedged against it (`WakeRubbleAround`), which falls again until it re-settles.
 
 Invariants to preserve:
 - Standing blocks stay `RigidbodyType2D.Static`; only detached debris is ever dynamic. Don't add forces/joints to standing structure — this is the core perf/stability decision.
@@ -99,6 +99,7 @@ At `Start`, if nothing registered blocks in code, the building auto-scans childr
 - Each block's world AABB (from collider geometry, not stale `Collider2D.bounds`) is rasterized onto a `cellSize` (1 unit) grid relative to a shared origin; multi-cell footprints (beams, platforms) occupy several cells and detach as one rigid unit.
 - Foreground and larger blocks claim cells first; blocks whose **name contains "bg"** sort last. A block whose cells are all already claimed becomes a cosmetic **rider** of the overlapping host — no structural role, falls when the host goes.
 - Anchors: blocks with a non-block, non-dynamic, non-trigger collider within `anchorProbeDepth` below them. If none touch ground, the lowest row is anchored.
+- Cells with no path to an anchor at `Start` (a block that doesn't touch the rest) fall right away, with an editor warning naming the block, instead of hovering until the first hit.
 - `BlockMaterial` (Brick/Metal/Wood/Glass/Support) sets default health; Glass registers as fragile.
 
 Code-driven alternative (`DemoBootstrap`): call `BuildingBlock.Initialise` + `DestructibleBuilding.RegisterBlock` before the building's `Start`, which then skips the scan.

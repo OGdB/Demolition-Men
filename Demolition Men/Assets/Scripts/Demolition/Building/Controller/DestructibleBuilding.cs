@@ -139,6 +139,7 @@ namespace Demolition
             // did, this is a hand-authored building — adopt the children.
             if (autoScanChildren && _structure.CellCount == 0)
                 ScanChildren();
+            DropUnsupported();
 
             _baseline = new Dictionary<Vector2Int, CellStress>();
             foreach (var kv in _structure.ComputeStress(stressScanRange, columnLoadCapacity, columnMomentCapacity))
@@ -146,6 +147,26 @@ namespace Demolition
 
             if (InitialCellCount > 0)
                 DestructionEvents.RaiseBuildingReady(InitialCellCount);
+        }
+
+        // Blocks that never touched the rest (a gap in a hand-made prefab, a piece that
+        // didn't snap onto the grid) fall now instead of floating until the first hit.
+        private void DropUnsupported()
+        {
+            List<Vector2Int> loose = _structure.RemoveUnsupported();
+            for (int i = 0; i < loose.Count; i++)
+            {
+                if (!_blocks.TryGetValue(loose[i], out BuildingBlock block))
+                    continue;
+                _blocks.Remove(loose[i]);
+                InitialCellCount--;
+#if UNITY_EDITOR
+                Debug.LogWarning($"{name}: block '{block.name}' isn't connected to the ground or the rest of the building, so it falls at start.", block);
+#endif
+                block.MarkCredited();
+                ReleaseRiders(block);
+                block.BeginFalling();
+            }
         }
 
         private void Update()
@@ -449,7 +470,7 @@ namespace Demolition
                 if (CrumbleDetached)
                 {
                     Particles.Burst(fallers[i].transform.position, BlockMaterialInfo.Tint(fallers[i].Material), 10, 3.5f, 0.16f, 0.6f);
-                    Destroy(fallers[i].gameObject);
+                    fallers[i].Vanish();
                 }
                 else if (fallen < maxSimultaneousFalling)
                 {
@@ -459,7 +480,7 @@ namespace Demolition
                 else
                 {
                     // Over the cap: drop it without adding a dynamic body.
-                    Destroy(fallers[i].gameObject);
+                    fallers[i].Vanish();
                 }
             }
 

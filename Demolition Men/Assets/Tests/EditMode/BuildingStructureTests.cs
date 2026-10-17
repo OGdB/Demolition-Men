@@ -420,5 +420,22 @@ namespace Demolition.Tests
 
             Assert.Contains(new Vector2Int(1, 3), d2, "Fully isolated cell must fall.");
         }
+
+        [Test]
+        public void RemoveUnsupported_DropsOnlyPiecesThatNeverTouchedTheBuilding()
+        {
+            var s = new BuildingStructure();
+            for (int y = 0; y < 3; y++)
+                s.AddCell(new Vector2Int(0, y), y == 0);   // a column standing on the ground
+            s.AddCell(new Vector2Int(1, 2));               // held sideways by the column
+            s.AddCell(new Vector2Int(4, 5));               // floating, touching nothing
+            s.AddCell(new Vector2Int(2, 3));               // touches (1,2) only diagonally
+
+            List<Vector2Int> loose = s.RemoveUnsupported();
+
+            CollectionAssert.AreEquivalent(new[] { new Vector2Int(4, 5), new Vector2Int(2, 3) }, loose);
+            Assert.AreEqual(4, s.CellCount);
+            Assert.IsEmpty(s.RemoveUnsupported(), "nothing left to drop");
+        }
     }
 }

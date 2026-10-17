@@ -133,6 +133,27 @@ namespace Demolition.Core
             return detached;
         }
 
+        /// <summary>
+        /// Remove and return every cell with no path to an anchor right now (no cell
+        /// destroyed). For a freshly built structure: a hand-placed block that doesn't
+        /// touch the rest would otherwise hang in the air until the first hit.
+        /// </summary>
+        public List<Vector2Int> RemoveUnsupported()
+        {
+            var detached = new List<Vector2Int>();
+            ComputeSupportedInto(_supportedScratch);
+            foreach (var cell in _cells)
+                if (!_supportedScratch.Contains(cell))
+                    detached.Add(cell);
+            for (int i = 0; i < detached.Count; i++)
+            {
+                _cells.Remove(detached[i]);
+                _anchors.Remove(detached[i]);
+                _fragile.Remove(detached[i]);
+            }
+            return detached;
+        }
+
         /// <summary>All cells currently connected to an anchor (BFS over 4-neighbours).</summary>
         public HashSet<Vector2Int> ComputeSupported()
         {
