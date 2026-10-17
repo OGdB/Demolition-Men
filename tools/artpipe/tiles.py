@@ -148,27 +148,27 @@ def masonry(r, rng, w, h, course=8, length=16, style="brick"):
 
 
 def corrugated(r, rng, w, h):
-    """Rusty corrugated sheet: 4 px ribs, a lapped seam every 16 rows, bolts, rust streaks."""
+    """Rusty corrugated sheet: 8 px ribs lit on their left flank, a lapped seam every 16
+    rows, bolts on the crests, rust runs down the troughs."""
     a = canvas(w, h)
-    ribs = [r[2], r[3], r[2], r[1]]
-    dim = [r[1], r[2], r[1], r[0]]
+    ribs = [r[1], r[2], r[3], r[3], r[2], r[2], r[1], r[1]]
+    dim = [r[1], r[1], r[2], r[2], r[2], r[1], r[1], r[1]]
     for s in range(h // 16):
         pattern = dim if rng.random() < 0.3 else ribs
-        for y in range(s * 16, s * 16 + 16):
-            for x in range(w):
-                a[y, x] = (*pattern[x % 4], 255)
+        for x in range(w):
+            rect(a, x, s * 16, x + 1, s * 16 + 16, pattern[x % 8])
         rect(a, 0, s * 16, w, s * 16 + 1, r[0])
         rect(a, 0, s * 16 + 1, w, s * 16 + 2, r[1])
-        for x in range(1, w, 8):
+        for x in range(2, w, 16):
             put(a, x, s * 16 + 3, r[0])
-        # rust runs down the troughs from the bolts
-        for _ in range(rng.integers(2, 5)):
-            x = rng.integers(0, w // 4) * 4 + 3
+            put(a, x + 1, s * 16 + 3, r[1])
+        for _ in range(rng.integers(2, 4)):
+            x = rng.integers(0, w // 8) * 8 + 7
             y = s * 16 + 2 + rng.integers(0, 6)
             for k in range(rng.integers(3, 9)):
                 put(a, x, y + k, r[0])
-        for _ in range(rng.integers(1, 4)):
-            put(a, rng.integers(0, w // 4) * 4 + 1, s * 16 + rng.integers(4, 15), r[2])
+        for _ in range(rng.integers(1, 4)):  # dents catching the light
+            put(a, rng.integers(0, w // 8) * 8 + 5, s * 16 + rng.integers(4, 15), r[3])
     return np.roll(a, 5, axis=0)  # keep the lap seam off the tile edge
 
 
@@ -545,13 +545,21 @@ def chimney(t, rng, w=32, h=32):
 
 # --- ground ----------------------------------------------------------------------------
 
-def quay_blocks(r, rng, a, y0, y1, row_offset):
-    """Ground mass in 16-row courses; the absolute course index keeps the bond continuous
-    from ground_top into ground_fill."""
+def ground_mass(r, rng, a, y0, y1, row_offset, blocks):
+    """Ground below the surface. 'blocks': 16-row courses whose absolute course index keeps
+    the bond continuous from ground_top into ground_fill. Otherwise asphalt: aggregate
+    speckle with a few hairline cracks kept off the tile edges."""
     w = a.shape[1]
     rect(a, 0, y0, w, y1, r[1])
     speckle(a, rng, np.pad(np.ones((y1 - y0, w), bool), ((y0, a.shape[0] - y1), (0, 0))),
-            [(r[0], 0.06), (r[2], 0.07)])
+            [(r[0], 0.06), (r[2], 0.07), (step(r, 3), 0.01 if not blocks else 0)])
+    if not blocks:
+        for _ in range(rng.integers(1, 3)):
+            x, y = rng.integers(4, w - 12), rng.integers(y0 + 3, y1 - 8)
+            for _ in range(rng.integers(4, 8)):
+                put(a, x, y, r[0], wrap=False)
+                x, y = x + 1, y + rng.integers(0, 2)
+        return
     for y in range(y0, y1):
         ay = y + row_offset
         if ay % 16 == 0:
@@ -568,7 +576,7 @@ def ground_top(t, rng, w=32, h=32):
     m = t["materials"]["ground"]
     fill = palette.ramp(t, m["fill"])
     a = canvas(w, h)
-    quay_blocks(fill, rng, a, 8, h, 8)
+    ground_mass(fill, rng, a, 8, h, 8, m.get("fill_style", "blocks") == "blocks")
     top = palette.ramp(t, m["top"])
     if m["style"] == "dock":
         rect(a, 0, 0, w, 8, top[2])
@@ -610,9 +618,10 @@ def ground_top(t, rng, w=32, h=32):
 
 
 def ground_fill(t, rng, w=32, h=32):
-    fill = palette.ramp(t, t["materials"]["ground"]["fill"])
+    m = t["materials"]["ground"]
+    fill = palette.ramp(t, m["fill"])
     a = canvas(w, h)
-    quay_blocks(fill, rng, a, 0, h, 8)
+    ground_mass(fill, rng, a, 0, h, 8, m.get("fill_style", "blocks") == "blocks")
     return a
 
 

@@ -19,6 +19,6 @@
     "cap": {"ramp": "steel", "trim": "magenta"},
     "support": {"style": "pillar", "ramp": "night", "trim": "cyan"},
     "chimney": {"style": "stack", "ramp": "night", "band": "cyan", "beacon": "magenta"},
-    "ground": {"style": "kerb", "top": "steel", "fill": "asphalt", "stud": "cyan"}
+    "ground": {"style": "kerb", "top": "steel", "fill": "asphalt", "fill_style": "asphalt", "stud": "cyan"}
   }
 }
