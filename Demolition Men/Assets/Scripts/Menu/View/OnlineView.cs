@@ -251,7 +251,7 @@ public class OnlineView : MonoBehaviour
 
     private void OnEnded(string reason)
     {
-        _status.text = reason;
+        _status.text = OnlineSession.TakeEndReason() ?? reason; // shown here: the menu mustn't show it again later
         Show(_step == Step.Connecting ? Step.Joining : Step.Choose);
     }
 

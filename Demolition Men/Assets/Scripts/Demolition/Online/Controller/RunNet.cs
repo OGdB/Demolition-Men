@@ -526,6 +526,7 @@ namespace Demolition.Online
         // Development builds: catch a desync early (docs/multiplayer.md §3).
         private void SendCheck()
         {
+            SendCells(); // the hash includes every change so far: the client must have them first
             var hashes = new List<(int index, int hash)>();
             foreach (DestructibleBuilding building in DestructibleBuilding.Loaded)
                 if (building != null)

@@ -52,17 +52,23 @@ namespace Demolition
                 _rb.bodyType = RigidbodyType2D.Kinematic; // local debris still bounces off it
         }
 
-        /// <summary>A proxy's health, as its owner reports it. Reaching 0 raises <see cref="Depleted"/>
-        /// on the host, whose run decides what happens.</summary>
+        /// <summary>A proxy's health, as its owner reports it. Dropping to 0 raises <see cref="Depleted"/>
+        /// on the host, whose run decides what happens. A 0 the owner still reports after a
+        /// revive here (it hasn't heard of the revive yet) is stale, not a new death.</summary>
         public void SetProxyHealth(float health)
         {
-            if (!IsProxy || IsDead)
+            if (!IsProxy)
                 return;
-            bool wasAlive = Current > 0f;
+            bool dropped = _reportedHealth > 0f && health <= 0f;
+            _reportedHealth = health;
+            if (IsDead || (health <= 0f && !dropped))
+                return;
             Current = Mathf.Clamp(health, 0f, maxHealth);
-            if (wasAlive && Current <= 0f && ManagedByRun)
+            if (dropped && ManagedByRun)
                 Depleted?.Invoke(this);
         }
+
+        private float _reportedHealth = -1f;
 
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;

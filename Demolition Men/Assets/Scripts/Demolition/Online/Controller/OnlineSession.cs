@@ -48,6 +48,7 @@ namespace Demolition.Online
         private readonly List<NetworkObject> _players = new List<NetworkObject>();
         private bool _clientLoaded;
         private bool _ending;
+        private bool _loading; // an NGO scene load is under way on this device
 
         public static void Host() => Begin(true, null);
         public static void Join(string code) => Begin(false, code);
@@ -109,6 +110,7 @@ namespace Demolition.Online
                 return;
             }
             _net.CustomMessagingManager.RegisterNamedMessageHandler(StartMessage, OnStart);
+            _net.SceneManager.OnSceneEvent += OnSceneEvent;
             if (_host)
                 _net.SceneManager.OnLoadEventCompleted += OnLoadEventCompleted;
         }
@@ -199,6 +201,12 @@ namespace Demolition.Online
             _endReason = reason;
             if (reason == null)
                 return;
+            if (_loading)
+            {
+                // The views here go with the scene being loaded: the menu after it shows the reason.
+                SceneManager.sceneLoaded += MenuOnceLoaded;
+                return;
+            }
             Ended?.Invoke(reason);
             // Mid-run or in the online menu: back to this device's own menu and level select.
             GameConfig config = GameConfig.Instance;
@@ -253,6 +261,40 @@ namespace Demolition.Online
             else
                 LevelSelection.SelectDaily(new DateTime(dailyTicks));
             LevelSelection.ReturnToLevelSelect = true;
+        }
+
+        private void OnSceneEvent(SceneEvent sceneEvent)
+        {
+            if (sceneEvent.ClientId != _net.LocalClientId)
+                return;
+            if (sceneEvent.SceneEventType == SceneEventType.Load)
+            {
+                _loading = true;
+                // NGO has just destroyed the players it spawned with this scene: stop the run
+                // and its camera reading them until the next scene is up.
+                RunController run = RunController.Current;
+                if (run != null)
+                {
+                    if (run.Camera != null && run.Camera.TryGetComponent(out ScrollCamera scroll))
+                        scroll.enabled = false;
+                    run.gameObject.SetActive(false);
+                }
+            }
+            else if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
+            {
+                _loading = false;
+            }
+        }
+
+        // The session ended while NGO was loading a scene here, which still activates: go on to the menu from it.
+        private static void MenuOnceLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SceneManager.sceneLoaded -= MenuOnceLoaded;
+            string menu = GameConfig.Instance.menuScene;
+            if (scene.name == menu)
+                return;
+            LevelSelection.ReturnToLevelSelect = true;
+            RunController.LoadScene(menu);
         }
 
         // ---------------- Players ----------------

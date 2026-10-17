@@ -69,7 +69,7 @@ namespace Demolition.Run
             if (_hitStopUntil < 0f)
                 return;
             _hitStopUntil = -1f;
-            if (!PauseController.IsPaused)
+            if (!PauseController.IsPaused || NetRole.IsOnline) // online the pause leaves time running
                 Time.timeScale = 1f;
         }
     }
