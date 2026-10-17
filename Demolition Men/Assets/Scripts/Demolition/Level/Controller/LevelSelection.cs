@@ -21,12 +21,17 @@ namespace Demolition.Levels
 
         public static void PlayCampaign(int index)
         {
-            GameConfig config = GameConfig.Instance;
-            CampaignLevel level = config.Campaign[index];
+            Select(index);
+            Load(GameConfig.Instance);
+        }
+
+        /// <summary>Choose a campaign level without loading it (tests, tools).</summary>
+        public static void Select(int index)
+        {
+            CampaignLevel level = GameConfig.Instance.Campaign[index];
             CampaignIndex = index;
             Spec = level.Spec;
             Theme = level.Theme;
-            Load(config);
         }
 
         public static void PlayDaily(DateTime date)
@@ -71,6 +76,10 @@ namespace Demolition.Levels
         /// play the first campaign level not finished yet.</summary>
         public static void EnsureSelected()
         {
+#if UNITY_EDITOR
+            if (EditorRequest())
+                return;
+#endif
             if (Spec != null)
                 return;
             var campaign = GameConfig.Instance.Campaign;
@@ -81,5 +90,33 @@ namespace Demolition.Levels
             Spec = campaign[index].Spec;
             Theme = campaign[index].Theme;
         }
+
+        /// <summary>Key the Level Lab writes before entering play mode (statics don't survive
+        /// the domain reload): "levelId|seed|bot". Read only in the editor.</summary>
+        public const string EditorRequestKey = "Demolition.LevelLab.Request";
+
+#if UNITY_EDITOR
+        private static bool EditorRequest()
+        {
+            string request = UnityEngine.PlayerPrefs.GetString(EditorRequestKey, string.Empty);
+            if (string.IsNullOrEmpty(request))
+                return false;
+            UnityEngine.PlayerPrefs.DeleteKey(EditorRequestKey);
+            string[] parts = request.Split('|');
+            foreach (CampaignLevel level in GameConfig.Instance.Campaign)
+            {
+                if (level.Spec.id != parts[0])
+                    continue;
+                CampaignIndex = level.Index;
+                Theme = level.Theme;
+                Spec = parts.Length > 1 && int.TryParse(parts[1], out int seed) && seed != level.Spec.seed
+                    ? level.Spec.WithSeed(seed, level.Spec.id)
+                    : level.Spec;
+                LevelBootstrap.AutoPilot = parts.Length > 2 && parts[2] == "bot";
+                return true;
+            }
+            return false;
+        }
+#endif
     }
 }

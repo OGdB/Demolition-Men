@@ -4,7 +4,7 @@
 #   tools/unity-check/check.sh            build + tests
 #   tools/unity-check/check.sh build      build only
 #   tools/unity-check/check.sh test -- --where "class == Demolition.Tests.MetaTests"
-# Run setup.sh once first. Editor-only code (Assets/Editor) is not covered.
+# Run setup.sh once first. Editor scripts build against an older UnityEditor.dll.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 export UNITY_CHECK_HOME="${UNITY_CHECK_HOME:-$HOME/.unity-check}"
@@ -28,6 +28,9 @@ if [ "$mode" = all ] || [ "$mode" = build ]; then
   done
   build Demolition || rc=1
   [ $rc -eq 0 ] && { build Assembly-CSharp || rc=1; }
+  [ $rc -eq 0 ] && { build Demolition.EditorDefines || rc=1; }
+  [ $rc -eq 0 ] && { build Assembly-CSharp-Editor || rc=1; }
+  [ $rc -eq 0 ] && { build PlayModeTests || rc=1; }
 fi
 if [ "$mode" = all ] || [ "$mode" = test ]; then
   build ModelTests || exit 1

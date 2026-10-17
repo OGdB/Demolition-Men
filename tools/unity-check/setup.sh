@@ -21,6 +21,13 @@ if [ ! -d mods ]; then
   mkdir -p mods && (cd mods && unzip -q -o ../mods.nupkg)
 fi
 
+# Editor scripts compile against an older UnityEditor.dll (no newer reference assembly is published).
+if [ ! -f editor/sdk/lib/UnityEditor.dll ]; then
+  mkdir -p editor
+  curl -sSL https://api.nuget.org/v3-flatcontainer/unity3d.sdk/2021.1.14.1/unity3d.sdk.2021.1.14.1.nupkg -o editor/sdk.nupkg
+  (cd editor && unzip -q -o sdk.nupkg -d sdk)
+fi
+
 fetch() { # package version
   [ -d "$1" ] && return
   url=$(curl -sS "https://download.packages.unity.com/$1" | python3 -c "import json,sys; print(json.load(sys.stdin)['versions']['$2']['dist']['tarball'])")

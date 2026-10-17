@@ -17,6 +17,10 @@ namespace Demolition.Levels
         /// <summary>Ground visible below the players' feet at the start.</summary>
         private const float GroundShown = 0.5f;
 
+        /// <summary>Let the <see cref="BotPilot"/> play player 1 (PlayMode tests, the
+        /// Tools ▸ Demolition ▸ Bot Run menu).</summary>
+        public static bool AutoPilot;
+
         private void Awake()
         {
             GameConfig config = GameConfig.Instance;
@@ -84,6 +88,8 @@ namespace Demolition.Levels
             {
                 GameObject player = Instantiate(config.playerPrefabs[i], spawn + new Vector3(-1.5f * i, 0f, 0f), Quaternion.identity);
                 player.name = $"Player_{i + 1}";
+                if (i == 0 && AutoPilot)
+                    player.AddComponent<BotPilot>();
             }
             return count;
         }
