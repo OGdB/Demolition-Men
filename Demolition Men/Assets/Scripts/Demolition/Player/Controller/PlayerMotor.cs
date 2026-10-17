@@ -72,6 +72,9 @@ namespace Demolition
         {
             _input = GetComponent<PlayerInputReader>();
             _rb = GetComponent<Rigidbody2D>();
+            // Better-jump falls land at ~0.5 units per step: discrete sinks the player into a
+            // seam between two block colliders, both push sideways, and they're wedged.
+            _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             _sr = GetComponentInChildren<SpriteRenderer>();
             _anim = GetComponent<Animator>();
             _audio = GetComponent<AudioSource>();
