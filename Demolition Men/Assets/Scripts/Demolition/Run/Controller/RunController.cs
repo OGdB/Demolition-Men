@@ -316,7 +316,7 @@ namespace Demolition.Run
         private void OnPlayerOut(int index, bool willRejoin)
         {
             _players[index].Health.Kill();
-            if (willRejoin)
+            if (willRejoin && !NetRole.IsClient) // a client's score is the host's, penalty included
                 Score.ApplyPenalty(index, rejoinPenalty);
             RefreshCameraTargets();
         }
