@@ -4,8 +4,6 @@ using UnityEngine;
 
 namespace Demolition
 {
-    public enum PickupKind { Axe, WreckingBall, Dynamite, Resurrect }
-
     /// <summary>
     /// Collected by touching it. Weapons add landed hits, dynamite adds sticks (not past
     /// the carry limit), Resurrect brings back a partner who is out. A pickup that can't

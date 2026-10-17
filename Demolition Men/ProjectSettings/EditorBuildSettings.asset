@@ -14,12 +14,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Tutorial.unity
     guid: 70b00bb50b41f034e82a920829fc4dac
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HubWorld.unity
     guid: be6745cb160970b4fa0de33deb495aab
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Level 1.unity
     guid: 5f45a5ceb8ee1ac45abba86555785d86
+  - enabled: 1
+    path: Assets/Scenes/Run.unity
+    guid: afa02ee9b08e428490ba7af5d2247167
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 5a73dae1c55147a4ca02e97e1e491800,
       type: 2}

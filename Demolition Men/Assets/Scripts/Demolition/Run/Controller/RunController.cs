@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Demolition.Levels;
+using Demolition.Meta;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -38,11 +40,15 @@ namespace Demolition.Run
         [SerializeField] private string menuScene = "MainMenu";
         [Tooltip("Scene the results screen's Next button loads; empty hides the button.")]
         [SerializeField] private string nextScene;
+        [Tooltip("Progress is saved under this id; empty = the scene name.")]
+        [SerializeField] private string levelId;
 
         private readonly List<Player> _players = new List<Player>();
         private ScrollCamera _camera;
         private int _totalCells;
+        private int _plannedCells;
         private int _removedCells;
+        private Action _nextLevel;
 
         /// <summary>The run in progress, if the scene has one.</summary>
         public static RunController Current { get; private set; }
@@ -53,8 +59,21 @@ namespace Demolition.Run
         public float ParTime => parTime;
         public Camera Camera => _camera != null ? _camera.Camera : null;
 
-        /// <summary>Share of every building's cells destroyed or collapsed, 0..1.</summary>
-        public float DestroyedFraction => _totalCells == 0 ? 0f : (float)_removedCells / _totalCells;
+        /// <summary>Share of every building's cells destroyed or collapsed, 0..1. A streamed
+        /// level counts the buildings it hasn't spawned yet too.</summary>
+        public float DestroyedFraction
+        {
+            get
+            {
+                int total = Mathf.Max(_totalCells, _plannedCells);
+                return total == 0 ? 0f : Mathf.Clamp01((float)_removedCells / total);
+            }
+        }
+
+        public string LevelId => string.IsNullOrEmpty(levelId) ? SceneManager.GetActiveScene().name : levelId;
+
+        /// <summary>What the profile got from this run, once it is over.</summary>
+        public RunReward Reward { get; private set; }
 
         public int FinalScore => State.Phase == RunPhase.Finished
             ? Score.FinalTotal(State.Elapsed, parTime)
@@ -64,8 +83,20 @@ namespace Demolition.Run
         public event Action<int, int, Vector3> Scored;
         /// <summary>A tutorial hint to show: message, seconds.</summary>
         public event Action<string, float> PromptShown;
+        /// <summary>The run is over and banked in the profile (see <see cref="Reward"/>).</summary>
+        public event Action Ended;
 
-        public bool HasNextLevel => !string.IsNullOrEmpty(nextScene);
+        public bool HasNextLevel => _nextLevel != null || !string.IsNullOrEmpty(nextScene);
+
+        /// <summary>Set up by a generated level before the run starts: its save id, par,
+        /// every cell it will spawn, and what Next does (null hides it).</summary>
+        public void Configure(string id, float par, int plannedCells, Action nextLevel)
+        {
+            levelId = id;
+            parTime = par;
+            _plannedCells = plannedCells;
+            _nextLevel = nextLevel;
+        }
 
         private void OnEnable()
         {
@@ -138,6 +169,7 @@ namespace Demolition.Run
                 input.AssignDevice(Session.DeviceFor(player.Index));
                 player.Health.ManagedByRun = true;
                 player.Health.Depleted += OnDepleted;
+                PlayerUpgrades.Apply(player, Profile.Data);
                 _players.Add(player);
             }
         }
@@ -197,13 +229,24 @@ namespace Demolition.Run
 
         public void Retry() => LoadScene(SceneManager.GetActiveScene().name);
 
-        public void QuitToMenu() => LoadScene(menuScene);
+        public void QuitToMenu()
+        {
+            LevelSelection.ReturnToLevelSelect = true;
+            LoadScene(menuScene);
+        }
 
-        public void NextLevel() => LoadScene(nextScene);
+        public void NextLevel()
+        {
+            if (_nextLevel != null)
+                _nextLevel();
+            else
+                LoadScene(nextScene);
+        }
 
-        private static void LoadScene(string scene)
+        public static void LoadScene(string scene)
         {
             Time.timeScale = 1f;
+            AudioListener.pause = false;
             SceneManager.LoadScene(scene);
         }
 
@@ -215,6 +258,26 @@ namespace Demolition.Run
             SetControls(playing);
             if (_camera != null)
                 _camera.Scrolling = playing;
+            if (State.IsOver)
+                Bank();
+        }
+
+        private void Bank()
+        {
+            bool finished = State.Phase == RunPhase.Finished;
+            Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(DestroyedFraction), FinalScore, State.Elapsed);
+            Profile.Save();
+            Ended?.Invoke();
+        }
+
+        /// <summary>A rewarded ad paid out: bank the run's cash once more.</summary>
+        public void DoubleReward()
+        {
+            Profile.Data.AddCash(Reward.Cash);
+            Profile.Save();
+            RunReward doubled = Reward;
+            doubled.Cash *= 2;
+            Reward = doubled;
         }
 
         private void OnPlayerOut(int index, bool willRejoin)

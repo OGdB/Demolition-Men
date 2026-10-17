@@ -1,0 +1,11 @@
+{
+  "id": "town-01",
+  "name": "MAIN STREET",
+  "theme": "Town",
+  "seed": 1101,
+  "parTime": 100,
+  "scrollSpeed": 1.3,
+  "pacing": ["start", "street", "breather", "cluster:2", "street", "finish"],
+  "pickups": { "dynamite": 3, "axe": 1, "wreckingBall": 0, "resurrect": 1 },
+  "archetypes": ["town.shack", "town.rowhouse"]
+}

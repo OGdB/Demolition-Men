@@ -101,6 +101,9 @@ namespace Demolition
         /// <summary>Landed hits left on the current weapon, -1 for fists.</summary>
         public int WeaponUses => weapon == WeaponType.Fists ? -1 : _uses[(int)weapon];
         public int DynamiteCount { get => dynamiteCount; set => dynamiteCount = Mathf.Max(0, value); }
+        public float DamageMultiplier { get => damageMultiplier; set => damageMultiplier = Mathf.Max(0f, value); }
+        /// <summary>Picked-up weapons get this many times their hits (skill shop).</summary>
+        public float WeaponHitMultiplier { get; set; } = 1f;
         public int PlayerIndex => _input.PlayerIndex;
 
         private Vector2 AttackOrigin =>
@@ -196,7 +199,7 @@ namespace Demolition
         {
             if (type == WeaponType.Fists || hits <= 0)
                 return;
-            _uses[(int)type] += hits;
+            _uses[(int)type] += Mathf.Max(1, Mathf.RoundToInt(hits * WeaponHitMultiplier));
             weapon = type;
         }
 

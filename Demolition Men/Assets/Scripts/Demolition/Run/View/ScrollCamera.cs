@@ -38,8 +38,12 @@ namespace Demolition.Run
 
         private readonly List<Transform> _targets = new List<Transform>();
         private float _floorY;
+        // Where framing put the camera; the shake is added on top of it.
+        private Vector3 _framed;
+        private Vector3 _shake;
 
         public Camera Camera { get; private set; }
+        public float ScrollSpeed { get => scrollSpeed; set => scrollSpeed = Mathf.Max(0f, value); }
         /// <summary>Set by the run controller: scrolling only happens while playing.</summary>
         public bool Scrolling { get; set; }
         public bool Pushed { get; private set; }
@@ -53,6 +57,8 @@ namespace Demolition.Run
             Camera = GetComponent<Camera>();
             // The authored framing defines the ground: never show below it unless a player is there.
             _floorY = transform.position.y - Camera.orthographicSize;
+            _framed = transform.position;
+            CameraShake.Clear();
             if (Camera.rect != new Rect(0f, 0f, 1f, 1f))
                 AddLetterboxClear();
         }
@@ -71,6 +77,13 @@ namespace Demolition.Run
             clear.orthographic = true;
         }
 
+        /// <summary>Take the current framing as the ground framing (after a level placed the camera).</summary>
+        public void ResetFloor()
+        {
+            _floorY = transform.position.y - Camera.orthographicSize;
+            _framed = transform.position;
+        }
+
         public void SetTargets(IEnumerable<Transform> targets)
         {
             _targets.Clear();
@@ -79,9 +92,16 @@ namespace Demolition.Run
 
         private void LateUpdate()
         {
-            if (_targets.Count == 0)
-                return;
+            transform.position = _framed;
+            if (_targets.Count > 0)
+                FrameTargets();
+            _framed = transform.position;
+            _shake = CameraShake.Tick(Time.deltaTime);
+            transform.position = _framed + _shake;
+        }
 
+        private void FrameTargets()
+        {
             float minX = float.MaxValue, maxX = float.MinValue;
             float minY = float.MaxValue, maxY = float.MinValue;
             foreach (Transform t in _targets)

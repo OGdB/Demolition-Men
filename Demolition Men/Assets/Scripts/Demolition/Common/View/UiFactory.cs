@@ -1,5 +1,7 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 namespace Demolition
@@ -13,6 +15,15 @@ namespace Demolition
         public static Material Outline =>
             _outline != null ? _outline : _outline = Resources.Load<Material>("Fonts & Materials/LiberationSans SDF - Outline");
 
+        /// <summary>UI needs an event system reading the Input System (mouse, touch, gamepad
+        /// navigation); runtime-built scenes get one here.</summary>
+        public static void EnsureEventSystem()
+        {
+            if (EventSystem.current != null || Object.FindAnyObjectByType<EventSystem>() != null)
+                return;
+            new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+        }
+
         public static Canvas Canvas(Transform parent, string name, int sortingOrder)
         {
             var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -25,6 +36,25 @@ namespace Demolition
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             return canvas;
+        }
+
+        /// <summary>Full-screen colour behind an overlay; it swallows clicks meant for what is underneath.</summary>
+        public static Image Backdrop(Transform root, Color color)
+        {
+            Image image = Image(Stretch(root, "Backdrop"), "Fill", Vector2.zero, Vector2.zero, Vector2.zero, color);
+            image.rectTransform.anchorMax = Vector2.one;
+            image.raycastTarget = true;
+            return image;
+        }
+
+        /// <summary>Change a button's label (and its size).</summary>
+        public static TextMeshProUGUI Label(Button button, string text, float fontSize = 0f)
+        {
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
+            label.text = text;
+            if (fontSize > 0f)
+                label.fontSize = fontSize;
+            return label;
         }
 
         /// <summary>A rect anchored and pivoted at <paramref name="anchor"/>, offset by <paramref name="position"/>.</summary>
@@ -43,6 +73,15 @@ namespace Demolition
         {
             RectTransform rt = Rect(parent, name, Vector2.zero, Vector2.zero, Vector2.zero);
             rt.anchorMax = Vector2.one;
+            return rt;
+        }
+
+        /// <summary>A full-screen child that stays inside the safe area (notches, overscan):
+        /// parent anything anchored to a screen edge here.</summary>
+        public static RectTransform SafeArea(Transform canvas)
+        {
+            RectTransform rt = Stretch(canvas, "SafeArea");
+            rt.gameObject.AddComponent<SafeAreaFitter>();
             return rt;
         }
 

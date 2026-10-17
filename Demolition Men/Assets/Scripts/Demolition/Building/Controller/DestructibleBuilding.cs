@@ -100,6 +100,10 @@ namespace Demolition
         private int _lastInstigator = -1;
 
         public int StandingBlockCount => _structure.CellCount;
+
+        /// <summary>Detached blocks burst into dust instead of falling (gates that must
+        /// clear the street, not pile up in it).</summary>
+        public bool CrumbleDetached { get; set; }
         public int InitialCellCount { get; private set; }
 
         /// <summary>Fraction of the building destroyed or collapsed, 0..1.</summary>
@@ -442,7 +446,12 @@ namespace Demolition
             {
                 fallers[i].MarkCredited();
                 ReleaseRiders(fallers[i]);
-                if (fallen < maxSimultaneousFalling)
+                if (CrumbleDetached)
+                {
+                    Particles.Burst(fallers[i].transform.position, BlockMaterialInfo.Tint(fallers[i].Material), 10, 3.5f, 0.16f, 0.6f);
+                    Destroy(fallers[i].gameObject);
+                }
+                else if (fallen < maxSimultaneousFalling)
                 {
                     fallers[i].BeginFalling();
                     fallen++;

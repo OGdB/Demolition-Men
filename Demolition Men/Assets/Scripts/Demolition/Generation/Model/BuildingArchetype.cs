@@ -43,6 +43,20 @@ namespace Demolition.Generation
 
         public static BuildingArchetype FromJson(string json) => JsonUtility.FromJson<BuildingArchetype>(json);
 
+        /// <summary>A copy no wider than <paramref name="maxWidth"/> cells (a slot with limited room).</summary>
+        public BuildingArchetype WithMaxWidth(int maxWidth)
+        {
+            var copy = (BuildingArchetype)MemberwiseClone();
+            copy.width.max = Mathf.Min(width.max, maxWidth);
+            copy.width.min = Mathf.Min(width.min, copy.width.max);
+            return copy;
+        }
+
+        /// <summary>Rough size, for ordering archetypes from small to big.</summary>
+        public int Bulk => width.max * floors.max * floorHeight.max;
+
+        public bool IsTower => id.Contains("tower");
+
         public static TileKind ParseTile(string name, TileKind fallback) =>
             Enum.TryParse(name, true, out TileKind kind) ? kind : fallback;
     }

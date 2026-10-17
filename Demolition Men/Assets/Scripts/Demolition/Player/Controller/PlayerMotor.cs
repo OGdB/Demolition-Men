@@ -37,6 +37,8 @@ namespace Demolition
         [SerializeField] private AudioClip glassBreakSound;
 
         public bool IsGrounded { get; private set; }
+        public float MaxSpeed { get => maxSpeed; set => maxSpeed = Mathf.Max(0f, value); }
+        public float JumpImpulse => jumpImpulse;
         /// <summary>+1 facing right, -1 facing left (same convention as directionCalc).</summary>
         public int Facing { get; private set; } = 1;
 

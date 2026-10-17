@@ -12,6 +12,9 @@ GameObject:
   - component: {fileID: 1253814281408908549}
   - component: {fileID: 2317896951977597424}
   - component: {fileID: 7087220444497947802}
+  - component: {fileID: 8264117050012345601}
+  - component: {fileID: 8264117050012345602}
+  - component: {fileID: 8264117050012345603}
   m_Layer: 0
   m_Name: Run
   m_TagString: Untagged
@@ -88,3 +91,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d879f3dfa273c3547a422c8a30934390, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.ResultsView
+--- !u!114 &8264117050012345601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4490347013378689099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0e1feb4113346249d1df22390534523, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.Run.PauseController
+--- !u!114 &8264117050012345602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4490347013378689099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd57102c18064e518ea1f33ec9b3addf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.Run.PauseView
+--- !u!114 &8264117050012345603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4490347013378689099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1aef4c8b55a4c238f66af7715df15e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.TouchControls

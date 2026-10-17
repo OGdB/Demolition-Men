@@ -291,7 +291,7 @@ namespace Demolition.Run
                 panel.TntPulse = 0.4f;
             panel.LastTnt = count;
 
-            panel.Tnt.text = count > 0 ? $"x{count}  {Key(player, "X", "B")}" : "x0";
+            panel.Tnt.text = count > 0 ? $"x{count}  {Key(player, "X", "B", string.Empty)}" : "x0";
             float alpha = count > 0 ? 1f : 0.35f;
             panel.TntIcon.color = new Color(1f, 1f, 1f, alpha);
             panel.Tnt.alpha = alpha;
@@ -306,11 +306,13 @@ namespace Demolition.Run
             if (index < 0 || index >= _panels.Count)
                 return;
             RunController.Player player = _run.Players[index];
-            string switchKeys = Key(player, "Q", "LB") + " " + Key(player, "E", "RB");
+            string switchKeys = player.Input != null && player.Input.Style == InputStyle.Touch
+                ? "TAP SWAP"
+                : Key(player, "Q", "LB", string.Empty) + " " + Key(player, "E", "RB", string.Empty);
             switch (kind)
             {
                 case PickupKind.Dynamite:
-                    _panels[index].Toast.text = $"+{amount} TNT   {Key(player, "X", "B")} TO THROW";
+                    _panels[index].Toast.text = $"+{amount} TNT   {Key(player, "X", "B", "TAP TNT")} TO THROW";
                     break;
                 case PickupKind.Axe:
                 case PickupKind.WreckingBall:
@@ -332,9 +334,17 @@ namespace Demolition.Run
                     ToCanvas(player.Transform.position + Vector3.up * 3.2f) + _root.rect.size * 0.5f;
         }
 
-        /// <summary>A button prompt for whatever this player last used: [X] key or (B) pad button.</summary>
-        private static string Key(RunController.Player player, string keyboard, string gamepad) =>
-            player.Input != null && player.Input.UsingGamepad ? $"({gamepad})" : $"[{keyboard}]";
+        /// <summary>A button prompt for whatever this player last used: [X] key, (B) pad
+        /// button, or the name on the on-screen touch button.</summary>
+        private static string Key(RunController.Player player, string keyboard, string gamepad, string touch)
+        {
+            switch (player.Input != null ? player.Input.Style : InputStyle.Keyboard)
+            {
+                case InputStyle.Gamepad: return $"({gamepad})";
+                case InputStyle.Touch: return touch;
+                default: return $"[{keyboard}]";
+            }
+        }
 
         private void OnScored(int player, int points, Vector3 world)
         {

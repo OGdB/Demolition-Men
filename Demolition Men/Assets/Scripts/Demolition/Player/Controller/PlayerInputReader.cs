@@ -4,16 +4,12 @@ using UnityEngine.InputSystem;
 namespace Demolition
 {
     /// <summary>
-    /// Merged gamepad + keyboard input for one player, replacing the old
-    /// PlayerInput/StupidController/ControllerManager chain with a single component.
+    /// One player's input, sampled once per frame from an <see cref="IPlayerInputSource"/>
+    /// (devices, the touch controls or a bot) and exposed to the motor and combat scripts.
     ///
     /// Faithful to the original feel: <see cref="MoveRaw"/> drives the physics while a
     /// SmoothDamp'd, deadzoned copy (<see cref="MoveSmoothed"/>) drives sprite flip and
     /// the animator's Speed float, so the run cycle eases in and out the way it used to.
-    ///
-    /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · LB/RB weapon.
-    /// Keyboard: A/D or ◀/▶ move · Space/W jump · Z, F or L-Mouse attack · X, R or
-    /// R-Mouse dynamite · Q/E weapon.
     /// </summary>
     public class PlayerInputReader : MonoBehaviour
     {
@@ -37,107 +33,47 @@ namespace Demolition
         public bool DynamiteDown { get; private set; }
         /// <summary>+1 / -1 on the frame the next / previous weapon is requested, otherwise 0.</summary>
         public int WeaponCycle { get; private set; }
-        /// <summary>The last input came from a gamepad (for button prompts).</summary>
-        public bool UsingGamepad { get; private set; }
+        /// <summary>Button glyphs for this player's prompts.</summary>
+        public InputStyle Style => Source.Style;
 
-        private Vector2 _smoothed;
-        private Vector2 _smoothedVelocity;
-        private InputDevice _assigned;
-
-        /// <summary>Read only this device (keyboard + mouse, or one gamepad) instead of the
-        /// default gamepad index + keyboard. Null restores the default.</summary>
-        public void AssignDevice(InputDevice device)
+        /// <summary>Where this player's input comes from. Defaults to the gamepad index plus
+        /// the keyboard (and the touch controls for player 1 on a touch device).</summary>
+        public IPlayerInputSource Source
         {
-            _assigned = device;
-            UsingGamepad = device != null ? device is Gamepad : !keyboardEnabled;
+            get => _source ??= DefaultSource();
+            set => _source = value;
         }
 
-        private void Awake() => UsingGamepad = !keyboardEnabled;
+        private IPlayerInputSource _source;
+        private Vector2 _smoothed;
+        private Vector2 _smoothedVelocity;
+
+        /// <summary>Read only this device (keyboard + mouse, one gamepad, or the touch
+        /// controls). Null restores the default.</summary>
+        public void AssignDevice(InputDevice device) => _source = device != null ? DeviceInputSource.For(device) : null;
+
+        private IPlayerInputSource DefaultSource()
+        {
+            var devices = new DeviceInputSource(gamepadIndex, keyboardEnabled);
+            return keyboardEnabled && Platform.IsTouch
+                ? new CombinedInputSource(devices, TouchInputSource.Shared)
+                : devices;
+        }
 
         private void Update()
         {
-            Gamepad pad;
-            Keyboard kb;
-            if (_assigned != null)
-            {
-                pad = _assigned as Gamepad;
-                kb = _assigned as Keyboard;
-            }
-            else
-            {
-                pad = Gamepad.all.Count > gamepadIndex ? Gamepad.all[gamepadIndex] : null;
-                kb = keyboardEnabled ? Keyboard.current : null;
-            }
-            Mouse mouse = kb != null ? Mouse.current : null;
+            PlayerInputFrame frame = Source.Read();
 
-            Vector2 raw = Vector2.zero;
-            bool jumpDown = false, jumpHeld = false, jumpUp = false;
-            bool attack = false, dynamiteDown = false;
-            int cycle = 0;
-
-            if (pad != null)
-            {
-                raw += pad.leftStick.ReadValue();
-                jumpDown |= pad.aButton.wasPressedThisFrame;
-                jumpHeld |= pad.aButton.isPressed;
-                jumpUp |= pad.aButton.wasReleasedThisFrame;
-                attack |= pad.xButton.isPressed;
-                dynamiteDown |= pad.bButton.wasPressedThisFrame;
-                if (pad.rightShoulder.wasPressedThisFrame) cycle = 1;
-                else if (pad.leftShoulder.wasPressedThisFrame) cycle = -1;
-                if (pad.wasUpdatedThisFrame && (pad.leftStick.ReadValue().sqrMagnitude > 0.25f || AnyButton(pad)))
-                    UsingGamepad = true;
-            }
-
-            if (kb != null)
-            {
-                float x = 0f, y = 0f;
-                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) x -= 1f;
-                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) x += 1f;
-                if (kb.sKey.isPressed || kb.downArrowKey.isPressed) y -= 1f;
-                if (kb.wKey.isPressed || kb.upArrowKey.isPressed) y += 1f;
-                raw += new Vector2(x, y);
-
-                jumpDown |= kb.spaceKey.wasPressedThisFrame || kb.wKey.wasPressedThisFrame
-                            || kb.upArrowKey.wasPressedThisFrame;
-                jumpHeld |= kb.spaceKey.isPressed || kb.wKey.isPressed || kb.upArrowKey.isPressed;
-                jumpUp |= kb.spaceKey.wasReleasedThisFrame || kb.wKey.wasReleasedThisFrame
-                          || kb.upArrowKey.wasReleasedThisFrame;
-
-                attack |= kb.zKey.isPressed || kb.fKey.isPressed;
-                dynamiteDown |= kb.xKey.wasPressedThisFrame || kb.rKey.wasPressedThisFrame;
-
-                if (kb.eKey.wasPressedThisFrame) cycle = 1;
-                else if (kb.qKey.wasPressedThisFrame) cycle = -1;
-                if (kb.anyKey.wasPressedThisFrame)
-                    UsingGamepad = false;
-            }
-
-            if (mouse != null)
-            {
-                attack |= mouse.leftButton.isPressed;
-                dynamiteDown |= mouse.rightButton.wasPressedThisFrame;
-                if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)
-                    UsingGamepad = false;
-            }
-
-            MoveRaw = Vector2.ClampMagnitude(raw, 1f);
-
+            MoveRaw = frame.Move;
             _smoothed = Vector2.SmoothDamp(_smoothed, MoveRaw, ref _smoothedVelocity, 1f / joystickDampSpeed);
             MoveSmoothed = _smoothed.magnitude < deadzone ? Vector2.zero : _smoothed;
 
-            JumpDown = jumpDown;
-            JumpHeld = jumpHeld;
-            JumpUp = jumpUp;
-            AttackHeld = attack;
-            DynamiteDown = dynamiteDown;
-            WeaponCycle = cycle;
+            JumpDown = frame.JumpPressed;
+            JumpHeld = frame.JumpHeld;
+            JumpUp = frame.JumpReleased;
+            AttackHeld = frame.AttackHeld;
+            DynamiteDown = frame.DynamitePressed;
+            WeaponCycle = frame.WeaponCycle;
         }
-
-        private static bool AnyButton(Gamepad pad) =>
-            pad.buttonSouth.wasPressedThisFrame || pad.buttonEast.wasPressedThisFrame
-            || pad.buttonWest.wasPressedThisFrame || pad.buttonNorth.wasPressedThisFrame
-            || pad.leftShoulder.wasPressedThisFrame || pad.rightShoulder.wasPressedThisFrame
-            || pad.startButton.wasPressedThisFrame;
     }
 }

@@ -19,6 +19,13 @@ namespace Demolition
         [SerializeField] private AudioClip hurtSound;
 
         public float Max => maxHealth;
+
+        /// <summary>Raise or lower the maximum (skill shop); refills to it.</summary>
+        public void SetMax(float max)
+        {
+            maxHealth = Mathf.Max(1f, max);
+            Current = maxHealth;
+        }
         public float Current { get; private set; }
         /// <summary>Out of play: hidden, no physics, no controls (see <see cref="Kill"/>).</summary>
         public bool IsDead { get; private set; }
