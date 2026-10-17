@@ -32,6 +32,15 @@ namespace Demolition.Levels
 
         public LevelLayout Layout => _layout;
 
+        /// <summary>World y of the lowest ground between two world x (pits excluded),
+        /// +infinity if there is none: what the camera needs to show floors below the street.</summary>
+        public float LowestGroundBetween(float worldX0, float worldX1)
+        {
+            float ox = transform.position.x;
+            int low = _layout.LowestGroundIn(Mathf.FloorToInt(worldX0 - ox), Mathf.FloorToInt(worldX1 - ox));
+            return low == LevelLayout.NoGround ? float.PositiveInfinity : transform.position.y + low;
+        }
+
         public void Build(LevelLayout layout, LevelTheme theme, Pickup pickupPrefab, bool coop)
         {
             _layout = layout;
@@ -115,22 +124,70 @@ namespace Demolition.Levels
             map.AddComponent<CompositeCollider2D>().geometryType = CompositeCollider2D.GeometryType.Polygons;
         }
 
-        // Pits and sewer trenches cut below the street would show sky (the skyline starts at
-        // the street): a darker, collider-free wall of fill tiles closes them from behind.
+        // Trenches cut below the street would show sky (the skyline starts at the street): a
+        // darker, collider-free wall of fill tiles closes them from behind. Pits must read
+        // differently from trenches: below their lips they are near-black, bottomless holes,
+        // and both lips get hazard stripes.
         private void BuildBackWall(Transform grid, int bottom)
         {
             int street = _layout.GroundAt(_layout.SpawnX);
-            var go = new GameObject("BackWall", typeof(Tilemap), typeof(TilemapRenderer));
-            go.transform.SetParent(grid, false);
-            var tilemap = go.GetComponent<Tilemap>();
-            tilemap.color = new Color(0.55f, 0.55f, 0.6f);
-            go.GetComponent<TilemapRenderer>().sortingOrder = -1;
+            Tilemap wall = BackTilemap(grid, "BackWall", new Color(0.55f, 0.55f, 0.6f));
+            Tilemap abyss = BackTilemap(grid, "Abyss", new Color(0.06f, 0.05f, 0.08f));
             for (int x = 0; x < _layout.Width; x++)
             {
                 int top = _layout.Ground[x];
-                int from = top == LevelLayout.NoGround ? bottom : top;
-                for (int y = from; y < street; y++)
-                    tilemap.SetTile(new Vector3Int(x, y, 0), _theme.groundFill);
+                if (top != LevelLayout.NoGround)
+                {
+                    for (int y = top; y < street; y++)
+                        wall.SetTile(new Vector3Int(x, y, 0), _theme.groundFill);
+                    continue;
+                }
+                int lip = PitLip(x);
+                for (int y = bottom; y < Mathf.Max(lip, street); y++)
+                    (y < lip ? abyss : wall).SetTile(new Vector3Int(x, y, 0), _theme.groundFill);
+            }
+            MarkPitEdges();
+        }
+
+        private static Tilemap BackTilemap(Transform grid, string name, Color tint)
+        {
+            var go = new GameObject(name, typeof(Tilemap), typeof(TilemapRenderer));
+            go.transform.SetParent(grid, false);
+            var tilemap = go.GetComponent<Tilemap>();
+            tilemap.color = tint;
+            go.GetComponent<TilemapRenderer>().sortingOrder = -1;
+            return tilemap;
+        }
+
+        // The lower of the ground heights on either side of the pit column x.
+        private int PitLip(int x)
+        {
+            int left = x, right = x;
+            while (left >= 0 && _layout.Ground[left] == LevelLayout.NoGround) left--;
+            while (right < _layout.Width && _layout.Ground[right] == LevelLayout.NoGround) right++;
+            int l = left >= 0 ? _layout.Ground[left] : int.MaxValue;
+            int r = right < _layout.Width ? _layout.Ground[right] : int.MaxValue;
+            return Mathf.Min(l, r);
+        }
+
+        // Hazard stripes along the walkable top of the columns either side of every pit.
+        private void MarkPitEdges()
+        {
+            for (int x = 0; x < _layout.Width; x++)
+            {
+                bool pit = _layout.Ground[x] == LevelLayout.NoGround;
+                bool leftLip = !pit && x + 1 < _layout.Width && _layout.Ground[x + 1] == LevelLayout.NoGround;
+                bool rightLip = !pit && x > 0 && _layout.Ground[x - 1] == LevelLayout.NoGround;
+                if (!leftLip && !rightLip)
+                    continue;
+                var go = new GameObject("PitEdge", typeof(SpriteRenderer));
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = new Vector3(x + 0.5f, _layout.Ground[x] - 0.125f, 0f);
+                var sr = go.GetComponent<SpriteRenderer>();
+                sr.sprite = PrimitiveSprite.Hazard();
+                sr.drawMode = SpriteDrawMode.Tiled;
+                sr.size = new Vector2(1f, 0.25f);
+                sr.sortingOrder = 1;
             }
         }
 

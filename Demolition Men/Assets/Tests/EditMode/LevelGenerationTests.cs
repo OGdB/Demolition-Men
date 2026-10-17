@@ -112,6 +112,18 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void LowestGround_SeesTrenchFloors_ButNotPitBottoms()
+        {
+            var layout = new LevelLayout(new LevelSpec());
+            int[] ground = { 0, 0, -3, -3, 0, LevelLayout.NoGround, LevelLayout.NoGround, 0 };
+            layout.Ground.AddRange(ground);
+            Assert.AreEqual(-3, layout.LowestGroundIn(0, 7), "trench floor");
+            Assert.AreEqual(0, layout.LowestGroundIn(4, 7), "a pit has no floor to show");
+            Assert.AreEqual(LevelLayout.NoGround, layout.LowestGroundIn(5, 6));
+            Assert.AreEqual(0, layout.LowestGroundIn(-5, 1), "clamped to the level");
+        }
+
+        [Test]
         public void Validator_RejectsAWallAndAWidePit()
         {
             var spec = new LevelSpec();

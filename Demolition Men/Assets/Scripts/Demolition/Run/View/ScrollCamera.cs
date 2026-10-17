@@ -35,6 +35,8 @@ namespace Demolition.Run
         [SerializeField] private float zoomInSpeed = 3f;
         [SerializeField] private float zoomOutSpeed = 4.8f;
         [SerializeField] private float verticalFollowSpeed = 2.5f;
+        [Tooltip("How far past the right edge the framing looks for lower ground (a trench floor ahead).")]
+        [SerializeField] private float groundLookAhead = 4f;
 
         private readonly List<Transform> _targets = new List<Transform>();
         private float _floorY;
@@ -44,6 +46,11 @@ namespace Demolition.Run
 
         public Camera Camera { get; private set; }
         public float ScrollSpeed { get => scrollSpeed; set => scrollSpeed = Mathf.Max(0f, value); }
+
+        /// <summary>Optional: the lowest ground surface between two world x, +infinity if none
+        /// (a generated level supplies it). The framing lowers its bottom so a floor below the
+        /// street shows before anyone drops onto it; a pit has no floor, so it stays a dark hole.</summary>
+        public System.Func<float, float, float> LowestGround { get; set; }
         /// <summary>Widest orthographic size the framing zooms out to.</summary>
         public float MaxZoom => maxZoom;
         /// <summary>Set by the run controller: scrolling only happens while playing.</summary>
@@ -123,6 +130,13 @@ namespace Demolition.Run
         private void Frame(float minX, float maxX, float minY, float maxY)
         {
             float bottom = Mathf.Min(_floorY, minY - marginBelow);
+            if (LowestGround != null)
+            {
+                float x = transform.position.x, half = Camera.orthographicSize * Camera.aspect;
+                float ground = LowestGround(x - half, x + half + groundLookAhead);
+                if (!float.IsInfinity(ground))
+                    bottom = Mathf.Min(bottom, ground - marginBelow);
+            }
             float top = maxY + playerHeight + marginAbove;
             float halfWidth = (maxX - minX) * 0.5f + marginX;
             float wanted = Mathf.Clamp(Mathf.Max((top - bottom) * 0.5f, halfWidth / Camera.aspect), minZoom, maxZoom);

@@ -66,6 +66,17 @@ namespace Demolition.Levels
             ? Spec.parTime
             : (FinishX - SpawnX) / UnityEngine.Mathf.Max(0.1f, Spec.scrollSpeed);
 
+        /// <summary>Lowest ground surface among columns [x0, x1]; pits don't count (they have
+        /// no floor). <see cref="NoGround"/> when the range holds no ground.</summary>
+        public int LowestGroundIn(int x0, int x1)
+        {
+            int low = NoGround;
+            for (int x = System.Math.Max(0, x0); x <= x1 && x < Ground.Count; x++)
+                if (Ground[x] != NoGround && (low == NoGround || Ground[x] < low))
+                    low = Ground[x];
+            return low;
+        }
+
         /// <summary>Destructible cells over the whole level (the demolition meter's 100%).</summary>
         public int TotalCells
         {

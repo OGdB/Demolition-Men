@@ -40,13 +40,15 @@ namespace Demolition.Levels
             float ground = layout.GroundAt(layout.SpawnX);
             var spawn = new Vector3(layout.SpawnX + 0.5f, ground + 0.1f, 0f);
 
-            SpawnCamera(config, theme, spec, spawn, ground);
+            ScrollCamera scroll = SpawnCamera(config, theme, spec, spawn, ground);
             SpawnBackdrop(config, theme, spawn.x, ground);
             int players = SpawnPlayers(config, spawn);
             UiFactory.EnsureEventSystem();
 
             var level = new GameObject("Level").AddComponent<LevelBuilder>();
             level.Build(layout, theme, config.pickupPrefab, players > 1);
+            if (scroll != null)
+                scroll.LowestGround = level.LowestGroundBetween; // show trench floors before the drop
 
             var run = Instantiate(config.runPrefab).GetComponent<RunController>();
             run.name = "Run";
@@ -55,7 +57,7 @@ namespace Demolition.Levels
             SpawnMusic(theme);
         }
 
-        private static void SpawnCamera(GameConfig config, LevelTheme theme, LevelSpec spec, Vector3 spawn, float ground)
+        private static ScrollCamera SpawnCamera(GameConfig config, LevelTheme theme, LevelSpec spec, Vector3 spawn, float ground)
         {
             GameObject go = Instantiate(config.cameraPrefab);
             go.name = "Main Camera 1";
@@ -79,6 +81,7 @@ namespace Demolition.Levels
                 scroll.ScrollSpeed = spec.scrollSpeed;
                 scroll.ResetFloor();
             }
+            return scroll;
         }
 
         /// <summary>One repeat of a backdrop layer's wrap: wider than the widest camera view.</summary>
