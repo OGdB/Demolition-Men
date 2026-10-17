@@ -50,7 +50,7 @@ namespace Demolition.Levels
 
             var run = Instantiate(config.runPrefab).GetComponent<RunController>();
             run.name = "Run";
-            run.Configure(spec.id, spec.parTime, layout.TotalCells, LevelSelection.NextAction());
+            run.Configure(spec.id, layout.Par, layout.TotalCells, LevelSelection.NextAction());
 
             SpawnMusic(theme);
         }

@@ -3,7 +3,7 @@
   "name": "DOWNTOWN",
   "theme": "Town",
   "seed": 3313,
-  "parTime": 160,
+  "parTime": 0,
   "scrollSpeed": 1.6,
   "pacing": ["start", "cluster:2", "gap", "tower", "breather", "sewer", "cluster:3", "gate", "finish"],
   "pickups": { "dynamite": 5, "axe": 1, "wreckingBall": 1, "resurrect": 1 },

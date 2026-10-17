@@ -60,6 +60,12 @@ namespace Demolition.Levels
 
         public int GroundAt(int x) => x >= 0 && x < Ground.Count ? Ground[x] : NoGround;
 
+        /// <summary>Par time: the spec's, or how long the camera's auto-scroll takes from spawn
+        /// to finish. Riding the scroll earns no speed bonus; pushing ahead does.</summary>
+        public float Par => Spec.parTime > 0f
+            ? Spec.parTime
+            : (FinishX - SpawnX) / UnityEngine.Mathf.Max(0.1f, Spec.scrollSpeed);
+
         /// <summary>Destructible cells over the whole level (the demolition meter's 100%).</summary>
         public int TotalCells
         {

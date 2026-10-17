@@ -3,7 +3,7 @@
   "name": "OLD QUARTER",
   "theme": "Town",
   "seed": 2207,
-  "parTime": 130,
+  "parTime": 0,
   "scrollSpeed": 1.5,
   "pacing": ["start", "street", "gap", "cluster:2", "hill", "cluster:2", "gate", "finish"],
   "pickups": { "dynamite": 4, "axe": 1, "wreckingBall": 1, "resurrect": 1 },
