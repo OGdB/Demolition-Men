@@ -12,6 +12,7 @@ import uuid
 
 from PIL import Image
 
+sys.dont_write_bytecode = True  # no __pycache__ next to the tools
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import qa  # noqa: E402
 from normalize import load_theme  # noqa: E402

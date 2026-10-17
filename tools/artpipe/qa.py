@@ -14,6 +14,7 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+sys.dont_write_bytecode = True  # no __pycache__ next to the tools
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import palette  # noqa: E402
 from normalize import load_theme  # noqa: E402
