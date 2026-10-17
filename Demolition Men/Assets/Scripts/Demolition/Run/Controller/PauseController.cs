@@ -16,6 +16,11 @@ namespace Demolition.Run
         private RunController _run;
 
         public static bool IsPaused { get; private set; }
+        private static int _resumedFrame = -10;
+
+        /// <summary>Players ignore input while paused and on the frame play resumes (the
+        /// button press that resumed must not also jump or throw).</summary>
+        public static bool BlocksInput => IsPaused || Time.frameCount - _resumedFrame <= 1;
         public static event Action<bool> Changed;
 
         private void Awake() => _run = GetComponent<RunController>();
@@ -47,6 +52,8 @@ namespace Demolition.Run
             if (paused == IsPaused)
                 return;
             IsPaused = paused;
+            if (!paused)
+                _resumedFrame = Time.frameCount;
             Time.timeScale = paused ? 0f : 1f;
             AudioListener.pause = paused;
             Changed?.Invoke(paused);

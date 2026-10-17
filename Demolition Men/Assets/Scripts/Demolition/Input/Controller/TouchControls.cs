@@ -25,11 +25,31 @@ namespace Demolition
 
         private void Start()
         {
+            Meta.Profile.SettingsChanged += OnSettingsChanged;
             if (Platform.IsTouch)
                 Build();
         }
 
-        private void OnDestroy() => TouchInputSource.Shared.Release();
+        private void OnDestroy()
+        {
+            Meta.Profile.SettingsChanged -= OnSettingsChanged;
+            TouchInputSource.Shared.Release();
+        }
+
+        // TOUCH CONTROLS changed in the pause menu: show or remove them right away.
+        private void OnSettingsChanged()
+        {
+            if (Platform.IsTouch && _root == null)
+            {
+                Build();
+            }
+            else if (!Platform.IsTouch && _root != null)
+            {
+                Destroy(_root);
+                _root = null;
+                TouchInputSource.Shared.Release();
+            }
+        }
 
         private void LateUpdate()
         {

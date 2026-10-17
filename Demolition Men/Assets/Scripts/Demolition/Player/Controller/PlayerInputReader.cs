@@ -63,6 +63,8 @@ namespace Demolition
         private void Update()
         {
             PlayerInputFrame frame = Source.Read();
+            if (Run.PauseController.BlocksInput)
+                frame = default;
 
             MoveRaw = frame.Move;
             _smoothed = Vector2.SmoothDamp(_smoothed, MoveRaw, ref _smoothedVelocity, 1f / joystickDampSpeed);

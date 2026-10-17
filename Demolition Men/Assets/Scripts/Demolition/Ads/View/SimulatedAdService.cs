@@ -22,14 +22,20 @@ namespace Demolition.Ads
             Canvas canvas = UiFactory.Canvas(null, "SimulatedAd", 100);
             UnityEngine.Object.DontDestroyOnLoad(canvas.gameObject);
             var root = (RectTransform)canvas.transform;
-            UiFactory.Image(UiFactory.Stretch(root, "Back"), "Fill", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0.1f, 0.1f, 0.2f, 1f))
-                .rectTransform.anchorMax = Vector2.one;
+            UiFactory.Backdrop(root, new Color(0.1f, 0.1f, 0.2f, 1f));
+            System.Action unblock = UiFactory.Modal(canvas);
+            if (UnityEngine.EventSystems.EventSystem.current != null)
+                UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
             var centre = new Vector2(0.5f, 0.5f);
             TextMeshProUGUI text = UiFactory.Text(root, "Title", centre, new Vector2(0f, 40f), 90f, TextAlignmentOptions.Center, new Vector2(1600f, 120f));
             text.text = title;
             TextMeshProUGUI sub = UiFactory.Text(root, "Subtitle", centre, new Vector2(0f, -60f), 40f, TextAlignmentOptions.Center, new Vector2(1600f, 60f));
             sub.text = subtitle;
-            canvas.gameObject.AddComponent<AdCard>().Begin(Seconds, done);
+            canvas.gameObject.AddComponent<AdCard>().Begin(Seconds, () =>
+            {
+                unblock();
+                done();
+            });
         }
 
         private sealed class AdCard : MonoBehaviour

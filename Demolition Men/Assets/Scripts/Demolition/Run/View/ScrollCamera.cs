@@ -44,6 +44,8 @@ namespace Demolition.Run
 
         public Camera Camera { get; private set; }
         public float ScrollSpeed { get => scrollSpeed; set => scrollSpeed = Mathf.Max(0f, value); }
+        /// <summary>Widest orthographic size the framing zooms out to.</summary>
+        public float MaxZoom => maxZoom;
         /// <summary>Set by the run controller: scrolling only happens while playing.</summary>
         public bool Scrolling { get; set; }
         public bool Pushed { get; private set; }

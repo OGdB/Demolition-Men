@@ -48,6 +48,30 @@ namespace Demolition
             return image;
         }
 
+        /// <summary>Make every other root canvas non-interactable while <paramref name="top"/>
+        /// is open, so gamepad navigation can't wander onto buttons underneath. Returns the
+        /// undo, to call when the overlay closes.</summary>
+        public static System.Action Modal(Canvas top)
+        {
+            var groups = new System.Collections.Generic.List<(CanvasGroup group, bool was)>();
+            foreach (Canvas canvas in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            {
+                if (canvas == top || !canvas.isRootCanvas || canvas.transform.IsChildOf(top.transform))
+                    continue;
+                CanvasGroup group = canvas.GetComponent<CanvasGroup>();
+                if (group == null)
+                    group = canvas.gameObject.AddComponent<CanvasGroup>();
+                groups.Add((group, group.interactable));
+                group.interactable = false;
+            }
+            return () =>
+            {
+                foreach ((CanvasGroup group, bool was) in groups)
+                    if (group != null)
+                        group.interactable = was;
+            };
+        }
+
         /// <summary>Change a button's label (and its size).</summary>
         public static TextMeshProUGUI Label(Button button, string text, float fontSize = 0f)
         {

@@ -16,6 +16,7 @@ namespace Demolition.Meta
 
         private TextMeshProUGUI _cash;
         private GameObject _previousSelection;
+        private System.Action _unblock;
         private readonly List<Action> _refresh = new List<Action>();
 
         public static bool IsOpen { get; private set; }
@@ -39,6 +40,7 @@ namespace Demolition.Meta
         private void OnDestroy()
         {
             IsOpen = false;
+            _unblock?.Invoke();
             if (_previousSelection != null && EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(_previousSelection);
         }
@@ -61,6 +63,7 @@ namespace Demolition.Meta
         private void Build()
         {
             Canvas canvas = UiFactory.Canvas(transform, "ShopCanvas", 40);
+            _unblock = UiFactory.Modal(canvas);
             var root = (RectTransform)canvas.transform;
             UiFactory.Backdrop(root, new Color(0.05f, 0.05f, 0.07f, 0.97f));
             var centre = new Vector2(0.5f, 0.5f);

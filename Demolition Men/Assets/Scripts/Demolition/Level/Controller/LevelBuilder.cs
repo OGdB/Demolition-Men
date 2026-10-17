@@ -15,7 +15,8 @@ namespace Demolition.Levels
     {
         /// <summary>Segments spawn this far (units) ahead of the camera's right edge.</summary>
         private const float LookAhead = 30f;
-        /// <summary>...and despawn this far behind its left edge.</summary>
+        /// <summary>...and despawn this far behind its left edge, at least (more if the camera
+        /// can zoom out further than it shows now, so nothing visibly pops away).</summary>
         private const float KeepBehind = 25f;
         /// <summary>Solid ground below the lowest surface, so pits and sewers have walls.</summary>
         private const int GroundDepth = 8;
@@ -27,6 +28,7 @@ namespace Demolition.Levels
         private Transform[] _segments;
         private bool[] _despawned;
         private Camera _camera;
+        private float _maxHalfWidth;
 
         public LevelLayout Layout => _layout;
 
@@ -47,26 +49,31 @@ namespace Demolition.Levels
             if (_layout == null)
                 return;
             if (_camera == null)
+            {
                 _camera = Camera.main;
-            float left = 0f, right = float.MaxValue;
+                ScrollCamera scroll = _camera != null ? _camera.GetComponent<ScrollCamera>() : null;
+                _maxHalfWidth = scroll != null ? scroll.MaxZoom * _camera.aspect : 0f;
+            }
+            float left = 0f, right = float.MaxValue, behind = KeepBehind;
             if (_camera != null)
             {
                 float halfWidth = _camera.orthographicSize * _camera.aspect;
                 left = _camera.transform.position.x - halfWidth;
                 right = _camera.transform.position.x + halfWidth;
+                behind = Mathf.Max(KeepBehind, _maxHalfWidth * 2f - halfWidth);
             }
-            Stream(left, right);
+            Stream(left, right, behind);
         }
 
         /// <summary>Spawn everything that should exist with the camera spanning [left, right].</summary>
-        public void Stream(float left, float right)
+        public void Stream(float left, float right, float behind = KeepBehind)
         {
             for (int i = 0; i < _layout.Segments.Count; i++)
             {
                 LevelSegment segment = _layout.Segments[i];
                 if (_segments[i] == null && !_despawned[i] && segment.X0 < right + LookAhead)
                     _segments[i] = Spawn(i);
-                if (_segments[i] != null && segment.X1 < left - KeepBehind)
+                if (_segments[i] != null && segment.X1 < left - behind)
                 {
                     Destroy(_segments[i].gameObject);
                     _segments[i] = null;
@@ -100,7 +107,9 @@ namespace Demolition.Levels
             body.bodyType = RigidbodyType2D.Static;
             var collider = map.AddComponent<TilemapCollider2D>();
             collider.compositeOperation = Collider2D.CompositeOperation.Merge;
-            map.AddComponent<CompositeCollider2D>();
+            // Solid polygons, not outline edges: anything spawned or knocked inside the
+            // ground surface is pushed out instead of falling through a hollow shell.
+            map.AddComponent<CompositeCollider2D>().geometryType = CompositeCollider2D.GeometryType.Polygons;
         }
 
         // Invisible walls before the start and after the end: nobody walks off the level.

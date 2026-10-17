@@ -20,6 +20,7 @@ All paths below are relative to the repo root.
 tools/unity-check/check.sh          # compile all assemblies + run the EditMode model tests
 tools/unity-check/check.sh build    # compile only
 tools/unity-check/check.sh test -- --where "class == Demolition.Tests.MetaTests"
+tools/unity-check/refs.py --since <rev>   # hand-edited scenes/prefabs/assets: unresolved GUIDs, dangling fileIDs
 ```
 It compiles `Demolition`, `Assembly-CSharp`, `Assets/Editor` (against an older UnityEditor.dll, so a brand-new editor API can false-fail), the `Demolition` assembly with `UNITY_EDITOR` defined, and the PlayMode tests, against Unity 6000.4 reference assemblies; then runs the EditMode tests on plain .NET with `UnityShim.cs` standing in for the UnityEngine value types. Only code under `*/Model/` (minus `Session.cs`) is in the test build, so models must not touch scenes, MonoBehaviours or devices. New `.cs` files are picked up automatically (globs), but **every new asset needs its `.meta`** — Unity is not there to make one.
 
@@ -135,7 +136,7 @@ The project follows Model–View–Controller. Keep the structure clean: no pers
 
 ## Unity conventions here
 
-- Input System supported devices (`Assets/Prefabs/InputSystem.inputsettings.asset`) must include `Mouse`, or UI clicks and mouse attack silently do nothing.
+- Input System supported devices (`Assets/Prefabs/InputSystem.inputsettings.asset`) must include `Mouse` and `Touchscreen`, or UI clicks, mouse attack and every touch control silently do nothing.
 - Unity 6 physics API: `Rigidbody2D.linearVelocity` / `linearDamping` (not `velocity` / `drag`).
 - Platforms: PC (keyboard/gamepad), TV (gamepads, 10-foot readable HUD), phones/tablets in landscape (touch). UI built in code goes through `UiFactory` (1920×1080 reference, `SafeArea` for edge-anchored HUD, `Canvas(scale)` for bigger UI, `EnsureEventSystem` adds an Input System UI module). Every menu must work with mouse, gamepad navigation and touch.
 - When creating, moving or deleting assets from the filesystem, move/delete the matching `.meta` file too — prefabs and scenes reference scripts by the GUID in it.

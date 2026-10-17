@@ -159,7 +159,7 @@ namespace Demolition.Levels
             for (int i = 0; i < columns; i++)
             {
                 if (spots != null && i % 2 == 1)
-                    spots.Add(new Spot { X = layout.Width + 0.5f, Y = height + 0.5f, Segment = segment });
+                    spots.Add(new Spot { X = layout.Width + 0.5f, Y = height + 0.6f, Segment = segment });
                 layout.Ground.Add(height);
             }
         }
@@ -235,7 +235,7 @@ namespace Demolition.Levels
         {
             int x = layout.Width;
             layout.Buildings.Add(new BuildingPlacement { X = x, GroundY = height, Spec = spec, Segment = segment });
-            spots.Add(new Spot { X = x + spec.Width * 0.5f, Y = height + spec.Height + 0.5f, Roof = true, Segment = segment });
+            spots.Add(new Spot { X = x + spec.Width * 0.5f, Y = height + spec.Height + 0.6f, Roof = true, Segment = segment });
             Flat(layout, spec.Width, height);
         }
 

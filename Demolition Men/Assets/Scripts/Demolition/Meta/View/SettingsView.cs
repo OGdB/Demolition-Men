@@ -18,6 +18,7 @@ namespace Demolition.Meta
         private static readonly string[] TouchModes = { "AUTO", "ON", "OFF" };
 
         private GameObject _previousSelection;
+        private System.Action _unblock;
         private Action _refresh;
 
         public static bool IsOpen { get; private set; }
@@ -41,6 +42,7 @@ namespace Demolition.Meta
         private void OnDestroy()
         {
             IsOpen = false;
+            _unblock?.Invoke();
             if (_previousSelection != null && EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(_previousSelection);
         }
@@ -60,6 +62,7 @@ namespace Demolition.Meta
         {
             GameSettings s = Profile.Data.settings;
             Canvas canvas = UiFactory.Canvas(transform, "SettingsCanvas", 40);
+            _unblock = UiFactory.Modal(canvas);
             var root = (RectTransform)canvas.transform;
             Image dim = UiFactory.Image(UiFactory.Stretch(root, "Dim"), "Background", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0.05f, 0.05f, 0.07f, 0.94f));
             dim.rectTransform.anchorMax = Vector2.one;

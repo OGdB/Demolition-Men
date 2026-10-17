@@ -17,8 +17,15 @@ namespace Demolition.Run
     {
         private static readonly Color Gold = new Color(1f, 0.85f, 0.3f);
 
+        /// <summary>Jump buttons double as Submit: don't let a held jump skip the results.</summary>
+        private const float InputDelay = 0.6f;
+
         private RunController _run;
         private bool _shown;
+        private bool _leaving;
+        private float _readyAt;
+        private CanvasGroup _group;
+        private Button _first;
         private TextMeshProUGUI _cash;
         private Button _double;
 
@@ -31,6 +38,22 @@ namespace Demolition.Run
         {
             if (!_shown && _run.State.IsOver)
                 Show();
+            if (_shown && !_group.interactable && !_leaving && Time.unscaledTime >= _readyAt)
+            {
+                _group.interactable = true;
+                if (EventSystem.current != null)
+                    EventSystem.current.SetSelectedGameObject(_first.gameObject);
+            }
+        }
+
+        // Each exit fires once, after any ad between runs.
+        private void Leave(System.Action action)
+        {
+            if (_leaving)
+                return;
+            _leaving = true;
+            _group.interactable = false;
+            AdManager.BetweenRuns(action);
         }
 
         private void Show()
@@ -43,6 +66,9 @@ namespace Demolition.Run
 
             Canvas canvas = UiFactory.Canvas(transform, "Results", 20);
             var root = (RectTransform)canvas.transform;
+            _group = canvas.gameObject.AddComponent<CanvasGroup>();
+            _group.interactable = false;
+            _readyAt = Time.unscaledTime + InputDelay;
             Image dim = UiFactory.Image(UiFactory.Stretch(root, "Dim"), "Background", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.75f));
             dim.rectTransform.anchorMax = Vector2.one;
             var centre = new Vector2(0.5f, 0.5f);
@@ -86,15 +112,16 @@ namespace Demolition.Run
             bool next = finished && _run.HasNextLevel;
             Button first = null;
             if (next)
-                first = UiFactory.Button(root, "NEXT", centre, new Vector2(-360f, -320f), size, () => AdManager.BetweenRuns(_run.NextLevel));
-            Button retry = UiFactory.Button(root, "RETRY", centre, new Vector2(next ? 0f : -180f, -320f), size, () => AdManager.BetweenRuns(_run.Retry));
-            UiFactory.Button(root, "MENU", centre, new Vector2(next ? 360f : 180f, -320f), size, () => AdManager.BetweenRuns(_run.QuitToMenu));
+                first = UiFactory.Button(root, "NEXT", centre, new Vector2(-360f, -320f), size, () => Leave(_run.NextLevel));
+            Button retry = UiFactory.Button(root, "RETRY", centre, new Vector2(next ? 0f : -180f, -320f), size, () => Leave(_run.Retry));
+            UiFactory.Button(root, "MENU", centre, new Vector2(next ? 360f : 180f, -320f), size, () => Leave(_run.QuitToMenu));
 
             if (reward.Cash > 0 && AdManager.CanOfferReward)
                 _double = UiFactory.Button(root, "WATCH AD: 2x CASH", centre, new Vector2(0f, -430f), new Vector2(640f, 80f), DoubleCash);
 
+            _first = first != null ? first : retry;
             if (EventSystem.current != null)
-                EventSystem.current.SetSelectedGameObject((first != null ? first : retry).gameObject);
+                EventSystem.current.SetSelectedGameObject(null);
         }
 
         private void ShowCash() => _cash.text = $"+${_run.Reward.Cash:N0}    BANK ${Profile.Data.cash:N0}";
@@ -104,6 +131,8 @@ namespace Demolition.Run
             _double.interactable = false;
             AdManager.ShowRewarded(earned =>
             {
+                if (this == null)
+                    return; // left the scene while the ad played
                 if (earned)
                     _run.DoubleReward();
                 if (_double != null)

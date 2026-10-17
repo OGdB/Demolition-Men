@@ -28,7 +28,11 @@ namespace Demolition.Run
         private void OnChanged(bool paused)
         {
             if (_root == null)
+            {
+                if (!paused)
+                    return; // unpaused while the scene is torn down: nothing to hide
                 Build();
+            }
             _root.SetActive(paused);
             if (paused && EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(_resume.gameObject);
