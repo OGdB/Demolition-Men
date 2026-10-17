@@ -30,7 +30,8 @@ Unity yet** — the checklist below is the first playtest.
    *Play*. Expect: street ground, a few buildings, pickups, finish banner; HUD; 3-2-1;
    the camera starts scrolling when you push right. Then *Play with bot*.
 4. **PlayMode test** `BotRunTests` — does the bot finish all 12 levels? If not, the
-   failure message says where it got stuck. Then Level Lab on `port-01` and `neon-01`:
+   failure message says where it got stuck (it plays on a temporary profile, so your save
+   is untouched). Then Level Lab on `port-01` and `neon-01`:
    do the generated Port/Neon sprites look right in game (compare with
    `content-work/<Theme>/contact.png`)?
 5. **Main menu flow** (open `MainMenu`, Play): join with Space / A, Start → (first time)
@@ -53,7 +54,11 @@ Unity yet** — the checklist below is the first playtest.
 - Two review passes by a separate agent read the code and YAML for runtime-only bugs.
   The first found 12 issues, all fixed in `bbd4eeb`; the important one was that
   Touchscreen was missing from the Input System's supported devices, so nothing touch would
-  have worked on a phone. Results of the second pass are in the commits that follow it.
+  have worked on a phone. The second pass found 13 more (fixed in `5a7440a`), e.g. the
+  shared particle system could be culled off-screen, and the bot's one-frame jumps could
+  fall between physics steps. Both reviewers flagged things only a real run can settle:
+  particle visibility, HUD text overlaps on tablets, and audio loudness during big
+  collapses.
 
 ## Not verified / likely to need a tweak
 
