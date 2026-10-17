@@ -7,7 +7,8 @@ namespace Demolition.Run
     public sealed class FinishLineView : MonoBehaviour
     {
         [SerializeField] private Vector2 size = new Vector2(1f, 8f);
-        [SerializeField] private int sortingOrder = -5;
+        [Tooltip("In front of the backdrop (-3..-1) and the ground, behind players (10).")]
+        [SerializeField] private int sortingOrder = 1;
 
         private void Awake()
         {

@@ -114984,7 +114984,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.FinishLineView
   size: {x: 1, y: 8}
-  sortingOrder: -5
+  sortingOrder: 1
 --- !u!114 &1681673218
 MonoBehaviour:
   m_ObjectHideFlags: 0
