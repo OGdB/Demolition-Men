@@ -14,6 +14,7 @@ python tools/artpipe/palette.py              # print the master palette
 - `backdrops.py`: three parallax layers per theme (`backdrop_far/mid/near.png`, 512x192). They are seamless left/right silhouettes in the theme's haze ramp, with no outline; farther layers sit lighter and closer to the sky. A theme JSON can limit what it builds with `sprites` (Town only builds the backdrops; its tiles stay hand-drawn).
 - `tiles.py`: one generator per sprite, plus `SPRITES` (size, tile axes, foreground). The same seed always gives the same pixels. Tileable sprites draw with wrap-around, and their joints sit away from the tile edge.
 - `build_theme.py`: writes `Demolition Men/Assets/Content/<Theme>/Sprites/*.png`. It adds a `.meta` (from `sprite.meta.template`: single sprite, 32 PPU, point filter, no compression) and folder metas only where none exist, so GUIDs survive regeneration.
+- `ui.py`: the shared UI sprites in `Demolition Men/Assets/Resources/UI/` (riveted plate for 9-sliced buttons and panels, hazard stripe, star). They are light grey so the Image colour tints them, and are imported at 25 pixels per unit (4 UI units per pixel).
 - `qa.py` checks:
   - every colour is in the theme palette;
   - alpha is hard;

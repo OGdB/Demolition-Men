@@ -9,25 +9,26 @@ using UnityEngine.UI;
 namespace Demolition.Meta
 {
     /// <summary>The skill shop (roadmap D6): banked cash buys the next level of an upgrade.
-    /// One row per <see cref="UpgradeCatalog"/> entry. Built in code; Back (Esc / B) closes.</summary>
+    /// One row per <see cref="UpgradeCatalog"/> entry. Built in code; Back (Esc / B) closes.
+    /// Opens from the level select and from the results screen between runs.</summary>
     public sealed class ShopView : MonoBehaviour
     {
-        private static readonly Color Gold = new Color(1f, 0.85f, 0.3f);
-
         private TextMeshProUGUI _cash;
+        private Action _closed;
         private GameObject _previousSelection;
         private System.Action _unblock;
         private readonly List<Action> _refresh = new List<Action>();
 
         public static bool IsOpen { get; private set; }
 
-        public static void Open(Transform parent)
+        /// <param name="closed">Called after the shop closes (the opener shows the new balance).</param>
+        public static void Open(Transform parent, Action closed = null)
         {
             if (IsOpen)
                 return;
             var go = new GameObject("Shop");
             go.transform.SetParent(parent, false);
-            go.AddComponent<ShopView>();
+            go.AddComponent<ShopView>()._closed = closed;
         }
 
         private void Awake()
@@ -56,8 +57,8 @@ namespace Demolition.Meta
 
         private void Close()
         {
-            GetComponentInParent<LevelSelectView>()?.OnCashChanged();
             Destroy(gameObject);
+            _closed?.Invoke();
         }
 
         private void Build()
@@ -65,14 +66,13 @@ namespace Demolition.Meta
             Canvas canvas = UiFactory.Canvas(transform, "ShopCanvas", 40);
             _unblock = UiFactory.Modal(canvas);
             var root = (RectTransform)canvas.transform;
-            UiFactory.Backdrop(root, new Color(0.05f, 0.05f, 0.07f, 0.97f));
+            UiFactory.Backdrop(root, new Color(0f, 0f, 0f, 0.75f));
             var centre = new Vector2(0.5f, 0.5f);
 
-            TextMeshProUGUI title = UiFactory.Text(root, "Title", centre, new Vector2(0f, 440f), 80f, TextAlignmentOptions.Center, new Vector2(1200f, 100f));
-            title.text = "SKILL SHOP";
-            title.color = Gold;
-            _cash = UiFactory.Text(root, "Cash", centre, new Vector2(0f, 360f), 48f, TextAlignmentOptions.Center, new Vector2(1000f, 60f));
-            _cash.color = Gold;
+            UiFactory.Panel(root, new Vector2(0f, 10f), new Vector2(1700f, 990f));
+            UiFactory.Title(root, "SKILL SHOP", centre, new Vector2(0f, 461f), 80f);
+            _cash = UiFactory.Text(root, "Cash", centre, new Vector2(0f, 375f), 48f, TextAlignmentOptions.Center, new Vector2(1000f, 60f), outlined: true);
+            _cash.color = UiFactory.Gold;
 
             Button first = null;
             float y = 240f;
@@ -93,9 +93,9 @@ namespace Demolition.Meta
         private Button Row(RectTransform root, UpgradeDefinition upgrade, float y)
         {
             var centre = new Vector2(0.5f, 0.5f);
-            TextMeshProUGUI name = UiFactory.Text(root, upgrade.Name, centre, new Vector2(-480f, y + 18f), 44f, TextAlignmentOptions.Left, new Vector2(700f, 56f));
+            TextMeshProUGUI name = UiFactory.Text(root, upgrade.Name, centre, new Vector2(-440f, y + 18f), 44f, TextAlignmentOptions.Left, new Vector2(700f, 56f));
             name.text = upgrade.Name;
-            TextMeshProUGUI description = UiFactory.Text(root, upgrade.Name + " Text", centre, new Vector2(-480f, y - 28f), 26f, TextAlignmentOptions.Left, new Vector2(700f, 36f));
+            TextMeshProUGUI description = UiFactory.Text(root, upgrade.Name + " Text", centre, new Vector2(-440f, y - 28f), 26f, TextAlignmentOptions.Left, new Vector2(700f, 36f));
             description.text = upgrade.Description;
             description.color = new Color(0.8f, 0.8f, 0.8f);
             TextMeshProUGUI level = UiFactory.Text(root, upgrade.Name + " Level", centre, new Vector2(120f, y), 34f, TextAlignmentOptions.Center, new Vector2(420f, 90f));

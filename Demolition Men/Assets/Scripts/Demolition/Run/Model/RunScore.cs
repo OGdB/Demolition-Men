@@ -92,6 +92,14 @@ namespace Demolition.Run
             return Grade.C;
         }
 
+        /// <summary>Players see a grade as stars: one per grade above C.</summary>
+        public const int MaxStars = 3;
+
+        public static int Stars(Grade grade) => (int)grade;
+
+        /// <summary>Destruction that earns star <paramref name="star"/> (0-based).</summary>
+        public static float StarThreshold(int star) => star <= 0 ? GradeB : star == 1 ? GradeA : GradeS;
+
         private bool IsPlayer(int player) => player >= 0 && player < _points.Length;
 
         private void Credit(int player, int points)

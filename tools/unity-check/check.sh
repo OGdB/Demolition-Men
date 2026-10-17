@@ -24,7 +24,9 @@ build() { # project
 rc=0
 if [ "$mode" = all ] || [ "$mode" = build ]; then
   for p in UnityEngine.UI Unity.TextMeshPro Unity.InputSystem; do
-    [ -f "$UNITY_CHECK_HOME/out/$p/$p.dll" ] || build "$p" || exit 1
+    dll="$UNITY_CHECK_HOME/out/$p/$p.dll"
+    # Cached; rebuilt when its project or the TMP shim changed since.
+    { [ -f "$dll" ] && [ "$dll" -nt "$HERE/projects/$p.csproj" ] && [ "$dll" -nt "$HERE/TmpCompat.cs" ]; } || build "$p" || exit 1
   done
   build Demolition || rc=1
   [ $rc -eq 0 ] && { build Assembly-CSharp || rc=1; }

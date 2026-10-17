@@ -59,6 +59,7 @@ namespace Demolition.Run
         private TextMeshProUGUI _timer;
         private RectTransform _meterFill;
         private TextMeshProUGUI _meterValue;
+        private readonly Image[] _meterStars = new Image[RunScore.MaxStars];
         private TextMeshProUGUI _center;
         private TextMeshProUGUI _prompt;
         private float _promptUntil;
@@ -129,7 +130,8 @@ namespace Demolition.Run
 
         // ---------------- Build ----------------
 
-        // A warning-striped bar filling with level-wide destruction, ticked at the grades.
+        // A warning-striped bar filling with level-wide destruction, ticked with a star at each
+        // grade; a star lights once the meter passes it.
         private void BuildMeter(Vector2 top)
         {
             const float y = -94f, height = 24f;
@@ -147,13 +149,13 @@ namespace Demolition.Run
             _meterFill = fill.rectTransform;
             Inset(_meterFill, 0f, 0f);
 
-            foreach ((float at, string grade) in new[] { (RunScore.GradeB, "B"), (RunScore.GradeA, "A"), (RunScore.GradeS, "S") })
+            for (int star = 0; star < _meterStars.Length; star++)
             {
-                Image tick = UiFactory.Image(frame.transform, "Tick " + grade, new Vector2(at, 0.5f), Vector2.zero, new Vector2(3f, height), Color.white);
+                float at = RunScore.StarThreshold(star);
+                Image tick = UiFactory.Image(frame.transform, "Tick " + star, new Vector2(at, 0.5f), Vector2.zero, new Vector2(3f, height), Color.white);
                 tick.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                TextMeshProUGUI mark = UiFactory.Text(frame.transform, "Grade " + grade, new Vector2(at, 0.5f), new Vector2(10f, 0f), 18f,
-                    TextAlignmentOptions.Center, new Vector2(20f, height), outlined: true);
-                mark.text = grade;
+                _meterStars[star] = UiFactory.Star(frame.transform, "Star " + star, new Vector2(at, 0.5f), new Vector2(0f, -height * 0.5f - 6f), 30f, false);
+                _meterStars[star].rectTransform.pivot = new Vector2(0.5f, 1f);
             }
 
             _meterValue = UiFactory.Text(_root, "MeterValue", top, new Vector2(MeterWidth * 0.5f + 70f, y + 2f), 24f,
@@ -242,7 +244,9 @@ namespace Demolition.Run
             _timer.text = FormatTime(state.Elapsed);
             float destroyed = _run.DestroyedFraction;
             _meterFill.anchorMax = new Vector2(Mathf.Clamp01(destroyed), 1f);
-            _meterValue.text = $"{Mathf.FloorToInt(destroyed * 100f)}%  {RunScore.GradeFor(destroyed)}";
+            _meterValue.text = $"{Mathf.FloorToInt(destroyed * 100f)}%";
+            for (int star = 0; star < _meterStars.Length; star++)
+                _meterStars[star].color = destroyed >= RunScore.StarThreshold(star) ? UiFactory.StarLit : UiFactory.StarDark;
             _center.text = CenterText(state);
             _prompt.gameObject.SetActive(Time.time < _promptUntil && !state.IsOver);
             _prompt.rectTransform.sizeDelta = new Vector2(Mathf.Min(1800f, _root.rect.width - 80f), 100f);

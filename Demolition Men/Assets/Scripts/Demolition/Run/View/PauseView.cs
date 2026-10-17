@@ -43,19 +43,18 @@ namespace Demolition.Run
             Canvas canvas = UiFactory.Canvas(transform, "Pause", 25);
             _root = canvas.gameObject;
             var root = (RectTransform)canvas.transform;
-            UiFactory.Image(UiFactory.Stretch(root, "Dim"), "Background", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.75f))
+            UiFactory.Image(UiFactory.Stretch(root, "Dim"), "Background", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.6f))
                 .rectTransform.anchorMax = Vector2.one;
             var centre = new Vector2(0.5f, 0.5f);
 
-            TextMeshProUGUI title = UiFactory.Text(root, "Title", centre, new Vector2(0f, 300f), 96f, TextAlignmentOptions.Center, new Vector2(1200f, 120f));
-            title.text = "PAUSED";
-            title.color = new Color(1f, 0.85f, 0.3f);
+            UiFactory.Panel(root, new Vector2(0f, -10f), new Vector2(760f, 640f));
+            UiFactory.Title(root, "PAUSED", centre, new Vector2(0f, 266f), 96f);
 
             var size = new Vector2(480f, 96f);
-            _resume = UiFactory.Button(root, "RESUME", centre, new Vector2(0f, 140f), size, () => _pause.SetPaused(false));
-            UiFactory.Button(root, "RESTART", centre, new Vector2(0f, 20f), size, _run.Retry);
-            UiFactory.Button(root, "SETTINGS", centre, new Vector2(0f, -100f), size, () => SettingsView.Open(transform));
-            UiFactory.Button(root, "MENU", centre, new Vector2(0f, -220f), size, _run.QuitToMenu);
+            _resume = UiFactory.Button(root, "RESUME", centre, new Vector2(0f, 120f), size, () => _pause.SetPaused(false));
+            UiFactory.Button(root, "RESTART", centre, new Vector2(0f, 0f), size, _run.Retry);
+            UiFactory.Button(root, "SETTINGS", centre, new Vector2(0f, -120f), size, () => SettingsView.Open(transform));
+            UiFactory.Button(root, "MENU", centre, new Vector2(0f, -240f), size, _run.QuitToMenu);
         }
     }
 }

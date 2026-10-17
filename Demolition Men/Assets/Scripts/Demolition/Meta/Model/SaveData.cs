@@ -22,9 +22,9 @@ namespace Demolition.Meta
         /// player panels and the meter never collide.</summary>
         public const float MinHudWidth = 1750f;
 
-        /// <summary>Largest HUD scale a screen of this aspect fits (1920x1080 reference,
-        /// matched halfway between width and height).</summary>
-        public static float HudScaleCap(float aspect) => (float)System.Math.Sqrt(aspect * 1920f * 1080f) / MinHudWidth;
+        /// <summary>Largest HUD scale a screen of this aspect fits. Canvases expand to keep
+        /// the whole 1920x1080 reference on screen, so a wider screen adds width.</summary>
+        public static float HudScaleCap(float aspect) => System.Math.Max(1920f, 1080f * aspect) / MinHudWidth;
 
         /// <summary>The HUD size to use on this device (the setting, or automatic), within the cap.</summary>
         public float HudScale(bool mobile, float aspect) =>

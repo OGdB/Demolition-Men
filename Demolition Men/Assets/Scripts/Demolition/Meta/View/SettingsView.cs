@@ -65,14 +65,13 @@ namespace Demolition.Meta
             Canvas canvas = UiFactory.Canvas(transform, "SettingsCanvas", 40);
             _unblock = UiFactory.Modal(canvas);
             var root = (RectTransform)canvas.transform;
-            Image dim = UiFactory.Image(UiFactory.Stretch(root, "Dim"), "Background", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0.05f, 0.05f, 0.07f, 0.94f));
+            Image dim = UiFactory.Image(UiFactory.Stretch(root, "Dim"), "Background", Vector2.zero, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.7f));
             dim.rectTransform.anchorMax = Vector2.one;
             dim.raycastTarget = true; // block clicks to whatever is behind
             var centre = new Vector2(0.5f, 0.5f);
 
-            TextMeshProUGUI title = UiFactory.Text(root, "Title", centre, new Vector2(0f, 400f), 80f, TextAlignmentOptions.Center, new Vector2(1200f, 100f));
-            title.text = "SETTINGS";
-            title.color = new Color(1f, 0.85f, 0.3f);
+            UiFactory.Panel(root, new Vector2(0f, -5f), new Vector2(1300f, 950f));
+            UiFactory.Title(root, "SETTINGS", centre, new Vector2(0f, 426f), 80f);
 
             float y = 290f;
             Button first = Stepper(root, ref y, "VOLUME", () => Percent(s.masterVolume), d => s.masterVolume = Step(s.masterVolume, d, 0.1f, 0f, 1f));

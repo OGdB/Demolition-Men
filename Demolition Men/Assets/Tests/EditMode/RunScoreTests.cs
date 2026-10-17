@@ -79,6 +79,12 @@ namespace Demolition.Tests
             Assert.AreEqual(Grade.A, RunScore.GradeFor(0.6f));
             Assert.AreEqual(Grade.B, RunScore.GradeFor(0.45f));
             Assert.AreEqual(Grade.C, RunScore.GradeFor(0.1f));
+            Assert.AreEqual(0, RunScore.Stars(RunScore.GradeFor(0.1f)));
+            for (int star = 0; star < RunScore.MaxStars; star++)
+            {
+                Assert.AreEqual(star + 1, RunScore.Stars(RunScore.GradeFor(RunScore.StarThreshold(star))), $"star {star}");
+                Assert.AreEqual(star, RunScore.Stars(RunScore.GradeFor(RunScore.StarThreshold(star) - 0.01f)), $"just short of star {star}");
+            }
         }
     }
 }

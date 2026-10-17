@@ -117,13 +117,15 @@ namespace Demolition.Tests
         {
             var auto = new GameSettings();
             Assert.AreEqual(1f, auto.HudScale(false, 16f / 9f), 0.11f, "desktop 16:9 stays ~100%");
-            Assert.Less(auto.HudScale(true, 20f / 9f), 1.3f, "phone AUTO is capped on 20:9");
-            Assert.Greater(auto.HudScale(true, 20f / 9f), 1.15f);
-            Assert.Less(auto.HudScale(false, 4f / 3f), 1f, "4:3 shrinks below 100%");
+            Assert.AreEqual(1.3f, auto.HudScale(true, 20f / 9f), 1e-4f, "phone AUTO fits a 20:9 screen");
+            Assert.AreEqual(1f, auto.HudScale(false, 4f / 3f), 1e-4f, "4:3 keeps the full reference width");
             var big = new GameSettings { hudScale = 1.6f };
-            float aspect = 16f / 9f;
-            float canvasWidth = Mathf.Sqrt(aspect * 1920f * 1080f) / big.HudScale(false, aspect);
-            Assert.GreaterOrEqual(canvasWidth, GameSettings.MinHudWidth - 0.5f);
+            foreach (float aspect in new[] { 4f / 3f, 16f / 9f, 20f / 9f })
+            {
+                // The canvas expands: 1080 high on wide screens, 1920 wide on narrow ones.
+                float canvasWidth = Mathf.Max(1920f, 1080f * aspect) / big.HudScale(false, aspect);
+                Assert.GreaterOrEqual(canvasWidth, GameSettings.MinHudWidth - 0.5f, $"aspect {aspect}");
+            }
         }
 
         [Test]

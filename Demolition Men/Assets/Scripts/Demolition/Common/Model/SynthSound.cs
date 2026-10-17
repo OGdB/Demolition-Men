@@ -3,9 +3,9 @@ using System;
 namespace Demolition
 {
     /// <summary>
-    /// Destruction sounds synthesised as sample arrays (no audio assets needed): filtered
-    /// noise with a decay for crunches and rumbles, decaying partials for metal. Pure
-    /// math; the view turns the samples into AudioClips.
+    /// Destruction and UI sounds synthesised as sample arrays (no audio assets needed):
+    /// filtered noise with a decay for crunches and rumbles, decaying partials for metal and
+    /// chimes. Pure math; the view turns the samples into AudioClips.
     /// </summary>
     public static class SynthSound
     {
@@ -62,6 +62,26 @@ namespace Demolition
                     tone += (float)Math.Sin(2.0 * Math.PI * pitch * partials[p] * t) * (float)Math.Exp(-t * (6f + p * 5f)) / (p + 1);
                 float noise = (float)(rng.NextDouble() * 2.0 - 1.0) * (float)Math.Exp(-t * 60f);
                 data[i] = tone + noise * 0.5f;
+            }
+            return Normalise(data, 0.7f);
+        }
+
+        /// <summary>Bright bell for rewards (stars, coins): near-harmonic partials over a
+        /// soft attack, ringing out. Keep <paramref name="pitch"/> under ~2.5 kHz: the top
+        /// partial must stay below the 11 kHz Nyquist limit.</summary>
+        public static float[] Chime(float seconds, float pitch)
+        {
+            int n = (int)(seconds * SampleRate);
+            var data = new float[n];
+            float[] partials = { 1f, 2f, 3f, 4.07f };
+            float[] gains = { 1f, 0.5f, 0.3f, 0.2f };
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)SampleRate;
+                float tone = 0f;
+                for (int p = 0; p < partials.Length; p++)
+                    tone += (float)Math.Sin(2.0 * Math.PI * pitch * partials[p] * t) * gains[p] * (float)Math.Exp(-t * (3f + p * 3f) / seconds);
+                data[i] = tone * Math.Min(1f, t / 0.004f);
             }
             return Normalise(data, 0.7f);
         }
