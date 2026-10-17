@@ -126,7 +126,9 @@ What it does:
    `stream_close_delay` stops a Caddy reload (for any of the sites) from cutting games in
    progress. The block is appended in place, because the Caddyfile is bind-mounted into the
    container by inode: a replaced file (`sed -i`, most editors) wouldn't show up inside it.
-   Caddy validates the result; if it refuses, the backup goes back.
+   Caddy validates the result; if it refuses, the backup goes back. If the Caddyfile was
+   replaced since the Caddy container started, the container still reads the old copy; the
+   script then stops before editing and asks for `docker restart caddy` first.
 6. Reloads Caddy (`caddy reload`, no restart: the other sites keep running), then waits for
    `https://<domain>/health` and prints the URL for the game: `wss://<domain>/ws`.
 

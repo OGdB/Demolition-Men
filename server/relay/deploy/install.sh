@@ -20,6 +20,10 @@ subnet=$(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' "
 [ -f "$caddyfile" ] || die "$caddyfile not found (--caddyfile)"
 inner=$(docker inspect -f '{{range .Mounts}}{{if eq .Source "'"$caddyfile"'"}}{{.Destination}}{{end}}{{end}}' "$caddy")
 [ -n "$inner" ] || die "$caddyfile isn't mounted into '$caddy' (--caddyfile)"
+# A single-file bind mount keeps the inode it started with: if the file was since replaced
+# (most editors, sed -i), the container still reads the old copy and never sees our block.
+[ "$(stat -c %i "$caddyfile")" = "$(docker exec "$caddy" stat -c %i "$inner")" ] \
+  || die "'$caddy' still reads an older copy of $caddyfile (the file was replaced since it started). Run: docker restart $caddy (all its sites blink for a few seconds), then re-run."
 
 echo "--> Building and starting the relay container"
 install -d -m 755 "$app"
