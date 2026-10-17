@@ -102,6 +102,7 @@ namespace Demolition.Run
         private void LateUpdate()
         {
             transform.position = _framed;
+            _targets.RemoveAll(t => t == null); // online, NGO destroys a client's player copies before its scene goes
             if (_targets.Count > 0)
                 FrameTargets();
             _framed = transform.position;
