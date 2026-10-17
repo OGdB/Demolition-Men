@@ -21,6 +21,8 @@ namespace Demolition.Run
         /// <summary>This frame's offset; call once per frame.</summary>
         public static Vector3 Tick(float dt)
         {
+            if (dt <= 0f)
+                return Vector3.zero; // paused: hold still, keep the trauma for later
             _trauma = Mathf.Max(0f, _trauma - Decay * dt);
             if (!Enabled || _trauma <= 0f)
                 return Vector3.zero;

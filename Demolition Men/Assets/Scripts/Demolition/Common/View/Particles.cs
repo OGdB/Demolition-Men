@@ -42,6 +42,8 @@ namespace Demolition
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.gravityModifier = 1.1f;
             main.maxParticles = MaxParticles;
+            // Its empty bounds sit wherever it was made: never cull it when the camera moves on.
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
             main.startSpeed = 0f;
 
             var emission = _system.emission;

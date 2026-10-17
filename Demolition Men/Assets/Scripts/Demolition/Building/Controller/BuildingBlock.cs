@@ -76,6 +76,7 @@ namespace Demolition
         private bool _credited;
         private SpriteRenderer _cracks;
         private int _crackStage;
+        private int _crackVariant;
         private float _targetLeanDeg;
         private float _targetSag;
         private float _targetDrift;
@@ -212,17 +213,34 @@ namespace Demolition
             _crackStage = stage;
             if (_cracks == null)
             {
+                // Clipped to the block's own sprite by a mask on the visual, so cracks never
+                // float over transparent parts (planks, trusses, thin columns). Same sorting
+                // order as the visual, a hair closer to the camera; the mask's range covers
+                // only that order.
+                int order = _sr.sortingOrder;
+                // On a child: a GameObject holds one Renderer, and the visual has its SpriteRenderer.
+                var maskGo = new GameObject("CrackMask");
+                maskGo.transform.SetParent(_visual, false);
+                var mask = maskGo.AddComponent<SpriteMask>();
+                mask.sprite = _sr.sprite;
+                mask.isCustomRangeActive = true;
+                mask.frontSortingLayerID = mask.backSortingLayerID = _sr.sortingLayerID;
+                mask.frontSortingOrder = order;
+                mask.backSortingOrder = order - 1;
+
                 var go = new GameObject("Cracks");
                 go.transform.SetParent(_visual, false);
                 _cracks = go.AddComponent<SpriteRenderer>();
                 _cracks.sortingLayerID = _sr.sortingLayerID;
-                _cracks.sortingOrder = _sr.sortingOrder + 1;
+                _cracks.sortingOrder = order;
+                _cracks.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
                 Bounds bounds = _sr.sprite != null ? _sr.sprite.bounds : new Bounds(Vector3.zero, Vector3.one);
-                go.transform.localPosition = bounds.center;
+                go.transform.localPosition = bounds.center + new Vector3(0f, 0f, -0.01f);
                 go.transform.localScale = new Vector3(bounds.size.x, bounds.size.y, 1f);
+                Vector3 p = transform.position;
+                _crackVariant = Mathf.FloorToInt(p.x * 7f + p.y * 13f); // picked once: a falling block keeps its pattern
             }
-            Vector3 p = transform.position;
-            _cracks.sprite = PrimitiveSprite.Cracks(stage, Mathf.FloorToInt(p.x * 7f + p.y * 13f));
+            _cracks.sprite = PrimitiveSprite.Cracks(stage, _crackVariant);
         }
 
         private void Destroyed()

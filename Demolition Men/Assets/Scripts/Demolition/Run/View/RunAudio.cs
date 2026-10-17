@@ -10,6 +10,8 @@ namespace Demolition.Run
     public sealed class RunAudio : MonoBehaviour
     {
         private const int Voices = 8;
+        /// <summary>A dynamite blast destroys many blocks at once: only this many crunches play.</summary>
+        private const int MaxPerFrame = 3;
 
         [SerializeField, Range(0f, 1f)] private float volume = 0.6f;
 
@@ -17,7 +19,10 @@ namespace Demolition.Run
         private static AudioClip _clang;
         private static AudioClip _rumble;
         private AudioSource[] _voices;
+        private AudioSource _rumbleVoice;
         private int _next;
+        private int _frame;
+        private int _playedThisFrame;
 
         private void Awake()
         {
@@ -32,6 +37,8 @@ namespace Demolition.Run
                 _clang = Clip("Clang", SynthSound.Clang(0.45f, 310f, 4));
                 _rumble = Clip("Rumble", SynthSound.Rumble(1.6f, 5));
             }
+            _rumbleVoice = gameObject.AddComponent<AudioSource>();
+            _rumbleVoice.playOnAwake = false;
             _voices = new AudioSource[Voices];
             for (int i = 0; i < Voices; i++)
             {
@@ -73,12 +80,22 @@ namespace Demolition.Run
 
         private void OnCollapsed(CollapseInfo info)
         {
+            // Its own source: re-pitching a shared voice would bend a rumble still playing.
             float size = Mathf.Clamp01(info.Cells.Count / 40f);
-            Play(_rumble, Mathf.Lerp(1.2f, 0.7f, size), 0.5f + 0.5f * size);
+            _rumbleVoice.Stop();
+            _rumbleVoice.pitch = Mathf.Lerp(1.2f, 0.7f, size);
+            _rumbleVoice.PlayOneShot(_rumble, volume * (0.5f + 0.5f * size));
         }
 
         private void Play(AudioClip clip, float pitch, float loudness)
         {
+            if (_frame != Time.frameCount)
+            {
+                _frame = Time.frameCount;
+                _playedThisFrame = 0;
+            }
+            if (++_playedThisFrame > MaxPerFrame)
+                return;
             AudioSource voice = _voices[_next];
             _next = (_next + 1) % _voices.Length;
             voice.pitch = pitch;

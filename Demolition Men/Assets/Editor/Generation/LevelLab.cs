@@ -29,6 +29,15 @@ public class LevelLab : EditorWindow
     [MenuItem("Tools/Demolition/Level Lab")]
     private static void Open() => GetWindow<LevelLab>("Level Lab");
 
+    // A play request the run never read (play mode failed to start) must not hijack a later run.
+    [InitializeOnLoadMethod]
+    private static void ClearStaleRequests() =>
+        EditorApplication.playModeStateChanged += state =>
+        {
+            if (state == PlayModeStateChange.EnteredEditMode)
+                PlayerPrefs.DeleteKey(LevelSelection.EditorRequestKey);
+        };
+
     private void OnGUI()
     {
         string[] paths = LevelPaths();
@@ -114,6 +123,8 @@ public class LevelLab : EditorWindow
         var watch = System.Diagnostics.Stopwatch.StartNew();
         LevelLayout layout = LevelGrammar.Generate(spec, Archetypes(path), JumpProfile.Default, out TraversalReport report);
         watch.Stop();
+        if (_preview != null)
+            DestroyImmediate(_preview);
         _preview = Render(layout);
         _status = $"{spec.id} seed {_seed}: {layout.Width} columns, {layout.Buildings.Count} buildings, {layout.TotalCells} cells, "
                   + $"{layout.Pickups.Count} pickups, {layout.Attempts} attempt(s), {watch.ElapsedMilliseconds} ms\n{report}";
@@ -188,6 +199,11 @@ public class LevelLab : EditorWindow
 
     private void Play(string path, bool bot)
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            _status = "Already playing: stop play mode first.";
+            return;
+        }
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             return;
         PlayerPrefs.SetString(LevelSelection.EditorRequestKey, $"{Load(path).id}|{_seed}|{(bot ? "bot" : "")}");

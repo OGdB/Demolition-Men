@@ -1,5 +1,6 @@
 using System.Collections;
 using Demolition.Levels;
+using Demolition.Meta;
 using Demolition.Run;
 using NUnit.Framework;
 using UnityEngine;
@@ -24,9 +25,15 @@ namespace Demolition.Tests
                 yield return i;
         }
 
+        // A fresh profile per run: no shop upgrades from this machine, nothing banked into
+        // the developer's real save.
+        [SetUp]
+        public void SetUp() => Profile.UseTemporary();
+
         [TearDown]
         public void TearDown()
         {
+            Profile.UseDisk();
             LevelBootstrap.AutoPilot = false;
             Time.timeScale = 1f;
         }

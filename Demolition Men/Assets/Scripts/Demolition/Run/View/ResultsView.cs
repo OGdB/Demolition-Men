@@ -23,6 +23,7 @@ namespace Demolition.Run
         private RunController _run;
         private bool _shown;
         private bool _leaving;
+        private bool _woken;
         private float _readyAt;
         private CanvasGroup _group;
         private Button _first;
@@ -38,8 +39,10 @@ namespace Demolition.Run
         {
             if (!_shown && _run.State.IsOver)
                 Show();
-            if (_shown && !_group.interactable && !_leaving && Time.unscaledTime >= _readyAt)
+            // Its own flag: a modal ad turning the group off must not count as "not woken yet".
+            if (_shown && !_woken && !_leaving && Time.unscaledTime >= _readyAt)
             {
+                _woken = true;
                 _group.interactable = true;
                 if (EventSystem.current != null)
                     EventSystem.current.SetSelectedGameObject(_first.gameObject);

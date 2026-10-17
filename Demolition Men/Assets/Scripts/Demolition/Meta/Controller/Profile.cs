@@ -13,6 +13,7 @@ namespace Demolition.Meta
     {
         private const string FileName = "profile.json";
         private static SaveData _data;
+        private static bool _temporary;
 
         public static SaveData Data => _data ??= Load();
 
@@ -21,9 +22,24 @@ namespace Demolition.Meta
 
         private static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 
+        /// <summary>Tests and tools: play on a fresh in-memory profile; nothing touches the
+        /// player's save until <see cref="UseDisk"/>.</summary>
+        public static void UseTemporary()
+        {
+            _data = new SaveData();
+            _temporary = true;
+        }
+
+        /// <summary>Back to the saved profile (reloaded on next use).</summary>
+        public static void UseDisk()
+        {
+            _data = null;
+            _temporary = false;
+        }
+
         public static void Save()
         {
-            if (_data == null)
+            if (_data == null || _temporary)
                 return;
             string path = FilePath;
             string temp = path + ".tmp";

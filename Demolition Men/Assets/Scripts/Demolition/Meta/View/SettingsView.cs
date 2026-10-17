@@ -78,7 +78,7 @@ namespace Demolition.Meta
             Stepper(root, ref y, "MUSIC", () => Percent(s.musicVolume), d => s.musicVolume = Step(s.musicVolume, d, 0.1f, 0f, 1f));
             Toggle(root, ref y, "SCREEN SHAKE", () => s.screenShake ? "ON" : "OFF", () => s.screenShake = !s.screenShake);
             Stepper(root, ref y, "HUD SIZE", () => s.hudScale > 0f ? Percent(s.hudScale) : "AUTO",
-                d => s.hudScale = s.hudScale <= 0f && d < 0 ? 0f : Step(s.hudScale <= 0f ? s.HudScale(Platform.IsMobile) : s.hudScale, d, 0.1f, 0.8f, 1.6f));
+                d => s.hudScale = HudStep(s, d));
             Toggle(root, ref y, "TOUCH CONTROLS", () => TouchModes[Mathf.Clamp(s.touchControls, 0, 2)], () => s.touchControls = (s.touchControls + 1) % 3);
             Stepper(root, ref y, "BUTTON SIZE", () => Percent(s.touchScale), d => s.touchScale = Step(s.touchScale, d, 0.1f, 0.6f, 1.6f));
             Stepper(root, ref y, "BUTTON OPACITY", () => Percent(s.touchOpacity), d => s.touchOpacity = Step(s.touchOpacity, d, 0.1f, 0.2f, 1f));
@@ -122,6 +122,17 @@ namespace Demolition.Meta
             change();
             _refresh?.Invoke();
             Profile.NotifySettingsChanged();
+        }
+
+        // AUTO (0) sits below the smallest size: "-" at 80% goes back to AUTO, "+" from AUTO
+        // starts one step above the automatic size.
+        private static float HudStep(GameSettings s, int direction)
+        {
+            if (s.hudScale <= 0f)
+                return direction < 0 ? 0f : Step(s.HudScale(Platform.IsMobile), 1, 0.1f, 0.8f, 1.6f);
+            if (direction < 0 && s.hudScale <= 0.8f)
+                return 0f;
+            return Step(s.hudScale, direction, 0.1f, 0.8f, 1.6f);
         }
 
         private static float Step(float value, int direction, float step, float min, float max) =>

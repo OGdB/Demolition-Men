@@ -12,6 +12,12 @@ namespace Demolition
     public sealed class BotPilot : MonoBehaviour
     {
         private const float StuckSeconds = 1.2f;
+        /// <summary>Hold jump this long: a one-frame tap can fall between physics steps.</summary>
+        private const float JumpHold = 0.25f;
+
+        private static readonly ContactFilter2D Solid = new ContactFilter2D { useTriggers = false };
+        private readonly RaycastHit2D[] _hits = new RaycastHit2D[4];
+        private float _jumpUntil;
 
         private readonly ScriptedInputSource _source = new ScriptedInputSource();
         private PlayerMotor _motor;
@@ -35,7 +41,8 @@ namespace Demolition
             Vector2 feet = transform.position;
             BuildingBlock block = BlockAhead(feet);
             bool attack = block != null;
-            bool jump = _motor.IsGrounded && !attack && (StepAhead(feet) || PitAhead(feet));
+            if (_motor.IsGrounded && !attack && (StepAhead(feet) || PitAhead(feet)))
+                _jumpUntil = Time.time + JumpHold;
 
             if (feet.x > _progressX + 0.5f)
             {
@@ -44,9 +51,10 @@ namespace Demolition
             }
             else if (Time.time - _progressTime > StuckSeconds && _motor.IsGrounded)
             {
-                jump = true;
+                _jumpUntil = Time.time + JumpHold;
                 _progressTime = Time.time;
             }
+            bool jump = Time.time < _jumpUntil;
 
             if (block != null && block.Material == BlockMaterial.Support && _combat.DynamiteCount > 0 && Time.time >= _nextDynamite)
             {
@@ -75,17 +83,17 @@ namespace Demolition
         }
 
         // Solid ground rising in front of the feet (not a building: those get hit).
-        private static bool StepAhead(Vector2 feet)
+        private bool StepAhead(Vector2 feet)
         {
-            RaycastHit2D hit = Physics2D.Raycast(feet + new Vector2(0.9f, 0.3f), Vector2.right, 0.6f);
-            return hit.collider != null && !hit.collider.isTrigger && hit.collider.GetComponentInParent<BuildingBlock>() == null
-                   && hit.collider.GetComponentInParent<PlayerHealth>() == null;
+            int count = Physics2D.Raycast(feet + new Vector2(0.9f, 0.3f), Vector2.right, Solid, _hits, 0.6f);
+            for (int i = 0; i < count; i++)
+                if (_hits[i].collider.GetComponentInParent<BuildingBlock>() == null
+                    && _hits[i].collider.GetComponentInParent<PlayerHealth>() == null)
+                    return true;
+            return false;
         }
 
-        private static bool PitAhead(Vector2 feet)
-        {
-            RaycastHit2D hit = Physics2D.Raycast(feet + new Vector2(1.2f, 0.2f), Vector2.down, 4f);
-            return hit.collider == null;
-        }
+        private bool PitAhead(Vector2 feet) =>
+            Physics2D.Raycast(feet + new Vector2(1.2f, 0.2f), Vector2.down, Solid, _hits, 4f) == 0;
     }
 }

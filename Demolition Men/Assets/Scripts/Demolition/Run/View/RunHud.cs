@@ -53,6 +53,7 @@ namespace Demolition.Run
         [SerializeField] private Sprite dynamiteIcon;
 
         private RunController _run;
+        private CanvasScaler _scaler;
         private RectTransform _root;
         private TextMeshProUGUI _timer;
         private RectTransform _meterFill;
@@ -70,7 +71,10 @@ namespace Demolition.Run
 
         private void Start()
         {
-            Canvas canvas = UiFactory.Canvas(transform, "HUD", 10, Profile.Data.settings.HudScale(Platform.IsMobile));
+            Canvas canvas = UiFactory.Canvas(transform, "HUD", 10);
+            _scaler = canvas.GetComponent<CanvasScaler>();
+            ApplyScale();
+            Profile.SettingsChanged += ApplyScale;
             _root = UiFactory.SafeArea(canvas.transform);
 
             var top = new Vector2(0.5f, 1f);
@@ -84,6 +88,7 @@ namespace Demolition.Run
             _prompt = UiFactory.Text(_root, "Prompt", new Vector2(0.5f, 0f), new Vector2(0f, 45f), 34f,
                 TextAlignmentOptions.Center, new Vector2(1800f, 60f), outlined: true);
             _prompt.color = new Color(1f, 0.85f, 0.3f);
+            _prompt.textWrappingMode = TextWrappingModes.Normal; // long hints wrap on narrow screens
 
             for (int i = 0; i < _run.Players.Count; i++)
                 _panels.Add(BuildPanel(i));
@@ -95,8 +100,23 @@ namespace Demolition.Run
             Pickup.Collected += OnPickup;
         }
 
+        // The HUD size setting, capped so the player panels and the meter never collide on
+        // narrow screens: the canvas stays at least MinCanvasWidth units wide.
+        private const float MinCanvasWidth = 1750f;
+
+        private void ApplyScale()
+        {
+            if (_scaler == null)
+                return;
+            float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : 16f / 9f;
+            float widest = Mathf.Sqrt(aspect * 1920f * 1080f) / MinCanvasWidth;
+            float scale = Mathf.Min(Profile.Data.settings.HudScale(Platform.IsMobile), widest);
+            _scaler.referenceResolution = new Vector2(1920f, 1080f) / Mathf.Max(0.5f, scale);
+        }
+
         private void OnDestroy()
         {
+            Profile.SettingsChanged -= ApplyScale;
             Pickup.Collected -= OnPickup;
             if (_run == null)
                 return;
@@ -220,6 +240,7 @@ namespace Demolition.Run
             _meterValue.text = $"{Mathf.FloorToInt(destroyed * 100f)}%  {RunScore.GradeFor(destroyed)}";
             _center.text = CenterText(state);
             _prompt.gameObject.SetActive(Time.time < _promptUntil && !state.IsOver);
+            _prompt.rectTransform.sizeDelta = new Vector2(Mathf.Min(1800f, _root.rect.width - 80f), 100f);
 
             for (int i = 0; i < _panels.Count; i++)
                 UpdatePanel(i, state);
@@ -279,7 +300,8 @@ namespace Demolition.Run
             {
                 panel.WarningCount.text = Mathf.CeilToInt(oob).ToString();
                 Vector2 local = ToCanvas(player.Transform.position + Vector3.up);
-                panel.Warning.anchoredPosition = new Vector2(20f, Mathf.Clamp(local.y, -400f, 400f));
+                float limit = Mathf.Max(0f, _root.rect.height * 0.5f - 110f); // sign and count stay on screen
+                panel.Warning.anchoredPosition = new Vector2(20f, Mathf.Clamp(local.y, -limit, limit));
             }
         }
 
