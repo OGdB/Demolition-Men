@@ -6,7 +6,7 @@ namespace Demolition.Meta
     public static class Economy
     {
         /// <summary>Score points per dollar.</summary>
-        public const int PointsPerCash = 10;
+        public const int PointsPerCash = 4;
         /// <summary>Finishing pays this much more than failing with the same score.</summary>
         public const float FinishBonus = 1.25f;
 

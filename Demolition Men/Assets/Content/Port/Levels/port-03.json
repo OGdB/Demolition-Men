@@ -1,0 +1,16 @@
+{
+  "id": "port-03",
+  "name": "DRY DOCK",
+  "theme": "Port",
+  "seed": 5313,
+  "parTime": 0,
+  "scrollSpeed": 1.8,
+  "pacing": ["start", "street", "sewer", "cluster:3", "gap", "tower", "gate", "finish"],
+  "pickups": {
+    "dynamite": 6,
+    "axe": 2,
+    "wreckingBall": 1,
+    "resurrect": 1
+  },
+  "archetypes": []
+}

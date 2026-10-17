@@ -1,0 +1,16 @@
+{
+  "id": "neon-02",
+  "name": "THE STRIP",
+  "theme": "Neon",
+  "seed": 7207,
+  "parTime": 0,
+  "scrollSpeed": 1.9,
+  "pacing": ["start", "cluster:3", "hill", "gap", "tower", "breather", "cluster:2", "finish"],
+  "pickups": {
+    "dynamite": 6,
+    "axe": 1,
+    "wreckingBall": 1,
+    "resurrect": 1
+  },
+  "archetypes": []
+}

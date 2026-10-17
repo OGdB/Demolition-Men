@@ -24,3 +24,5 @@ MonoBehaviour:
   pickupPrefab: {fileID: 5921544143652039461, guid: 3de564e561acff847a5392084ea8bdf3, type: 3}
   themes:
   - {fileID: 11400000, guid: ce467a8e5a484d429e80e8189e8966a6, type: 2}
+  - {fileID: 11400000, guid: cb593af4ecb0425fa21c7a443b424d71, type: 2}
+  - {fileID: 11400000, guid: 4ed6b64fcf034ee3af082a4c712eb6d5, type: 2}

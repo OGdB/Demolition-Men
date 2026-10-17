@@ -1,0 +1,16 @@
+{
+  "id": "port-01",
+  "name": "THE DOCKS",
+  "theme": "Port",
+  "seed": 5101,
+  "parTime": 0,
+  "scrollSpeed": 1.6,
+  "pacing": ["start", "street", "gap", "cluster:2", "breather", "street", "finish"],
+  "pickups": {
+    "dynamite": 4,
+    "axe": 1,
+    "wreckingBall": 1,
+    "resurrect": 1
+  },
+  "archetypes": []
+}

@@ -1,0 +1,16 @@
+{
+  "id": "neon-01",
+  "name": "AFTER HOURS",
+  "theme": "Neon",
+  "seed": 7101,
+  "parTime": 0,
+  "scrollSpeed": 1.8,
+  "pacing": ["start", "street", "cluster:2", "gap", "street", "gate", "finish"],
+  "pickups": {
+    "dynamite": 5,
+    "axe": 1,
+    "wreckingBall": 1,
+    "resurrect": 1
+  },
+  "archetypes": []
+}

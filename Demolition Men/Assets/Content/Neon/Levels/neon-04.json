@@ -1,0 +1,16 @@
+{
+  "id": "neon-04",
+  "name": "SKYLINE",
+  "theme": "Neon",
+  "seed": 7421,
+  "parTime": 0,
+  "scrollSpeed": 2.1,
+  "pacing": ["start", "tower", "gap", "cluster:3", "tower", "hill", "gate", "tower", "cluster:2", "finish"],
+  "pickups": {
+    "dynamite": 8,
+    "axe": 2,
+    "wreckingBall": 2,
+    "resurrect": 1
+  },
+  "archetypes": []
+}

@@ -1,0 +1,31 @@
+{
+  "id": "port.warehouse",
+  "width": {
+    "min": 12,
+    "max": 18
+  },
+  "floors": {
+    "min": 1,
+    "max": 2
+  },
+  "floorHeight": {
+    "min": 5,
+    "max": 6
+  },
+  "wall": "Brick",
+  "tallBrickChance": 0.4,
+  "floor": "MetalTruss",
+  "roof": "Beam",
+  "columnSpacing": {
+    "min": 3,
+    "max": 4
+  },
+  "windowChance": 0.3,
+  "door": true,
+  "chimneyChance": 0.0,
+  "weakPoints": {
+    "min": 1,
+    "max": 5
+  },
+  "weakPointCascade": 0.3
+}

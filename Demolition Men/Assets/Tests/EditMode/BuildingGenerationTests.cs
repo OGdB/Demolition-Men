@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Demolition.Generation;
 using NUnit.Framework;
 using UnityEngine;
@@ -10,9 +11,10 @@ namespace Demolition.Tests
     /// weak-point targets and are reproducible from the seed.</summary>
     public class BuildingGenerationTests
     {
-        private const string ArchetypeFolder = "Assets/Content/Town/Archetypes";
+        private const string ContentFolder = "Assets/Content";
 
-        private static IEnumerable<string> Archetypes() => Directory.GetFiles(ArchetypeFolder, "*.json");
+        private static IEnumerable<string> Archetypes() =>
+            Directory.GetFiles(ContentFolder, "*.json", SearchOption.AllDirectories).Where(p => p.Replace('\\', '/').Contains("/Archetypes/"));
 
         private static BuildingArchetype Load(string path) => BuildingArchetype.FromJson(File.ReadAllText(path));
 

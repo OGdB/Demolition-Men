@@ -223,7 +223,7 @@ Design in §7.
 
 ### M6 — Meta, juice, ship (M/L) — partly built 2026-10-17
 Built: JSON save in `persistentDataPath` (`Meta/`), unlocks in campaign order, the **skill
-shop** (power, hard hat, boots, TNT belt, tool grip; cash = score / 10, x1.25 for a
+shop** (power, hard hat, boots, TNT belt, tool grip; cash = score / 4, x1.25 for a
 finish), settings (volume, music, screen shake, HUD size, touch controls mode/size/opacity),
 code-built pause menu, results with cash and best-result badges, screen shake by collapse
 size, hit-stop, dust, pooled particles. **Decision change:** the level select is a menu
