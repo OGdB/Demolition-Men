@@ -209,8 +209,10 @@ Design in §5.2. Code in `Scripts/Demolition/Level/` (see the Levels section of 
 Built: `tools/artpipe` (master palette, procedural tile generators, normalizer, QA with
 contact sheets, `unity_theme.py` writing tiles/tileset/theme assets), the
 `ContentSpriteImporter` AssetPostprocessor, and two themes made with it — **Port** and
-**Neon**, 17 sprites each, 4 archetypes and 4 levels each. Not yet: autotile edge variants,
-SpriteAtlas, street props.
+**Neon**, 17 sprites each, 4 archetypes and 4 levels each. Since then: street props and
+dressing, back walls, and one SpriteAtlas per theme written before every build
+(`Editor/Atlases/ThemeAtlasPrebuild`); the legacy pixel-art textures import point-filtered and
+uncompressed like the generated ones. Not yet: autotile edge variants.
 
 Art and level review, 2026-10-17 (`content-work/levels/*.png`, drawn headless by
 `tools/artpipe/level_preview.py`):

@@ -20,6 +20,8 @@ namespace Demolition
         [SerializeField] private float areaOfEffect = 3f;
         [Tooltip("Damage to a player at the centre of the blast, falling to 30% at the edge of the area of effect.")]
         [SerializeField] private float playerDamage = 45f;
+        [Tooltip("Speed a player is thrown away from the centre of the blast, falling to 40% at the edge.")]
+        [SerializeField] private float playerKnockback = 14f;
         [SerializeField] private bool explodeOnContact = true;
         [Tooltip("Optional explosion prefab, spawned by the Effect animation event.")]
         [SerializeField] private GameObject effect;
@@ -128,6 +130,15 @@ namespace Demolition
                     continue;
                 float distance = Vector2.Distance(hit.ClosestPoint(transform.position), transform.position);
                 health.TakeDamage(playerDamage * Mathf.Lerp(1f, 0.3f, distance / areaOfEffect), capped: false);
+                var motor = health.GetComponent<PlayerMotor>();
+                if (motor != null && !health.IsProxy && !health.IsDead)
+                {
+                    // Away from the blast, always with some lift so the player is thrown, not slid.
+                    Vector2 away = (Vector2)health.transform.position + Vector2.up - (Vector2)transform.position;
+                    away = away.sqrMagnitude > 0.0001f ? away.normalized : Vector2.up;
+                    away.y = Mathf.Max(away.y, 0.35f);
+                    motor.Knockback(away.normalized * (playerKnockback * Mathf.Lerp(1f, 0.4f, distance / areaOfEffect)));
+                }
             }
 
             var damaged = new HashSet<BuildingBlock>();

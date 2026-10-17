@@ -51,8 +51,22 @@ namespace Demolition
         private Animator _anim;
         private AudioSource _audio;
         private bool _jumpQueued;
+        private float _staggerUntil;
+
+        /// <summary>Seconds a knockback flies uncontrolled before running and swinging take over again.</summary>
+        private const float StaggerSeconds = 0.35f;
 
         public void SetGroundCheckOffset(Vector2 offset) => groundCheckOffset = offset;
+
+        /// <summary>Thrown by a blast: replaces the velocity (running into it doesn't cancel the
+        /// shove) and runs uncontrolled for a moment.</summary>
+        public void Knockback(Vector2 velocity)
+        {
+            _rb.linearVelocity = velocity;
+            _staggerUntil = Time.time + StaggerSeconds;
+        }
+
+        private bool Staggered => Time.time < _staggerUntil;
 
         private void Awake()
         {
@@ -82,6 +96,8 @@ namespace Demolition
 
         private void Run()
         {
+            if (Staggered)
+                return;
             float x = _input.MoveRaw.x;
             bool attacking = _input.AttackHeld;
             float cap = attacking ? maxSpeed * attackMoveFactor : maxSpeed;
@@ -119,7 +135,7 @@ namespace Demolition
                 _jumpQueued = false;
                 _rb.linearVelocity += Vector2.up * (Physics2D.gravity.y * (fallMultiplier - 1f) * Time.fixedDeltaTime);
             }
-            else if (_rb.linearVelocity.y > 0f && !_input.JumpHeld && Mathf.Abs(_input.MoveRaw.x) < 0.2f)
+            else if (_rb.linearVelocity.y > 0f && !_input.JumpHeld && Mathf.Abs(_input.MoveRaw.x) < 0.2f && !Staggered)
             {
                 _jumpQueued = false;
                 _rb.linearVelocity += Vector2.up * (Physics2D.gravity.y * (lowJumpMultiplier - 1f) * Time.fixedDeltaTime);
