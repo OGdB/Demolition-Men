@@ -231,6 +231,11 @@ namespace Demolition.Online
                 SendStart();
             _clientLoaded = false;
             _spawn = null;
+            // Leave the players to the scene unload. Despawned by NGO's load they'd be destroyed while
+            // its async load reads the next scene, which deadlocks the editor (SpriteRenderer cleanup vs the loader).
+            foreach (NetworkObject player in _players)
+                if (player != null && player.IsSpawned)
+                    player.Despawn(destroy: false);
             _players.Clear();
             SceneEventProgressStatus status = _net.SceneManager.LoadScene(scene, LoadSceneMode.Single);
             if (status != SceneEventProgressStatus.Started)
