@@ -144,7 +144,7 @@ def masonry(r, rng, w, h, course=8, length=16, style="brick"):
                     put(a, xs + rng.integers(2, length - 1), y0 + rng.integers(2, course - 1), r[1] if not dark else r[0])
                 for _ in range(rng.integers(0, 2)):
                     put(a, xs + rng.integers(2, length - 1), y0 + rng.integers(2, course - 2), r[3])
-    return a
+    return np.roll(a, (3, 4), axis=(0, 1))  # keep joints off the tile edge
 
 
 def corrugated(r, rng, w, h):
@@ -169,7 +169,7 @@ def corrugated(r, rng, w, h):
                 put(a, x, y + k, r[0])
         for _ in range(rng.integers(1, 4)):
             put(a, rng.integers(0, w // 4) * 4 + 1, s * 16 + rng.integers(4, 15), r[2])
-    return a
+    return np.roll(a, 5, axis=0)  # keep the lap seam off the tile edge
 
 
 def wall(t, rng, w, h):
@@ -198,7 +198,7 @@ def concrete(t, rng, w=32, h=32):
         if rng.random() < 0.5:  # water stain under the tie
             for k in range(rng.integers(2, 6)):
                 put(a, hx + rng.integers(0, 2), hy + 3 + k, r[1])
-    return a
+    return np.roll(a, (16, 16), axis=(0, 1))  # panel joints inside the tile, edges mid-panel
 
 
 def wood_planks(r, rng, a, y0, y1, w, joints=1, outline_rows=True):
@@ -344,13 +344,13 @@ def window_back(t, rng, w=32, h=64):
         dither[10:30, :] = (np.add.outer(np.arange(h), np.arange(w)) % 2 == 0)[10:30, :]
         dither[10:30, 6:26] = False
         a[dither] = (*r[2], 255)
-        rect(a, 0, 21, 8, 22, r[2])      # shelf left
-        rect(a, 0, 22, 8, 23, r[0])
-        rect(a, 0, 35, 8, 36, r[2])
-        rect(a, 0, 36, 8, 37, r[0])
+        rect(a, 1, 21, 8, 22, r[2])      # shelf left
+        rect(a, 1, 22, 8, 23, r[0])
+        rect(a, 1, 35, 8, 36, r[2])
+        rect(a, 1, 36, 8, 37, r[0])
         rect(a, 1, 31, 4, 35, r[0])      # boxes on the shelf
-        rect(a, 25, 42, 32, 52, r[0])    # crate on the right
-        rect(a, 25, 42, 32, 43, r[2])
+        rect(a, 25, 42, 31, 52, r[0])    # crate on the right
+        rect(a, 25, 42, 31, 43, r[2])
         rect(a, 25, 42, 26, 52, r[2])
         rect(a, 0, 52, w, 53, r[2])      # floor line
         rect(a, 0, 53, w, h, r[0])
@@ -433,7 +433,7 @@ def beam(t, rng, w=64, h=32):
         neon_tube(a, 0, h // 2 - 1, w, h // 2 + 2, palette.ramp(t, m["trim"]))
     elif m.get("stain"):
         speckle(a, rng, np.pad(np.ones((h - 18, w), bool), ((9, 9), (0, 0))), [(r[0], 0.04)])
-    return a
+    return np.roll(a, 8, axis=1)  # stiffeners off the tile edge
 
 
 def brick_cap(t, rng, w=64, h=32):
@@ -558,7 +558,7 @@ def quay_blocks(r, rng, a, y0, y1, row_offset):
             rect(a, 0, y, w, y + 1, r[0])
         elif ay % 16 == 1:
             rect(a, 0, y, w, y + 1, r[2])
-        jx = 0 if (ay // 16) % 2 == 0 else 16
+        jx = 8 if (ay // 16) % 2 == 0 else 24
         if ay % 16 != 0:
             put(a, jx, y, r[0])
             put(a, jx + 1, y, r[2])
@@ -568,7 +568,7 @@ def ground_top(t, rng, w=32, h=32):
     m = t["materials"]["ground"]
     fill = palette.ramp(t, m["fill"])
     a = canvas(w, h)
-    quay_blocks(fill, rng, a, 8, h, 0)
+    quay_blocks(fill, rng, a, 8, h, 8)
     top = palette.ramp(t, m["top"])
     if m["style"] == "dock":
         rect(a, 0, 0, w, 8, top[2])
@@ -612,7 +612,7 @@ def ground_top(t, rng, w=32, h=32):
 def ground_fill(t, rng, w=32, h=32):
     fill = palette.ramp(t, t["materials"]["ground"]["fill"])
     a = canvas(w, h)
-    quay_blocks(fill, rng, a, 0, h, 0)
+    quay_blocks(fill, rng, a, 0, h, 8)
     return a
 
 

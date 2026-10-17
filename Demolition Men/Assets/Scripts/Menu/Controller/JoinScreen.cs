@@ -8,7 +8,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// "Press to join" lobby between the main menu and the level select. Any keyboard or
+/// "Press to join" lobby between the main menu and the level select (the training yard
+/// on a new profile's first play). Any keyboard or
 /// gamepad joins with A / Space and leaves with B / Esc; Start / Enter continues once
 /// someone has joined. On a phone the touchscreen joins as player 1 straight away and the
 /// on-screen START / BACK buttons drive the lobby (a gamepad can still join as player 2).
@@ -79,10 +80,19 @@ public class JoinScreen : MonoBehaviour
         }
     }
 
+    // A brand-new profile goes straight to the training yard; everyone else picks a job.
     private void Continue()
     {
-        if (_open && Session.PlayerCount > 0)
-            StartCoroutine(Close(() => LevelSelectView.Open(BackToMenu)));
+        if (!_open || Session.PlayerCount == 0)
+            return;
+        if (Profile.Data.runsPlayed == 0 && GameConfig.Instance != null)
+        {
+            _open = false;
+            LevelSelection.Clear();
+            RunController.LoadScene(GameConfig.Instance.tutorialScene);
+            return;
+        }
+        StartCoroutine(Close(() => LevelSelectView.Open(BackToMenu)));
     }
 
     private void Back()

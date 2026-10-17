@@ -78,6 +78,56 @@ namespace Demolition
             return _hazard;
         }
 
+        private const int CrackVariants = 3;
+        private static readonly Sprite[] _cracks = new Sprite[3 * CrackVariants];
+
+        /// <summary>Pixel crack overlay, 1 unit square: stage 1..3 (each adds to the last),
+        /// a few variants so neighbouring blocks don't crack alike.</summary>
+        public static Sprite Cracks(int stage, int variant)
+        {
+            stage = Mathf.Clamp(stage, 1, 3);
+            variant = ((variant % CrackVariants) + CrackVariants) % CrackVariants;
+            int index = (stage - 1) * CrackVariants + variant;
+            if (_cracks[index] != null)
+                return _cracks[index];
+
+            const int size = 32;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            var pixels = new Color[size * size];
+            var dark = new Color(0.08f, 0.06f, 0.05f, 0.85f);
+            var rng = new System.Random(1000 + variant);
+            int[] linesPerStage = { 2, 3, 4 };
+            for (int s = 0; s < stage; s++)
+            {
+                for (int line = 0; line < linesPerStage[s]; line++)
+                {
+                    // A jagged walk from near the centre towards a random edge.
+                    float x = size * 0.5f + rng.Next(-6, 7), y = size * 0.5f + rng.Next(-6, 7);
+                    float angle = (float)(rng.NextDouble() * Mathf.PI * 2f);
+                    int length = 6 + s * 5 + rng.Next(0, 6);
+                    for (int step = 0; step < length; step++)
+                    {
+                        angle += (float)(rng.NextDouble() - 0.5) * 0.9f;
+                        x += Mathf.Cos(angle);
+                        y += Mathf.Sin(angle);
+                        int px = Mathf.RoundToInt(x), py = Mathf.RoundToInt(y);
+                        if (px < 0 || py < 0 || px >= size || py >= size)
+                            break;
+                        pixels[py * size + px] = dark;
+                    }
+                }
+            }
+            tex.SetPixels(pixels);
+            tex.Apply();
+            _cracks[index] = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+            _cracks[index].name = $"Cracks{stage}_{variant}";
+            return _cracks[index];
+        }
+
         /// <summary>Soft-edged filled circle.</summary>
         public static Sprite Disc()
         {

@@ -74,6 +74,8 @@ namespace Demolition
         // Points for this block were already awarded (collapse credit, or a cosmetic
         // rider released by its host), so destroying it later scores nothing.
         private bool _credited;
+        private SpriteRenderer _cracks;
+        private int _crackStage;
         private float _targetLeanDeg;
         private float _targetSag;
         private float _targetDrift;
@@ -197,6 +199,30 @@ namespace Demolition
             float factor = (0.45f + 0.55f * damageFrac) * (IsRubble ? 0.7f : 1f);
             _sr.color = new Color(
                 _baseColor.r * factor, _baseColor.g * factor, _baseColor.b * factor, _baseColor.a);
+            RefreshCracks(damageFrac);
+        }
+
+        // Cracks on top of the darkening: stage 1..3 as health drops, never healing. A child
+        // of the visual, so it leans with the sprite.
+        private void RefreshCracks(float healthFraction)
+        {
+            int stage = healthFraction > 0.75f ? 0 : healthFraction > 0.45f ? 1 : healthFraction > 0.2f ? 2 : 3;
+            if (stage <= _crackStage || _visual == null || material == BlockMaterial.Glass)
+                return;
+            _crackStage = stage;
+            if (_cracks == null)
+            {
+                var go = new GameObject("Cracks");
+                go.transform.SetParent(_visual, false);
+                _cracks = go.AddComponent<SpriteRenderer>();
+                _cracks.sortingLayerID = _sr.sortingLayerID;
+                _cracks.sortingOrder = _sr.sortingOrder + 1;
+                Bounds bounds = _sr.sprite != null ? _sr.sprite.bounds : new Bounds(Vector3.zero, Vector3.one);
+                go.transform.localPosition = bounds.center;
+                go.transform.localScale = new Vector3(bounds.size.x, bounds.size.y, 1f);
+            }
+            Vector3 p = transform.position;
+            _cracks.sprite = PrimitiveSprite.Cracks(stage, Mathf.FloorToInt(p.x * 7f + p.y * 13f));
         }
 
         private void Destroyed()
