@@ -35,8 +35,13 @@ echo "==> Connecting to $target"
 info=$(ssh "$target" "echo \$(mktemp -d) \$(getent ahostsv4 $domain | awk 'NR == 1 { print \$1 }' | grep . || echo none) \$(hostname -I)" | tail -n 1)
 read -r stage ip addresses <<<"$info"
 [[ $stage == /tmp/* ]] || die "unexpected answer from $target: $info"
-[ "$ip" != none ] || die "$domain has no A record yet. Add one pointing at the VPS, wait for it to resolve, then re-run: Caddy can't get a certificate without it."
-[[ " $addresses " == *" $ip "* ]] || echo "warning: $domain points at $ip, which isn't an address of this VPS ($addresses). Fine for a floating IP; otherwise fix the A record."
+# Only a warning: the VPS's resolver may still cache "no such name" for up to an hour after the
+# record was added, while Let's Encrypt checks with its own resolvers.
+if [ "$ip" = none ]; then
+  echo "warning: the VPS can't resolve $domain (yet). Continuing: if the A record exists, Caddy still gets the certificate."
+elif [[ " $addresses " != *" $ip "* ]]; then
+  echo "warning: $domain points at $ip, which isn't an address of this VPS ($addresses). Fine for a floating IP; otherwise fix the A record."
+fi
 
 echo "==> Uploading the sources (the VPS builds the image)"
 # shellcheck disable=SC2029 # $stage is the VPS's own path, expanded here on purpose
