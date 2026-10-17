@@ -132,12 +132,13 @@ namespace Demolition
             if (_sr != null) _sr.enabled = inPlay;
         }
 
-        public void TakeDamage(float amount)
+        /// <param name="capped">False for a blast: <see cref="maxDamagePerHit"/> is for debris piling up.</param>
+        public void TakeDamage(float amount, bool capped = true)
         {
             if (IsProxy || IsDead || amount <= 0f || Time.time < _invulnUntil)
                 return;
 
-            Current = Mathf.Max(0f, Current - Mathf.Min(amount, maxDamagePerHit));
+            Current = Mathf.Max(0f, Current - (capped ? Mathf.Min(amount, maxDamagePerHit) : amount));
             _flashUntil = Time.time + 0.12f;
             _invulnUntil = Time.time + hitInvulnerability;
             if (hurtSound != null && _audio != null)

@@ -18,6 +18,8 @@ namespace Demolition
         [SerializeField] private float pushForce = 20f;
         [SerializeField] private float fuseTime = 2f;
         [SerializeField] private float areaOfEffect = 3f;
+        [Tooltip("Damage to a player at the centre of the blast, falling to 30% at the edge of the area of effect.")]
+        [SerializeField] private float playerDamage = 45f;
         [SerializeField] private bool explodeOnContact = true;
         [Tooltip("Optional explosion prefab, spawned by the Effect animation event.")]
         [SerializeField] private GameObject effect;
@@ -115,6 +117,18 @@ namespace Demolition
             Exploded?.Invoke(transform.position);
             if (!Cosmetic)
                 NetRole.DynamiteExploded?.Invoke(this);
+
+            // Players in the area get hurt, more the closer they stand. Each device hurts only its own
+            // player (a proxy ignores damage), so an online copy hurts the player next to it too.
+            var hurt = new HashSet<PlayerHealth>();
+            foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect))
+            {
+                var health = hit != null ? hit.GetComponentInParent<PlayerHealth>() : null;
+                if (health == null || !hurt.Add(health))
+                    continue;
+                float distance = Vector2.Distance(hit.ClosestPoint(transform.position), transform.position);
+                health.TakeDamage(playerDamage * Mathf.Lerp(1f, 0.3f, distance / areaOfEffect), capped: false);
+            }
 
             var damaged = new HashSet<BuildingBlock>();
             if (!Cosmetic)
