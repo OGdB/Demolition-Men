@@ -205,8 +205,14 @@ Design in §5.2. Code in `Scripts/Demolition/Level/` (see the Levels section of 
 - **Still to check in the editor:** the bot finishes all levels; 60 fps through the
   biggest collapse on a mid-range phone.
 
-### M4 — Art pipeline (L, can start alongside M2)
-Design in §6.
+### M4 — Art pipeline (L, can start alongside M2) — ✅ built 2026-10-17
+Built: `tools/artpipe` (master palette, procedural tile generators, normalizer, QA with
+contact sheets, `unity_theme.py` writing tiles/tileset/theme assets), the
+`ContentSpriteImporter` AssetPostprocessor, and two themes made with it — **Port** and
+**Neon**, 17 sprites each, 4 archetypes and 4 levels each. Not yet: autotile edge variants,
+per-theme parallax backdrops (the Town backdrop is tinted per theme), SpriteAtlas.
+
+Original plan (design in §6):
 - Style-bible schema, procedural tile generator, normalizer, QA and contact sheets.
 - Unity `AssetPostprocessor` enforcing import settings.
 - Proof: **re-skin Theme 1 (Town)** from the existing art as the anchor, then make
@@ -214,8 +220,13 @@ Design in §6.
 - **Done when:** a Theme 2 tile set, props and parallax background pass QA and look like
   the same game as the demolition man sprite.
 
-### M5 — Agentic content pipeline (L)
-Design in §7.
+### M5 — Agentic content pipeline (L) — roles written 2026-10-17
+The five roles exist as Claude Code subagents in `.claude/agents/` (theme-director,
+architect, artist, level-designer, integrator), each ending in validators it can't argue
+with (`tools/unity-check/check.sh`, `tools/artpipe/qa.py`). Not yet run end to end on a
+Theme 4 pitch, and no workflow script chains them.
+
+Original plan (design in §7):
 - Agent roles, artifacts, validators runnable from the command line, human gates.
 - Run it end to end to produce **Theme 3** with almost no hand work. Then use it to fill
   the 3 × 3–4 campaign.
