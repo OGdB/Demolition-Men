@@ -1,7 +1,9 @@
 # Online co-op plan
 
 **Status (2026-10-17):** O1 (seams) is in: `NetRole`, `NetPacking` and the §5 guards, with
-offline play unchanged. Nothing networked runs yet. Online stays post-v1 (roadmap D4).
+offline play unchanged. The relay (§8) is written and tested in `server/relay/`, with a
+deploy script for the VPS; it has not been deployed yet. Nothing in the game connects yet.
+Online stays post-v1 (roadmap D4).
 
 Two players on two devices play one run together: PC, phone or a browser (WebGL), in any
 mix. This doc picks the topology, says exactly what crosses the wire and who decides what,
@@ -167,6 +169,9 @@ the client skips the validators.
     as host or as joiner. It sends each NGO batch as one binary WebSocket message. Every NGO
     delivery mode becomes reliable and ordered (TCP). shortcut: unreliable sends are never
     dropped when the connection backs up; add that if the remote player lags on bad links.
+    The relay closes a paired room after 60 s without binary data (WebSocket pings don't
+    count), so the transport sends an empty binary message about every 20 s and ignores
+    empty ones it receives. The protocol and close codes are in `server/relay/README.md`.
     Look at the community WebSocket transport for NGO (OpenUPM
     `com.community.netcode.transport.websocket`) before writing it from scratch.
   - `OnlineSession` — the NetworkManager (tick rate 20, connection approval carrying

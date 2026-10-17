@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `docs/multiplayer.md` — the online co-op plan: player-hosted NGO over a self-hosted WebSocket relay on the VPS (no game server, no paid services, works in WebGL), who decides what, every message and its size, milestones O1–O5, what the VPS is for.
 - `docs/monetization.md` — the ads seam (free game with ads on phones), placements, wiring a real ad network, store/consent checklist.
 - `tools/unity-check/` — compile-check and model tests without the Unity editor (see Commands).
+- `server/relay/` — the online co-op WebSocket relay for the VPS (ASP.NET Core, .NET 10, no game code) with its tests (`dotnet test Relay.Tests`) and `deploy/deploy.sh <ssh-target> <domain>`; see its README.
 - The `*.csproj` / `*.slnx` files and `Library/`, `Temp/`, `Logs/`, `UserSettings/` are Unity-generated or per-user and gitignored. Unity regenerates `Demolition Men.slnx` (the four project assemblies) when the editor opens the project.
 
 ## Commands

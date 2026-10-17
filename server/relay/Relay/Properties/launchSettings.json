@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Relay": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5080"
+    }
+  }
+}
