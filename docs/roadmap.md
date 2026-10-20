@@ -1,7 +1,9 @@
 # Demolition Men — Roadmap to v1.0
 
 **Status:** in progress · written 2026-10-16 from a full pass over the code, scenes and prefabs ·
-updated 2026-10-17 after the overnight build (M3, most of M6, phones + TV, ads seam)
+updated 2026-10-17 after the overnight build (M3, most of M6, phones + TV, ads seam) ·
+re-planned 2026-10-20 around a **Google Play release in January 2027** (§4 R1–R5; marketing
+in `marketing.md`)
 **Supersedes:** the project-level parts of `building-destruction-design.md` §6 (its
 destruction-specific phases are folded in below).
 
@@ -23,78 +25,61 @@ reward that.
 
 ---
 
-## 2. Current state (2026-10-16)
+## 2. Current state (2026-10-20)
 
-### 2.1 What works
+The game plays start to finish on PC and in the editor's phone simulator. M0–M4 are built,
+most of M6 is built, and online co-op has its code in but hasn't been played between two
+devices over the internet yet.
 
-| Area | State | Where |
-|---|---|---|
-| Destruction core | Solid. Support graph, collapse on detach, stress lean/tremble, overload crumble, persistent rubble, glass, 13 unit tests. | `Scripts/Demolition/Core`, `DestructibleBuilding`, `BuildingBlock` |
-| Hand-made buildings | ~20 prefabs auto-scanned onto the grid. | `Prefabs/Buildings`, `TestBuildings`, `Sky's Prefabs` |
-| Code-built buildings | Supported via `Initialise` + `RegisterBlock`. Proven by `DemoBootstrap`'s procedural building. | `DemoBootstrap.CreateBuilding` |
-| Players | Two sprite prefabs: movement, jump feel, fists / axe / wrecking ball per-material damage, 3 dynamite, health. | `Scripts/Demolition/Player`, `Prefabs/Demolition` |
-| Scrolling camera | Stands still until a player touches the front trigger, then scrolls (+6 while pushed, 1.5 base). Follows the players' midpoint upward and zooms to frame both. | `CameraMovement`, `cameraSpeed`, `Main Camera 1.prefab` |
-| Level assembly | `Level 1` chains 10 random parts from a list of 13, then an end part. Building slots in the parts spawn a random hand-made building. | `TerrainGenerator`, `BuildingGenerator`, `Prefabs/Generator` |
-| Run end | Run ends when every player is permanently dead. End menu shows Retry / Quit. | `EndMenu`, `PlayerHealth.Kill` |
-| Menus | Main menu (solo/co-op, play, tutorial), pause (Esc / Start). | `UI/` |
-| Art & audio | Pixel art at 32 px/unit (player sheets, object set, tile sets), 8 sound clips, 2 music tracks. | `Sprites/`, `Animations/`, `Palettes/`, `Sounds/` |
+### 2.1 Built
 
-### 2.2 Gaps against the core loop
-
-| Loop element | Gap |
+| Area | State |
 |---|---|
-| **Finish** | No finish line or win state. `levelPart_End` is a decorative trailer tilemap, and the camera scrolls straight past it. |
-| **"Short timespan"** | No timer, no par time, no time bonus. |
-| **Score** | A flat +10 per block destroyed by damage. **Blocks that collapse and survive as rubble score nothing**, so hitting a weak point (the system's best moment) pays less than grinding bricks. No per-player attribution. No level-wide destruction %; `DestroyedFraction` exists per building and is used only by the test-bench HUD. |
-| **Falling behind** | No 3-second countdown. The left trigger calls `PlayerHealth.Kill()` instantly. |
-| **Zoom down** | The camera never goes below its starting Y (`baseY`), so sewer parts are only framed by zooming out. |
-| **Tools & utilities** | Weapon pickups were deleted in the August migration. Weapons switch only with keyboard keys 1/2/3, so **gamepad players can't switch weapons at all**. Dynamite never refills. |
-| **Co-op input** | Player 2 needs a second gamepad. Keyboard + one gamepad doesn't work, because P1 merges the keyboard with gamepad 0. |
-| **Results / progression** | No results screen or saves. The hub (trailer with TV and door) has no behaviour and is never visited: `MainMenu.PlayGame` loads build index 3 (Level 1). The skill-shop canvas isn't in any scene. |
-| **Tutorial** | `Tutorial.cs` isn't attached anywhere, and its prompts refer to the deleted pickups. |
-| **Content** | One level type, one look, about 20 hand-made buildings. No pipeline to make more. |
+| Core loop | 3-2-1 start, scrolling camera with a 3 s out-of-bounds grace, finish line with last call, timer and par, scoring with collapse credit and a chain multiplier, 0–3 stars, results screen, co-op rejoin and Resurrect. |
+| Destruction | Support graph, collapse on detach, stress and overload crumble, rubble that falls again when its footing goes, glass, back walls that crumble with their cells, blasts (TNT, gas tanks) that hurt and throw players. |
+| Content | 3 themes (Town, Port, Neon) × 4 campaign levels, a daily seed, the tutorial. Buildings and levels are generated from JSON + seed and validated (they stand, have weak points, every jump is passable); street props and decor. |
+| Players | Fists, axe, wrecking ball, dynamite, headbutt; pickups; skill-shop upgrades. |
+| Meta and menus | Save file, unlocks, shop, settings, pause, title, join screen, level select, quit popup. |
+| Phones | Touch controls, safe area, landscape lock, IL2CPP ARM64, a sprite atlas per theme, pixel-art import settings. |
+| Ads | The `IAdService` seam with interstitial and rewarded placements and a pacing policy; no ad SDK. |
+| Online | O1 done; O2 code in (NGO over a WebSocket relay, join codes in `OnlineView`, the host plays on when the client leaves); the relay runs on the VPS behind TLS (`wss://relay.oeds.space/ws`). |
+| Tooling | Editor-free compile and 213 model tests, level previews, Building and Level Labs, the bot playtester, the art pipeline, the content-pipeline agents. |
 
-### 2.3 Debt and bugs found while mapping
+### 2.2 Left before a Play release
 
-- **About 230 uncommitted changes** on `claude/demolition-men-physics-d52rzw`: the whole August
-  legacy-system migration (110 deletions, 84 modifications, 36 new files including
-  `Score.cs` and `Assets/Editor/`). The branch is also 15 commits ahead of `main` and
-  unmerged. A fresh clone of the branch **doesn't compile**, because `Score.cs` is untracked.
-- `cameraSpeed`: each player entering adds +6, so two players give +12. When one leaves, the
-  speed resets to 1.5 even if the other is still pushing.
-- The left kill trigger sits at `-1.2 × orthographicSize`. At 16:9 the visible half-width is
-  `1.78 × size`, so players die while still about 16% of the screen width inside the left
-  edge.
-- `TerrainGenerator` never despawns parts behind the camera, which is fine for 10 parts but
-  not for long levels. It also paces itself only against Player 1.
-- `GlobalVariables.FixedUpdate` calls `GameObject.Find` and `GetComponentInChildren` on every
-  physics tick.
-- Sprite import settings vary: 32 px/unit for most art, but some assets use 100, 64, 34, 150
-  or 6.
-- The stale `Demolition Men/Demolition Men/` snapshot is still tracked.
+| Area | What's missing |
+|---|---|
+| Android build | No package name, company still `DefaultCompany`, no upload keystore, no app icon. Target API is "highest installed", but Play needs **API 36** for new apps since 31 Aug 2026. App category not confirmed as Game; internet permission not forced on (online needs it). Never built, installed or profiled on a phone. |
+| Play account | None yet. A new personal account must run a **closed test with 12+ testers for 14 days** before it may publish to production. |
+| Ads | No SDK, no consent form (Google requires a certified consent tool for ads in the EEA/UK), no "privacy options" entry in Settings. |
+| Online | O2 play tests, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other over mobile data), O4 hardening (a backgrounded app, timeouts, version mismatch, relay down). |
+| Legal and store | Privacy policy, Data safety form, content rating, target audience, ads declaration, EU trader status, store listing text and graphics, trailer. |
+| Audio | 8 sound clips and 2 music tracks: every theme plays the same track, no material break sounds, and the origin and licence of the existing clips and music aren't recorded. |
+| Polish | Crack overlays, the phone letterbox question, tuning (scroll speeds, upgrade costs and cash rate are first guesses), a phone-first first five minutes. |
+| Performance | The worst collapse was never measured on a phone; composite debris (design doc Phase 2) isn't built. |
+| Marketing | Nothing yet: no accounts, clips, press kit or community. Plan: `marketing.md`. |
 
 ---
 
 ## 3. What v1.0 is
 
-**In scope**
-- The full loop: a 3-2-1 start, scrolling camera, a 3-second out-of-bounds countdown, a finish
-  line, a timer, scoring that rewards collapses, a results screen with a grade.
-- 1–2 local players with a join screen (keyboard and/or gamepads, any mix).
-- Fists, axe, wrecking ball and dynamite as **pickups**, plus 1–2 utilities (e.g. spring pad,
-  weight drop).
-- **3 themes × 3–4 campaign levels**, all generated from data (spec + seed), plus a
-  **daily seed** mode.
-- **Procedural buildings and levels**, with an **agentic content pipeline** producing themes,
-  level specs and coherent sprites.
-- The hub as level select, saves (best grade per level, unlocks), settings, juice (shake,
-  hit-stop, dust), and a Windows build.
-- A **skill shop** in the hub: banked run score buys player upgrades (D6).
+**v1.0 is the Google Play release for Android phones and tablets (landscape), in January
+2027** (D20).
 
-**Out of v1 (post-v1 backlog)**
-- Online co-op over **Netcode for GameObjects (NGO)**. The structure is ready for it (see
-  design doc §5), but it adds months (D4). Plan: `docs/multiplayer.md`.
-- Online leaderboards, endless mode, player level editor.
+**In scope**
+- Everything in §2.1: the campaign (3 themes × 4 levels), the daily seed, the tutorial, the
+  skill shop, solo and local co-op (a gamepad per player on a phone or tablet).
+- **Online co-op at launch** (D4): two players on two devices through the VPS relay with a
+  join code. The WebGL build on itch.io joins the same games, so a friend without the app
+  can play along in a browser.
+- Ads (an interstitial between runs, the rewarded 2x cash) with consent.
+- The audio, polish and performance work in R2.
+
+**Out of v1 (updates after launch, §4 After launch)**
+- The remove-ads purchase, a daily-challenge leaderboard, Theme 4 and more from the content
+  pipeline (M5), endless mode, a level editor.
+- Other stores and platforms: iOS (needs a Mac and $99 a year), an Android TV listing, PC on
+  itch.io or Steam. The code already runs there; the release work for them waits.
 
 ---
 
@@ -104,9 +89,15 @@ Sizes are relative: **S** ≈ a few sessions, **M** ≈ 1–3 weeks part-time, *
 The art-pipeline tooling in M4 is Python-only, so it can **run in parallel** with M2 and M3.
 
 ```
-M0 Stabilize ─▶ M1 Core loop ─▶ M2 Building gen ─▶ M3 Level gen ─▶ M5 Agentic pipeline ─▶ M6 Ship v1.0
-                                   └──────── M4 Art pipeline (parallel) ───────┘
+M0 ✅ ─▶ M1 ✅ ─▶ M2 ✅ ─▶ M3 ✅ ─▶ M6 (the rest folded into R1–R2)      M4 ✅ (in parallel)
+
+R1 Android build ─▶ R2 Release candidate ───────────────────────▶ R5 Launch ─▶ updates (v1.x, M5)
+  20 Oct–1 Nov        2 Nov–13 Dec                                  week of 11 Jan 2027
+                  └▶ R3 Closed test (from 16 Nov, 14+ days) ─▶ R4 Store listing + run-up (Dec–Jan)
 ```
+
+The release milestones R1–R5 follow M6 below; who does what is marked **You** (only the
+account holder can) and **Agent**.
 
 ### M0 — Stabilize (S) ✅ 2026-10-16
 - ✅ Commit the migration in logical commits, then merge the branch into `main`.
@@ -244,7 +235,10 @@ Original plan (design in §6):
 - **Done when:** a Theme 2 tile set, props and parallax background pass QA and look like
   the same game as the demolition man sprite.
 
-### M5 — Agentic content pipeline (L) — roles written 2026-10-17
+### M5 — Agentic content pipeline (L) — roles written 2026-10-17; moved after launch
+Not needed for v1: the campaign's 12 levels exist. After launch it makes the content
+updates, Theme 4 first (§4 After launch).
+
 The five roles exist as Claude Code subagents in `.claude/agents/` (theme-director,
 architect, artist, level-designer, integrator), each ending in validators it can't argue
 with (`tools/unity-check/check.sh`, `tools/artpipe/qa.py`). Not yet run end to end on a
@@ -256,7 +250,7 @@ Original plan (design in §7):
   the 3 × 3–4 campaign.
 - **Done when:** one pitch sentence becomes a playable, reviewed theme PR.
 
-### M6 — Meta, juice, ship (M/L) — partly built 2026-10-17
+### M6 — Meta, juice, ship (M/L) — partly built 2026-10-17; the rest folded into R1–R2
 Built: JSON save in `persistentDataPath` (`Meta/`), unlocks in campaign order, the **skill
 shop** (power, hard hat, boots, TNT belt, tool grip; cash = score / 4, x1.25 for a
 finish), settings (volume, music, screen shake, HUD size, touch controls mode/size/opacity),
@@ -265,8 +259,8 @@ size, hit-stop, dust, pooled particles. **Decision change:** the level select is
 overlay (`LevelSelectView`) instead of walking the hub — it has to work with a thumb on a
 phone and from a sofa with a gamepad; the hub scene stays for a later "home base".
 Still open from the list below: crack-overlay damage states, material break sounds and a
-music track per theme, composite debris, rebinding and resolution settings, builds and
-store assets.
+music track per theme, composite debris, builds and store assets (all in R1–R2). Rebinding
+and resolution settings are PC-only and wait for a PC release.
 
 Original plan:
 - Hub as level select (TV = theme/level select, door = start), unlocks by grade, JSON save in
@@ -282,9 +276,117 @@ Original plan:
 - Settings (volume, rebinding, resolution, screen-shake toggle), Windows build, store page
   assets (the art pipeline can make key art).
 
-### Post-v1
-Online co-op with NGO (replicate level id + seed + cell health; `docs/multiplayer.md`),
-daily-seed leaderboards, endless mode, player level editor, more themes from the pipeline.
+### R1 — Android build on your phone (S) — 20 Oct – 1 Nov 2026
+**You**
+- Create the Play Console account (personal, $25) and finish the identity verification; it
+  can take a few days.
+- Choose the **package name** (e.g. `com.<you>.demolitionmen`) and the developer name (D22).
+  The package name can never change after the first upload.
+- Create an upload keystore and keep two backups. Play App Signing holds the real signing
+  key; a lost upload key means a key-reset request before the next update.
+- Install Android Build Support with SDK platform 36 through Unity Hub.
+
+**Agent**
+- Player Settings: package name, company, version 1.0.0 with a versionCode raised on every
+  build, target API 36, minimum API 25 (as now), application category **Game** (Android 16
+  leaves games out of its large-screen orientation override, so landscape stays locked on
+  tablets), Internet Access *Require*, IL2CPP ARM64 (already set).
+- Size: R8 minify for release, managed stripping *Medium*, unused packages out of the build
+  (ProBuilder, AI Navigation, Sprite Shape, PSD Importer, once checked that nothing uses
+  them). Aim for a download under ~50 MB.
+- An adaptive app icon from the art pipeline; the splash screen without the Unity logo
+  (allowed on Unity Personal since Unity 6).
+- A build entry point (Tools ▸ Demolition ▸ Build ▸ Android AAB, plus a batch method) that
+  reads the keystore passwords from environment variables and writes the AAB.
+- Save the profile on `OnApplicationPause`: Android can kill a backgrounded app without
+  quitting it.
+
+**Done when:** the AAB installs from the Play **internal testing** track on your phone and
+plays a full level, and the worst collapse holds ~60 fps in a development build (Profiler
+over USB), or the cheapest fix is known (a lower falling cap on phones, composite debris).
+
+### R2 — Release candidate (M) — 2 Nov – 13 Dec 2026
+Ads and the privacy policy come first: the closed test (R3) can't start without the store
+declarations that depend on them.
+1. **Ads and consent** (first week): the Google Mobile Ads (AdMob) Unity plugin with its UMP
+   consent form (D23), an AdMob adapter behind `IAdService`, test ads in development builds,
+   a **Privacy options** button in Settings for EEA/UK players. Steps: `monetization.md`.
+2. **Privacy policy** page (on the VPS next to the relay, or GitHub Pages): what the ad SDK
+   collects, consent, the relay seeing IP addresses, no accounts, the save file staying on
+   the device, a contact address.
+3. **Online**, O2–O4 in `multiplayer.md`:
+   - play tests between two phones and between a phone and a PC;
+   - the WebGL build on itch.io, and a phone on mobile data, a PC and a browser tab joining
+     each other through the relay already on the VPS;
+   - a backgrounded or locked phone, timeouts, the relay down;
+   - a **version check**, so a store build and an older itch build refuse each other with a
+     message instead of desyncing.
+4. **Audio**: break sounds per material, a collapse rumble, prop and gas-tank blasts, a music
+   track per theme. Use CC0 or bought licences and record each source and licence in a
+   credits list; replace anything whose origin is unknown. A credits screen in Settings
+   (it also names the Black Ops One font, SIL OFL).
+5. **Feel and the first five minutes on a phone**:
+   - crack overlays (three stages, from the art pipeline);
+   - decide the phone letterbox (`overnight-2026-10-17.md`, question 2);
+   - tune scroll speeds, upgrade costs and the cash rate from closed-test feedback;
+   - touch glyphs in the tutorial prompts;
+   - from app start to the first falling building in under a minute.
+6. **Clip mode** for marketing, development builds only: hide the HUD, 9:16 framing, slow
+   motion on a key (`marketing.md` §2).
+7. **Pre-launch report**: Play runs every closed-track upload on real devices for free. Fix
+   every crash it finds.
+
+**Done when:** a release-signed AAB with test ads, consent and online play through the VPS
+passes the pre-launch report with no crashes, and closed testers finish the campaign.
+
+### R3 — Closed test (12+ testers × 14 days) — start by 16 Nov 2026
+- Before the first closed release, Play wants the app content declarations: privacy policy
+  URL, ads, content rating (IARC questionnaire), target audience (13+, so not the Families
+  program), Data safety, app access, and a basic store listing. Do them in the week of
+  9 Nov; they can be improved later.
+- **You:** recruit 20+ testers (friends, family, colleagues, the tester call in
+  `marketing.md`). 12 must stay opted in for **14 days in a row**; the spares cover
+  drop-outs. Prefer people who will play: when you apply for production, Google asks what
+  testers did and what you changed.
+- Ship updates during the test. Ask testers three things: what was confusing, what was fun,
+  would you keep it installed.
+- **You:** after 14 days, apply for production access on the Play Console dashboard. Google
+  says the review usually takes up to 7 days. Target: access by about 10 Dec.
+
+**Done when:** production access is granted.
+
+### R4 — Store listing and run-up — 1 Dec 2026 to launch
+- The listing: title (30 characters), short description (80), full description, icon
+  512×512, feature graphic 1024×500, 4–8 landscape screenshots with a caption each, and a
+  30–60 s trailer on YouTube. The art pipeline and the clip mode make most of these.
+- **You:** EU trader status. An app with ads counts as a trader under the Digital Services
+  Act, so Play shows the developer's address, e-mail and phone number on the store page.
+  Settle which address may be public (a business address or a P.O. box service) before you
+  declare (D24).
+- **Pre-registration** as soon as production access is granted: a "notify me" page that
+  every clip and post can link to before launch.
+- The press kit page and the outreach list (`marketing.md`).
+
+**Done when:** pre-registration is live with the trailer, and the press kit is up.
+
+### R5 — Launch — week of 11 Jan 2027
+- Production release with a **staged rollout** (20% → 50% → 100% over a few days) while
+  watching Android vitals: Play shows apps less when the user-perceived crash rate is over
+  1.09% or the ANR rate over 0.47%.
+- Launch week as in `marketing.md`: posts, press e-mails, the small paid push.
+- Reply to every review in the first month; fix-only updates go out within days.
+
+**Done when:** the rollout is at 100% with vitals under those thresholds.
+
+### After launch (v1.x)
+An update every 2–4 weeks keeps the listing fresh and gives the clips something new to
+show:
+- **v1.1:** fixes from launch; the **remove-ads purchase** (Unity IAP on Play Billing, needs a
+  payments profile); a share button that sends a join code with the store and itch links.
+- **v1.2:** **Theme 4** through the content pipeline (M5), first run end to end on one pitch.
+- A daily-challenge leaderboard (Play Games Services is free), store listings translated for
+  the top countries.
+- Later: an Android TV listing, PC on itch.io or Steam, iOS, endless mode, a level editor.
 
 ---
 
@@ -475,13 +577,19 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D1 | Co-op: is a player who falls behind (or dies) out for the whole run? | **Decided:** one free rejoin at the partner after 5 s (score penalty). After that, out until the partner collects a Resurrect pickup. Details in M1. |
 | D2 | When does a level finish? | When all living players cross the finish line, with a 5 s "last call" after the first crosses. |
 | D3 | Destruction vs speed weighting | Destruction-led score with collapse credit and chain multiplier; speed as a ×1.0–1.5 multiplier against par (§M1). |
-| D4 | Online multiplayer in v1? | **Decided:** post-v1, using Netcode for GameObjects (NGO), not Fishnet. Local co-op first. Plan and its decisions (D11–D18): `docs/multiplayer.md`. |
+| D4 | Online multiplayer in v1? | **Decided (2026-10-20):** yes, online co-op ships with the Android v1.0 (R2), on Netcode for GameObjects (NGO), not Fishnet. Was post-v1 until then. Plan and its decisions (D11–D19): `docs/multiplayer.md`. |
 | D5 | Campaign levels: baked scenes or generated at load? | **Generated at load from `{spec, seed}`.** Bake only if a level needs hand polish. |
 | D6 | Skill shop / upgrades in v1? | **Decided:** yes, in v1 (M6). |
 | D7 | Art anchor | Keep the existing demolition man and object set as Theme 1 (Town) and as the reference for every generated theme. |
 | D8 | Image generator | Unity AI first (already in the project and the MCP). Check commercial terms before shipping its output. |
 | D9 | Target platform | **Decided (2026-10-17):** PC (Windows, Steam Deck), TV (gamepads, couch co-op) and phones/tablets in landscape (touch). WebGL (browser) added later the same day, online play included (`docs/multiplayer.md` D19). One build of the UI for all: code-built uGUI through `UiFactory`, safe area, HUD size setting. |
 | D10 | Business model | **Decided (2026-10-17):** free, with ads on phones only (interstitials between runs, opt-in rewarded "2x cash"); a "remove ads" purchase later. See `docs/monetization.md`. |
+| D20 | Release target | **Decided (2026-10-20):** Google Play first, week of 11 Jan 2027, from a new personal developer account (so a closed test first, R3). Other platforms after launch. |
+| D21 | Marketing budget | **Decided (2026-10-20):** €100–500 for launch and the first months. Plan: `marketing.md`. |
+| D22 | Package name and developer name | Needed in R1; the package name is permanent. Suggested shape: `com.<developer>.demolitionmen`. |
+| D23 | Ad network | AdMob directly, with its UMP consent form: one SDK, consent included and Google-certified for the EEA/UK. LevelPlay (the earlier pick) mediates more networks but needs a consent tool on top; mediation can come later through AdMob. |
+| D24 | Public trader details | Before declaring trader status (R4): which address and phone number may be shown on the store page. |
+| D25 | Game name | Search the Play Store and the EU/US trademark registers for the name before the listing goes up; renaming after marketing has started loses the audience built so far. A subtitle in the title helps search (e.g. "Demolition Men: Wreck Co-op"). |
 
 ---
 
@@ -495,15 +603,23 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | Scope creep (online, shop, editor) | The v1 fence in §3. Post-v1 items wait. |
 | Losing the uncommitted migration | M0 first. |
 | Pixel shimmer with continuous zoom | Point filtering and integer-ish zoom snapping. `com.unity.2d.pixel-perfect` is installed if it becomes a problem. Low priority. |
+| Fewer than 12 testers stay the full 14 days (R3) | Recruit 20+, remind them weekly, start by 16 Nov so a restart still fits before January. |
+| Production access refused or slow | Apply with real tester feedback and the changes made; about four weeks of buffer between the target (10 Dec) and launch. |
+| Online breaks on mobile networks | Test on mobile data early in R2. The game is complete offline, so a late online problem can ship as "online co-op in the next update" without moving the launch. |
+| A low-end phone can't hold the frame rate | Profile in R1; a falling cap per platform, composite debris; exclude devices below a RAM floor in Play's device catalog. |
+| A small audience | Organic clips first, paid ads only after the listing converts (`marketing.md`). It is a side project: scale the weekly rhythm to the hours you have. |
+| Ads trip a policy review | Test ads only in development builds, never tap your own ads, interstitials only between runs, the ads declaration filled in. |
 
 ---
 
-## 10. Next five tasks (2026-10-17)
+## 10. Next five tasks (2026-10-20)
 
-1. **Playtest in the editor** the overnight work: Run scene levels (Level Lab ▸ Play), the
-   phone flow in the Device Simulator (touch controls, join, level select, results), the
-   PlayMode `BotRunTests`. Fix what the list in `docs/overnight-2026-10-17.md` turns up.
-2. **Tune** scroll speeds, upgrade costs and pickup budgets from those runs.
-3. **Ad network:** install LevelPlay (or AdMob), write the `IAdService` adapter, consent.
-4. **Builds:** Windows, Android (IL2CPP ARM64 is set), iOS; app icons and store pages.
-5. **Themes 2–3 polish** (art pipeline output) and a music track per theme.
+1. **You:** create the Play Console account and start the identity verification; pick the
+   package name (D22).
+2. **Agent:** the R1 Player Settings, app icon and build entry point; **you** build, upload
+   to internal testing and install it on your phone.
+3. **You + agent:** profile the worst collapse on your phone and fix it if it drops frames.
+4. **Agent:** the AdMob + UMP adapter, the Privacy options button and a privacy policy draft
+   (R2 steps 1–2), so the R3 declarations can be filled in by 13 Nov.
+5. **You:** open the marketing accounts and post the first clips; post the tester call
+   (`marketing.md` §5).

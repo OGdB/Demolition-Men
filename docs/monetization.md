@@ -25,24 +25,34 @@ Placements:
 - **Remove ads**: `SaveData.adsRemoved` turns all ads off. Wire it to a one-off in-app
   purchase (Unity IAP) when there is one; nothing sets it today.
 
-## Wiring a real network (recommended: Unity LevelPlay)
+## Wiring a real network (recommended: AdMob with UMP consent)
 
-1. Install the package in the editor (Package Manager): `com.unity.services.levelplay`
-   (LevelPlay mediation; it can serve Unity Ads, AdMob and others). Configure the app keys
-   and ad unit ids in the LevelPlay dashboard.
-2. Add an adapter next to the others, e.g. `Ads/Controller/LevelPlayAdService.cs`,
-   implementing `IAdService` on top of the SDK's interstitial and rewarded ad objects
-   (load on start, reload after each show, report `IsReady` from the SDK).
-   Add `Unity.LevelPlay` (or the SDK's assembly) to `Demolition.asmdef` references.
-3. Install it at startup on phones only, e.g. in `Meta/Controller/AppBootstrap.Init`:
+Roadmap D23 (2026-10-20): AdMob directly, because its Unity plugin ships Google's UMP consent
+form, which is certified for the EEA/UK. That gives one SDK and no separate consent tool.
+LevelPlay mediates more networks but needs a consent tool on top; mediation can be added
+later through AdMob.
+
+1. Import the Google Mobile Ads Unity plugin (it brings UMP). Create the app and the
+   interstitial and rewarded ad units in the AdMob console; set the app id in the plugin's
+   settings.
+2. Add an adapter next to the others, e.g. `Ads/Controller/AdMobAdService.cs`, implementing
+   `IAdService` on top of the SDK's interstitial and rewarded ad objects (load on start,
+   reload after each show, report `IsReady` from the SDK). Add the SDK's assembly to the
+   `Demolition.asmdef` references.
+3. At startup on phones only (e.g. in `Meta/Controller/AppBootstrap.Init`), request consent
+   info through UMP and show the form if required. Then initialise the SDK and install the
+   adapter:
    ```csharp
    #if UNITY_ANDROID || UNITY_IOS
-   if (!Debug.isDebugBuild) Ads.AdManager.Service = new Ads.LevelPlayAdService(appKey);
+   if (!Debug.isDebugBuild) Ads.AdManager.Service = new Ads.AdMobAdService();
    #endif
    ```
-4. Test with the network's test ads before release.
+4. Add a **Privacy options** button to `SettingsView` that reopens the UMP form. Show it
+   when UMP says it is required (EEA/UK players must be able to change their choice).
+5. Test with Google's test ad units and a registered test device. Never tap live ads on your
+   own phone: AdMob suspends accounts for invalid clicks.
 
-AdMob directly (Google Mobile Ads Unity plugin) works the same way: one adapter class.
+LevelPlay (`com.unity.services.levelplay`) works the same way: one adapter class.
 
 ## Legal and store checklist (needed before release)
 
@@ -57,6 +67,11 @@ AdMob directly (Google Mobile Ads Unity plugin) works the same way: one adapter 
   primarily for children unless you want the stricter child-directed ad rules (COPPA /
   Families policy), which also limit ad networks.
 - **Ratings:** IARC questionnaire on Google Play, age rating on the App Store.
+- **EU trader status (Google Play):** an app that earns money through ads makes the
+  developer a trader under the Digital Services Act. Play then shows the developer's
+  address, e-mail and phone number on the store page (roadmap D24).
+- **Online:** the privacy policy says the relay sees players' IP addresses
+  (`multiplayer.md` O4).
 
 ## Ideas for later
 

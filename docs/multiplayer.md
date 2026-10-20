@@ -5,7 +5,7 @@
 Mode installed, `RelayTransport`, `OnlineSession`, `NetPlayer`, `RunNet`, `OnlineView`. It
 compiles against the real packages, but it has not run in the editor yet: O2's "done when"
 (§7) is still open. What was built differs from the first plan where §2, §3, §5 and §6 say
-"as built". Online stays post-v1 (roadmap D4).
+"as built". Online co-op ships with the Android v1.0 (roadmap D4, decided 2026-10-20).
 
 Two players on two devices play one run together: PC, phone or a browser (WebGL), in any
 mix. This doc picks the topology, says exactly what crosses the wire and who decides what,
@@ -336,7 +336,7 @@ Check both. 1 TB a month is about 30,000 match-hours.
 | D15 | Out of bounds | The host decides with its own camera. Each device frames its own camera from both players, so the two views differ by about the latency; the 3 s grace absorbs that. Sync the camera only if playtests show it matters. |
 | D16 | Ads online | None while connected: an ad pauses the app, and a paused host times out the client. A due interstitial shows after the session ends. |
 | D17 | Pause online | An overlay only; the run keeps going. |
-| D18 | When | O1 any time (offline, low risk). O2 onwards post-v1, per D4. |
+| D18 | When | O1 any time (offline, low risk). O2–O4 before the Android launch (roadmap R2, D4 since 2026-10-20); O5 only if playtests ask for it. |
 | D19 | Platforms online | **Decided (2026-10-17):** PC, phones and WebGL, in any mix; each can host. |
 
 ## 10. Risks

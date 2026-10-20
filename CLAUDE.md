@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `Demolition Men/` — the Unity project (Unity **6000.4.9f1**, 2D, built-in render pipeline). All code lives under `Demolition Men/Assets/`.
 - `docs/building-destruction-design.md` — design rationale for the destruction system ("Option C" support-graph), the NGO (Netcode for GameObjects) networking plan, and the PlayMode manual test checklist.
-- `docs/roadmap.md` — the plan to v1.0: current-state gap analysis, milestones M0–M6, the procedural building/level generation design, the art pipeline and the agentic content pipeline, plus the design decisions. Check it before starting feature work.
+- `docs/roadmap.md` — the plan to v1.0, the Google Play release in January 2027: what's built and what's left, milestones M0–M6 (built) and the release milestones R1–R5, the procedural building/level generation design, the art pipeline and the agentic content pipeline, plus the design decisions. Check it before starting feature work.
+- `docs/marketing.md` — reaching players on a €100–500 budget: audience, clips and the clip mode, free channels, the paid launch push, the calendar to launch, what to measure.
 - `docs/multiplayer.md` — the online co-op plan: player-hosted NGO over a self-hosted WebSocket relay on the VPS (no game server, no paid services, works in WebGL), who decides what, every message and its size, milestones O1–O5, what the VPS is for.
-- `docs/monetization.md` — the ads seam (free game with ads on phones), placements, wiring a real ad network, store/consent checklist.
+- `docs/monetization.md` — the ads seam (free game with ads on phones), placements, wiring AdMob with UMP consent, store/consent checklist.
 - `tools/unity-check/` — compile-check and model tests without the Unity editor (see Commands).
 - `server/relay/` — the online co-op WebSocket relay for the VPS (ASP.NET Core, .NET 10, no game code) with its tests (`dotnet test Relay.Tests`) and `deploy/deploy.sh <ssh-target> <domain>`; see its README.
 - The `*.csproj` / `*.slnx` files and `Library/`, `Temp/`, `Logs/`, `UserSettings/` are Unity-generated or per-user and gitignored. Unity regenerates `Demolition Men.slnx` (the four project assemblies) when the editor opens the project.
