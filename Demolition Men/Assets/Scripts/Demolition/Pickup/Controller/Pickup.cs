@@ -125,12 +125,15 @@ namespace Demolition
             Remove(collector);
         }
 
+        private int AmountFor(PlayerCombat combat) =>
+            kind == PickupKind.Dynamite ? amount + combat.DynamitePickupBonus : amount;
+
         private void Remove(PlayerCombat collector)
         {
             _collected = true;
             MarkTaken(NetIndex);
             if (collector != null)
-                Collected?.Invoke(collector, kind, amount);
+                Collected?.Invoke(collector, kind, AmountFor(collector));
             Particles.Burst(transform.position, new Color(1f, 0.9f, 0.4f), 14, 4f, 0.12f, 0.5f);
             Destroy(gameObject);
         }
@@ -160,7 +163,7 @@ namespace Demolition
                     combat.AddWeapon(WeaponType.WreckingBall, amount);
                     return true;
                 case PickupKind.Dynamite:
-                    return combat.AddDynamite(amount);
+                    return combat.AddDynamite(AmountFor(combat));
                 case PickupKind.Resurrect:
                     return RunController.Current != null && RunController.Current.TryResurrect(combat.PlayerIndex);
                 default:

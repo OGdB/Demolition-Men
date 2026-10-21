@@ -347,7 +347,7 @@ MonoBehaviour:
   fallbackSwingInterval: 0.35
   showSwingFlash: 0
   dynamitePrefab: {fileID: 1000000, guid: 3b58d0f2a7c14e93b6d8f0a2c4e71055, type: 3}
-  dynamiteCount: 3
+  dynamiteCount: 0
   throwForce: 400
   hitSound: {fileID: 8300000, guid: ca86397c9ce57934ca90429569450b35, type: 3}
 --- !u!114 &11400006

@@ -84,7 +84,7 @@ namespace Demolition.Tests
             var fresh = new SaveData();
             Assert.AreEqual(8f, UpgradeCatalog.Value(fresh, UpgradeStat.Speed));
             Assert.AreEqual(100f, UpgradeCatalog.Value(fresh, UpgradeStat.Health));
-            Assert.AreEqual(3f, UpgradeCatalog.Value(fresh, UpgradeStat.Dynamite));
+            Assert.AreEqual(0f, UpgradeCatalog.Value(fresh, UpgradeStat.Dynamite));
             Assert.AreEqual(1f, UpgradeCatalog.Value(fresh, UpgradeStat.Power));
         }
 

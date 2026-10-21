@@ -57,8 +57,8 @@ namespace Demolition.Meta
                 new[] { 500, 1200, 3000, 6500 }, new[] { 100f, 125f, 150f, 180f, 220f }, "{0:0} HP"),
             new UpgradeDefinition("speed", UpgradeStat.Speed, "BOOTS", "Run faster",
                 new[] { 500, 1200, 3000, 6500 }, new[] { 8f, 8.5f, 9f, 9.5f, 10f }, "{0:0.0} m/s"),
-            new UpgradeDefinition("dynamite", UpgradeStat.Dynamite, "TNT BELT", "Start every level with more dynamite",
-                new[] { 800, 2000, 4500, 9000 }, new[] { 3f, 4f, 5f, 6f, 8f }, "{0:0} TNT"),
+            new UpgradeDefinition("dynamite", UpgradeStat.Dynamite, "TNT BELT", "Every dynamite pickup gives extra sticks",
+                new[] { 800, 2000, 4500, 9000 }, new[] { 0f, 1f, 2f, 3f, 4f }, "+{0:0} TNT"),
             new UpgradeDefinition("grip", UpgradeStat.ToolGrip, "TOOL GRIP", "Picked-up weapons last longer",
                 new[] { 700, 1800, 4000, 8000 }, new[] { 1f, 1.2f, 1.4f, 1.7f, 2f }, "x{0:0.0}"),
         };

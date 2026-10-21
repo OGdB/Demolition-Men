@@ -39,8 +39,7 @@ public class JoinView : MonoBehaviour
         var root = (RectTransform)canvas.transform;
         var centre = new Vector2(0.5f, 0.5f);
 
-        UiFactory.Panel(root, new Vector2(0f, -90f), new Vector2(1200f, 640f));
-        UiFactory.Title(root, "WHO'S DEMOLISHING?", centre, new Vector2(0f, 186f), 64f, 1100f);
+        UiFactory.TitledPanel(root, new Vector2(0f, -90f), new Vector2(1200f, 640f), "WHO'S DEMOLISHING?", 64f, 1100f);
 
         for (int i = 0; i < _slots.Length; i++)
             _slots[i] = UiFactory.Text(root, $"P{i + 1}", centre, new Vector2(0f, 80f - i * 100f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);

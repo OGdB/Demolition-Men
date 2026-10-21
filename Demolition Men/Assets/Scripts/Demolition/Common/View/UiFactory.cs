@@ -17,6 +17,7 @@ namespace Demolition
         public static readonly Color Ink = new Color(0.06f, 0.06f, 0.09f);
         public static readonly Color Steel = new Color(0.36f, 0.4f, 0.45f);
         public static readonly Color PanelColor = new Color(0.2f, 0.22f, 0.26f, 0.97f);
+        private static readonly Color NameplateColor = new Color(0.1f, 0.11f, 0.13f, 1f);
         public static readonly Color StarLit = new Color(1f, 0.82f, 0.25f);
         public static readonly Color StarDark = new Color(0.22f, 0.23f, 0.27f, 0.9f);
         private static readonly Color Highlight = new Color(1f, 0.78f, 0.2f);
@@ -221,6 +222,22 @@ namespace Demolition
                 strip.rectTransform.offsetMax = new Vector2(-28f, -28f);
             }
             return plate;
+        }
+
+        /// <summary>A <see cref="Panel"/> with its title on a dark nameplate across the hazard
+        /// strip: gold letters straight on the yellow stripes can't be read.</summary>
+        public static TextMeshProUGUI TitledPanel(Transform parent, Vector2 position, Vector2 size, string title, float fontSize, float width = 1400f)
+        {
+            Panel(parent, position, size);
+            var centre = new Vector2(0.5f, 0.5f);
+            Vector2 onStrip = position + new Vector2(0f, size.y * 0.5f - 44f); // the strip's middle (see Panel)
+            Image plate = Image(parent, "Nameplate", centre, onStrip, Vector2.zero, NameplateColor);
+            plate.sprite = PlateSprite;
+            plate.type = UnityEngine.UI.Image.Type.Sliced;
+            TextMeshProUGUI text = Title(parent, title, centre, onStrip, fontSize, width);
+            float textWidth = Mathf.Min(width, text.GetPreferredValues(title).x);
+            plate.rectTransform.sizeDelta = new Vector2(textWidth + 100f, fontSize * 1.1f + 28f);
+            return text;
         }
 
         /// <summary>Yellow and black hazard stripes stretched across the top of <paramref name="parent"/>.</summary>

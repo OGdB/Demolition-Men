@@ -1,0 +1,16 @@
+# MADE BY
+The Demolition Men team
+
+# MUSIC
+"Funked Up" by Joth - CC0 - opengameart.org/content/funked-up
+"Scramblin'" by congusbongus - CC BY 4.0 - opengameart.org/content/scramblin
+"Mammoth" by congusbongus - CC BY 4.0, silence trimmed - opengameart.org/content/mammoth
+"Neon Action" by Bogart VGM - CC BY 4.0, silence trimmed - opengameart.org/content/neon-action
+CC BY 4.0: creativecommons.org/licenses/by/4.0
+
+# FONT
+Black Ops One - The Black-Ops Project Authors - SIL Open Font License 1.1 (scripts.sil.org/OFL)
+
+# SOFTWARE
+Made with Unity
+NativeWebSocket - Endel Dreyer, Jiri Hybek - Apache License 2.0 (apache.org/licenses/LICENSE-2.0)

@@ -47,8 +47,7 @@ namespace Demolition.Run
                 .rectTransform.anchorMax = Vector2.one;
             var centre = new Vector2(0.5f, 0.5f);
 
-            UiFactory.Panel(root, new Vector2(0f, -10f), new Vector2(760f, 640f));
-            UiFactory.Title(root, "PAUSED", centre, new Vector2(0f, 266f), 96f);
+            UiFactory.TitledPanel(root, new Vector2(0f, -10f), new Vector2(760f, 640f), "PAUSED", 96f);
 
             var size = new Vector2(480f, 96f);
             _resume = UiFactory.Button(root, "RESUME", centre, new Vector2(0f, 120f), size, () => _pause.SetPaused(false));

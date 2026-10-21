@@ -73,8 +73,7 @@ public class OnlineView : MonoBehaviour
     {
         Canvas canvas = UiFactory.Canvas(transform, "OnlineCanvas", 30);
         _root = (RectTransform)canvas.transform;
-        UiFactory.Panel(_root, new Vector2(0f, -110f), new Vector2(1300f, 760f));
-        UiFactory.Title(_root, "PLAY ONLINE", new Vector2(0.5f, 0.5f), new Vector2(0f, 226f), 64f, 1100f);
+        UiFactory.TitledPanel(_root, new Vector2(0f, -110f), new Vector2(1300f, 760f), "PLAY ONLINE", 64f, 1100f);
         _status = UiFactory.Text(_root, "Status", new Vector2(0.5f, 0.5f), new Vector2(0f, 140f), 34f, TextAlignmentOptions.Center, new Vector2(1150f, 50f));
         _status.color = new Color(1f, 0.55f, 0.45f);
     }

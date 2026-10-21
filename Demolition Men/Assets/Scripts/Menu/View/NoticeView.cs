@@ -27,8 +27,7 @@ public class NoticeView : MonoBehaviour
         var root = (RectTransform)canvas.transform;
         UiFactory.Backdrop(root, new Color(0f, 0f, 0f, 0.6f));
         var centre = new Vector2(0.5f, 0.5f);
-        UiFactory.Panel(root, Vector2.zero, new Vector2(1100f, 420f));
-        UiFactory.Title(root, title, centre, new Vector2(0f, 166f), 64f, 1000f);
+        UiFactory.TitledPanel(root, Vector2.zero, new Vector2(1100f, 420f), title, 64f, 1000f);
         var text = UiFactory.Text(root, "Message", centre, new Vector2(0f, 30f), 38f, TMPro.TextAlignmentOptions.Center, new Vector2(980f, 140f));
         text.textWrappingMode = TMPro.TextWrappingModes.Normal;
         text.text = message;

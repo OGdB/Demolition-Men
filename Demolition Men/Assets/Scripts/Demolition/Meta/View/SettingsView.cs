@@ -12,7 +12,7 @@ namespace Demolition.Meta
     /// Settings overlay built in code, usable from the menu and the pause screen: volumes,
     /// screen shake, touch controls (mode, size, opacity). Every row is a pair of − / +
     /// buttons (or one toggle), so it works the same with a mouse, a gamepad and a thumb.
-    /// Back (Esc / B) closes it; changes save immediately.
+    /// CREDITS opens <see cref="CreditsView"/>. Back (Esc / B) closes it; changes save immediately.
     /// </summary>
     public sealed class SettingsView : MonoBehaviour
     {
@@ -53,7 +53,7 @@ namespace Demolition.Meta
             bool back = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
             foreach (Gamepad pad in Gamepad.all)
                 back |= pad.buttonEast.wasPressedThisFrame;
-            if (back)
+            if (back && !CreditsView.IsOpen)
                 Close();
         }
 
@@ -70,8 +70,7 @@ namespace Demolition.Meta
             dim.raycastTarget = true; // block clicks to whatever is behind
             var centre = new Vector2(0.5f, 0.5f);
 
-            UiFactory.Panel(root, new Vector2(0f, -5f), new Vector2(1300f, 950f));
-            UiFactory.Title(root, "SETTINGS", centre, new Vector2(0f, 426f), 80f);
+            UiFactory.TitledPanel(root, new Vector2(0f, -5f), new Vector2(1300f, 950f), "SETTINGS", 80f);
 
             float y = 290f;
             Button first = Stepper(root, ref y, "VOLUME", () => Percent(s.masterVolume), d => s.masterVolume = Step(s.masterVolume, d, 0.1f, 0f, 1f));
@@ -83,7 +82,8 @@ namespace Demolition.Meta
             Stepper(root, ref y, "BUTTON SIZE", () => Percent(s.touchScale), d => s.touchScale = Step(s.touchScale, d, 0.1f, 0.6f, 1.6f));
             Stepper(root, ref y, "BUTTON OPACITY", () => Percent(s.touchOpacity), d => s.touchOpacity = Step(s.touchOpacity, d, 0.1f, 0.2f, 1f));
 
-            UiFactory.Button(root, "BACK", centre, new Vector2(0f, y - 40f), new Vector2(360f, 90f), Close);
+            UiFactory.Button(root, "BACK", centre, new Vector2(-200f, y - 40f), new Vector2(360f, 90f), Close);
+            UiFactory.Button(root, "CREDITS", centre, new Vector2(200f, y - 40f), new Vector2(360f, 90f), () => CreditsView.Open(transform));
             _refresh?.Invoke();
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(first.gameObject);

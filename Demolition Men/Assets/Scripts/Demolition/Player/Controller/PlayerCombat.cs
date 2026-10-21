@@ -86,7 +86,8 @@ namespace Demolition
 
         [Header("Dynamite")]
         [SerializeField] private GameObject dynamitePrefab;
-        [SerializeField] private int dynamiteCount = 3;
+        [Tooltip("Every level starts empty: dynamite only comes from pickups.")]
+        [SerializeField] private int dynamiteCount = 0;
         [SerializeField] private int maxDynamite = 9;
         [SerializeField] private float throwForce = 400f;
 
@@ -115,6 +116,8 @@ namespace Demolition
         public int WeaponUses => weapon == WeaponType.Fists ? -1 : _uses[(int)weapon];
         public int DynamiteCount { get => dynamiteCount; set => dynamiteCount = Mathf.Max(0, value); }
         public bool DynamiteFull => dynamiteCount >= maxDynamite;
+        /// <summary>Extra sticks on every dynamite pickup (skill shop).</summary>
+        public int DynamitePickupBonus { get; set; }
         public float DamageMultiplier { get => damageMultiplier; set => damageMultiplier = Mathf.Max(0f, value); }
         /// <summary>Picked-up weapons get this many times their hits (skill shop).</summary>
         public float WeaponHitMultiplier { get; set; } = 1f;

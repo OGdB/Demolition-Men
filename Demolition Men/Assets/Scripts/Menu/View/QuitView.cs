@@ -57,8 +57,7 @@ public class QuitView : MonoBehaviour
         UiFactory.Backdrop(root, new Color(0f, 0f, 0f, 0.6f));
         var centre = new Vector2(0.5f, 0.5f);
 
-        UiFactory.Panel(root, Vector2.zero, new Vector2(860f, 420f));
-        UiFactory.Title(root, "QUIT GAME?", centre, new Vector2(0f, 166f), 72f, 800f);
+        UiFactory.TitledPanel(root, Vector2.zero, new Vector2(860f, 420f), "QUIT GAME?", 72f, 800f);
         UiFactory.Text(root, "Question", centre, new Vector2(0f, 40f), 36f, TMPro.TextAlignmentOptions.Center, new Vector2(760f, 50f))
             .text = "THE SITE WILL STILL BE HERE.";
 

@@ -69,8 +69,7 @@ namespace Demolition.Meta
             UiFactory.Backdrop(root, new Color(0f, 0f, 0f, 0.75f));
             var centre = new Vector2(0.5f, 0.5f);
 
-            UiFactory.Panel(root, new Vector2(0f, 10f), new Vector2(1700f, 990f));
-            UiFactory.Title(root, "SKILL SHOP", centre, new Vector2(0f, 461f), 80f);
+            UiFactory.TitledPanel(root, new Vector2(0f, 10f), new Vector2(1700f, 990f), "SKILL SHOP", 80f);
             _cash = UiFactory.Text(root, "Cash", centre, new Vector2(0f, 375f), 48f, TextAlignmentOptions.Center, new Vector2(1000f, 60f), outlined: true);
             _cash.color = UiFactory.Gold;
 

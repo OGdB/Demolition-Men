@@ -38,7 +38,7 @@ MonoBehaviour:
   - sprite: {fileID: 21300000, guid: 1938532dde4a447fa12964d476a32f48, type: 3}
     parallax: 0.55
     bottom: -0.5
-  music: {fileID: 8300000, guid: 828023a63bc96a54287b6c5834991490, type: 3}
+  music: {fileID: 8300000, guid: 23530c8a4a914e69859e161cec6d3c70, type: 3}
   decor:
   - kind: 0
     sprites:

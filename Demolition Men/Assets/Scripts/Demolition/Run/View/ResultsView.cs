@@ -99,8 +99,7 @@ namespace Demolition.Run
             _content.pivot = new Vector2(0.5f, 0.5f); // scale from the middle
             var centre = new Vector2(0.5f, 0.5f);
 
-            UiFactory.Panel(_content, new Vector2(0f, 10f), new Vector2(1400f, 880f));
-            _title = UiFactory.Title(_content, finished ? "DEMOLISHED!" : "WRECKED", centre, new Vector2(0f, 406f), 110f);
+            _title = UiFactory.TitledPanel(_content, new Vector2(0f, 10f), new Vector2(1400f, 880f), finished ? "DEMOLISHED!" : "WRECKED", 110f);
             if (!finished)
                 _title.color = Wrecked;
 

@@ -201,7 +201,9 @@ namespace Demolition
 
             go.AddComponent<PlayerInputReader>();
             go.AddComponent<PlayerMotor>();
-            go.AddComponent<PlayerCombat>().ConfigureForPrimitive(new Vector2(1f, 0.75f), true);
+            var combat = go.AddComponent<PlayerCombat>();
+            combat.ConfigureForPrimitive(new Vector2(1f, 0.75f), true);
+            combat.DynamiteCount = 9; // the bench has no pickups
             go.AddComponent<PlayerHealth>();
             return go;
         }
