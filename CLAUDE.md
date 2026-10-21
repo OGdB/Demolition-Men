@@ -109,7 +109,7 @@ At `Start`, if nothing registered blocks in code, the building auto-scans childr
 
 Code-driven alternative (`DemoBootstrap`): call `BuildingBlock.Initialise` + `DestructibleBuilding.RegisterBlock` before the building's `Start`, which then skips the scan.
 
-`Prefabs/Buildings/Crane.prefab` keeps its authored joints on purpose — it's a physics prop outside the destruction system.
+`Prefabs/Buildings/Crane.prefab` keeps its authored joints on purpose — it's a physics prop outside the destruction system. `HangingChain` does the same in code for chains and plank walkways (the Tutorial's `Tall Bridge` deck and its two chains): at Start it hinges its child links to each other and to their anchors (a pillar's block, or a pin in the world) and makes them dynamic; it moves itself out of the building at Awake so the scan doesn't adopt them. The links keep an unregistered `BuildingBlock`, so hits and blasts break them, and an end whose anchor block is destroyed drops.
 
 ## Building generation
 

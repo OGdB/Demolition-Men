@@ -2028,6 +2028,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1511164959250071415}
+  - component: {fileID: 4815103065402819201}
   m_Layer: 8
   m_Name: bridge
   m_TagString: Untagged
@@ -2858,6 +2859,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2868431646131678070}
+  - component: {fileID: 253558641861626304}
   m_Layer: 8
   m_Name: Wire 1
   m_TagString: Untagged
@@ -4534,6 +4536,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5389743190938411093}
+  - component: {fileID: 8178785316463762953}
   m_Layer: 8
   m_Name: Wire 2
   m_TagString: Untagged
@@ -5552,3 +5555,51 @@ MonoBehaviour:
   visualLerpSpeed: 4
   trembleThreshold: 0.55
   trembleAmplitude: 0.045
+--- !u!114 &4815103065402819201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2400437767534170187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a585b1099ad248b9bc50fb4e8d2c19c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.HangingChain
+  startAnchor: {fileID: 2073893443905798449}
+  pinStart: 0
+  endAnchor: {fileID: 2804856643914749935}
+  pinEnd: 0
+--- !u!114 &253558641861626304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3235106019176916566}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a585b1099ad248b9bc50fb4e8d2c19c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.HangingChain
+  startAnchor: {fileID: 0}
+  pinStart: 1
+  endAnchor: {fileID: 2073893443905798449}
+  pinEnd: 0
+--- !u!114 &8178785316463762953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6619610036570146380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a585b1099ad248b9bc50fb4e8d2c19c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.HangingChain
+  startAnchor: {fileID: 2804856643914749935}
+  pinStart: 0
+  endAnchor: {fileID: 0}
+  pinEnd: 1
