@@ -29,6 +29,17 @@ namespace Demolition.Levels
         [Tooltip("Far to near. Empty = the shared backdrop prefab, tinted.")]
         public BackdropLayer[] backdrop = new BackdropLayer[0];
         public AudioClip music;
+        [Header("Light (URP 2D, Demolition.Lighting)")]
+        [Tooltip("Ambient light over the whole level; below 1 darkens it so lamps and blasts show.")]
+        public Color ambient = Color.white;
+        [Range(0f, 1.5f)] public float ambientIntensity = 1f;
+        [Tooltip("Lamp posts' light; 0 = unlit (daylight).")]
+        public float lampLight;
+        [Tooltip("Light around street signs (neon); 0 = none.")]
+        public float signLight;
+        public Color signColor = new Color(1f, 0.3f, 0.8f);
+        [Tooltip("The demolition men wear lamps on their hard hats.")]
+        public bool headlamps;
         [Header("Street")]
         [Tooltip("Cosmetic dressing per kind (lamp posts, fences, bushes, bins, signs). A kind with no sprites is left out.")]
         public DecorEntry[] decor = new DecorEntry[0];

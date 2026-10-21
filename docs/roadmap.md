@@ -301,6 +301,9 @@ Original plan:
 - Save the profile on `OnApplicationPause`: Android can kill a backgrounded app without
   quitting it.
 
+**You** first: the URP editor steps in `rendering.md` (D26), so the profiling below measures
+the renderer that ships, with Settings ▸ EFFECTS on and off.
+
 **Done when:** the AAB installs from the Play **internal testing** track on your phone and
 plays a full level, and the worst collapse holds ~60 fps in a development build (Profiler
 over USB), or the cheapest fix is known (a lower falling cap on phones, composite debris).
@@ -590,6 +593,7 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D23 | Ad network | AdMob directly, with its UMP consent form: one SDK, consent included and Google-certified for the EEA/UK. LevelPlay (the earlier pick) mediates more networks but needs a consent tool on top; mediation can come later through AdMob. |
 | D24 | Public trader details | Before declaring trader status (R4): which address and phone number may be shown on the store page. |
 | D25 | Game name | Search the Play Store and the EU/US trademark registers for the name before the listing goes up; renaming after marketing has started loses the audience built so far. A subtitle in the title helps search (e.g. "Demolition Men: Wreck Co-op"). |
+| D26 | Render pipeline | **Decided (2026-10-21):** URP with the 2D Renderer, before R1 profiling: 2D lights in the dark themes and bloom/vignette, with an EFFECTS setting for slow phones. Code in `Demolition.Lighting`; editor steps in `rendering.md`. |
 
 ---
 

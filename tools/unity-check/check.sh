@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Compile-check the project's runtime assemblies (Demolition, Demolition.Online, Assembly-CSharp) against
+# Compile-check the project's runtime assemblies (Demolition, Demolition.Online, Demolition.Lighting on URP stubs,
+# Assembly-CSharp) against
 # Unity's reference assemblies, then run the EditMode model tests on plain .NET.
 #   tools/unity-check/check.sh            build + tests
 #   tools/unity-check/check.sh build      build only
@@ -33,6 +34,7 @@ if [ "$mode" = all ] || [ "$mode" = build ]; then
   done
   build Demolition || rc=1
   [ $rc -eq 0 ] && { build Demolition.Online || rc=1; }
+  [ $rc -eq 0 ] && { build Demolition.Lighting || rc=1; }
   [ $rc -eq 0 ] && { build Assembly-CSharp || rc=1; }
   [ $rc -eq 0 ] && { build Demolition.EditorDefines || rc=1; }
   [ $rc -eq 0 ] && { build Assembly-CSharp-Editor || rc=1; }

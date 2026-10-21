@@ -39,6 +39,12 @@ MonoBehaviour:
     parallax: 0.55
     bottom: -0.5
   music: {fileID: 8300000, guid: 23530c8a4a914e69859e161cec6d3c70, type: 3}
+  ambient: {r: 0.62, g: 0.6, b: 0.9, a: 1}
+  ambientIntensity: 0.55
+  lampLight: 1
+  signLight: 1.2
+  signColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  headlamps: 1
   decor:
   - kind: 0
     sprites:

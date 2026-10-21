@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- The Demolition assembly as the editor compiles it (UNITY_EDITOR blocks included). -->
   <PropertyGroup><AssemblyName>Demolition</AssemblyName><ExtraDefines>UNITY_EDITOR</ExtraDefines></PropertyGroup>
-  <ItemGroup><Compile Include="$(ProjectAssets)/Scripts/Demolition/**/*.cs" Exclude="$(ProjectAssets)/Scripts/Demolition/Online/Controller/**" />
+  <ItemGroup><Compile Include="$(ProjectAssets)/Scripts/Demolition/**/*.cs" Exclude="$(ProjectAssets)/Scripts/Demolition/Online/Controller/**;$(ProjectAssets)/Scripts/Demolition/Lighting/View/**" />
   <Reference Include="$(UnityCheckHome)/editor/sdk/lib/UnityEditor.dll" Private="false" />
   <Reference Include="$(UnityCheckHome)/out/UnityEngine.UI/UnityEngine.UI.dll" Private="false" />
   <Reference Include="$(UnityCheckHome)/out/Unity.TextMeshPro/Unity.TextMeshPro.dll" Private="false" />

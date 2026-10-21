@@ -10,13 +10,14 @@ namespace Demolition.Meta
 {
     /// <summary>
     /// Settings overlay built in code, usable from the menu and the pause screen: volumes,
-    /// screen shake, touch controls (mode, size, opacity). Every row is a pair of − / +
+    /// screen shake, effects (lights and post-processing), touch controls (mode, size, opacity). Every row is a pair of − / +
     /// buttons (or one toggle), so it works the same with a mouse, a gamepad and a thumb.
     /// CREDITS opens <see cref="CreditsView"/>. Back (Esc / B) closes it; changes save immediately.
     /// </summary>
     public sealed class SettingsView : MonoBehaviour
     {
         private static readonly string[] TouchModes = { "AUTO", "ON", "OFF" };
+        private const float RowStep = 86f;
 
         private GameObject _previousSelection;
         private System.Action _unblock;
@@ -70,12 +71,13 @@ namespace Demolition.Meta
             dim.raycastTarget = true; // block clicks to whatever is behind
             var centre = new Vector2(0.5f, 0.5f);
 
-            UiFactory.TitledPanel(root, new Vector2(0f, -5f), new Vector2(1300f, 950f), "SETTINGS", 80f);
+            UiFactory.TitledPanel(root, new Vector2(0f, -20f), new Vector2(1300f, 1000f), "SETTINGS", 80f);
 
-            float y = 290f;
+            float y = 300f;
             Button first = Stepper(root, ref y, "VOLUME", () => Percent(s.masterVolume), d => s.masterVolume = Step(s.masterVolume, d, 0.1f, 0f, 1f));
             Stepper(root, ref y, "MUSIC", () => Percent(s.musicVolume), d => s.musicVolume = Step(s.musicVolume, d, 0.1f, 0f, 1f));
             Toggle(root, ref y, "SCREEN SHAKE", () => s.screenShake ? "ON" : "OFF", () => s.screenShake = !s.screenShake);
+            Toggle(root, ref y, "EFFECTS", () => s.effects ? "ON" : "OFF", () => s.effects = !s.effects);
             Stepper(root, ref y, "HUD SIZE", () => s.hudScale > 0f ? Percent(s.HudScale(Platform.IsMobile, RunHud.SafeAspect())) : "AUTO",
                 d => s.hudScale = HudStep(s, d));
             Toggle(root, ref y, "TOUCH CONTROLS", () => TouchModes[Mathf.Clamp(s.touchControls, 0, 2)], () => s.touchControls = (s.touchControls + 1) % 3);
@@ -97,7 +99,7 @@ namespace Demolition.Meta
             TextMeshProUGUI shown = UiFactory.Text(root, label + " Value", centre, new Vector2(290f, y), 40f, TextAlignmentOptions.Center, new Vector2(200f, 80f));
             UiFactory.Button(root, "+", centre, new Vector2(450f, y), new Vector2(90f, 80f), () => Changed(() => change(1)));
             _refresh += () => shown.text = value();
-            y -= 92f;
+            y -= RowStep;
             return minus;
         }
 
@@ -107,7 +109,7 @@ namespace Demolition.Meta
             Button button = UiFactory.Button(root, "Toggle", new Vector2(0.5f, 0.5f), new Vector2(290f, y), new Vector2(410f, 80f), () => Changed(toggle));
             TextMeshProUGUI shown = button.GetComponentInChildren<TextMeshProUGUI>();
             _refresh += () => shown.text = value();
-            y -= 92f;
+            y -= RowStep;
         }
 
         private static TextMeshProUGUI Row(RectTransform root, float y, string label)

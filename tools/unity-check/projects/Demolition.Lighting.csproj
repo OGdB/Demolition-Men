@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Lighting/View is its own asmdef (Demolition.Lighting), compiled by Unity only once URP is
+       installed. Here it builds against UrpStubs.cs: a signature check, not a URP build. -->
+  <ItemGroup><Compile Include="$(ProjectAssets)/Scripts/Demolition/Lighting/View/**/*.cs" />
+  <Compile Include="$(MSBuildThisFileDirectory)../UrpStubs.cs" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" /></ItemGroup>
+</Project>
