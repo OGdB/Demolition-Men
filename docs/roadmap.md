@@ -23,6 +23,11 @@ buildings collapse when they lose their path to the ground. **The best players r
 building and hit its weak point**, so the scoring and the level generator should both
 reward that.
 
+**Tone: "you're a badass".** Think Broforce and Duke Nukem: over-the-top, loud and swaggering,
+with a grin. Music is guitar-driven hard rock and metal (not funk, jazz or cute chiptune).
+Hits and blasts are big, and the UI shouts in stencil type. Music, sound, art, store text and
+clips all follow this.
+
 ---
 
 ## 2. Current state (2026-10-20)
