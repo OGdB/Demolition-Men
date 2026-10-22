@@ -14,9 +14,9 @@ using UnityEngine.InputSystem;
 /// new profile's first play). Any keyboard or gamepad joins with A / Space and leaves with
 /// B / Esc; Start / Enter continues once someone has joined. B / Esc from a device that
 /// hasn't joined is "back", which the menu turns into the quit question. On a phone the touchscreen joins as
-/// player 1 straight away and the on-screen START button continues (a gamepad can still
-/// join as player 2). Joined devices go to <see cref="Session"/>, which the run uses to
-/// give each player their own device.
+/// player 1 straight away and the view becomes a play menu: PLAY continues, PLAY ONLINE
+/// goes online (a gamepad can still join as player 2). Joined devices go to
+/// <see cref="Session"/>, which the run uses to give each player their own device.
 /// </summary>
 [RequireComponent(typeof(JoinView))]
 public class JoinScreen : MonoBehaviour

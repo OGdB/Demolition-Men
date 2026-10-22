@@ -7,16 +7,27 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>Join lobby panel under the title: one line per player slot plus the controls,
-/// and a START button for mouse and touch. Fades in. Reads <see cref="Session"/>.</summary>
+/// and START / ONLINE buttons for mouse and touch. With the touchscreen joined (a phone) it
+/// is a play menu instead: big PLAY and PLAY ONLINE buttons, and a player row only while a
+/// gamepad is there to join as P2. Fades in. Reads <see cref="Session"/>.</summary>
 public class JoinView : MonoBehaviour
 {
     private GameObject _root;
     private CanvasGroup _group;
+    private System.Action _continue;
+    private System.Action _goOnline;
+
+    // Keyboards and gamepads (PC, TV).
+    private GameObject _lobby;
     private readonly TextMeshProUGUI[] _slots = new TextMeshProUGUI[Session.MaxPlayers];
     private Button _start;
     private Button _online;
-    private System.Action _continue;
-    private System.Action _goOnline;
+
+    // The touchscreen as P1 (phone, tablet).
+    private GameObject _touch;
+    private TextMeshProUGUI _pads;
+    private Button _playOnline;
+    private TextMeshProUGUI _onlineNote;
 
     public void Show(bool visible, System.Action onContinue, System.Action onOnline = null)
     {
@@ -39,23 +50,50 @@ public class JoinView : MonoBehaviour
         var root = (RectTransform)canvas.transform;
         var centre = new Vector2(0.5f, 0.5f);
 
-        UiFactory.TitledPanel(root, new Vector2(0f, -90f), new Vector2(1200f, 640f), "WHO'S DEMOLISHING?", 64f, 1100f);
+        RectTransform lobby = UiFactory.Stretch(root, "Lobby");
+        _lobby = lobby.gameObject;
+        UiFactory.TitledPanel(lobby, new Vector2(0f, -90f), new Vector2(1200f, 640f), "WHO'S DEMOLISHING?", 64f, 1100f);
 
         for (int i = 0; i < _slots.Length; i++)
-            _slots[i] = UiFactory.Text(root, $"P{i + 1}", centre, new Vector2(0f, 80f - i * 100f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);
+            _slots[i] = UiFactory.Text(lobby, $"P{i + 1}", centre, new Vector2(0f, 80f - i * 100f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);
 
-        TextMeshProUGUI hint = UiFactory.Text(root, "Hint", centre, new Vector2(0f, -170f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 50f));
+        TextMeshProUGUI hint = UiFactory.Text(lobby, "Hint", centre, new Vector2(0f, -170f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 50f));
         hint.text = "JOIN: A / SPACE     LEAVE: B / ESC     PLAY: START / ENTER";
         hint.color = new Color(0.8f, 0.8f, 0.82f);
 
-        _start = UiFactory.Button(root, "START", centre, new Vector2(-200f, -310f), new Vector2(360f, 100f), () => _continue?.Invoke());
-        _online = UiFactory.Button(root, "ONLINE", centre, new Vector2(200f, -310f), new Vector2(360f, 100f), () => _goOnline?.Invoke());
+        _start = UiFactory.Button(lobby, "START", centre, new Vector2(-200f, -310f), new Vector2(360f, 100f), () => _continue?.Invoke());
+        _online = UiFactory.Button(lobby, "ONLINE", centre, new Vector2(200f, -310f), new Vector2(360f, 100f), () => _goOnline?.Invoke());
+
+        RectTransform touch = UiFactory.Stretch(root, "Touch");
+        _touch = touch.gameObject;
+        UiFactory.TitledPanel(touch, new Vector2(0f, -90f), new Vector2(1200f, 560f), "READY TO DEMOLISH?", 64f, 1100f);
+
+        _pads = UiFactory.Text(touch, "Players", centre, new Vector2(0f, 40f), 40f, TextAlignmentOptions.Center, new Vector2(1100f, 60f), outlined: true);
+
+        Button play = UiFactory.Button(touch, "PLAY", centre, new Vector2(-270f, -90f), new Vector2(480f, 150f), () => _continue?.Invoke());
+        UiFactory.Label(play, "PLAY", 60f);
+        _playOnline = UiFactory.Button(touch, "PLAY ONLINE", centre, new Vector2(270f, -90f), new Vector2(480f, 150f), () => _goOnline?.Invoke());
+        UiFactory.Label(_playOnline, "PLAY ONLINE", 56f);
+
+        _onlineNote = UiFactory.Text(touch, "OnlineNote", centre, new Vector2(270f, -225f), 28f, TextAlignmentOptions.Center, new Vector2(600f, 80f));
+        _onlineNote.text = "CO-OP WITH A FRIEND ON\nANOTHER PHONE, PC OR BROWSER";
     }
 
     private void LateUpdate()
     {
         if (_root == null || !_root.activeSelf)
             return;
+        bool touch = Touchscreen.current != null && Session.IsJoined(Touchscreen.current);
+        _lobby.SetActive(!touch);
+        _touch.SetActive(touch);
+        if (touch)
+            ShowTouch();
+        else
+            ShowLobby();
+    }
+
+    private void ShowLobby()
+    {
         for (int i = 0; i < _slots.Length; i++)
         {
             InputDevice device = Session.DeviceFor(i);
@@ -66,6 +104,19 @@ public class JoinView : MonoBehaviour
         }
         _start.interactable = Session.PlayerCount > 0;
         _online.interactable = Session.PlayerCount == 1; // one player per device online
+    }
+
+    // Local co-op on a phone needs a gamepad for P2: without one there's nobody to call.
+    private void ShowTouch()
+    {
+        InputDevice second = Session.DeviceFor(1);
+        _pads.gameObject.SetActive(second != null || Gamepad.all.Count > 0);
+        string gold = ColorUtility.ToHtmlStringRGB(UiFactory.Gold);
+        _pads.text = second != null
+            ? $"<color=#{gold}>P1  TOUCH     P2  {DeviceName(second)}"
+            : $"<color=#{gold}>P1  TOUCH</color>     <alpha=#66>P2  PRESS A TO JOIN";
+        _playOnline.interactable = Session.PlayerCount == 1;
+        _onlineNote.color = new Color(0.8f, 0.8f, 0.82f, _playOnline.interactable ? 1f : 0.4f);
     }
 
     private static string DeviceName(InputDevice device)
