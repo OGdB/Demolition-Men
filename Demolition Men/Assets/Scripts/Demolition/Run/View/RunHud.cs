@@ -227,7 +227,7 @@ namespace Demolition.Run
             panel.HealthFill = fill.rectTransform;
             Inset(panel.HealthFill, 1f, 2f);
 
-            panel.Toast =UiFactory.Text(_root, id + " Toast", Vector2.zero, Vector2.zero, 30f, TextAlignmentOptions.Center,
+            panel.Toast = UiFactory.Text(_root, id + " Toast", Vector2.zero, Vector2.zero, 30f, TextAlignmentOptions.Center,
                 new Vector2(700f, 44f), outlined: true);
             panel.Toast.color = colour;
             panel.Toast.rectTransform.pivot = new Vector2(0.5f, 0f); // centred above the head
