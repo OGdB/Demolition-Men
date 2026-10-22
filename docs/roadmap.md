@@ -54,7 +54,7 @@ devices over the internet yet.
 
 | Area | What's missing |
 |---|---|
-| Android build | No package name, company still `DefaultCompany`, no upload keystore, no app icon. Target API is "highest installed", but Play needs **API 36** for new apps since 31 Aug 2026. App category not confirmed as Game; internet permission not forced on (online needs it). Never built, installed or profiled on a phone. |
+| Android build | No package name, company still `DefaultCompany`, no upload keystore, the app icon (`Assets/Brand/`, from `tools/artpipe/brand.py`) not yet set in Player Settings. Target API is "highest installed", but Play needs **API 36** for new apps since 31 Aug 2026. App category not confirmed as Game; internet permission not forced on (online needs it). Never built, installed or profiled on a phone. |
 | Play account | None yet. A new personal account must run a **closed test with 12+ testers for 14 days** before it may publish to production. |
 | Ads | The plugin's Android dependency resolution in the editor and a first test on a phone (`monetization.md`, What's left). The privacy policy is live and the AdMob consent message is published. |
 | Online | O2 play tests, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other over mobile data), O4 hardening (a backgrounded app, timeouts, version mismatch, relay down). |
