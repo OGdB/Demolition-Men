@@ -465,7 +465,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -687,6 +687,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: Knock out the supports and everything above comes down. Collapses score
     big!
+  touchMessage: 
   duration: 6
 --- !u!1 &362225562
 GameObject:
@@ -733,8 +734,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: DYNAMITE  [X] / (B)  -  throw it at the base of a building
-  duration: 6
   touchMessage: DYNAMITE  tap TNT  -  throw it at the base of a building
+  duration: 6
 --- !u!1001 &410537503
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -897,7 +898,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1120,7 +1121,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1435,7 +1436,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1856,8 +1857,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: Grab the AXE  -  switch weapons with [Q] [E] / (LB) (RB)
-  duration: 6
   touchMessage: Grab the AXE  -  tap SWAP to switch weapons
+  duration: 6
 --- !u!1 &925040993
 GameObject:
   m_ObjectHideFlags: 0
@@ -2312,6 +2313,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: Cross the finish. The faster you finish, the bigger the bonus!
+  touchMessage: 
   duration: 6
 --- !u!1 &1086775352
 GameObject:
@@ -2358,6 +2360,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: KEEP UP! Off-screen for 3 seconds and you're out
+  touchMessage: 
   duration: 6
 --- !u!1 &1095061457
 GameObject:
@@ -2404,8 +2407,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: HIT  hold [Z] / (X)  -  smash your way through!
-  duration: 6
   touchMessage: HIT  hold HIT  -  smash your way through!
+  duration: 6
 --- !u!50 &1123219455 stripped
 Rigidbody2D:
   m_CorrespondingSourceObject: {fileID: 3045864645810956019, guid: eb553efe8038082469faaf7f2f982d19,
@@ -2456,7 +2459,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2713,7 +2716,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2852,7 +2855,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3135,7 +3138,7 @@ TilemapRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -115205,8 +115208,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: MOVE  [A] [D] / stick        JUMP  [SPACE] / (A)  - hold to jump higher
-  duration: 6
   touchMessage: MOVE  drag on the left        JUMP  hold JUMP to jump higher
+  duration: 6
 --- !u!1 &1879748805
 GameObject:
   m_ObjectHideFlags: 0
@@ -115265,7 +115268,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -115365,7 +115368,7 @@ TilemapRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -118761,7 +118764,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -119001,7 +119004,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -119163,7 +119166,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

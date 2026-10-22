@@ -67,7 +67,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -359,6 +359,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxSpeed: 8
+  attackMoveFactor: 0.35
   jumpImpulse: 45
   fallMultiplier: 3.8
   lowJumpMultiplier: 3
@@ -386,7 +387,6 @@ MonoBehaviour:
   attackForce: 500
   damageMultiplier: 1
   weapon: 0
-  weaponHotkeys: 1
   fistDamage:
     wood: 35
     brick: 12
@@ -405,10 +405,15 @@ MonoBehaviour:
     metal: 40
     glass: 25
     support: 50
+  headbuttFactor: 2
+  headbuttMinSpeed: 3
+  headbuttFullSpeed: 12
+  headHeight: 1.2
   fallbackSwingInterval: 0.35
   showSwingFlash: 0
   dynamitePrefab: {fileID: 1000000, guid: 3b58d0f2a7c14e93b6d8f0a2c4e71055, type: 3}
   dynamiteCount: 0
+  maxDynamite: 9
   throwForce: 400
   hitSound: {fileID: 8300000, guid: ca86397c9ce57934ca90429569450b35, type: 3}
 --- !u!114 &11400006
@@ -425,4 +430,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   respawnInvulnerability: 1.5
+  hitInvulnerability: 0.75
+  maxDamagePerHit: 20
   hurtSound: {fileID: 8300000, guid: e01260f95aad3d543b2fa0f62b53896f, type: 3}
