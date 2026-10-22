@@ -59,6 +59,8 @@ namespace Demolition.Levels
     {
         /// <summary>Ground height of a column with no ground (a pit into the void).</summary>
         public const int NoGround = int.MinValue;
+        /// <summary>Columns the crew's caravan stands on past the finish (its sprite is scaled to them).</summary>
+        public const int CaravanWidth = 6;
 
         public LevelLayout(LevelSpec spec) => Spec = spec;
 
@@ -71,6 +73,9 @@ namespace Demolition.Levels
         public List<DecorPlacement> Decor { get; } = new List<DecorPlacement>();
         public int SpawnX { get; set; }
         public int FinishX { get; set; }
+        /// <summary>Left column of the crew's caravan, parked just past the finish line as at
+        /// the end of the Tutorial; street dressing keeps off its <see cref="CaravanWidth"/> columns.</summary>
+        public int CaravanX { get; set; }
         /// <summary>How many times the grammar re-rolled to pass the traversal check.</summary>
         public int Attempts { get; set; } = 1;
 

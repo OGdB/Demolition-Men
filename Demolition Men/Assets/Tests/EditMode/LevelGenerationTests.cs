@@ -210,6 +210,20 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Caravan_ParksOnFlatStreetPastTheFinish_WithNothingInFront([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            LevelLayout layout = LevelGrammar.Generate(spec, ArchetypesFor(path));
+            int x0 = layout.CaravanX, x1 = x0 + LevelLayout.CaravanWidth;
+            Assert.Greater(x0, layout.FinishX, $"{spec.id}: the caravan stands on the finish line");
+            Assert.LessOrEqual(x1, layout.Width, $"{spec.id}: the caravan sticks out of the level");
+            for (int x = x0; x < x1; x++)
+                Assert.AreEqual(layout.GroundAt(layout.FinishX), layout.GroundAt(x), $"{spec.id}: column {x} under the caravan isn't street");
+            Assert.IsFalse(layout.Decor.Any(d => d.X >= x0 && d.X < x1), $"{spec.id}: dressing in front of the caravan");
+            Assert.IsFalse(layout.Buildings.Any(b => b.X < x1 && b.X + b.Spec.Width > x0), $"{spec.id}: a building or prop on the caravan");
+        }
+
+        [Test]
         public void Props_FollowTheSpec_AndContainersComeOnlyWhenAsked()
         {
             var spec = new LevelSpec { id = "test", seed = 3, pacing = new[] { "start", "breather", "breather", "breather", "finish" } };

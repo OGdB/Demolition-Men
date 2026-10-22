@@ -5,7 +5,8 @@
 
 Reads the theme's real assets (ground tiles, building tileset, window backs, backdrop
 layers, sky) through their .meta GUIDs, sliced sheets included, and draws every building
-block where BuildingBuilder puts it. Pickups, spawn, finish and segment names are marked.
+block where BuildingBuilder puts it, and the crew's caravan past the finish. Pickups, spawn,
+finish and segment names are marked.
 The level is cut into strips stacked top to bottom so a long level fits one image.
 Parallax and camera framing are not simulated: backdrops sit where they spawn.
 """
@@ -25,6 +26,7 @@ OUT = os.path.join(ROOT, "content-work", "levels")
 PPU = 16           # preview pixels per world unit (the art is 32)
 STRIP = 70         # world units per strip
 GROUND_DEPTH = 8   # LevelBuilder.GroundDepth
+CARAVAN_WIDTH = 6  # LevelLayout.CaravanWidth
 KINDS = ["Brick", "BrickTall", "Concrete", "Wood", "Glass", "Door", "Plank", "MetalTruss", "Beam", "BrickCap",
          "Support", "Chimney", "Crate", "Car", "Barrel", "Container"]
 DECOR = ["Lamp", "Fence", "Bush", "Bin", "Sign"]
@@ -86,6 +88,13 @@ def pivot(alignment, custom):
     if alignment == 9 and custom:
         return float(custom.group(1)), float(custom.group(2))
     return table.get(alignment, (0.5, 0.5))
+
+
+def caravan_sprite():
+    """GameConfig's caravan, parked past every level's finish; None if it has none."""
+    m = re.search(r"\n  caravan: (\{[^}]*\})", open(os.path.join(ASSETS, "Resources", "GameConfig.asset"), encoding="utf-8").read())
+    refs = ref(m.group(1)) if m else []
+    return sprite(*refs[0]) if refs else None
 
 
 def tile_sprite(file_id, guid):
@@ -223,6 +232,11 @@ def render(level):
         if sprites:
             spr = sprites[variant % len(sprites)]
             c.draw(spr, x + 0.5, y + spr[2][1] * spr[0].height / spr[1])  # pivot up from the ground
+    caravan = caravan_sprite()
+    if caravan and "caravanX" in level:
+        x = level["caravanX"]
+        h = CARAVAN_WIDTH * caravan[0].height / caravan[0].width  # scaled to its columns (LevelBuilder.SpawnCaravan)
+        c.draw(caravan, x + caravan[2][0] * CARAVAN_WIDTH, ground[x] + caravan[2][1] * h, size=(CARAVAN_WIDTH, h))
 
     # Buildings: the back wall (BuildingInterior), then each block's visual centred on its
     # rect (BuildingBuilder + BuildingTileset.Dress).

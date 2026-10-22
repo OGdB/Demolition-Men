@@ -27,6 +27,7 @@ MonoBehaviour:
   pickupPrefab: {fileID: 5921544143652039461, guid: 3de564e561acff847a5392084ea8bdf3,
     type: 3}
   dynamitePrefab: {fileID: 1000000, guid: 3b58d0f2a7c14e93b6d8f0a2c4e71055, type: 3}
+  caravan: {fileID: -3841519392376858156, guid: 5d46734245705f5438a65ad6968dc36d, type: 3}
   relayUrl: wss://relay.oeds.space/ws
   netPlayerPrefabs:
   - {fileID: 3340135010435384464, guid: eacffbae758f43547a20dcba438652c1, type: 3}

@@ -30,6 +30,7 @@ namespace Demolition.Levels
         private LevelLayout _layout;
         private LevelTheme _theme;
         private Pickup _pickupPrefab;
+        private Sprite _caravan;
         private bool _coop;
         private Transform[] _segments;
         private bool[] _despawned;
@@ -47,11 +48,12 @@ namespace Demolition.Levels
             return low == LevelLayout.NoGround ? float.PositiveInfinity : transform.position.y + low;
         }
 
-        public void Build(LevelLayout layout, LevelTheme theme, Pickup pickupPrefab, bool coop)
+        public void Build(LevelLayout layout, LevelTheme theme, Pickup pickupPrefab, Sprite caravan, bool coop)
         {
             _layout = layout;
             _theme = theme;
             _pickupPrefab = pickupPrefab;
+            _caravan = caravan;
             _coop = coop;
             _segments = new Transform[layout.Segments.Count];
             _despawned = new bool[layout.Segments.Count];
@@ -267,7 +269,27 @@ namespace Demolition.Levels
                 finish.transform.SetParent(root, false);
                 finish.transform.localPosition = new Vector3(_layout.FinishX, _layout.GroundAt(_layout.FinishX), 0f);
             }
+            if (_caravan != null && _layout.CaravanX >= segment.X0 && _layout.CaravanX < segment.X1)
+                SpawnCaravan(root);
             return root;
+        }
+
+        // The crew's caravan past the finish line, as at the end of the Tutorial. Cosmetic like
+        // the decor: scaled to the columns the grammar kept clear for it, wheels on the street.
+        private void SpawnCaravan(Transform root)
+        {
+            var go = new GameObject("Caravan", typeof(SpriteRenderer));
+            go.transform.SetParent(root, false);
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.sprite = _caravan;
+            sr.sortingOrder = DecorOrder;
+            Bounds bounds = _caravan.bounds;
+            float scale = LevelLayout.CaravanWidth / bounds.size.x;
+            go.transform.localScale = new Vector3(scale, scale, 1f);
+            go.transform.localPosition = new Vector3(
+                _layout.CaravanX + LevelLayout.CaravanWidth * 0.5f - bounds.center.x * scale,
+                _layout.GroundAt(_layout.CaravanX) - bounds.min.y * scale,
+                DecorDepth);
         }
     }
 }

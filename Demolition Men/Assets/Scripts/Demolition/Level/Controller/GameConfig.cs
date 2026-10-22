@@ -36,6 +36,8 @@ namespace Demolition.Levels
         public Pickup pickupPrefab;
         [Tooltip("The stick of dynamite a gas tank goes off as (its blast and sound; nobody throws it).")]
         public GameObject dynamitePrefab;
+        [Tooltip("The crew's caravan, parked just past every generated level's finish line (the Tutorial places its own). None = no caravan.")]
+        public Sprite caravan;
 
         [Header("Online")]
         [Tooltip("The co-op relay (server/relay). ws://localhost:5080/ws for one run with dotnet run.")]

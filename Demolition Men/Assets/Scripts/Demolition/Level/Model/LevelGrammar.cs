@@ -152,6 +152,7 @@ namespace Demolition.Levels
                     case SegmentKind.Finish:
                         Flat(layout, 6, height);
                         layout.FinishX = layout.Width;
+                        layout.CaravanX = layout.FinishX + 1;
                         Flat(layout, 16, height);
                         break;
                 }
@@ -316,6 +317,7 @@ namespace Demolition.Levels
             }
             Mark(null, taken, layout.SpawnX - 3, 10);   // room to start
             Mark(null, taken, layout.FinishX - 2, 5);   // the finish line stays clear
+            Mark(solid, taken, layout.CaravanX, LevelLayout.CaravanWidth);   // the caravan's spot
 
             // Each free stretch of flat street: props with a free column either side.
             List<string> kinds = PropKinds(layout.Spec);

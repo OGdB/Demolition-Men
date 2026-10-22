@@ -47,7 +47,7 @@ namespace Demolition.Levels
             UiFactory.EnsureEventSystem();
 
             var level = new GameObject("Level").AddComponent<LevelBuilder>();
-            level.Build(layout, theme, config.pickupPrefab, players > 1 || NetRole.IsOnline);
+            level.Build(layout, theme, config.pickupPrefab, config.caravan, players > 1 || NetRole.IsOnline);
             if (scroll != null)
                 scroll.LowestGround = level.LowestGroundBetween; // show trench floors before the drop
             NetRole.LevelBuilt?.Invoke(layout);

@@ -43,7 +43,7 @@ public static class LevelDump
         LevelSpec spec = layout.Spec;
         s.Append($"{{\"id\":\"{spec.id}\",\"name\":\"{spec.name}\",\"theme\":\"{spec.theme}\",\"seed\":{spec.seed},");
         s.Append($"\"scrollSpeed\":{F(spec.scrollSpeed)},\"par\":{F(layout.Par)},\"passable\":{(passable ? "true" : "false")},");
-        s.Append($"\"spawnX\":{layout.SpawnX},\"finishX\":{layout.FinishX},\"cells\":{layout.TotalCells},\"ground\":[");
+        s.Append($"\"spawnX\":{layout.SpawnX},\"finishX\":{layout.FinishX},\"caravanX\":{layout.CaravanX},\"cells\":{layout.TotalCells},\"ground\":[");
         for (int x = 0; x < layout.Width; x++)
             s.Append(x > 0 ? "," : "").Append(layout.Ground[x] == LevelLayout.NoGround ? "null" : layout.Ground[x].ToString());
         s.Append("],\"segments\":[");
