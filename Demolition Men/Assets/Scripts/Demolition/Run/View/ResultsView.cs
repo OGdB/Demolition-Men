@@ -114,7 +114,7 @@ namespace Demolition.Run
 
             var stats = new StringBuilder();
             RunScore score = _run.Score;
-            stats.AppendLine($"TIME  {RunHud.FormatTime(_run.State.Elapsed)}   <alpha=#99>PAR {RunHud.FormatTime(_run.ParTime)}</alpha>");
+            stats.AppendLine($"TIME  {RunHud.FormatTime(_run.State.Elapsed)}   <alpha=#99>PAR {RunHud.FormatTime(_run.ParTime)}<alpha=#FF>");
             for (int i = 0; i < score.PlayerCount; i++)
                 stats.AppendLine($"P{i + 1}  {score.Points(i):N0}");
             if (score.Unattributed > 0)
