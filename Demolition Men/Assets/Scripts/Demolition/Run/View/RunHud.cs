@@ -56,6 +56,7 @@ namespace Demolition.Run
         private const float HealthShowSeconds = 1.5f; // fully visible this long after the health changes
         private const float HealthFadeSeconds = 0.5f;
         private static readonly Color[] PlayerColors = { new Color(1f, 0.85f, 0.3f), new Color(1f, 0.45f, 0.35f) };
+        private static readonly Color OverPar = new Color(1f, 0.4f, 0.3f);
 
         [Tooltip("Shown at the left edge while a player is out of bounds.")]
         [SerializeField] private Sprite warningSign;
@@ -68,6 +69,7 @@ namespace Demolition.Run
         private Vector2Int _appliedFor;
         private RectTransform _root;
         private TextMeshProUGUI _timer;
+        private TextMeshProUGUI _par;
         private RectTransform _meterFill;
         private TextMeshProUGUI _meterValue;
         private readonly Image[] _meterStars = new Image[RunScore.MaxStars];
@@ -95,8 +97,8 @@ namespace Demolition.Run
 
             var top = new Vector2(0.5f, 1f);
             _timer = UiFactory.Text(_root, "Timer", top, new Vector2(0f, -10f), 56f, TextAlignmentOptions.Center);
-            TextMeshProUGUI par = UiFactory.Text(_root, "Par", top, new Vector2(260f, -26f), 24f, TextAlignmentOptions.Center, new Vector2(220f, 34f));
-            par.text = "PAR " + FormatTime(_run.ParTime);
+            _par = UiFactory.Text(_root, "Par", top, new Vector2(260f, -26f), 24f, TextAlignmentOptions.Center, new Vector2(220f, 34f));
+            _par.text = "PAR " + FormatTime(_run.ParTime);
             BuildMeter(top);
 
             _center = UiFactory.Text(_root, "Center", new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), 140f,
@@ -259,11 +261,18 @@ namespace Demolition.Run
             RunState state = _run.State;
 
             _timer.text = FormatTime(state.Elapsed);
+            bool withinPar = RunScore.WithinPar(state.Elapsed, _run.ParTime);
+            _par.color = withinPar ? Color.white : OverPar; // past par the stars can't be rainbow any more
             float destroyed = _run.DestroyedFraction;
             _meterFill.anchorMax = new Vector2(Mathf.Clamp01(destroyed), 1f);
             _meterValue.text = $"{Mathf.FloorToInt(destroyed * 100f)}%";
             for (int star = 0; star < _meterStars.Length; star++)
-                _meterStars[star].color = destroyed >= RunScore.StarThreshold(star) ? UiFactory.StarLit : UiFactory.StarDark;
+            {
+                bool lit = destroyed >= RunScore.StarThreshold(star);
+                RainbowTint.Set(_meterStars[star], lit && withinPar, star * RainbowTint.StarPhase);
+                if (!(lit && withinPar))
+                    _meterStars[star].color = lit ? UiFactory.StarLit : UiFactory.StarDark;
+            }
             _center.text = CenterText(state);
             _prompt.gameObject.SetActive(Time.time < _promptUntil && !state.IsOver);
             _prompt.rectTransform.sizeDelta = new Vector2(Mathf.Min(1800f, _root.rect.width - 80f), 100f);

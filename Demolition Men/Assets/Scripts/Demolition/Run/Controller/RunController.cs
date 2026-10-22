@@ -291,7 +291,8 @@ namespace Demolition.Run
             bool finished = State.Phase == RunPhase.Finished;
             BankedFraction = DestroyedFraction;
             BankedScore = FinalScore;
-            Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(BankedFraction), BankedScore, State.Elapsed);
+            Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(BankedFraction), BankedScore, State.Elapsed,
+                RunScore.WithinPar(State.Elapsed, parTime));
             Profile.Save();
             Ended?.Invoke();
         }

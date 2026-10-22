@@ -150,10 +150,12 @@ namespace Demolition.Meta
                 LevelRecord record = save.Level(level.Spec.id);
                 bool finished = record != null && record.finished;
                 int earned = finished ? RunScore.Stars((Grade)record.bestGrade) : 0;
+                int rainbow = finished ? RunScore.Stars((Grade)record.bestParGrade) : 0;
                 for (int i = 0; i < stars.Length; i++)
                 {
                     stars[i].enabled = unlocked;
                     stars[i].color = i < earned ? UiFactory.StarLit : UiFactory.StarDark;
+                    RainbowTint.Set(stars[i], i < rainbow, i * RainbowTint.StarPhase);
                 }
                 string line = !unlocked ? "LOCKED" : finished ? $"BEST {record.bestScore:N0}" : "NEW";
                 UiFactory.Label(button, $"{level.Index + 1}. {level.Spec.name}\n<size=60%>{line}</size>");

@@ -43,6 +43,8 @@ namespace Demolition.Meta
         public bool finished;
         /// <summary>A <see cref="Grade"/>, -1 before the first finish.</summary>
         public int bestGrade = -1;
+        /// <summary>The best <see cref="Grade"/> finished within par (its stars show rainbow), -1 for none.</summary>
+        public int bestParGrade = -1;
         public int bestScore;
         public float bestTime;
     }
@@ -61,6 +63,8 @@ namespace Demolition.Meta
         public bool FirstClear;
         public bool NewBestScore;
         public bool NewBestGrade;
+        /// <summary>More rainbow stars (a better grade within par) than before.</summary>
+        public bool NewRainbow;
     }
 
     /// <summary>
@@ -124,7 +128,7 @@ namespace Demolition.Meta
         }
 
         /// <summary>Bank a run: cash from its score, best results, run counters.</summary>
-        public RunReward RecordRun(string levelId, bool finished, Grade grade, int score, float time)
+        public RunReward RecordRun(string levelId, bool finished, Grade grade, int score, float time, bool withinPar = false)
         {
             runsPlayed++;
             runsSinceAd++;
@@ -156,6 +160,11 @@ namespace Demolition.Meta
             {
                 reward.NewBestGrade = record.bestGrade >= 0;
                 record.bestGrade = (int)grade;
+            }
+            if (withinPar && (int)grade > record.bestParGrade)
+            {
+                reward.NewRainbow = grade > Grade.C; // a C has no stars to colour
+                record.bestParGrade = (int)grade;
             }
             return reward;
         }

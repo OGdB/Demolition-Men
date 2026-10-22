@@ -47,6 +47,8 @@ namespace Demolition.Run
         private TextMeshProUGUI _cash;
         private TextMeshProUGUI _bank;
         private TextMeshProUGUI _badge;
+        private TextMeshProUGUI _parStamp;
+        private bool _rainbow;
 
         private void Awake()
         {
@@ -108,6 +110,12 @@ namespace Demolition.Run
                 bool middle = i == 1;
                 _stars[i] = UiFactory.Star(_content, "Star " + i, centre, new Vector2((i - 1) * 230f, middle ? 258f : 240f), middle ? 190f : 160f, false);
             }
+            // Says why the stars came out rainbow; mirrors the record badge on the other side.
+            _parStamp = UiFactory.Text(_content, "ParStamp", centre, new Vector2(-500f, 270f), 44f, TextAlignmentOptions.Center, new Vector2(380f, 60f), outlined: true);
+            _parStamp.text = "WITHIN PAR!";
+            _parStamp.rectTransform.localEulerAngles = new Vector3(0f, 0f, 10f);
+            RainbowTint.Set(_parStamp, true);
+            _parStamp.gameObject.SetActive(false);
 
             _meterText = UiFactory.Text(_content, "Demolition", centre, new Vector2(0f, 122f), 40f, TextAlignmentOptions.Center, new Vector2(800f, 50f), outlined: true);
             BuildMeter(_content, new Vector2(0f, 75f));
@@ -133,7 +141,7 @@ namespace Demolition.Run
 
             RunReward reward = _run.Reward;
             _badge = UiFactory.Text(_content, "Badge", centre, new Vector2(500f, 270f), 44f, TextAlignmentOptions.Center, new Vector2(380f, 60f), outlined: true);
-            _badge.text = reward.FirstClear ? "FIRST CLEAR!" : reward.NewBestGrade ? "MORE STARS!" : reward.NewBestScore ? "NEW BEST!" : string.Empty;
+            _badge.text = reward.FirstClear ? "FIRST CLEAR!" : reward.NewBestGrade ? "MORE STARS!" : reward.NewRainbow ? "RAINBOW!" : reward.NewBestScore ? "NEW BEST!" : string.Empty;
             _badge.color = new Color(0.5f, 1f, 0.5f);
             _badge.rectTransform.localEulerAngles = new Vector3(0f, 0f, -10f);
 
@@ -211,6 +219,7 @@ namespace Demolition.Run
         {
             float destroyed = _run.BankedFraction;
             int stars = finished ? RunScore.Stars(RunScore.GradeFor(destroyed)) : 0;
+            _rainbow = stars > 0 && RunScore.WithinPar(_run.State.Elapsed, _run.ParTime);
 
             yield return Tween(0.25f, t =>
             {
@@ -251,6 +260,7 @@ namespace Demolition.Run
             });
             while (lit < stars)
                 StartCoroutine(PopStar(lit++));
+            _parStamp.gameObject.SetActive(_rainbow);
 
             int total = _run.BankedScore;
             int cash = _run.Reward.Cash;
@@ -286,6 +296,7 @@ namespace Demolition.Run
         {
             Image star = _stars[index];
             star.color = UiFactory.StarLit;
+            RainbowTint.Set(star, _rainbow, index * RainbowTint.StarPhase);
             if (!_skip)
                 UiAudio.Star(index);
             yield return Tween(0.3f, t =>

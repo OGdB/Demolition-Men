@@ -38,6 +38,24 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void RainbowStars_KeepTheBestGradeWithinPar()
+        {
+            var save = new SaveData();
+            save.RecordRun("town-01", true, Grade.S, 30000, 200f, withinPar: false);
+            LevelRecord record = save.Level("town-01");
+            Assert.AreEqual(-1, record.bestParGrade, "three stars, but slow");
+
+            RunReward fast = save.RecordRun("town-01", true, Grade.A, 20000, 80f, withinPar: true);
+            Assert.IsTrue(fast.NewRainbow);
+            Assert.AreEqual((int)Grade.S, record.bestGrade);
+            Assert.AreEqual((int)Grade.A, record.bestParGrade);
+
+            Assert.IsFalse(save.RecordRun("town-01", true, Grade.B, 10000, 70f, withinPar: true).NewRainbow);
+            Assert.IsFalse(save.RecordRun("town-02", false, Grade.S, 10000, 10f, withinPar: true).NewRainbow, "a failed run colours nothing");
+            Assert.AreEqual((int)Grade.A, record.bestParGrade);
+        }
+
+        [Test]
         public void FailedRun_StillPays_ButUnlocksNothing()
         {
             var save = new SaveData();
