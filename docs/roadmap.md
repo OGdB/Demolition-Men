@@ -191,7 +191,7 @@ Design in §5.2. Code in `Scripts/Demolition/Level/` (see the Levels section of 
 - ✅ `LevelBuilder`: ground tilemap up front, buildings/pickups/finish streamed in per
   segment ahead of the camera and despawned behind it. The **Run scene** holds only
   `LevelBootstrap`, which assembles the level from `Resources/GameConfig`. Replaces
-  `TerrainGenerator` (Level 1 stays in the project, out of the build).
+  `TerrainGenerator` (it went with Level 1 and its level parts on 2026-10-22).
 - ✅ **Bot playtester:** `BotPilot` drives a player through `ScriptedInputSource`;
   `BotRunTests` (PlayMode) plays every campaign level to the finish. Par is now derived
   from the course (time the auto-scroll takes from spawn to finish), not calibrated by hand.
@@ -262,7 +262,8 @@ finish), settings (volume, music, screen shake, effects, quality tier, HUD size,
 code-built pause menu, results with cash and best-result badges, screen shake by collapse
 size, hit-stop, dust, pooled particles. **Decision change:** the level select is a menu
 overlay (`LevelSelectView`) instead of walking the hub — it has to work with a thumb on a
-phone and from a sofa with a gamepad; the hub scene stays for a later "home base".
+phone and from a sofa with a gamepad. The unused hub scene was removed on 2026-10-22; git
+history has it if a "home base" comes back.
 Still open from the list below: crack-overlay damage states, material break sounds and a
 music track per theme, composite debris, builds and store assets (all in R1–R2). Rebinding
 and resolution settings are PC-only and wait for a PC release.
@@ -296,9 +297,10 @@ Original plan:
   build, target API 36, minimum API 25 (as now), application category **Game** (Android 16
   leaves games out of its large-screen orientation override, so landscape stays locked on
   tablets), Internet Access *Require*, IL2CPP ARM64 (already set).
-- Size: R8 minify for release, managed stripping *Medium*, unused packages out of the build
-  (ProBuilder, AI Navigation, Sprite Shape, PSD Importer, once checked that nothing uses
-  them). Aim for a download under ~50 MB.
+- Size: R8 minify for release, managed stripping *Medium*. Aim for a download under ~50 MB.
+  ✅ Unused packages removed on 2026-10-22 (nothing used them): ProBuilder, AI Navigation,
+  Timeline, Multiplayer Center, Version Control, and the 2D feature set's Sprite Shape, PSD
+  Importer, Aseprite Importer, 2D Animation, Tilemap Extras and Pixel Perfect.
 - An adaptive app icon from the art pipeline; the splash screen without the Unity logo
   (allowed on Unity Personal since Unity 6).
 - A build entry point (Tools ▸ Demolition ▸ Build ▸ Android AAB, plus a batch method) that
@@ -414,7 +416,7 @@ Assets/Scripts/Demolition/Generation/
   Model/      Pcg32, BuildingArchetype (JSON), TileKind, BuildingSpec, BuildingGrammar,
               BuildingValidator; later LevelSpec, LevelGrammar, TraversalValidator (M3)
   View/       BuildingTileset (ScriptableObject: TileKind → sprites)
-  Controller/ BuildingBuilder (spec → blocks), GeneratedBuilding (slot); later LevelBuilder
+  Controller/ BuildingBuilder (spec → blocks); later LevelBuilder
 Assets/Editor/Generation/           Building Lab window + -executeMethod entry points
 Assets/Content/<theme>/             Archetypes/*.json, <Theme>Tileset.asset; later levels/*.json
 tools/artpipe/                      Python art tooling (see §6)

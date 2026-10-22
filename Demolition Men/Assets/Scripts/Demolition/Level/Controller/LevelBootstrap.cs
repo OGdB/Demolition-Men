@@ -13,7 +13,7 @@ namespace Demolition.Levels
     /// </summary>
     public sealed class LevelBootstrap : MonoBehaviour
     {
-        /// <summary>Backdrop height above the street, as authored for Level 1.</summary>
+        /// <summary>Backdrop height above the street, as authored for the hand-made levels.</summary>
         private const float BackdropHeight = 12.6f;
         /// <summary>Ground visible below the players' feet at the start.</summary>
         private const float GroundShown = 0.5f;

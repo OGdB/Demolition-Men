@@ -47,25 +47,25 @@ The generated csproj files list sources explicitly (`<Compile Include>`), so a n
 
 Only the pure models have fast automated tests; everything physics/visual is verified manually in `Assets/Scenes/DemolitionTestBranch.unity` (a `DemoBootstrap` test bench that builds ground, a building, player, camera and HUD entirely from code) or in a generated level (Tools ▸ Demolition ▸ Level Lab ▸ Play / Play with bot).
 
-Build scenes (enabled): MainMenu → Tutorial → Run. `Level 1` (hand-made parts) and `HubWorld` stay in the project but out of the build.
+Build scenes (enabled): MainMenu → Tutorial → Run. The only other scene is the `DemolitionTestBranch` test bench.
 
 ## Assemblies and the dependency boundary
 
 - `Assets/Scripts/Demolition/Demolition.asmdef` → assembly **`Demolition`**: the destruction system, players, the run loop, its HUD. References `Unity.InputSystem`, `Unity.TextMeshPro`, `UnityEngine.UI`. Any other package used from this folder must be added to the asmdef's `references` or it won't compile (even though Assembly-CSharp sees it).
-- Everything else in `Assets/Scripts/` (Menu, Generations) → **Assembly-CSharp**, which references `Demolition` — never the reverse. Menu choices reach the run through `Demolition.Run.Session` (joined devices) and `Demolition.Levels.LevelSelection` (which level).
+- Everything else in `Assets/Scripts/` (Menu) → **Assembly-CSharp**, which references `Demolition` — never the reverse. Menu choices reach the run through `Demolition.Run.Session` (joined devices) and `Demolition.Levels.LevelSelection` (which level).
 - Feature folders inside `Demolition`: `Building`, `Generation` (buildings), `Level` (levels, M3), `Run`, `Player`, `Input`, `Pickup`, `Meta` (profile, shop, settings, level select), `Ads`, `Common`, `Sandbox`.
 - `Lighting/View/` is its own asmdef, **`Demolition.Lighting`** (references Demolition and URP; `defineConstraints` + `versionDefines` make Unity compile it only once `com.unity.render-pipelines.universal` is installed). `SceneLighting` adds itself to every scene: a global `Light2D` ambient (the run's `LevelTheme` light fields, else white), a global `Volume` with a code-built profile (bloom, vignette, colour adjustments), point lights on lamp/sign decor (`LevelBuilder.DecorSpawned`) and players' headlamps, a flash per `Dynamite.Exploded`; `GameSettings.effects` (Settings ▸ EFFECTS) turns all but a white ambient off. `RenderScaleView` hands `Meta.Quality.RenderScale` to the URP asset's render scale (in memory; restored when play mode ends). unity-check compiles it against `tools/unity-check/UrpStubs.cs` (URP 17.4 signatures from Unity-Technologies/Graphics `6000.4/staging`; URP isn't on the registry since Unity 6): add any new URP member you use there, copied from that source.
 
-Players are located at runtime **by GameObject name** `"Player_1"` / `"Player_2"` (`RunController`, `TerrainGenerator`) — scene references to players are not serialized, so keep those names.
+Players are located at runtime **by GameObject name** `"Player_1"` / `"Player_2"` (`RunController`, `SceneLighting`, `RunNet`) — scene references to players are not serialized, so keep those names.
 
 ## Run loop
 
 `Scripts/Demolition/Run/`, one `Prefabs/Run/Run.prefab` per level (placed in Tutorial; instantiated by `LevelBootstrap` in the Run scene). The prefab carries `RunController`, `RunHud`, `ResultsView`, `PauseController` + `PauseView`, `TouchControls` and `RunJuice`:
 - **Model:** `RunState` (countdown → playing → finished/failed; out-of-bounds grace, co-op free rejoin then Resurrect, finish + last call), `RunScore` (material points, collapse chain multiplier, speed bonus vs par, grade by level-wide destruction; players see the grade as 0–3 stars at 40/60/80%, finished runs only, saved as `LevelRecord.bestGrade`), `Session`.
-- **Controller:** `RunController` finds the players, feeds the models (viewport out-of-bounds, finish crossing, health depletion, `DestructionEvents`) and applies their decisions (`PlayerHealth.Kill/Revive`, controls on/off, camera targets). `FinishLine` marks the finish (in `levelPart_End`; placed by hand in Tutorial). `TutorialPrompt` markers (on the ground) each start a stretch of the tutorial: its sign (`TutorialSigns`, drawn by `RunHud` at world positions; `TutorialTrail` model) travels over the front player through that stretch and then stays on a striped post at the next marker. The message's first line is the heading; `{MOVE} {JUMP} {HIT} {TNT} {SWAP}` become the buttons of the devices the players have used (`InputGlyphs`). `nextScene` on the run enables the results screen's NEXT.
+- **Controller:** `RunController` finds the players, feeds the models (viewport out-of-bounds, finish crossing, health depletion, `DestructionEvents`) and applies their decisions (`PlayerHealth.Kill/Revive`, controls on/off, camera targets). `FinishLine` marks the finish (placed by `LevelBuilder` in generated levels, by hand in Tutorial). `TutorialPrompt` markers (on the ground) each start a stretch of the tutorial: its sign (`TutorialSigns`, drawn by `RunHud` at world positions; `TutorialTrail` model) travels over the front player through that stretch and then stays on a striped post at the next marker. The message's first line is the heading; `{MOVE} {JUMP} {HIT} {TNT} {SWAP}` become the buttons of the devices the players have used (`InputGlyphs`). `nextScene` on the run enables the results screen's NEXT.
 - **View:** `ScrollCamera` on `Main Camera 1` (push/auto-scroll, ground-anchored zoom framing that lowers to show floors below the street in view or just ahead via `LowestGround`, the players' own zoom on top (`Zoom`: mouse wheel / right stick / pinch through `PlayerInputFrame.Zoom`, 0.8–1.5×, kept across levels, never cropping a target), letterbox clear, applies `CameraShake`), `RunHud` (its demolition meter lights a star at each threshold) and `ResultsView` (uGUI built in code through `UiFactory`; a skippable reveal: title slam, meter fill lighting up to 3 stars with chimes, count-ups, record stamp; NEXT / RETRY / SHOP / MENU, the shop opening over the results; the rewarded "2x cash"), `PauseView`, `RunJuice` (shake by collapse size, hit-stop, dust), `FinishLineView`.
 - **End of run:** `RunController.Bank()` records the run in the profile (`SaveData.RecordRun`: cash, best grade/score/time, first clear) once the phase is Finished/Failed. `LevelId` is the spec id for generated levels, else the scene name.
-- Pickups: `Scripts/Demolition/Pickup/` (`Pickup`, `PickupSlot` in each level part, `PickupView`), prefab `Prefabs/Pickups/Pickup.prefab`. Resurrect calls `RunController.Current.TryResurrect`.
+- Pickups: `Scripts/Demolition/Pickup/` (`Pickup`, placed by `LevelBuilder` from the layout or by hand in Tutorial; `PickupView`), prefab `Prefabs/Pickups/Pickup.prefab`. Resurrect calls `RunController.Current.TryResurrect`.
 - Score attribution: `TakeDamage(amount, instigator)` carries the player index (`PlayerInputReader.PlayerIndex`, assigned by the run). Collapsed blocks are credited to whoever destroyed the support; blocks credited once never score again. `PlayerHealth.ManagedByRun` makes depletion raise `Depleted` instead of the test-bench respawn.
 
 ## Levels (M3)
@@ -100,7 +100,7 @@ Invariants to preserve:
 
 ### Building authoring contract (hand-made prefabs)
 
-Building prefab roots (`Prefabs/Buildings/`, `TestBuildings/`, `Sky's Prefabs/`, `Oeds/Buildings/`, and the two `LevelPart_Sewer` parts) carry a `DestructibleBuilding` with `autoScanChildren` on. Wall segments in `Prefabs/Building Materials/` deliberately do **not** — each `BuildingBlock` belongs to its nearest ancestor `DestructibleBuilding`.
+Building prefab roots (`Prefabs/Buildings/`, `Sky's Prefabs/`) carry a `DestructibleBuilding` with `autoScanChildren` on. Wall segments in `Prefabs/Building Materials/` deliberately do **not** — each `BuildingBlock` belongs to its nearest ancestor `DestructibleBuilding`.
 
 At `Start`, if nothing registered blocks in code, the building auto-scans children:
 - Each block's world AABB (from collider geometry, not stale `Collider2D.bounds`) is rasterized onto a `cellSize` (1 unit) grid relative to a shared origin; multi-cell footprints (beams, platforms) occupy several cells and detach as one rigid unit.
@@ -112,7 +112,7 @@ At `Start`, if nothing registered blocks in code, the building auto-scans childr
 
 Code-driven alternative (`DemoBootstrap`): call `BuildingBlock.Initialise` + `DestructibleBuilding.RegisterBlock` before the building's `Start`, which then skips the scan.
 
-`Prefabs/Buildings/Crane.prefab` keeps its authored joints on purpose — it's a physics prop outside the destruction system. `HangingChain` does the same in code for chains and plank walkways (the Tutorial's `Tall Bridge` deck and its two chains): at Start it hinges its child links to each other and to their anchors (a pillar's block, or a pin in the world) and makes them dynamic; it moves itself out of the building at Awake so the scan doesn't adopt them. The links keep an unregistered `BuildingBlock`, so hits and blasts break them, and an end whose anchor block is destroyed drops.
+Joints exist only outside the standing structure: `HangingChain` makes them in code for chains and plank walkways (the Tutorial's `Tall Bridge` deck and its two chains): at Start it hinges its child links to each other and to their anchors (a pillar's block, or a pin in the world) and makes them dynamic; it moves itself out of the building at Awake so the scan doesn't adopt them. The links keep an unregistered `BuildingBlock`, so hits and blasts break them, and an end whose anchor block is destroyed drops.
 
 ## Building generation
 
@@ -142,7 +142,7 @@ The project follows Model–View–Controller. Keep the structure clean: no pers
 - **View** — MonoBehaviours that only present: sprites, animation, HUD, particles, audio, camera framing. They read models or listen to events and never change game state.
 - **Controller** — MonoBehaviours that turn input and events into model changes and tell views what to show. Example: `DestructibleBuilding`.
 - Folders go feature first, then layer: `Scripts/<Feature>/Model|View|Controller/`. New code uses this layout; existing scripts move into it (with their `.meta`) when a milestone touches them. Don't restructure untouched code.
-- Legacy exceptions: the person-named content folders (`Prefabs/Building Materials/Oeds/`, `Prefabs/Sky's Prefabs/`, `Scenes/Oeds.unity`) stay until generated content replaces them (roadmap M2/M3).
+- Legacy exception: the person-named `Prefabs/Sky's Prefabs/` holds two of the Tutorial's hand-made buildings and stays while the Tutorial does.
 
 ## Unity conventions here
 

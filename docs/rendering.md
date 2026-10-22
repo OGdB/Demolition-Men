@@ -12,7 +12,7 @@ profile measures the renderer that ships.
   (buildings, ground, decor), which picks up the pipeline's default 2D material by itself.
 - One code-made material: `Particles` uses `Sprites/Default`. It works in URP, unlit, so dust and
   sparks stay bright in dark levels (intended).
-- Cameras: `Main Camera 1` (prefab), scene cameras in MainMenu and HubWorld, plus two made in code:
+- Cameras: `Main Camera 1` (prefab), a scene camera in MainMenu, plus two made in code:
   `ScrollCamera`'s letterbox clear camera and the test bench camera.
 - Six Quality levels (Very Low … Ultra), none with a pipeline asset.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write a theme's Unity assets from its sprites and JSON (the integrator step, roadmap §7).
 
-    python tools/artpipe/unity_theme.py Port --music "Assets/Sounds/Game Music.mp3"
+    python tools/artpipe/unity_theme.py Port --music "Assets/Sounds/Music/Mammoth.ogg"
 
 Reads   Demolition Men/Assets/Content/<Theme>/Sprites/*.png (+ .meta, from build_theme.py),
         Content/<Theme>/Archetypes/*.json and Content/<Theme>/Levels/*.json (sorted),
@@ -187,7 +187,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("theme")
     ap.add_argument("--display", help="name shown in the level select (default: THEME)")
-    ap.add_argument("--music", default="Assets/Sounds/Game Music.mp3", help="project-relative AudioClip path")
+    ap.add_argument("--music", default="Assets/Sounds/Music/Rock Theme.ogg", help="project-relative AudioClip path")
     ap.add_argument("--backdrop-only", action="store_true", help="only refresh the backdrop list of an existing theme asset")
     ap.add_argument("--street-only", action="store_true",
                     help="only refresh the decor list and add missing prop kinds (hand-made themes like Town)")
