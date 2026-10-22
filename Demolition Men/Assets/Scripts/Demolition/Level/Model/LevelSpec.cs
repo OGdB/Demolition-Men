@@ -31,8 +31,8 @@ namespace Demolition.Levels
         public float parTime;
         /// <summary>Camera auto-scroll speed (units/s) once pushed.</summary>
         public float scrollSpeed = 1.5f;
-        /// <summary>Segment tokens: start, street, cluster:n, islands:n, tower, gap, hill,
-        /// plateau, sewer, gate, breather, finish.</summary>
+        /// <summary>Segment tokens: start, street, cluster:n, terrace:n, islands:n, yard:n,
+        /// tower, gap, hill, plateau, sewer, gate, breather, finish.</summary>
         public string[] pacing = { "start", "street", "cluster:2", "finish" };
         public PickupBudget pickups = new PickupBudget();
         /// <summary>Archetype ids allowed in this level; empty = all of the theme's.</summary>

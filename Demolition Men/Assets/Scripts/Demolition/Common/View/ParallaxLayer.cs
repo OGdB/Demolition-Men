@@ -21,7 +21,8 @@ namespace Demolition
         private float _wrapLength;
 
         /// <summary>Set up from code: how much it follows the camera, and the distance after
-        /// which its picture repeats (a tiled sprite; 0 = the sprite's own width).</summary>
+        /// which its picture repeats (a tiled sprite; 0 = the sprite's own width, negative =
+        /// a single sprite that never wraps, such as the sun).</summary>
         public void Configure(float effect, float wrapLength)
         {
             parallaxEffect = Mathf.Clamp01(effect);
@@ -31,7 +32,7 @@ namespace Demolition
         private void Start()
         {
             _start = transform.position.x;
-            _length = _wrapLength > 0f ? _wrapLength : GetComponent<SpriteRenderer>().bounds.size.x;
+            _length = _wrapLength < 0f ? 0f : _wrapLength > 0f ? _wrapLength : GetComponent<SpriteRenderer>().bounds.size.x;
         }
 
         private void LateUpdate()

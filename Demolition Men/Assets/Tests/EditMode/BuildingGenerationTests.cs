@@ -42,6 +42,37 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Edges_AreTheOutermostBlocksOfTheirRows_AndStoreysCountSlabRows()
+        {
+            // Two storeys: walls at x 0 and 4, a plank slab at y 3, an inset upper left wall.
+            var spec = new BuildingSpec("test", 1);
+            for (int y = 0; y < 3; y++)
+            {
+                spec.TryPlace(TileKind.Brick, 0, y);
+                spec.TryPlace(TileKind.Brick, 4, y);
+            }
+            spec.TryPlace(TileKind.Support, 2, 1);
+            for (int x = 1; x < 4; x++)
+                spec.TryPlace(TileKind.Plank, x, 3);
+            spec.TryPlace(TileKind.BrickTall, 1, 4);
+            spec.TryPlace(TileKind.Brick, 4, 4);
+            spec.TryPlace(TileKind.Brick, 4, 5);
+
+            BlockEdge Edge(int x, int y) => spec.EdgeOf(spec.At(new Vector2Int(x, y)));
+            Assert.AreEqual(BlockEdge.Left, Edge(0, 0));
+            Assert.AreEqual(BlockEdge.Right, Edge(4, 2));
+            Assert.AreEqual(BlockEdge.None, Edge(2, 1), "an interior support is no edge");
+            Assert.AreEqual(BlockEdge.Left, Edge(1, 4), "the inset upper wall is the left edge of its rows");
+            Assert.AreEqual(BlockEdge.None, Edge(2, 3), "a slab piece between walls");
+
+            var interior = spec.Interior().ToDictionary(c => c.Cell);
+            Assert.AreEqual(0, interior[new Vector2Int(1, 1)].Storey);
+            Assert.AreEqual(1, interior[new Vector2Int(2, 4)].Storey, "above the slab");
+            Assert.IsTrue(interior[new Vector2Int(2, 1)].SeeThrough, "behind the support");
+            Assert.IsFalse(interior[new Vector2Int(1, 1)].SeeThrough);
+        }
+
+        [Test]
         public void EveryArchetype_StandsAndMeetsTargets_Over200Seeds([ValueSource(nameof(Archetypes))] string path)
         {
             BuildingArchetype archetype = Load(path);

@@ -56,16 +56,16 @@ public static class LevelDump
         for (int i = 0; i < layout.Buildings.Count; i++)
         {
             BuildingPlacement b = layout.Buildings[i];
-            s.Append(i > 0 ? "," : "").Append($"{{\"archetype\":\"{b.Spec.Archetype}\",\"x\":{b.X},\"y\":{b.GroundY},\"w\":{b.Spec.Width},\"h\":{b.Spec.Height},\"blocks\":[");
+            s.Append(i > 0 ? "," : "").Append($"{{\"archetype\":\"{b.Spec.Archetype}\",\"seed\":{b.Spec.Seed},\"x\":{b.X},\"y\":{b.GroundY},\"w\":{b.Spec.Width},\"h\":{b.Spec.Height},\"blocks\":[");
             for (int k = 0; k < b.Spec.Blocks.Count; k++)
             {
                 SpecBlock block = b.Spec.Blocks[k];
-                s.Append(k > 0 ? "," : "").Append($"[\"{block.Kind}\",{block.Rect.x},{block.Rect.y},{block.Rect.width},{block.Rect.height},{block.Variant},{(TileKinds.WalkThrough(block.Kind) ? 1 : 0)}]");
+                s.Append(k > 0 ? "," : "").Append($"[\"{block.Kind}\",{block.Rect.x},{block.Rect.y},{block.Rect.width},{block.Rect.height},{block.Variant},{(TileKinds.WalkThrough(block.Kind) ? 1 : 0)},{(int)b.Spec.EdgeOf(block)}]");
             }
             s.Append("],\"interior\":[");
             List<InteriorCell> interior = b.Spec.Interior();
             for (int k = 0; k < interior.Count; k++)
-                s.Append(k > 0 ? "," : "").Append($"[{interior[k].Cell.x},{interior[k].Cell.y},{(interior[k].UnderCeiling ? 1 : 0)}]");
+                s.Append(k > 0 ? "," : "").Append($"[{interior[k].Cell.x},{interior[k].Cell.y},{(interior[k].UnderCeiling ? 1 : 0)},{interior[k].Storey},{(interior[k].SeeThrough ? 1 : 0)}]");
             s.Append("]}");
         }
         s.Append("],\"decor\":[");

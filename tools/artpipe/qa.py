@@ -113,8 +113,13 @@ def mock_street(sprites, theme):
         if name not in sprites:
             return
         s = sprites[name]
-        img.alpha_composite(s, (x * 32, (rows - ground) * 32 - y * 32 - s.height))
+        top = (rows - ground) * 32 - y * 32 - s.height
+        if top < 0:  # the sky is taller than the street: keep its bottom part
+            s, top = s.crop((0, -top, s.width, s.height)), 0
+        img.alpha_composite(s, (x * 32, top))
 
+    place("backdrop_sky", 0, 0)
+    place("backdrop_sun", 9, 7)
     for layer in ("backdrop_far", "backdrop_mid", "backdrop_near"):
         place(layer, 0, 0)
     for x in range(cols):
@@ -126,8 +131,10 @@ def mock_street(sprites, theme):
         for x in range(1, 7):
             if (x, y) == (5, 0):  # open interior held by a support column
                 continue
-            place(walls[(x * 7 + y) % 3], x, y)
-            place(walls[(x * 5 + y + 1) % 3], x, y + 1)
+            # the corner pieces on the outer columns, like BuildingTileset.Dress
+            edge = {1: "brick_l", 6: "brick_r"}.get(x)
+            place(edge if edge in sprites else walls[(x * 7 + y) % 3], x, y)
+            place(edge if edge in sprites else walls[(x * 5 + y + 1) % 3], x, y + 1)
     for x in range(1, 7):
         place("plank", x, 2)
     place("interior", 5, 0)

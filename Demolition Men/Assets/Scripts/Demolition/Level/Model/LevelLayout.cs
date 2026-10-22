@@ -3,7 +3,7 @@ using Demolition.Generation;
 
 namespace Demolition.Levels
 {
-    public enum SegmentKind { Start, Street, Cluster, Tower, Gap, Hill, Sewer, Gate, Breather, Finish, Islands, Plateau }
+    public enum SegmentKind { Start, Street, Cluster, Tower, Gap, Hill, Sewer, Gate, Breather, Finish, Islands, Plateau, Terrace, Yard }
 
     /// <summary>Street dressing, cosmetic only; each theme draws its own (a Town lamp post,
     /// a Port dock light...).</summary>

@@ -99,11 +99,32 @@ namespace Demolition.Levels
                         Flat(layout, rng.Range(3, 5), height, spots, index);
                         break;
                     case SegmentKind.Cluster:
-                        // A terrace: the buildings stand wall to wall, like a row of houses.
+                        // A row of different buildings standing wall to wall.
                         Flat(layout, 3, height, spots, index);
                         for (int b = 0; b < Mathf.Max(1, count); b++)
                             PlaceBuilding(layout, rng, Pick(archetypes, rng, progress, false), height, index, spots);
                         Flat(layout, 3, height, spots, index);
+                        break;
+                    case SegmentKind.Terrace:
+                        // A terrace: one archetype at one size, wall to wall, so the roofs make a
+                        // continuous run players can take instead of the street.
+                        Flat(layout, 3, height, spots, index);
+                        BuildingArchetype pinned = Pick(archetypes, rng, progress, false).Pinned(rng);
+                        for (int b = 0; b < Mathf.Max(1, count); b++)
+                            PlaceBuilding(layout, rng, pinned, height, index, spots);
+                        Flat(layout, 3, height, spots, index);
+                        break;
+                    case SegmentKind.Yard:
+                        // A lot full of breakables (crates, cars, gas tanks, containers), one
+                        // free column between them, with no building to hide behind.
+                        Flat(layout, 2, height, spots, index);
+                        for (int b = 0, n = Mathf.Max(1, count); b < n; b++)
+                        {
+                            List<string> yardKinds = PropKinds(spec);
+                            Place(layout, Prop(yardKinds[rng.Range(0, yardKinds.Count - 1)], rng), height, index, spots);
+                            Flat(layout, 1, height, spots, index);
+                        }
+                        Flat(layout, 2, height, spots, index);
                         break;
                     case SegmentKind.Tower:
                         Flat(layout, 4, height, spots, index);
@@ -282,8 +303,10 @@ namespace Demolition.Levels
         private static void Place(LevelLayout layout, BuildingSpec spec, int height, int segment, List<Spot> spots)
         {
             int x = layout.Width;
-            layout.Buildings.Add(new BuildingPlacement { X = x, GroundY = height, Spec = spec, Segment = segment });
-            spots.Add(new Spot { X = x + spec.Width * 0.5f, Y = height + spec.Height + 0.6f, Roof = true, Segment = segment });
+            var placement = new BuildingPlacement { X = x, GroundY = height, Spec = spec, Segment = segment };
+            layout.Buildings.Add(placement);
+            if (!placement.IsProp)
+                spots.Add(new Spot { X = x + spec.Width * 0.5f, Y = height + spec.Height + 0.6f, Roof = true, Segment = segment });
             Flat(layout, spec.Width, height);
         }
 
