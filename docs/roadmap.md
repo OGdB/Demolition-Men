@@ -54,7 +54,7 @@ devices over the internet yet.
 
 | Area | What's missing |
 |---|---|
-| Android build | Player Settings done (2026-10-22): `com.ogstudio.demolitionmen`, OG Studio, 1.0.0, target API 36, category Game, internet required, R8 minify for release, managed stripping Medium, the adaptive icon from `Assets/Brand/`. Missing: an upload keystore, the build entry point, the profile saved on pause, unused packages out. Never built, installed or profiled on a phone. |
+| Android build | Player Settings done (2026-10-22): `com.ogstudio.demolitionmen`, OG Studio, 1.0.0, target API 36, category Game, internet required, R8 minify for release, managed stripping Medium, the adaptive icon from `Assets/Brand/`. Build entry point (Tools ▸ Demolition ▸ Build), profile saved when the app loses focus, unused packages out. Missing: an upload keystore (**you**, R1). Never built, installed or profiled on a phone. |
 | Play account | None yet. A new personal account must run a **closed test with 12+ testers for 14 days** before it may publish to production. |
 | Ads | The plugin's Android dependency resolution in the editor and a first test on a phone (`monetization.md`, What's left). The privacy policy is live and the AdMob consent message is published. |
 | Online | O2 play tests, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other over mobile data), O4 hardening (a backgrounded app, timeouts, version mismatch, relay down). |

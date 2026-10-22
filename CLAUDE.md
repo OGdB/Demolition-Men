@@ -43,6 +43,8 @@ The generated csproj files list sources explicitly (`<Compile Include>`), so a n
   ```
   Single test: add `-testFilter "Demolition.Tests.BuildingStructureTests.RemoveMidColumn_DetachesEverythingAbove"`. Don't pass `-quit` with `-runTests`.
 
+**Android build:** Tools ▸ Demolition ▸ Build ▸ Android AAB (release / development), or batch `-buildTarget Android -executeMethod AndroidBuild.ReleaseCli` (`Assets/Editor/Android/AndroidBuild.cs`): raises the versionCode, writes `Builds/Android/DemolitionMen-<version>-<code>.aab`, signs with the keystore named by `DEMOLITION_KEYSTORE` / `DEMOLITION_KEYSTORE_PASS` / `DEMOLITION_KEYALIAS` / `DEMOLITION_KEYALIAS_PASS` (unset: debug-signed, Play refuses it).
+
 **PlayMode tests** (`Assets/Tests/PlayMode/`): `BotRunTests` plays every campaign level to the finish with the `BotPilot` at 3x speed (minutes; editor only).
 
 Only the pure models have fast automated tests; everything physics/visual is verified manually in `Assets/Scenes/DemolitionTestBranch.unity` (a `DemoBootstrap` test bench that builds ground, a building, player, camera and HUD entirely from code) or in a generated level (Tools ▸ Demolition ▸ Level Lab ▸ Play / Play with bot).

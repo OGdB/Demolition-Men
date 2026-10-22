@@ -37,6 +37,9 @@ sysinfo.txt
 
 # Builds
 *.apk
+*.aab
+*.jks
+*.keystore
 *.unitypackage
 
 # Unity logs and per-user editor state
