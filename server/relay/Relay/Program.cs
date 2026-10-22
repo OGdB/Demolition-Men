@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.HttpOverrides;
 
-var app = WebApplication.CreateBuilder(args).Build();
+var builder = WebApplication.CreateBuilder(args);
+// No Server header: responses don't say what the relay runs on.
+builder.WebHost.ConfigureKestrel(kestrel => kestrel.AddServerHeader = false);
+var app = builder.Build();
 // Read after Build so test overrides and env vars (Relay__MaxRooms=...) are in.
 var options = app.Configuration.GetSection("Relay").Get<RelayOptions>() ?? new();
 var relay = new RelayServer(options, app.Logger);
@@ -19,6 +22,17 @@ app.UseWebSockets(new WebSocketOptions
 });
 app.MapGet("/health", () => "ok");
 app.Map("/ws", relay.Handle);
+
+// The game's privacy policy (store listing, AdMob consent form, the game's credits). Read once;
+// like every request here it isn't logged. The page loads nothing from anywhere.
+var privacyPage = File.ReadAllText(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "privacy.html"));
+app.MapGet("/privacy", (HttpContext ctx) =>
+{
+    ctx.Response.Headers.ContentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+    ctx.Response.Headers.XContentTypeOptions = "nosniff";
+    ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+    return Results.Content(privacyPage, "text/html; charset=utf-8");
+});
 
 _ = relay.Tick(app.Lifetime.ApplicationStopping);
 app.Run();

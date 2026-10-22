@@ -39,6 +39,10 @@ namespace Demolition.Levels
         [Tooltip("The crew's caravan, parked just past every generated level's finish line (the Tutorial places its own). None = no caravan.")]
         public Sprite caravan;
 
+        [Header("Store")]
+        [Tooltip("The privacy policy page (served by the relay from server/relay/Relay/wwwroot/privacy.html). CREDITS links to it; Play requires a link inside the app.")]
+        public string privacyPolicyUrl = "https://relay.oeds.space/privacy";
+
         [Header("Online")]
         [Tooltip("The co-op relay (server/relay). ws://localhost:5080/ws for one run with dotnet run.")]
         public string relayUrl = "wss://relay.oeds.space/ws";

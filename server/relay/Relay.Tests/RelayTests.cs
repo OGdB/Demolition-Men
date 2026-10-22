@@ -81,6 +81,17 @@ public class RelayTests
     }
 
     [Fact]
+    public async Task PrivacyPolicy_ServedAsLockedDownHtml()
+    {
+        using var app = Start();
+        var response = await app.CreateClient().GetAsync("/privacy");
+        Assert.Equal(200, (int)response.StatusCode);
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+        Assert.StartsWith("default-src 'none'", response.Headers.GetValues("Content-Security-Policy").Single());
+        Assert.Contains("Privacy Policy", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Join_PairsAndForwardsBinaryBothWaysByteExact()
     {
         using var app = Start();

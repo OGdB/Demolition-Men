@@ -1,4 +1,5 @@
 using System.Text;
+using Demolition.Levels;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,6 +12,7 @@ namespace Demolition.Meta
     /// Credits overlay from the settings: who made the game and every free asset it uses with
     /// its licence, read from <c>Resources/Credits.txt</c> ("# " starts a section). Licences
     /// such as CC BY require this credit, so add a line there with every new asset.
+    /// PRIVACY POLICY opens <see cref="GameConfig.privacyPolicyUrl"/> in the browser.
     /// Back (Esc / B) closes it.
     /// </summary>
     public sealed class CreditsView : MonoBehaviour
@@ -73,7 +75,9 @@ namespace Demolition.Meta
             var credits = Resources.Load<TextAsset>("Credits");
             body.text = credits != null ? Format(credits.text) : string.Empty;
 
-            Button back = UiFactory.Button(root, "BACK", centre, new Vector2(0f, -400f), new Vector2(360f, 90f), Close);
+            Button back = UiFactory.Button(root, "BACK", centre, new Vector2(-230f, -400f), new Vector2(360f, 90f), Close);
+            UiFactory.Button(root, "PRIVACY POLICY", centre, new Vector2(230f, -400f), new Vector2(480f, 90f),
+                () => Application.OpenURL(GameConfig.Instance.privacyPolicyUrl));
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(back.gameObject);
         }

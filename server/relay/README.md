@@ -4,7 +4,8 @@ Pairs two players by a join code and forwards their bytes over WebSockets. It ru
 code and never reads game data. Design: `docs/multiplayer.md` §8.
 
 ```
-Relay/            ASP.NET Core app (RelayServer.cs holds rooms, limits and forwarding)
+Relay/            ASP.NET Core app (RelayServer.cs holds rooms, limits and forwarding;
+                  wwwroot/privacy.html is the game's privacy policy at /privacy)
 Relay.Tests/      xUnit tests against the app in memory
 Dockerfile        the image: built on the VPS, runs on the chiseled ASP.NET image as non-root
 compose.yaml      the container behind the VPS's existing Caddy container
@@ -34,6 +35,7 @@ so old builds get a clear `4003` instead of garbage.
 | Joiner leaves | Host gets TEXT `peer-left`. The room stays open; the same code takes a new joiner. |
 | Host leaves | The room closes; the joiner is closed with `4005`. |
 | Health | `GET /health` answers `ok`. |
+| Privacy policy | `GET /privacy`: the game's privacy policy, `Relay/wwwroot/privacy.html`, read at startup (edit it, then deploy). |
 
 Errors come as WebSocket close codes after the accept, because browsers can't read HTTP
 error bodies:
@@ -97,10 +99,11 @@ Before the first deploy:
    record, and Caddy can't get a certificate for a name that doesn't resolve.
 2. **On your machine:** bash (Linux, macOS, WSL or Git Bash), ssh, tar and curl. The VPS
    builds the image, so you don't need .NET locally to deploy.
-3. **On the VPS:** SSH as root or as a user with sudo; Docker with the compose plugin.
+3. **On the VPS:** SSH as root or as a user with sudo; Docker with the compose plugin. This VPS
+   only takes SSH over Tailscale, as `og` (Tailscale SSH), so deploy from a device on the tailnet.
 
 ```
-server/relay/deploy/deploy.sh root@138.201.155.228 relay.oeds.space
+server/relay/deploy/deploy.sh og@hetzner-vps relay.oeds.space
 ```
 
 On Windows, run it from Git Bash (or WSL), not PowerShell: PowerShell doesn't run `.sh`
@@ -133,7 +136,7 @@ What it does:
    `https://<domain>/health` and prints the URL for the game: `wss://<domain>/ws`.
 
 **Update:** run the same command again. The Caddy block is only added once.
-**Roll back:** `server/relay/deploy/rollback.sh root@138.201.155.228` swaps the `latest` and
+**Roll back:** `server/relay/deploy/rollback.sh og@hetzner-vps` swaps the `latest` and
 `previous` images and restarts the container; running it again swaps back.
 **Logs:** `docker logs -f demolition-relay`. Once a minute, if anything happened: rooms open,
 peers, bytes/s in and out, connections closed by reason. Certificates: `docker logs caddy`.
