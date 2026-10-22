@@ -46,7 +46,7 @@ devices over the internet yet.
 | Players | Fists, axe, wrecking ball, dynamite, headbutt; pickups; skill-shop upgrades. |
 | Meta and menus | Save file, unlocks, shop, settings, pause, title, join screen, level select, quit popup. |
 | Phones | Touch controls, safe area, landscape lock, IL2CPP ARM64, a sprite atlas per theme, pixel-art import settings. |
-| Ads | The `IAdService` seam with interstitial and rewarded placements and a pacing policy; no ad SDK. |
+| Ads | AdMob on Android (2026-10-22): an interstitial between runs and the rewarded 2x cash behind the `IAdService` seam with a pacing policy, UMP consent, a PRIVACY button in Settings; test ads in development builds. |
 | Online | O1 done; O2 code in (NGO over a WebSocket relay, join codes in `OnlineView`, the host plays on when the client leaves); the relay runs on the VPS behind TLS (`wss://relay.oeds.space/ws`). |
 | Tooling | Editor-free compile and 213 model tests, level previews, Building and Level Labs, the bot playtester, the art pipeline, the content-pipeline agents. |
 
@@ -56,10 +56,10 @@ devices over the internet yet.
 |---|---|
 | Android build | No package name, company still `DefaultCompany`, no upload keystore, no app icon. Target API is "highest installed", but Play needs **API 36** for new apps since 31 Aug 2026. App category not confirmed as Game; internet permission not forced on (online needs it). Never built, installed or profiled on a phone. |
 | Play account | None yet. A new personal account must run a **closed test with 12+ testers for 14 days** before it may publish to production. |
-| Ads | No SDK, no consent form (Google requires a certified consent tool for ads in the EEA/UK), no "privacy options" entry in Settings. |
+| Ads | The plugin's Android dependency resolution in the editor and a first test on a phone (`monetization.md`, What's left). The privacy policy is live and the AdMob consent message is published. |
 | Online | O2 play tests, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other over mobile data), O4 hardening (a backgrounded app, timeouts, version mismatch, relay down). |
 | Legal and store | Privacy policy, Data safety form, content rating, target audience, ads declaration, EU trader status, store listing text and graphics, trailer. |
-| Audio | 8 sound clips and 2 music tracks: every theme plays the same track, no material break sounds, and the origin and licence of the existing clips and music aren't recorded. |
+| Audio | A track per theme and synthesised break and collapse sounds are in, with every source in `Credits.txt`, except `OOF Sound` (player hurt): its source is unknown. |
 | Polish | Crack overlays, the phone letterbox question, tuning (scroll speeds, upgrade costs and cash rate are first guesses), a phone-first first five minutes. |
 | Performance | The worst collapse was never measured on a phone; composite debris (design doc Phase 2) isn't built. |
 | Marketing | Nothing yet: no accounts, clips, press kit or community. Plan: `marketing.md`. |
@@ -367,10 +367,11 @@ passes the pre-launch report with no crashes, and closed testers finish the camp
 - The listing: title (30 characters), short description (80), full description, icon
   512×512, feature graphic 1024×500, 4–8 landscape screenshots with a caption each, and a
   30–60 s trailer on YouTube. The art pipeline and the clip mode make most of these.
-- **You:** EU trader status. An app with ads counts as a trader under the Digital Services
-  Act, so Play shows the developer's address, e-mail and phone number on the store page.
-  Settle which address may be public (a business address or a P.O. box service) before you
-  declare (D24).
+- **You:** EU trader status, a self-declaration under the Digital Services Act; earning
+  money through ads points towards trader, and a trader's address, e-mail and phone number
+  appear on the store page. Settle which address may be public (a business address or a
+  P.O. box service) before you declare (D24). KVK registration is a separate, Dutch question
+  (`monetization.md`).
 - **Pre-registration** as soon as production access is granted: a "notify me" page that
   every clip and post can link to before launch.
 - The press kit page and the outreach list (`marketing.md`).
@@ -594,7 +595,7 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D10 | Business model | **Decided (2026-10-17):** free, with ads on phones only (interstitials between runs, opt-in rewarded "2x cash"); a "remove ads" purchase later. See `docs/monetization.md`. |
 | D20 | Release target | **Decided (2026-10-20):** Google Play first, week of 11 Jan 2027, from a new personal developer account (so a closed test first, R3). Other platforms after launch. |
 | D21 | Marketing budget | **Decided (2026-10-20):** €100–500 for launch and the first months. Plan: `marketing.md`. |
-| D22 | Package name and developer name | Needed in R1; the package name is permanent. Suggested shape: `com.<developer>.demolitionmen`. |
+| D22 | Package name and developer name | Developer name **decided (2026-10-22): OG Studio**, contact `OGpriv@proton.me`. The package name is still open and needed in R1; it is permanent. Suggested: `com.ogstudio.demolitionmen`. |
 | D23 | Ad network | AdMob directly, with its UMP consent form: one SDK, consent included and Google-certified for the EEA/UK. LevelPlay (the earlier pick) mediates more networks but needs a consent tool on top; mediation can come later through AdMob. |
 | D24 | Public trader details | Before declaring trader status (R4): which address and phone number may be shown on the store page. |
 | D25 | Game name | Search the Play Store and the EU/US trademark registers for the name before the listing goes up; renaming after marketing has started loses the audience built so far. A subtitle in the title helps search (e.g. "Demolition Men: Wreck Co-op"). |
