@@ -32,6 +32,9 @@ namespace Demolition.Ads.AdMob
         {
             if (Application.isEditor || Application.platform != RuntimePlatform.Android || Profile.Data.adsRemoved)
                 return;
+            // The SDK only creates its main-thread queue when MobileAds is first used; the consent
+            // callbacks go through that queue before then, and would wait in it forever.
+            MobileAdsEventExecutor.Initialize();
             bool test = Debug.isDebugBuild;
             var service = new AdMobAdService(test ? TestInterstitialId : InterstitialId, test ? TestRewardedId : RewardedId);
             var ads = new AdMobAds(service);
