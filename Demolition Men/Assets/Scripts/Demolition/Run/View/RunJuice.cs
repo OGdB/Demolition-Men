@@ -58,7 +58,7 @@ namespace Demolition.Run
 
         private void HitStop(float seconds)
         {
-            if (PauseController.IsPaused)
+            if (PauseController.MenuOpen)
                 return;
             _hitStopUntil = Time.unscaledTime + seconds;
             Time.timeScale = hitStopTimeScale;
@@ -69,7 +69,7 @@ namespace Demolition.Run
             if (_hitStopUntil < 0f)
                 return;
             _hitStopUntil = -1f;
-            if (!PauseController.IsPaused || NetRole.IsOnline) // online the pause leaves time running
+            if (!PauseController.Frozen)
                 Time.timeScale = 1f;
         }
     }

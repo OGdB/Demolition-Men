@@ -20,7 +20,7 @@ namespace Demolition.Online
     /// <item>Pickups: the client claims (<c>DM.Claim</c>), the host grants first come (<c>DM.Taken</c>).</item>
     /// <item>Dynamite: the thrower's device sends the throw and the blast (<c>DM.Thrown</c>,
     /// <c>DM.Blast</c>); the other flies a harmless copy.</item>
-    /// <item>Run: the host's run state, score, demolition and level hash at 10 Hz (<c>DM.State</c>),
+    /// <item>Run: the host's run state, score, demolition, pause and level hash at 10 Hz (<c>DM.State</c>),
     /// once the client says its run scene is up (<c>DM.Ready</c>); in development builds a
     /// standing-cells hash per building every 5 s (<c>DM.Check</c>).</item>
     /// </list>
@@ -123,6 +123,8 @@ namespace Demolition.Online
             if (_current != this)
                 return; // replaced: the new one owns the handlers and hooks
             _current = null;
+            if (!_host)
+                PauseController.SetHostPaused(false); // a host gone while paused leaves nothing frozen
             NetRole.DynamiteThrown = null;
             NetRole.DynamiteExploded = null;
             NetRole.BlockHealthChanged = null;
@@ -474,6 +476,7 @@ namespace Demolition.Online
                     BytePacker.WriteValueBitPacked(writer, i < score.PlayerCount ? score.Points(i) : 0);
                 }
                 BytePacker.WriteValueBitPacked(writer, score.Unattributed);
+                writer.WriteValueSafe(PauseController.IsPaused);
             });
         }
 
@@ -513,6 +516,7 @@ namespace Demolition.Online
                 ByteUnpacker.ReadValueBitPacked(reader, out points[i]);
             }
             ByteUnpacker.ReadValueBitPacked(reader, out int unattributed);
+            reader.ReadValueSafe(out bool hostPaused);
 
             RunController run = RunController.Current;
             if (run == null)
@@ -521,6 +525,7 @@ namespace Demolition.Online
             run.NetFraction = destroyed;
             run.Score.Restore(points, unattributed);
             run.State.ApplySnapshot(s);
+            PauseController.SetHostPaused(hostPaused);
         }
 
         // Development builds: catch a desync early (docs/multiplayer.md §3).
