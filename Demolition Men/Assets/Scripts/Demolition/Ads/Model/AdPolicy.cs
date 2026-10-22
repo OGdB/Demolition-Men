@@ -10,7 +10,7 @@ namespace Demolition.Ads
         public const int RunsBetweenInterstitials = 3;
         public const float MinSecondsBetweenInterstitials = 180f;
         /// <summary>New players get this many ad-free runs first.</summary>
-        public const int GraceRuns = 4;
+        public const int GraceRuns = 2;
 
         public static bool InterstitialDue(int runsPlayed, int runsSinceAd, float secondsSinceAd, bool adsRemoved) =>
             !adsRemoved

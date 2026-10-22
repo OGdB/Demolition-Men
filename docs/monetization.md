@@ -12,7 +12,7 @@ network can be picked (or swapped) without touching gameplay.
 
 | Piece | Where | What it does |
 |---|---|---|
-| `AdPolicy` (model) | `Scripts/Demolition/Ads/Model/` | When an interstitial is allowed: not in a new profile's first 4 runs, at most every 3 runs, at least 3 minutes apart, never once ads are removed. Unit-tested. |
+| `AdPolicy` (model) | `Scripts/Demolition/Ads/Model/` | When an interstitial is allowed: not in a new profile's first 2 runs, at most every 3 runs, at least 3 minutes apart, never once ads are removed. Unit-tested. |
 | `IAdService` | `Ads/Controller/IAdService.cs` | What the game needs from a network: `IsInterstitialReady`, `IsRewardedReady`, `ShowInterstitial(closed)`, `ShowRewarded(finished(earned))`. |
 | `NoAdService` | same file | Default on PC/TV and release phone builds until an SDK adapter is installed. |
 | `SimulatedAdService` | `Ads/View/` | Development phone builds (and the editor with `AdManager.SimulateInEditor = true`): a full-screen card that closes after 2.5 s, so the flow can be tested. |
