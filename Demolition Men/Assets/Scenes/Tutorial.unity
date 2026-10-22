@@ -303,7 +303,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1812194221}
-  - {fileID: 1095061458}
   - {fileID: 922070552}
   - {fileID: 334683493}
   - {fileID: 362225563}
@@ -685,10 +684,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: Knock out the supports and everything above comes down. Collapses score
-    big!
-  touchMessage: 
-  duration: 6
+  message: "COLLAPSE\nKnock out the supports and everything above comes down. Collapses score big!"
 --- !u!1 &362225562
 GameObject:
   m_ObjectHideFlags: 0
@@ -733,9 +729,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: DYNAMITE  [X] / (B)  -  throw it at the base of a building
-  touchMessage: DYNAMITE  tap TNT  -  throw it at the base of a building
-  duration: 6
+  message: "DYNAMITE\n{TNT} throws it: aim at the base of a building."
 --- !u!1001 &410537503
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1856,9 +1850,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: Grab the AXE  -  switch weapons with [Q] [E] / (LB) (RB)
-  touchMessage: Grab the AXE  -  tap SWAP to switch weapons
-  duration: 6
+  message: "SMASH\nHold {HIT} to smash your way through.\nGrab the AXE: {SWAP} switches weapons."
 --- !u!1 &925040993
 GameObject:
   m_ObjectHideFlags: 0
@@ -2312,9 +2304,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: Cross the finish. The faster you finish, the bigger the bonus!
-  touchMessage: 
-  duration: 6
+  message: "FINISH\nThe faster you cross the line, the bigger the bonus!"
 --- !u!1 &1086775352
 GameObject:
   m_ObjectHideFlags: 0
@@ -2359,56 +2349,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: KEEP UP! Off-screen for 3 seconds and you're out
-  touchMessage: 
-  duration: 6
---- !u!1 &1095061457
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1095061458}
-  - component: {fileID: 1095061459}
-  m_Layer: 0
-  m_Name: Prompt 14
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1095061458
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1095061457}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 14, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 73022410}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1095061459
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1095061457}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: HIT  hold [Z] / (X)  -  smash your way through!
-  touchMessage: HIT  hold HIT  -  smash your way through!
-  duration: 6
+  message: "KEEP UP!\nOff-screen for 3 seconds and you're out."
 --- !u!50 &1123219455 stripped
 Rigidbody2D:
   m_CorrespondingSourceObject: {fileID: 3045864645810956019, guid: eb553efe8038082469faaf7f2f982d19,
@@ -115207,9 +115148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
-  message: MOVE  [A] [D] / stick        JUMP  [SPACE] / (A)  - hold to jump higher
-  touchMessage: MOVE  drag on the left        JUMP  hold JUMP to jump higher
-  duration: 6
+  message: "MOVE & JUMP\n{MOVE} to move, {JUMP} to jump - hold it to jump higher.\nMind the barbed wire!"
 --- !u!1 &1879748805
 GameObject:
   m_ObjectHideFlags: 0

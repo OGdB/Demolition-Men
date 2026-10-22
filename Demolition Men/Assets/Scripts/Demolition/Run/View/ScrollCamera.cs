@@ -8,7 +8,9 @@ namespace Demolition.Run
     /// once they pass <see cref="pushLine"/>, and from that first push on it also
     /// auto-scrolls at <see cref="scrollSpeed"/>. Vertically it keeps the authored
     /// ground framing and zooms out so every target stays in view: jumping players
-    /// raise the top, and players below the ground (sewers) lower the bottom.
+    /// raise the top, and players below the ground (sewers) lower the bottom. The players
+    /// can zoom it a little on top of that (<see cref="Zoom"/>): out to see upper floors,
+    /// in as far as the framing still holds every target.
     ///
     /// The run controller decides when it scrolls and which players it frames, and
     /// judges out-of-bounds from its viewport.
@@ -37,6 +39,13 @@ namespace Demolition.Run
         [SerializeField] private float verticalFollowSpeed = 2.5f;
         [Tooltip("How far past the right edge the framing looks for lower ground (a trench floor ahead).")]
         [SerializeField] private float groundLookAhead = 4f;
+
+        [Header("Player zoom")]
+        [SerializeField] private float minPlayerZoom = 0.8f;
+        [SerializeField] private float maxPlayerZoom = 1.5f;
+
+        // The players' zoom on top of the framing; kept from one level to the next.
+        private static float _playerZoom = 1f;
 
         private readonly List<Transform> _targets = new List<Transform>();
         private float _floorY;
@@ -93,6 +102,13 @@ namespace Demolition.Run
             _framed = transform.position;
         }
 
+        /// <summary>Zoom out (+) or in (-) by whole or fractional steps (see <see cref="PlayerInputFrame.Zoom"/>).</summary>
+        public void Zoom(float steps)
+        {
+            if (steps != 0f)
+                _playerZoom = Mathf.Clamp(_playerZoom * Mathf.Pow(PlayerInputFrame.ZoomStep, steps), minPlayerZoom, maxPlayerZoom);
+        }
+
         public void SetTargets(IEnumerable<Transform> targets)
         {
             _targets.Clear();
@@ -140,7 +156,10 @@ namespace Demolition.Run
             }
             float top = maxY + playerHeight + marginAbove;
             float halfWidth = (maxX - minX) * 0.5f + marginX;
-            float wanted = Mathf.Clamp(Mathf.Max((top - bottom) * 0.5f, halfWidth / Camera.aspect), minZoom, maxZoom);
+            float fit = Mathf.Max((top - bottom) * 0.5f, halfWidth / Camera.aspect);
+            float wanted = Mathf.Clamp(fit, minZoom, maxZoom);
+            // Zooming in never crops a target, which would put them out of bounds.
+            wanted = Mathf.Min(Mathf.Max(wanted * _playerZoom, fit), maxZoom);
 
             float speed = wanted > Camera.orthographicSize ? zoomOutSpeed : zoomInSpeed;
             Camera.orthographicSize = Mathf.MoveTowards(Camera.orthographicSize, wanted, speed * Time.deltaTime);

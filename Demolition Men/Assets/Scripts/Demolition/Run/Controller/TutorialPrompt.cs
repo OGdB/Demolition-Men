@@ -3,21 +3,21 @@ using UnityEngine;
 
 namespace Demolition.Run
 {
-    /// <summary>A hint shown once, when the front player passes this transform's x.</summary>
+    /// <summary>
+    /// Where a tutorial hint's stretch of the level starts, on the ground. Its sign travels
+    /// with the front player from here to the next marker and then stays standing there
+    /// (<see cref="TutorialTrail"/>, drawn by <see cref="TutorialSigns"/>).
+    /// </summary>
     public sealed class TutorialPrompt : MonoBehaviour
     {
         private static readonly List<TutorialPrompt> _all = new List<TutorialPrompt>();
 
-        [TextArea] [SerializeField] private string message;
-        [Tooltip("Shown instead on touch screens (button names instead of keys); empty = the message.")]
-        [TextArea] [SerializeField] private string touchMessage;
-        [SerializeField] private float duration = 6f;
+        [Tooltip("First line: the sign's heading. {MOVE} {JUMP} {HIT} {TNT} {SWAP} become the buttons of the devices in use.")]
+        [TextArea(2, 5)] [SerializeField] private string message;
 
         public static IReadOnlyList<TutorialPrompt> All => _all;
-        public string Message => Platform.IsTouch && !string.IsNullOrEmpty(touchMessage) ? touchMessage : message;
-        public float Duration => duration;
-        public float X => transform.position.x;
-        public bool Shown { get; set; }
+        public string Message => message;
+        public Vector2 Position => transform.position;
 
         private void OnEnable() => _all.Add(this);
         private void OnDisable() => _all.Remove(this);

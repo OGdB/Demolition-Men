@@ -13,6 +13,9 @@ namespace Demolition
     /// </summary>
     public struct PlayerInputFrame
     {
+        /// <summary>One <see cref="Zoom"/> step scales the camera's view by this factor.</summary>
+        public const float ZoomStep = 1.1f;
+
         public Vector2 Move;
         public bool JumpPressed;
         public bool JumpHeld;
@@ -21,6 +24,13 @@ namespace Demolition
         public bool DynamitePressed;
         /// <summary>+1 / -1 on the frame the next / previous weapon is requested, otherwise 0.</summary>
         public int WeaponCycle;
+        /// <summary>Camera zoom steps this frame: + shows more, - less. A mouse wheel notch is
+        /// one step, a held stick a few per second, a pinch as far as the fingers move. The
+        /// camera is a view, so this isn't gameplay.</summary>
+        public float Zoom;
+
+        /// <summary>The player is doing something: moving, a button held or pressed.</summary>
+        public bool IsActive => Move.sqrMagnitude > 0.04f || JumpHeld || AttackHeld || DynamitePressed || WeaponCycle != 0;
 
         /// <summary>Both sources at once: moves add up (clamped), buttons combine.</summary>
         public static PlayerInputFrame Merge(PlayerInputFrame a, PlayerInputFrame b) => new PlayerInputFrame
@@ -32,6 +42,7 @@ namespace Demolition
             AttackHeld = a.AttackHeld || b.AttackHeld,
             DynamitePressed = a.DynamitePressed || b.DynamitePressed,
             WeaponCycle = a.WeaponCycle != 0 ? a.WeaponCycle : b.WeaponCycle,
+            Zoom = a.Zoom + b.Zoom,
         };
     }
 }

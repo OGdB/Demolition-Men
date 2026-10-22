@@ -9,8 +9,9 @@ namespace Demolition.Run
     /// <summary>
     /// In-run HUD, built in code: timer and par, a hazard-striped demolition meter with
     /// the grade marks, a panel per player (score, free life, weapon, TNT with its button),
-    /// the 3-2-1 countdown, the last call, tutorial hints, out-of-bounds warnings pinned to
-    /// the left edge, health bars, pickup toasts above the players and floating score popups.
+    /// the 3-2-1 countdown, the last call, messages, the tutorial's signs (<see cref="TutorialSigns"/>),
+    /// out-of-bounds warnings pinned to the left edge, health bars, pickup toasts above the
+    /// players and floating score popups.
     /// Reads <see cref="RunController"/>; changes nothing.
     /// </summary>
     [RequireComponent(typeof(RunController))]
@@ -73,6 +74,7 @@ namespace Demolition.Run
         private TextMeshProUGUI _center;
         private TextMeshProUGUI _prompt;
         private float _promptUntil;
+        private TutorialSigns _signs;
         private readonly List<PlayerPanel> _panels = new List<PlayerPanel>();
         private readonly List<Popup> _popups = new List<Popup>();
 
@@ -88,6 +90,8 @@ namespace Demolition.Run
             ApplyScale();
             Profile.SettingsChanged += ApplyScale;
             _root = UiFactory.SafeArea(canvas.transform);
+            if (TutorialPrompt.All.Count > 0)
+                _signs = new TutorialSigns(_root, TutorialPrompt.All); // first: the rest of the HUD draws over them
 
             var top = new Vector2(0.5f, 1f);
             _timer = UiFactory.Text(_root, "Timer", top, new Vector2(0f, -10f), 56f, TextAlignmentOptions.Center);
@@ -263,6 +267,7 @@ namespace Demolition.Run
             _center.text = CenterText(state);
             _prompt.gameObject.SetActive(Time.time < _promptUntil && !state.IsOver);
             _prompt.rectTransform.sizeDelta = new Vector2(Mathf.Min(1800f, _root.rect.width - 80f), 100f);
+            _signs?.Tick(_run, world => ToCanvas(world) + _root.rect.size * 0.5f);
 
             for (int i = 0; i < _panels.Count; i++)
                 UpdatePanel(i, state);

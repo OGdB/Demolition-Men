@@ -7,7 +7,8 @@ namespace Demolition
 {
     /// <summary>
     /// On-screen controls for phones and tablets, built in code: a floating stick on the
-    /// left half, JUMP / HIT / TNT / SWAP under the right thumb, and a pause button. Shown
+    /// left half, JUMP / HIT / TNT / SWAP under the right thumb, a pause button, and two
+    /// fingers anywhere else pinch-zoom the camera. Shown
     /// only when <see cref="Platform.IsTouch"/>; hidden while paused or after the run.
     /// Drives <see cref="TouchInputSource.Shared"/>.
     /// </summary>
@@ -71,6 +72,12 @@ namespace Demolition
             _root = canvas.gameObject;
             _group = _root.AddComponent<CanvasGroup>();
             RectTransform safe = UiFactory.SafeArea(canvas.transform);
+
+            // Everywhere the controls aren't: made first, so they sit on top and keep their touches.
+            Image pinch = UiFactory.Image(safe, "PinchZone", Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);
+            pinch.rectTransform.anchorMax = Vector2.one;
+            pinch.raycastTarget = true;
+            pinch.gameObject.AddComponent<TouchPinch>().Configure(source);
 
             // Stick zone: the lower-left of the screen.
             Image zone = UiFactory.Image(safe, "StickZone", Vector2.zero, Vector2.zero, Vector2.zero, Color.clear);

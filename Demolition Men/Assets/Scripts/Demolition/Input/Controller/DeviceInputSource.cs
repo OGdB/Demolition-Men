@@ -6,12 +6,16 @@ namespace Demolition
     /// <summary>
     /// Keyboard + mouse and/or one gamepad, read straight from the Input System.
     ///
-    /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · LB/RB weapon.
+    /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · LB/RB weapon ·
+    /// right stick up/down zoom in/out.
     /// Keyboard: A/D or ◀/▶ move · Space/W jump · Z, F or L-Mouse attack · X, R or
-    /// R-Mouse dynamite · Q/E weapon.
+    /// R-Mouse dynamite · Q/E weapon · mouse wheel zoom.
     /// </summary>
     public sealed class DeviceInputSource : IPlayerInputSource
     {
+        private const float StickZoomSteps = 3f; // zoom steps per second, stick held all the way
+        private const float StickZoomDeadzone = 0.35f;
+
         private readonly InputDevice _assigned;
         private readonly int _gamepadIndex;
         private readonly bool _keyboard;
@@ -67,6 +71,9 @@ namespace Demolition
                 frame.DynamitePressed |= pad.bButton.wasPressedThisFrame;
                 if (pad.rightShoulder.wasPressedThisFrame) frame.WeaponCycle = 1;
                 else if (pad.leftShoulder.wasPressedThisFrame) frame.WeaponCycle = -1;
+                float zoom = pad.rightStick.ReadValue().y; // pushed up: closer
+                if (Mathf.Abs(zoom) > StickZoomDeadzone)
+                    frame.Zoom -= zoom * StickZoomSteps * Time.unscaledDeltaTime;
                 if (pad.wasUpdatedThisFrame && (pad.leftStick.ReadValue().sqrMagnitude > 0.25f || AnyButton(pad)))
                     Style = InputStyle.Gamepad;
             }
@@ -101,6 +108,11 @@ namespace Demolition
                 frame.DynamitePressed |= mouse.rightButton.wasPressedThisFrame;
                 if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)
                     Style = InputStyle.Keyboard;
+                // One step per frame the wheel turns: its delta is pixels on some platforms and
+                // notches on others. Rolled up: closer.
+                float wheel = mouse.scroll.ReadValue().y;
+                if (Mathf.Abs(wheel) > 0.01f)
+                    frame.Zoom -= Mathf.Sign(wheel);
             }
 
             frame.Move = Vector2.ClampMagnitude(move, 1f);

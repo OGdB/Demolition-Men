@@ -12,6 +12,7 @@ namespace Demolition
 
         private bool _jumpHeld, _jumpPressed, _jumpReleased, _attackHeld, _dynamitePressed;
         private int _cycle;
+        private float _zoom;
 
         public InputStyle Style => InputStyle.Touch;
 
@@ -27,6 +28,8 @@ namespace Demolition
         public void SetAttack(bool held) => _attackHeld = held;
         public void PressDynamite() => _dynamitePressed = true;
         public void PressCycle() => _cycle = 1;
+        /// <summary>Pinch: zoom steps, added up until the next read.</summary>
+        public void AddZoom(float steps) => _zoom += steps;
 
         /// <summary>Let go of everything (controls hidden, scene change).</summary>
         public void Release()
@@ -34,6 +37,7 @@ namespace Demolition
             Move = UnityEngine.Vector2.zero;
             SetJump(false);
             _attackHeld = false;
+            _zoom = 0f;
         }
 
         public PlayerInputFrame Read()
@@ -47,9 +51,11 @@ namespace Demolition
                 AttackHeld = _attackHeld,
                 DynamitePressed = _dynamitePressed,
                 WeaponCycle = _cycle,
+                Zoom = _zoom,
             };
             _jumpPressed = _jumpReleased = _dynamitePressed = false;
             _cycle = 0;
+            _zoom = 0f;
             return frame;
         }
     }

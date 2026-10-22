@@ -30,14 +30,11 @@ namespace Demolition
         public PlayerInputFrame Read()
         {
             PlayerInputFrame a = _a.Read(), b = _b.Read();
-            if (Active(b) && !Active(_lastB)) _style = _b.Style;
-            else if (Active(a) && !Active(_lastA)) _style = _a.Style;
+            if (b.IsActive && !_lastB.IsActive) _style = _b.Style;
+            else if (a.IsActive && !_lastA.IsActive) _style = _a.Style;
             _lastA = a;
             _lastB = b;
             return PlayerInputFrame.Merge(a, b);
         }
-
-        private static bool Active(PlayerInputFrame f) =>
-            f.Move.sqrMagnitude > 0.04f || f.JumpHeld || f.AttackHeld || f.DynamitePressed || f.WeaponCycle != 0;
     }
 }

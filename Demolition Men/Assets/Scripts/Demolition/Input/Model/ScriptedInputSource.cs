@@ -13,6 +13,7 @@ namespace Demolition
             PlayerInputFrame frame = Next;
             Next.JumpPressed = Next.JumpReleased = Next.DynamitePressed = false;
             Next.WeaponCycle = 0;
+            Next.Zoom = 0f;
             return frame;
         }
     }

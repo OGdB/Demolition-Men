@@ -46,6 +46,43 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Zoom_IsReadOnce_AndBothSourcesAddUp()
+        {
+            var bot = new ScriptedInputSource();
+            bot.Next.Zoom = 1f;
+            Assert.AreEqual(1f, bot.Read().Zoom);
+            Assert.AreEqual(0f, bot.Read().Zoom, "a wheel notch is one step, not one per frame");
+            var merged = PlayerInputFrame.Merge(new PlayerInputFrame { Zoom = 1f }, new PlayerInputFrame { Zoom = -0.25f });
+            Assert.AreEqual(0.75f, merged.Zoom, 1e-5f);
+        }
+
+        [Test]
+        public void TouchPinch_AddsUpUntilRead()
+        {
+            var touch = new TouchInputSource();
+            touch.AddZoom(-0.5f);
+            touch.AddZoom(-0.25f);
+            Assert.AreEqual(-0.75f, touch.Read().Zoom, 1e-5f);
+            Assert.AreEqual(0f, touch.Read().Zoom);
+            touch.AddZoom(1f);
+            touch.Release();
+            Assert.AreEqual(0f, touch.Read().Zoom, "letting go drops a half-read pinch");
+        }
+
+        [Test]
+        public void Glyphs_FollowTheDevicesInUse()
+        {
+            const string message = "{JUMP} to jump, hold {HIT} to smash";
+            Assert.AreEqual("[SPACE] to jump, hold [Z] to smash", InputGlyphs.Format(message, new[] { InputStyle.Keyboard }));
+            Assert.AreEqual("JUMP to jump, hold HIT to smash", InputGlyphs.Format(message, new[] { InputStyle.Touch }));
+            Assert.AreEqual("[SPACE] / (A) to jump, hold [Z] / (X) to smash",
+                InputGlyphs.Format(message, new[] { InputStyle.Gamepad, InputStyle.Keyboard, InputStyle.Gamepad }),
+                "keyboard first, each device once");
+            Assert.AreEqual("[SPACE] / (A) to jump, hold [Z] / (X) to smash", InputGlyphs.Format(message, new InputStyle[0]));
+            Assert.AreEqual("no buttons here", InputGlyphs.Format("no buttons here", new[] { InputStyle.Touch }));
+        }
+
+        [Test]
         public void Combined_FollowsTheSourceUsedLast()
         {
             var bot = new ScriptedInputSource();

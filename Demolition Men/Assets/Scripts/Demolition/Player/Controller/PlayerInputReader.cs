@@ -33,8 +33,13 @@ namespace Demolition
         public bool DynamiteDown { get; private set; }
         /// <summary>+1 / -1 on the frame the next / previous weapon is requested, otherwise 0.</summary>
         public int WeaponCycle { get; private set; }
+        /// <summary>Camera zoom steps this frame (see <see cref="PlayerInputFrame.Zoom"/>).</summary>
+        public float Zoom { get; private set; }
         /// <summary>Button glyphs for this player's prompts.</summary>
         public InputStyle Style => Source.Style;
+        /// <summary>The player has touched their controls since the scene started; until then
+        /// their device may not even be there (a level started without the join screen).</summary>
+        public bool Used { get; private set; }
 
         /// <summary>Where this player's input comes from. Defaults to the gamepad index plus
         /// the keyboard (and the touch controls for player 1 on a touch device).</summary>
@@ -76,6 +81,8 @@ namespace Demolition
             AttackHeld = frame.AttackHeld;
             DynamiteDown = frame.DynamitePressed;
             WeaponCycle = frame.WeaponCycle;
+            Zoom = frame.Zoom;
+            Used |= frame.IsActive;
         }
     }
 }

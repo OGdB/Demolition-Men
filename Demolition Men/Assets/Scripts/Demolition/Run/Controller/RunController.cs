@@ -91,7 +91,7 @@ namespace Demolition.Run
 
         /// <summary>Points just awarded: player (-1 for none), points, world position.</summary>
         public event Action<int, int, Vector3> Scored;
-        /// <summary>A tutorial hint to show: message, seconds.</summary>
+        /// <summary>A message for everyone (a player left): message, seconds.</summary>
         public event Action<string, float> PromptShown;
         /// <summary>The run is over and banked in the profile (see <see cref="Reward"/>).</summary>
         public event Action Ended;
@@ -190,22 +190,21 @@ namespace Demolition.Run
         {
             if (State.IsOver)
                 return;
+            if (_camera != null)
+                _camera.Zoom(ZoomInput());
 
             FinishLine finish = FinishLine.Active;
-            float frontX = float.MinValue;
             for (int i = 0; i < _players.Count; i++)
             {
                 if (State.Status(i) != PlayerStatus.Alive)
                     continue;
                 Vector3 pos = _players[i].Transform.position;
-                frontX = Mathf.Max(frontX, pos.x);
                 if (NetRole.IsClient)
                     continue; // online, the host's RunState decides
                 State.SetInBounds(i, IsInBounds(pos));
                 if (finish != null && pos.x >= finish.X)
                     State.ReportCrossedFinish(i);
             }
-            ShowReachedPrompts(frontX);
 
             if (_camera != null && finish != null)
                 _camera.StopX = finish.X;
@@ -223,20 +222,14 @@ namespace Demolition.Run
             return vp.x >= 0f && vp.y >= -bottomMargin;
         }
 
-        // Several hints reached at once (a fast player): only the furthest one is current.
-        private void ShowReachedPrompts(float frontX)
+        // Either local player zooms the shared camera; the other device's player zooms theirs.
+        private float ZoomInput()
         {
-            TutorialPrompt furthest = null;
-            foreach (TutorialPrompt prompt in TutorialPrompt.All)
-            {
-                if (prompt.Shown || frontX < prompt.X)
-                    continue;
-                prompt.Shown = true;
-                if (furthest == null || prompt.X > furthest.X)
-                    furthest = prompt;
-            }
-            if (furthest != null)
-                PromptShown?.Invoke(furthest.Message, furthest.Duration);
+            float steps = 0f;
+            for (int i = 0; i < _players.Count; i++)
+                if (!_players[i].Health.IsProxy)
+                    steps += _players[i].Input.Zoom;
+            return steps;
         }
 
         /// <summary>Online host: the other device left. Its player is out for good; the run goes on.</summary>
