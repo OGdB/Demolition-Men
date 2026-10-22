@@ -8,9 +8,9 @@ namespace Demolition.Run
 {
     /// <summary>
     /// In-run HUD, built in code: timer and par, a hazard-striped demolition meter with
-    /// the grade marks, a panel per player (score, health, free life, weapon, TNT with its
-    /// button), the 3-2-1 countdown, the last call, tutorial hints, out-of-bounds warnings
-    /// pinned to the left edge, pickup toasts above the players and floating score popups.
+    /// the grade marks, a panel per player (score, free life, weapon, TNT with its button),
+    /// the 3-2-1 countdown, the last call, tutorial hints, out-of-bounds warnings pinned to
+    /// the left edge, health bars, pickup toasts above the players and floating score popups.
     /// Reads <see cref="RunController"/>; changes nothing.
     /// </summary>
     [RequireComponent(typeof(RunController))]
@@ -19,7 +19,11 @@ namespace Demolition.Run
         private sealed class PlayerPanel
         {
             public TextMeshProUGUI Score;
+            public RectTransform HealthBar;
+            public CanvasGroup HealthGroup;
             public RectTransform HealthFill;
+            public float LastHealth = -1f;
+            public float HealthChangedAt = float.NegativeInfinity;
             public TextMeshProUGUI Life;
             public Image WeaponIcon;
             public TextMeshProUGUI Weapon;
@@ -44,6 +48,12 @@ namespace Demolition.Run
         private const float PopupLifetime = 0.9f;
         private const float ToastSeconds = 2.5f;
         private const float MeterWidth = 460f;
+        private const float HeadHeight = 1.9f; // top of the player sprite's head above its feet, world units
+        private const float HealthBarGap = 14f;
+        private static readonly Vector2 HealthBarSize = new Vector2(96f, 12f);
+        private const float HealthIdleAlpha = 0.35f;
+        private const float HealthShowSeconds = 1.5f; // fully visible this long after the health changes
+        private const float HealthFadeSeconds = 0.5f;
         private static readonly Color[] PlayerColors = { new Color(1f, 0.85f, 0.3f), new Color(1f, 0.45f, 0.35f) };
 
         [Tooltip("Shown at the left edge while a player is out of bounds.")]
@@ -187,13 +197,7 @@ namespace Demolition.Run
             name.color = colour;
             panel.Score = UiFactory.Text(_root, id + " Score", anchor, new Vector2(100f * side, -16f), 40f, align, new Vector2(400f, 50f));
 
-            Image back = UiFactory.Image(_root, id + " Health", anchor, new Vector2(30f * side, -72f), new Vector2(300f, 18f), new Color(0f, 0f, 0f, 0.6f));
-            Image fill = UiFactory.Image(back.transform, "Fill", Vector2.zero, Vector2.zero, Vector2.zero, colour);
-            panel.HealthFill = fill.rectTransform;
-            panel.HealthFill.anchorMin = Vector2.zero;
-            panel.HealthFill.anchorMax = Vector2.one;
-            panel.HealthFill.pivot = new Vector2(left ? 0f : 1f, 0.5f);
-            panel.Life = UiFactory.Text(_root, id + " Life", anchor, new Vector2(342f * side, -66f), 20f, align, new Vector2(140f, 28f));
+            panel.Life = UiFactory.Text(_root, id + " Life", anchor, new Vector2(30f * side, -66f), 20f, align, new Vector2(140f, 28f));
 
             panel.WeaponIcon = UiFactory.Image(_root, id + " WeaponIcon", anchor, new Vector2(30f * side, -94f), new Vector2(30f, 30f), Color.white);
             panel.WeaponIcon.preserveAspect = true;
@@ -214,7 +218,16 @@ namespace Demolition.Run
                 TextAlignmentOptions.Center, new Vector2(110f, 70f), outlined: true);
             panel.Warning.gameObject.SetActive(false);
 
-            panel.Toast = UiFactory.Text(_root, id + " Toast", Vector2.zero, Vector2.zero, 30f, TextAlignmentOptions.Center,
+            Image bar = UiFactory.Image(_root, id + " Health", Vector2.zero, Vector2.zero, HealthBarSize, new Color(0f, 0f, 0f, 0.7f));
+            panel.HealthBar = bar.rectTransform;
+            panel.HealthBar.pivot = new Vector2(0.5f, 0f); // centred above the head
+            panel.HealthGroup = bar.gameObject.AddComponent<CanvasGroup>();
+            panel.HealthGroup.alpha = HealthIdleAlpha;
+            Image fill = UiFactory.Image(bar.transform, "Fill", Vector2.zero, Vector2.zero, Vector2.zero, colour);
+            panel.HealthFill = fill.rectTransform;
+            Inset(panel.HealthFill, 1f, 2f);
+
+            panel.Toast =UiFactory.Text(_root, id + " Toast", Vector2.zero, Vector2.zero, 30f, TextAlignmentOptions.Center,
                 new Vector2(700f, 44f), outlined: true);
             panel.Toast.color = colour;
             panel.Toast.rectTransform.pivot = new Vector2(0.5f, 0f); // centred above the head
@@ -281,9 +294,7 @@ namespace Demolition.Run
             bool alive = status == PlayerStatus.Alive;
 
             panel.Score.text = _run.Score.Points(index).ToString("N0");
-            float health = player.Health.Max > 0f ? player.Health.Current / player.Health.Max : 0f;
-            panel.HealthFill.anchorMax = new Vector2(index == 0 ? health : 1f, 1f);
-            panel.HealthFill.anchorMin = new Vector2(index == 0 ? 0f : 1f - health, 0f);
+            UpdateHealthBar(panel, player, alive && !state.IsOver);
             panel.Life.text = state.HasFreeRespawn(index) ? "+1 LIFE" : string.Empty;
 
             if (status == PlayerStatus.Rejoining)
@@ -313,6 +324,32 @@ namespace Demolition.Run
                 panel.Warning.anchoredPosition = new Vector2(20f, Mathf.Clamp(local.y, -limit, limit));
             }
         }
+
+        // Above the head: faint while nothing happens, fully visible for a moment after the
+        // health changes (a hit, a revive), then fading back.
+        private void UpdateHealthBar(PlayerPanel panel, RunController.Player player, bool show)
+        {
+            float current = player.Health.Current;
+            if (current != panel.LastHealth)
+            {
+                if (panel.LastHealth >= 0f)
+                    panel.HealthChangedAt = Time.time;
+                panel.LastHealth = current;
+            }
+
+            panel.HealthBar.gameObject.SetActive(show);
+            if (!show)
+                return;
+            float max = player.Health.Max;
+            panel.HealthFill.anchorMax = new Vector2(max > 0f ? Mathf.Clamp01(current / max) : 0f, 1f);
+            float fade = Mathf.Clamp01((Time.time - panel.HealthChangedAt - HealthShowSeconds) / HealthFadeSeconds);
+            panel.HealthGroup.alpha = Mathf.Lerp(1f, HealthIdleAlpha, fade);
+            panel.HealthBar.anchoredPosition = AboveHead(player) + _root.rect.size * 0.5f;
+        }
+
+        /// <summary>Where the health bar sits: just above the player's head, relative to the canvas centre.</summary>
+        private Vector2 AboveHead(RunController.Player player) =>
+            ToCanvas(player.Transform.position + Vector3.up * HeadHeight) + new Vector2(0f, HealthBarGap);
 
         // TNT count with the throw button for this player's device; pulses when it goes up.
         private void UpdateTnt(PlayerPanel panel, RunController.Player player, bool alive)
@@ -363,9 +400,11 @@ namespace Demolition.Run
         {
             bool show = Time.time < panel.ToastUntil;
             panel.Toast.gameObject.SetActive(show);
-            if (show)
-                ((RectTransform)panel.Toast.transform).anchoredPosition =
-                    ToCanvas(player.Transform.position + Vector3.up * 3.2f) + _root.rect.size * 0.5f;
+            if (!show)
+                return;
+            Vector2 local = ToCanvas(player.Transform.position + Vector3.up * 3.2f);
+            local.y = Mathf.Max(local.y, AboveHead(player).y + HealthBarSize.y + 6f); // clear of the health bar when zoomed out
+            ((RectTransform)panel.Toast.transform).anchoredPosition = local + _root.rect.size * 0.5f;
         }
 
         /// <summary>A button prompt for whatever this player last used: [X] key, (B) pad

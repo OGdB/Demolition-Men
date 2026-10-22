@@ -40,6 +40,8 @@ namespace Demolition.Levels
         public Color signColor = new Color(1f, 0.3f, 0.8f);
         [Tooltip("The demolition men wear lamps on their hard hats.")]
         public bool headlamps;
+        [Tooltip("How far the hard-hat lamps reach, in world units (blocks).")]
+        [Min(0.5f)] public float headlampRange = 5f;
         [Header("Street")]
         [Tooltip("Cosmetic dressing per kind (lamp posts, fences, bushes, bins, signs). A kind with no sprites is left out.")]
         public DecorEntry[] decor = new DecorEntry[0];

@@ -25,8 +25,8 @@ before the editor steps below. `SceneLighting` adds itself to every scene:
 - **Ambient:** one global `Light2D`. In a run it uses the level theme's `ambient` and
   `ambientIntensity`; menus, the tutorial and daylight themes stay at white 1.0 (looks unlit).
 - **Point lights:** lamp posts (`lampLight`), signs (`signLight`, `signColor`) and hard-hat
-  headlamps on both players (`headlamps`), from the theme. Only Neon uses them so far:
-  ambient 0.55 bluish, lamps 1.0, magenta signs 1.2, headlamps on.
+  headlamps on both players (`headlamps`, reach `headlampRange`), from the theme. Only Neon
+  uses them so far: ambient 0.55 bluish, lamps 1.0, magenta signs 1.2, headlamps on (range 5).
 - **Blasts:** every dynamite or gas-tank explosion flashes an orange light that fades in 0.4 s.
 - **Post-processing:** a global `Volume` with a profile built in code: Bloom (threshold
   0.95, intensity 0.6), Vignette (0.22), Color Adjustments (contrast +8, saturation +10). No

@@ -84,7 +84,7 @@ namespace Demolition.Lighting
                 {
                     GameObject player = GameObject.Find(name);
                     if (player != null && _lamped.Add(player))
-                        AddPoint(player.transform, new Vector3(0f, 1.55f, 0f), HeadlampColor, 0.9f, 5f);
+                        AddPoint(player.transform, new Vector3(0f, 1.55f, 0f), HeadlampColor, 0.9f, _theme.headlampRange);
                 }
             }
         }
