@@ -54,7 +54,7 @@ devices over the internet yet.
 
 | Area | What's missing |
 |---|---|
-| Android build | No package name, company still `DefaultCompany`, no upload keystore, the app icon (`Assets/Brand/`, from `tools/artpipe/brand.py`) not yet set in Player Settings. Target API is "highest installed", but Play needs **API 36** for new apps since 31 Aug 2026. App category not confirmed as Game; internet permission not forced on (online needs it). Never built, installed or profiled on a phone. |
+| Android build | Player Settings done (2026-10-22): `com.ogstudio.demolitionmen`, OG Studio, 1.0.0, target API 36, category Game, internet required, R8 minify for release, managed stripping Medium, the adaptive icon from `Assets/Brand/`. Missing: an upload keystore, the build entry point, the profile saved on pause, unused packages out. Never built, installed or profiled on a phone. |
 | Play account | None yet. A new personal account must run a **closed test with 12+ testers for 14 days** before it may publish to production. |
 | Ads | The plugin's Android dependency resolution in the editor and a first test on a phone (`monetization.md`, What's left). The privacy policy is live and the AdMob consent message is published. |
 | Online | O2 play tests, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other over mobile data), O4 hardening (a backgrounded app, timeouts, version mismatch, relay down). |
@@ -595,7 +595,7 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D10 | Business model | **Decided (2026-10-17):** free, with ads on phones only (interstitials between runs, opt-in rewarded "2x cash"); a "remove ads" purchase later. See `docs/monetization.md`. |
 | D20 | Release target | **Decided (2026-10-20):** Google Play first, week of 11 Jan 2027, from a new personal developer account (so a closed test first, R3). Other platforms after launch. |
 | D21 | Marketing budget | **Decided (2026-10-20):** €100–500 for launch and the first months. Plan: `marketing.md`. |
-| D22 | Package name and developer name | Developer name **decided (2026-10-22): OG Studio**, contact `OGpriv@proton.me`. The package name is still open and needed in R1; it is permanent. Suggested: `com.ogstudio.demolitionmen`. |
+| D22 | Package name and developer name | Developer name **decided (2026-10-22): OG Studio**, contact `OGpriv@proton.me`. The package name `com.ogstudio.demolitionmen` is set in Player Settings (2026-10-22); it becomes permanent with the first upload to Play. |
 | D23 | Ad network | AdMob directly, with its UMP consent form: one SDK, consent included and Google-certified for the EEA/UK. LevelPlay (the earlier pick) mediates more networks but needs a consent tool on top; mediation can come later through AdMob. |
 | D24 | Public trader details | Before declaring trader status (R4): which address and phone number may be shown on the store page. |
 | D25 | Game name | Search the Play Store and the EU/US trademark registers for the name before the listing goes up; renaming after marketing has started loses the audience built so far. A subtitle in the title helps search (e.g. "Demolition Men: Wreck Co-op"). |
