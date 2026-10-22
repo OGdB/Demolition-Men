@@ -43,12 +43,12 @@ if [ "$mode" = all ] || [ "$mode" = build ]; then
 fi
 if [ "$mode" = all ] || [ "$mode" = test ]; then
   build ModelTests || exit 1
-  out=$(cd "$HERE/../../Demolition Men" && dotnet "$UNITY_CHECK_HOME/out/ModelTests/ModelTests.dll" --noresult --labels=Off "$@" 2>&1)
+  out=$(cd "$HERE/../../Demolition Men" && DOTNET_ROLL_FORWARD="${DOTNET_ROLL_FORWARD:-Major}" dotnet "$UNITY_CHECK_HOME/out/ModelTests/ModelTests.dll" --noresult --labels=Off "$@" 2>&1)
   echo "$out" | sed -n '/Errors, Failures/,/^Run Settings/p;/^Test Run Summary/,/Failed Tests/p'
   echo "$out" | grep -q "Overall result: Passed" || rc=1
 fi
 if [ "$mode" = levels ]; then
   build ModelTests || exit 1
-  (cd "$HERE/../../Demolition Men" && dotnet "$UNITY_CHECK_HOME/out/ModelTests/ModelTests.dll" dump-levels "$HERE/../../content-work/levels" "$@") || rc=1
+  (cd "$HERE/../../Demolition Men" && DOTNET_ROLL_FORWARD="${DOTNET_ROLL_FORWARD:-Major}" dotnet "$UNITY_CHECK_HOME/out/ModelTests/ModelTests.dll" dump-levels "$HERE/../../content-work/levels" "$@") || rc=1
 fi
 exit $rc
