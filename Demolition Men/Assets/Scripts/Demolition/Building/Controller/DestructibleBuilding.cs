@@ -20,7 +20,9 @@ namespace Demolition
     ///    probes below ground-floor blocks for terrain to find the anchors, and
     ///    registers everything automatically. Background dressing that overlaps an
     ///    already-claimed cell becomes a cosmetic "rider" that simply falls when the
-    ///    block in front of it does.
+    ///    block in front of it does. Other sprites in the building that belong to no
+    ///    block (a flame on a chimney) are "dressing" of the block they sit on and go
+    ///    out when it leaves the structure.
     ///
     /// This is where the discrete, deterministic "which cells exist / which detached"
     /// state lives — the exact thing that would be replicated over NGO (see the
@@ -80,6 +82,11 @@ namespace Demolition
         // structural, they just fall when their host block goes.
         private readonly Dictionary<BuildingBlock, List<BuildingBlock>> _riders =
             new Dictionary<BuildingBlock, List<BuildingBlock>>();
+
+        // Sprites that belong to no block, by the block they sit on: they go out with it.
+        private readonly Dictionary<BuildingBlock, List<GameObject>> _dressing =
+            new Dictionary<BuildingBlock, List<GameObject>>();
+        private static readonly Color Smoke = new Color(0.35f, 0.35f, 0.38f);
 
         // Stress/overload present in the intact building (e.g. a roof over a hollow
         // interior). Only damage-induced strain beyond this baseline is shown to the
@@ -213,7 +220,7 @@ namespace Demolition
                 Debug.LogWarning($"{name}: block '{block.name}' isn't connected to the ground or the rest of the building, so it falls at start.", block);
 #endif
                 block.MarkCredited();
-                ReleaseRiders(block);
+                ReleaseAttached(block);
                 block.BeginFalling();
             }
         }
@@ -338,6 +345,7 @@ namespace Demolition
             // mid-air arrangement — fall back to anchoring the lowest row so the
             // building still stands until hit.
             Physics2D.SyncTransforms();
+            AdoptDressing(cellsOf);
             var anchored = new HashSet<BuildingBlock>();
             foreach (var kv in cellsOf)
             {
@@ -378,6 +386,60 @@ namespace Demolition
         }
 
         private readonly Collider2D[] _probeHits = new Collider2D[16];
+
+        // Sprites under the building that belong to no block and to nothing else with a job
+        // of its own: a flame on a chimney. Each hangs on the block it sits on (or, failing
+        // that, is drawn over). They aren't structure, so their solid colliders go; a
+        // trigger (a trap) keeps working.
+        private void AdoptDressing(Dictionary<BuildingBlock, List<Vector2Int>> structural)
+        {
+            foreach (SpriteRenderer sprite in GetComponentsInChildren<SpriteRenderer>())
+            {
+                GameObject go = sprite.gameObject;
+                if (!IsDressing(go.transform) || go.GetComponentInChildren<BuildingBlock>(true) != null)
+                    continue;
+                Bounds b = sprite.bounds;
+                BuildingBlock host = BlockAt(new Vector2(b.center.x, b.min.y - 0.1f), structural)
+                                     ?? BlockAt(b.center, structural);
+                if (host == null)
+                    continue;
+
+                foreach (Collider2D col in go.GetComponents<Collider2D>())
+                    if (!col.isTrigger)
+                        col.enabled = false;
+                var body = go.GetComponent<Rigidbody2D>();
+                if (body != null)
+                    body.simulated = false;
+                if (!_dressing.TryGetValue(host, out var list))
+                    _dressing[host] = list = new List<GameObject>();
+                list.Add(go);
+            }
+        }
+
+        // Nothing between it and the building has a script: not a block's sprite, not a
+        // nested building, not something like a pickup.
+        private bool IsDressing(Transform t)
+        {
+            for (; t != null && t != transform; t = t.parent)
+                foreach (MonoBehaviour behaviour in t.GetComponents<MonoBehaviour>())
+                    if (behaviour != null)
+                        return false;
+            return t == transform;
+        }
+
+        private BuildingBlock BlockAt(Vector2 point, Dictionary<BuildingBlock, List<Vector2Int>> structural)
+        {
+            ContactFilter2D filter = ContactFilter2D.noFilter;
+            filter.useTriggers = false;
+            int count = Physics2D.OverlapPoint(point, filter, _probeHits);
+            for (int i = 0; i < count; i++)
+            {
+                BuildingBlock block = _probeHits[i] != null ? _probeHits[i].GetComponentInParent<BuildingBlock>() : null;
+                if (block != null && structural.ContainsKey(block))
+                    return block;
+            }
+            return null;
+        }
 
         private bool HasGroundBelow(Bounds aabb)
         {
@@ -472,7 +534,7 @@ namespace Demolition
         /// <summary>Called by a <see cref="BuildingBlock"/> when its health reaches zero.</summary>
         public void OnBlockDestroyed(BuildingBlock block)
         {
-            ReleaseRiders(block);
+            ReleaseAttached(block);
 
             if (block.Coords.Count == 0)
             {
@@ -522,7 +584,7 @@ namespace Demolition
             for (int i = 0; i < fallers.Count; i++)
             {
                 fallers[i].MarkCredited();
-                ReleaseRiders(fallers[i]);
+                ReleaseAttached(fallers[i]);
                 if (CrumbleDetached)
                 {
                     Particles.Burst(fallers[i].transform.position, BlockMaterialInfo.Tint(fallers[i].Material), 10, 3.5f, 0.16f, 0.6f);
@@ -543,8 +605,21 @@ namespace Demolition
             RefreshStressVisuals();
         }
 
-        private void ReleaseRiders(BuildingBlock host)
+        // The host left the structure: its riders fall, its dressing goes out in a puff of smoke.
+        private void ReleaseAttached(BuildingBlock host)
         {
+            if (_dressing.TryGetValue(host, out var dressing))
+            {
+                _dressing.Remove(host);
+                foreach (GameObject go in dressing)
+                {
+                    if (go == null)
+                        continue;
+                    Particles.Burst(go.transform.position, Smoke, 8, 2f, 0.16f, 0.6f);
+                    Destroy(go);
+                }
+            }
+
             if (!_riders.TryGetValue(host, out var list))
                 return;
             _riders.Remove(host);

@@ -3,10 +3,10 @@ using UnityEngine;
 namespace Demolition
 {
     /// <summary>
-    /// Player health. Falling blocks deal impact damage (see <see cref="BuildingBlock"/>).
-    /// In a run, running out of health raises <see cref="Depleted"/> and the run
-    /// controller decides what happens. On the test bench the player respawns at its
-    /// start position instead.
+    /// Player health. Falling blocks deal impact damage (see <see cref="BuildingBlock"/>), and
+    /// so does touching anything tagged <c>Trap</c> (barbed wire, fire). In a run, running
+    /// out of health raises <see cref="Depleted"/> and the run controller decides what
+    /// happens. On the test bench the player respawns at its start position instead.
     /// </summary>
     public class PlayerHealth : MonoBehaviour
     {
@@ -17,6 +17,13 @@ namespace Demolition
         [Tooltip("Most damage one hit can deal.")]
         [SerializeField] private float maxDamagePerHit = 20f;
         [SerializeField] private AudioClip hurtSound;
+        [Header("Traps")]
+        [Tooltip("Damage per hit while touching a trigger tagged Trap; one hit per hitInvulnerability.")]
+        [SerializeField] private float trapDamage = 15f;
+        [Tooltip("Upward speed a trap hit gives, a flinch that helps the player scramble out.")]
+        [SerializeField] private float trapHop = 6f;
+
+        private const string TrapTag = "Trap";
 
         public float Max => maxHealth;
 
@@ -152,6 +159,15 @@ namespace Demolition
                 else
                     Respawn();
             }
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            if (!other.CompareTag(TrapTag) || IsProxy || IsDead || Time.time < _invulnUntil)
+                return;
+            TakeDamage(trapDamage);
+            if (_rb != null && !IsDead)
+                _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, Mathf.Max(_rb.linearVelocity.y, trapHop));
         }
 
         private void Respawn()
