@@ -254,7 +254,7 @@ namespace Demolition.Run
 
         private void LateUpdate()
         {
-            if (_root == null)
+            if (_root == null || !_run.enabled) // a run switched off as an online session ends: its players are going
                 return;
             if (_appliedFor.x != Screen.width || _appliedFor.y != Screen.height)
                 ApplyScale(); // resized window, rotated phone
