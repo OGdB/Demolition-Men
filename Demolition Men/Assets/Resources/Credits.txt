@@ -8,6 +8,13 @@ The Demolition Men team
 "Neon Action" by Bogart VGM - CC BY 4.0, silence trimmed - opengameart.org/content/neon-action
 CC BY 4.0: creativecommons.org/licenses/by/4.0
 
+# SOUND EFFECTS
+"Hard Punch 1" by miksmusic - CC BY 3.0 - freesound.org/s/497706
+"Jump.wav" by iimck - CC BY 3.0 - freesound.org/s/386486
+"Glas_Window_Drop_Slices_On_Floor_01.clip.wav" by TheSoundcatcher - CC BY 4.0 - freesound.org/s/315646
+"explosion_high_to_low_1.wav" by eardeer - CC0 - freesound.org/s/402006
+CC BY 3.0: creativecommons.org/licenses/by/3.0
+
 # FONT
 Black Ops One - The Black-Ops Project Authors - SIL Open Font License 1.1 (scripts.sil.org/OFL)
 
