@@ -59,6 +59,12 @@ namespace UnityEngine.Rendering.Universal
         public float pointLightInnerRadius { get; set; }
         public float pointLightOuterRadius { get; set; }
     }
+    // The real one derives from RenderPipelineAsset<UniversalRenderPipeline>.
+    public partial class UniversalRenderPipelineAsset : RenderPipelineAsset
+    {
+        public override RenderPipeline CreatePipeline() => throw new NotImplementedException(); // protected in Unity; the reference assemblies make it public
+        public float renderScale { get; set; }
+    }
     public class UniversalAdditionalCameraData : MonoBehaviour
     {
         public bool renderPostProcessing { get; set; }

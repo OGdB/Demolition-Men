@@ -34,6 +34,9 @@ namespace Demolition
                + "collapse event. Extra detached blocks are removed without simulation.")]
         [SerializeField] private int maxSimultaneousFalling = 200;
 
+        /// <summary>The quality tier's cap on top of <see cref="maxSimultaneousFalling"/> (Meta.Quality).</summary>
+        public static int FallingLimit { get; set; } = int.MaxValue;
+
         [Tooltip("How far (in cells) the stress heuristic scans sideways for a load-bearing "
                + "column when deciding how much a cell should lean/sag.")]
         [SerializeField] private int stressScanRange = StructureDefaults.StressScanRange;
@@ -590,7 +593,7 @@ namespace Demolition
                     Particles.Burst(fallers[i].transform.position, BlockMaterialInfo.Tint(fallers[i].Material), 10, 3.5f, 0.16f, 0.6f);
                     fallers[i].Vanish();
                 }
-                else if (fallen < maxSimultaneousFalling)
+                else if (fallen < Mathf.Min(maxSimultaneousFalling, FallingLimit))
                 {
                     fallers[i].BeginFalling();
                     fallen++;

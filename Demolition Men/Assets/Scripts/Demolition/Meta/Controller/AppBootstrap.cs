@@ -44,6 +44,7 @@ namespace Demolition.Meta
             TouchControls.Scale = Mathf.Clamp(s.touchScale, 0.6f, 1.6f);
             TouchControls.Opacity = Mathf.Clamp(s.touchOpacity, 0.15f, 1f);
             CameraShake.Enabled = s.screenShake;
+            Quality.Apply(s);
 
             GameObject music = GameObject.Find(MusicObjectName);
             if (music != null && music.TryGetComponent(out AudioSource source))

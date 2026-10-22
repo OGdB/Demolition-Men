@@ -13,6 +13,8 @@ namespace Demolition.Meta
         public bool screenShake = true;
         /// <summary>2D lights and post-processing (bloom, vignette); off for slow phones.</summary>
         public bool effects = true;
+        /// <summary>A <see cref="QualityChoice"/>; AUTO lets the device decide (<see cref="QualityPolicy"/>).</summary>
+        public int quality;
         /// <summary>A <see cref="TouchControlsMode"/>.</summary>
         public int touchControls;
         public float touchScale = 1f;

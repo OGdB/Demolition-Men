@@ -34,6 +34,13 @@ before the editor steps below. `SceneLighting` adds itself to every scene:
   switched on by the code.
 - **Settings ▸ EFFECTS:** OFF turns off the point lights, the flashes and the post-processing,
   and puts the ambient back to daylight, for slow phones.
+- **Settings ▸ QUALITY (render scale):** `RenderScaleView` sets the URP asset's render scale
+  from `Meta.Quality`: the world renders at most 720 pixels tall on LOW, 1080 on HIGH phones and
+  at full resolution on HIGH elsewhere, then scales up (URP's automatic filter); canvases stay
+  sharp. AUTO picks LOW for phones under ~4.5 GB of memory or 6 cores and for phone browsers
+  (`QualityPolicy`). The asset is changed in memory only; in the editor the authored scale
+  comes back when play mode ends. The six stock quality levels in Project Settings are unused:
+  they all share `URP-2D.asset` and only differ in 3D settings.
 
 The values are first guesses; tune them on `NeonTheme.asset` (Light header) and in
 `SceneLighting.PostProfile`. unity-check compiles the assembly against `UrpStubs.cs` (URP 17.4

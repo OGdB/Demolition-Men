@@ -11,7 +11,8 @@ namespace Demolition.Meta
 {
     /// <summary>
     /// Settings overlay built in code, usable from the menu and the pause screen: volumes,
-    /// screen shake, effects (lights and post-processing), touch controls (mode, size, opacity). Every row is a pair of − / +
+    /// screen shake, effects (lights and post-processing), quality (<see cref="Quality"/>: AUTO, LOW,
+    /// HIGH), touch controls (mode, size, opacity). Every row is a pair of − / +
     /// buttons (or one toggle), so it works the same with a mouse, a gamepad and a thumb.
     /// CREDITS opens <see cref="CreditsView"/>; PRIVACY (EEA/UK phones) reopens the ad consent form.
     /// Back (Esc / B) closes it; changes save immediately.
@@ -19,7 +20,8 @@ namespace Demolition.Meta
     public sealed class SettingsView : MonoBehaviour
     {
         private static readonly string[] TouchModes = { "AUTO", "ON", "OFF" };
-        private const float RowStep = 86f;
+        private const float RowStep = 80f;
+        private const float RowHeight = 74f;
 
         private GameObject _previousSelection;
         private System.Action _unblock;
@@ -80,6 +82,7 @@ namespace Demolition.Meta
             Stepper(root, ref y, "MUSIC", () => Percent(s.musicVolume), d => s.musicVolume = Step(s.musicVolume, d, 0.1f, 0f, 1f));
             Toggle(root, ref y, "SCREEN SHAKE", () => s.screenShake ? "ON" : "OFF", () => s.screenShake = !s.screenShake);
             Toggle(root, ref y, "EFFECTS", () => s.effects ? "ON" : "OFF", () => s.effects = !s.effects);
+            Toggle(root, ref y, "QUALITY", () => QualityLabel(s), () => s.quality = (s.quality + 1) % 3);
             Stepper(root, ref y, "HUD SIZE", () => s.hudScale > 0f ? Percent(s.HudScale(Platform.IsMobile, RunHud.SafeAspect())) : "AUTO",
                 d => s.hudScale = HudStep(s, d));
             Toggle(root, ref y, "TOUCH CONTROLS", () => TouchModes[Mathf.Clamp(s.touchControls, 0, 2)], () => s.touchControls = (s.touchControls + 1) % 3);
@@ -103,9 +106,9 @@ namespace Demolition.Meta
         {
             TextMeshProUGUI text = Row(root, y, label);
             var centre = new Vector2(0.5f, 0.5f);
-            Button minus = UiFactory.Button(root, "-", centre, new Vector2(130f, y), new Vector2(90f, 80f), () => Changed(() => change(-1)));
-            TextMeshProUGUI shown = UiFactory.Text(root, label + " Value", centre, new Vector2(290f, y), 40f, TextAlignmentOptions.Center, new Vector2(200f, 80f));
-            UiFactory.Button(root, "+", centre, new Vector2(450f, y), new Vector2(90f, 80f), () => Changed(() => change(1)));
+            Button minus = UiFactory.Button(root, "-", centre, new Vector2(130f, y), new Vector2(90f, RowHeight), () => Changed(() => change(-1)));
+            TextMeshProUGUI shown = UiFactory.Text(root, label + " Value", centre, new Vector2(290f, y), 40f, TextAlignmentOptions.Center, new Vector2(200f, RowHeight));
+            UiFactory.Button(root, "+", centre, new Vector2(450f, y), new Vector2(90f, RowHeight), () => Changed(() => change(1)));
             _refresh += () => shown.text = value();
             y -= RowStep;
             return minus;
@@ -114,7 +117,7 @@ namespace Demolition.Meta
         private void Toggle(RectTransform root, ref float y, string label, Func<string> value, Action toggle)
         {
             Row(root, y, label);
-            Button button = UiFactory.Button(root, "Toggle", new Vector2(0.5f, 0.5f), new Vector2(290f, y), new Vector2(410f, 80f), () => Changed(toggle));
+            Button button = UiFactory.Button(root, "Toggle", new Vector2(0.5f, 0.5f), new Vector2(290f, y), new Vector2(410f, RowHeight), () => Changed(toggle));
             TextMeshProUGUI shown = button.GetComponentInChildren<TextMeshProUGUI>();
             _refresh += () => shown.text = value();
             y -= RowStep;
@@ -122,7 +125,7 @@ namespace Demolition.Meta
 
         private static TextMeshProUGUI Row(RectTransform root, float y, string label)
         {
-            TextMeshProUGUI text = UiFactory.Text(root, label, new Vector2(0.5f, 0.5f), new Vector2(-330f, y), 40f, TextAlignmentOptions.Right, new Vector2(620f, 80f));
+            TextMeshProUGUI text = UiFactory.Text(root, label, new Vector2(0.5f, 0.5f), new Vector2(-330f, y), 40f, TextAlignmentOptions.Right, new Vector2(620f, RowHeight));
             text.text = label;
             return text;
         }
@@ -149,6 +152,14 @@ namespace Demolition.Meta
 
         private static float Step(float value, int direction, float step, float min, float max) =>
             Mathf.Clamp(Mathf.Round((value + direction * step) * 100f) / 100f, min, max);
+
+        // AUTO shows what the device picked.
+        private static string QualityLabel(GameSettings s) => (QualityChoice)s.quality switch
+        {
+            QualityChoice.Low => "LOW",
+            QualityChoice.High => "HIGH",
+            _ => Quality.Auto == QualityTier.Low ? "AUTO: LOW" : "AUTO: HIGH",
+        };
 
         private static string Percent(float value) => $"{Mathf.RoundToInt(value * 100f)}%";
     }
