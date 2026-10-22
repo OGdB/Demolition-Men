@@ -172,6 +172,8 @@ namespace Demolition.Online
                 case 4005: return "THE HOST LEFT";
                 case 4010: return "THE ROOM TIMED OUT";
                 case 4029: return "TOO MANY TRIES: WAIT A MINUTE";
+                case RelayTransport.PeerSilent: return "THE HOST STOPPED RESPONDING";
+                case RelayTransport.Away: return "THE GAME WAS IN THE BACKGROUND TOO LONG";
                 default: return IsConnected ? "CONNECTION LOST" : "CAN'T REACH THE SERVER";
             }
         }

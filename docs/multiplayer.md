@@ -191,7 +191,13 @@ the client skips the validators.
     count). As built, every binary message starts with a kind byte (data, ping, pong, drop):
     a ping every second measures the round trip for NGO and keeps the room open, and drop
     is how the host kicks the client. Relay text messages start with a letter, so they never
-    collide with a kind byte. The relay's close code becomes the reason the menu shows. The
+    collide with a kind byte. The relay's close code becomes the reason the menu shows.
+    `LinkWatch` (`Online/Model/`, tested) judges the link on each device's own clock: no
+    answer from the relay within 10 s is "can't reach the server"; paired, 10 s without a
+    word from the peer (a backgrounded phone, a hidden tab, a dead network) ends the session
+    (the host drops a frozen client and plays on, a client shows "the host stopped
+    responding"); a 10 s gap in this device's own frames means it was the frozen one, and it
+    ends the session itself on waking. Shorter hitches of its own are forgiven. The
     protocol and close codes are in `server/relay/README.md`.
   - `OnlineSession` — the NetworkManager (tick rate 20, connection approval carrying
     `Application.version`, one client), host and join; added at runtime, so no scene holds
@@ -266,7 +272,7 @@ Online: campaign and daily levels. Tutorial and training stay local. One player 
 | **O1** | **Seams**: §5 table, `NetPacking`, no packages installed | Offline play unchanged; all tests pass; new tests: `NetPacking` round trips, and two structures fed the same `CellHealth` stream end with the same standing cells. |
 | **O2** | **Netcode against a local relay**: install NGO, Multiplayer Play Mode and NativeWebSocket; write `RelayTransport` and the relay (`server/relay/`, run with `dotnet run` on the dev machine); `RunNet`, `NetPlayer`, the client mode of `RunController`. *Code in and pinned (NGO 2.13.3, NativeWebSocket c612a4f); the play tests below are open.* | Two Multiplayer Play Mode players finish a generated level together through the local relay, and the desync check passes. It still plays with 150 ms delay and 3 % loss added by a network simulator on the socket (e.g. clumsy on Windows). Every campaign level and 365 daily seeds give the same hash on PC, on an Android phone and in WebGL. Pin NGO and NativeWebSocket. |
 | **O3** | **Deploy and join codes**: the relay on the VPS behind TLS with the §8 limits, `OnlineView`, a WebGL build on a free HTTPS host (e.g. itch.io) | A phone on mobile data, a PC and a browser tab can each host and join each other through the VPS with a code, and finish a level. |
-| **O4** | **Hardening** | The host leaves: the client gets a message and the menu. The client leaves: the host plays on, P2 is out *(both in since O2)*. The relay is down: a clear message, local play unaffected. A phone app or a browser tab sent to the background (browsers throttle hidden tabs, so a hidden host stalls), timeouts, a version mismatch message. The privacy policy says the relay sees players' IP addresses (`monetization.md` checklist). A soak test with `BotPilot` driving both players. |
+| **O4** | **Hardening** | The host leaves: the client gets a message and the menu. The client leaves: the host plays on, P2 is out *(both in since O2)*. The relay is down: a clear message, local play unaffected. A phone app or a browser tab sent to the background (browsers throttle hidden tabs, so a hidden host stalls), timeouts, a version mismatch message. The privacy policy says the relay sees players' IP addresses (`monetization.md` checklist). A soak test with `BotPilot` driving both players. *Built 2026-10-22, not yet tried on devices: the connect timeout, the background/stall handling (`LinkWatch`), the version message (connection approval), the privacy policy. Left: the device tests and the soak test.* |
 | **O5** | **Optional** | A UDP leg for native builds if TCP hitches show up in playtests: LiteNetLib in the transport, and the relay bridges UDP and WebSocket peers. LAN without internet for native builds only (a browser can't host a LAN game): `com.easysee.networkdiscovery` with UnityTransport. |
 
 Open in O2:
