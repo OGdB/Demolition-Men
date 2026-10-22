@@ -28,9 +28,6 @@ namespace Demolition
 
         [Header("Ground check")]
         [SerializeField] private LayerMask groundMask = ~0;
-        [SerializeField] private Vector2 groundCheckSize = new Vector2(0.4f, 0.1f);
-        [Tooltip("Ground box centre relative to the transform (the prefabs pivot at the feet).")]
-        [SerializeField] private Vector2 groundCheckOffset = Vector2.zero;
 
         [Header("Audio")]
         [SerializeField] private AudioClip jumpSound;
@@ -52,11 +49,10 @@ namespace Demolition
         private AudioSource _audio;
         private bool _jumpQueued;
         private float _staggerUntil;
+        private ContactFilter2D _groundFilter;
 
         /// <summary>Seconds a knockback flies uncontrolled before running and swinging take over again.</summary>
         private const float StaggerSeconds = 0.35f;
-
-        public void SetGroundCheckOffset(Vector2 offset) => groundCheckOffset = offset;
 
         /// <summary>Thrown by a blast: replaces the velocity (running into it doesn't cancel the
         /// shove) and runs uncontrolled for a moment.</summary>
@@ -78,6 +74,10 @@ namespace Demolition
             _sr = GetComponentInChildren<SpriteRenderer>();
             _anim = GetComponent<Animator>();
             _audio = GetComponent<AudioSource>();
+            // Grounded = touching something whose contact normal points up (within 45°),
+            // so a wall beside the feet can never count and walls can't be jumped up.
+            _groundFilter.SetLayerMask(groundMask);
+            _groundFilter.SetNormalAngle(45f, 135f);
         }
 
         // Jump input is buffered every frame and consumed by physics in FixedUpdate —
@@ -147,18 +147,7 @@ namespace Demolition
 
         private void GroundCheck()
         {
-            Vector2 centre = (Vector2)transform.position + groundCheckOffset;
-            var hits = Physics2D.OverlapBoxAll(centre, groundCheckSize, 0f, groundMask);
-
-            IsGrounded = false;
-            foreach (var hit in hits)
-            {
-                if (hit == null || hit.isTrigger || hit.attachedRigidbody == _rb)
-                    continue;
-                IsGrounded = true;
-                break;
-            }
-
+            IsGrounded = _rb.IsTouching(_groundFilter);
             if (_anim != null)
                 _anim.SetBool(InAirParam, !IsGrounded);
         }
@@ -179,21 +168,6 @@ namespace Demolition
         {
             if (clip != null && _audio != null)
                 _audio.PlayOneShot(clip);
-        }
-
-        // Green when grounded, red when airborne (grey outline in edit mode).
-        private void OnDrawGizmos()
-        {
-            Vector3 centre = transform.position + (Vector3)groundCheckOffset;
-
-            Color colour = !Application.isPlaying ? Color.grey
-                : IsGrounded ? Color.green
-                : Color.red;
-
-            Gizmos.color = new Color(colour.r, colour.g, colour.b, 0.25f);
-            Gizmos.DrawCube(centre, groundCheckSize);
-            Gizmos.color = colour;
-            Gizmos.DrawWireCube(centre, groundCheckSize);
         }
     }
 }

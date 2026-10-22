@@ -366,8 +366,6 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  groundCheckSize: {x: 0.4, y: 0.1}
-  groundCheckOffset: {x: 0, y: 0}
   jumpSound: {fileID: 8300000, guid: 35d5c45f4f27e8648ab84e22505c2e13, type: 3}
   glassBreakSound: {fileID: 8300000, guid: 7b46a34d066e30148b892137b48f0ed8, type: 3}
 --- !u!114 &11400004
