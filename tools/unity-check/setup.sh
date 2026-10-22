@@ -3,7 +3,7 @@
 # (cloud agents, CI). Installs the .NET 8 SDK, fetches Unity 6000.4 reference assemblies
 # (stubs: they compile, they don't run) and the package sources check.sh builds against them:
 # Input System, uGUI/TMP, Netcode for GameObjects with its Transport/Collections/Burst/Mathematics,
-# NativeWebSocket. Everything lands in $UNITY_CHECK_HOME (default ~/.unity-check).
+# NativeWebSocket, Google Mobile Ads (OpenUPM). Everything lands in $UNITY_CHECK_HOME (default ~/.unity-check).
 set -euo pipefail
 HOME_DIR="${UNITY_CHECK_HOME:-$HOME/.unity-check}"
 UNITY_MODULES_VERSION="${UNITY_MODULES_VERSION:-6000.4.9}"
@@ -18,6 +18,7 @@ BURST_VERSION="${BURST_VERSION:-1.8.29}"
 MATHEMATICS_VERSION="${MATHEMATICS_VERSION:-1.3.3}"
 COLLECTIONS_VERSION="${COLLECTIONS_VERSION:-2.7.1}"
 NATIVEWEBSOCKET_COMMIT="${NATIVEWEBSOCKET_COMMIT:-c612a4fef60f2ae57614b73202d2d261ba56aa3e}" # upm-2, 2.0.7
+GMA_VERSION="${GMA_VERSION:-11.6.0}"   # Packages/manifest.json, from OpenUPM
 mkdir -p "$HOME_DIR"
 cd "$HOME_DIR"
 
@@ -38,9 +39,9 @@ if [ ! -f editor/sdk/lib/UnityEditor.dll ]; then
   (cd editor && unzip -q -o sdk.nupkg -d sdk)
 fi
 
-fetch() { # package version
+fetch() { # package version [registry]
   [ -d "$1" ] && return
-  url=$(curl -sS "https://download.packages.unity.com/$1" | python3 -c "import json,sys; print(json.load(sys.stdin)['versions']['$2']['dist']['tarball'])")
+  url=$(curl -sS "${3:-https://download.packages.unity.com}/$1" | python3 -c "import json,sys; print(json.load(sys.stdin)['versions']['$2']['dist']['tarball'])")
   mkdir -p "$1" && curl -sSL "$url" | tar xz -C "$1"
 }
 fetch com.unity.inputsystem "$INPUTSYSTEM_VERSION"
@@ -50,6 +51,7 @@ fetch com.unity.transport "$TRANSPORT_VERSION"
 fetch com.unity.collections "$COLLECTIONS_VERSION"
 fetch com.unity.burst "$BURST_VERSION"
 fetch com.unity.mathematics "$MATHEMATICS_VERSION"
+fetch com.google.ads.mobile "$GMA_VERSION" https://package.openupm.com
 if [ ! -d NativeWebSocket ]; then
   git init -q NativeWebSocket.tmp
   git -C NativeWebSocket.tmp fetch -q --depth 1 https://github.com/endel/NativeWebSocket.git "$NATIVEWEBSOCKET_COMMIT"

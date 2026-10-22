@@ -1,6 +1,16 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.google.ads.mobile"
+      ]
+    }
+  ],
   "dependencies": {
     "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#c612a4fef60f2ae57614b73202d2d261ba56aa3e",
+    "com.google.ads.mobile": "11.6.0",
     "com.unity.2d.animation": "14.0.4",
     "com.unity.2d.pixel-perfect": "5.1.1",
     "com.unity.2d.psdimporter": "13.0.3",

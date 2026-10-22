@@ -7,8 +7,9 @@ namespace Demolition.Ads
     /// <summary>
     /// The game's one door to ads: decides when an interstitial is due (<see cref="AdPolicy"/>)
     /// and whether a rewarded ad can be offered. Mobile builds use whatever
-    /// <see cref="Service"/> a platform bootstrap installs; until an SDK is wired in,
-    /// development builds simulate ads and release builds show none.
+    /// <see cref="Service"/> and <see cref="Consent"/> a platform bootstrap installs (Android:
+    /// the Demolition.Ads.AdMob assembly); without one, development builds simulate ads and
+    /// release builds show none.
     /// </summary>
     public static class AdManager
     {
@@ -23,6 +24,9 @@ namespace Demolition.Ads
             get => _service ??= DefaultService();
             set => _service = value;
         }
+
+        /// <summary>The SDK's consent form, or null where no SDK asks for consent.</summary>
+        public static IAdConsent Consent { get; set; }
 
         private static bool Enabled => (Platform.IsMobile || (Application.isEditor && SimulateInEditor)) && !Profile.Data.adsRemoved;
 

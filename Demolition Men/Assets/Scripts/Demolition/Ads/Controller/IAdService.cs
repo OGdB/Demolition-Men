@@ -18,6 +18,19 @@ namespace Demolition.Ads
         void ShowRewarded(Action<bool> finished);
     }
 
+    /// <summary>
+    /// The ad SDK's consent side, for Settings: players where the law requires it (EEA, UK)
+    /// must be able to reopen the consent form and change their choice.
+    /// </summary>
+    public interface IAdConsent
+    {
+        /// <summary>Settings must offer the privacy options form.</summary>
+        bool PrivacyOptionsRequired { get; }
+
+        /// <summary>Reopen the consent choices; <paramref name="closed"/> runs when the form is gone.</summary>
+        void ShowPrivacyOptions(Action closed);
+    }
+
     /// <summary>No ads (PC, TV, or ads removed).</summary>
     public sealed class NoAdService : IAdService
     {

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Ads/Controller/AdMob is its own asmdef (Demolition.Ads.AdMob), compiled by Unity only once
+       com.google.ads.mobile is installed. The plugin ships its API as precompiled DLLs (setup.sh
+       fetches them from OpenUPM). -->
+  <ItemGroup><Compile Include="$(ProjectAssets)/Scripts/Demolition/Ads/Controller/AdMob/**/*.cs" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/com.google.ads.mobile/package/GoogleMobileAds/*.dll" Private="false" /></ItemGroup>
+</Project>

@@ -1,4 +1,5 @@
 using System;
+using Demolition.Ads;
 using Demolition.Run;
 using TMPro;
 using UnityEngine;
@@ -12,7 +13,8 @@ namespace Demolition.Meta
     /// Settings overlay built in code, usable from the menu and the pause screen: volumes,
     /// screen shake, effects (lights and post-processing), touch controls (mode, size, opacity). Every row is a pair of − / +
     /// buttons (or one toggle), so it works the same with a mouse, a gamepad and a thumb.
-    /// CREDITS opens <see cref="CreditsView"/>. Back (Esc / B) closes it; changes save immediately.
+    /// CREDITS opens <see cref="CreditsView"/>; PRIVACY (EEA/UK phones) reopens the ad consent form.
+    /// Back (Esc / B) closes it; changes save immediately.
     /// </summary>
     public sealed class SettingsView : MonoBehaviour
     {
@@ -84,8 +86,14 @@ namespace Demolition.Meta
             Stepper(root, ref y, "BUTTON SIZE", () => Percent(s.touchScale), d => s.touchScale = Step(s.touchScale, d, 0.1f, 0.6f, 1.6f));
             Stepper(root, ref y, "BUTTON OPACITY", () => Percent(s.touchOpacity), d => s.touchOpacity = Step(s.touchOpacity, d, 0.1f, 0.2f, 1f));
 
-            UiFactory.Button(root, "BACK", centre, new Vector2(-200f, y - 40f), new Vector2(360f, 90f), Close);
-            UiFactory.Button(root, "CREDITS", centre, new Vector2(200f, y - 40f), new Vector2(360f, 90f), () => CreditsView.Open(transform));
+            // PRIVACY reopens the ad consent form, shown only where the law asks for it (EEA, UK).
+            IAdConsent consent = AdManager.Consent;
+            bool privacy = consent != null && consent.PrivacyOptionsRequired;
+            float x = privacy ? 400f : 200f;
+            UiFactory.Button(root, "BACK", centre, new Vector2(-x, y - 40f), new Vector2(360f, 90f), Close);
+            UiFactory.Button(root, "CREDITS", centre, new Vector2(privacy ? 0f : x, y - 40f), new Vector2(360f, 90f), () => CreditsView.Open(transform));
+            if (privacy)
+                UiFactory.Button(root, "PRIVACY", centre, new Vector2(x, y - 40f), new Vector2(360f, 90f), () => consent.ShowPrivacyOptions(null));
             _refresh?.Invoke();
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(first.gameObject);
