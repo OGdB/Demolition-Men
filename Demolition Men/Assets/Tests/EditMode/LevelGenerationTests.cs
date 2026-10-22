@@ -169,6 +169,39 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Terrace_SharesOneRoofline_WallToWall()
+        {
+            for (int seed = 0; seed < 20; seed++)
+            {
+                LevelLayout layout = Designed(new[] { "start", "terrace:3", "finish" }, seed, new PickupBudget());
+                var row = layout.Buildings.Where(b => !b.IsProp).ToList();
+                Assert.AreEqual(3, row.Count, $"seed {seed}");
+                int Roof(BuildingSpec s) => s.Blocks.Where(b => b.Kind != TileKind.Chimney).Max(b => b.Rect.yMax);
+                for (int i = 1; i < row.Count; i++)
+                {
+                    Assert.AreEqual(row[i - 1].X + row[i - 1].Spec.Width, row[i].X, $"seed {seed}: building {i} not wall to wall");
+                    Assert.AreEqual(Roof(row[0].Spec), Roof(row[i].Spec), $"seed {seed}: building {i} breaks the roofline");
+                    Assert.AreEqual(row[0].Spec.Archetype, row[i].Spec.Archetype, $"seed {seed}: building {i} is another archetype");
+                }
+            }
+        }
+
+        [Test]
+        public void Yard_LinesUpBreakables_OnTheStreet()
+        {
+            for (int seed = 0; seed < 20; seed++)
+            {
+                LevelLayout layout = Designed(new[] { "start", "street", "yard:4", "finish" }, seed, new PickupBudget());
+                LevelSegment yard = layout.Segments.First(s => s.Kind == SegmentKind.Yard);
+                var inside = layout.Buildings.Where(b => b.Segment == layout.Segments.IndexOf(yard)).ToList();
+                Assert.GreaterOrEqual(inside.Count, 4, $"seed {seed}");
+                Assert.IsTrue(inside.All(b => b.IsProp), $"seed {seed}: a building in the yard");
+                for (int i = 1; i < inside.Count; i++)
+                    Assert.GreaterOrEqual(inside[i].X, inside[i - 1].X + inside[i - 1].Spec.Width + 1, $"seed {seed}: props {i - 1} and {i} touch");
+            }
+        }
+
+        [Test]
         public void Props_StandClear_OnFlatGround_AwayFromTheStartAndTheFinish([ValueSource(nameof(Levels))] string path)
         {
             LevelSpec spec = Load(path);

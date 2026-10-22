@@ -1,0 +1,16 @@
+{
+  "id": "port.cannery",
+  "width": { "min": 10, "max": 14 },
+  "floors": { "min": 2, "max": 3 },
+  "floorHeight": { "min": 5, "max": 5 },
+  "wall": "Brick",
+  "tallBrickChance": 0.4,
+  "floor": "Plank",
+  "roof": "BrickCap",
+  "columnSpacing": { "min": 4, "max": 5 },
+  "windowChance": 0.7,
+  "door": true,
+  "chimneyChance": 0.8,
+  "weakPoints": { "min": 1, "max": 5 },
+  "weakPointCascade": 0.3
+}

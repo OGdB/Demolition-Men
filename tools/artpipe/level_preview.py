@@ -124,14 +124,16 @@ def load_theme(name):
     m = re.search(r"\n  decor:\n((?:  - kind:.*\n(?:    .*\n)*)*)", asset)
     for entry in re.split(r"  - kind: ", m.group(1))[1:] if m else []:
         theme["decor"][DECOR[int(entry.split("\n", 1)[0])]] = [sprite(*r) for r in ref(entry)]
-    for layer in re.finditer(r"- sprite: (\{[^}]*\})\s+parallax: [\d.]+\s+bottom: (-?[\d.]+)", asset):
-        theme["backdrop"].append((sprite(*ref(layer.group(1))[0]), float(layer.group(2))))
+    for layer in re.finditer(r"- sprite: (\{[^}]*\})\s+parallax: [\d.]+\s+bottom: (-?[\d.]+)(?:\s+single: (\d)\s+offset: (-?[\d.]+))?", asset):
+        theme["backdrop"].append((sprite(*ref(layer.group(1))[0]), float(layer.group(2)), layer.group(3) == "1",
+                                  float(layer.group(4) or 0)))
     tileset = open(guid_index()[ref(re.search(r"tileset: .*", asset).group(0))[0][1]], encoding="utf-8").read()
     for entry in re.split(r"\n  - kind: ", tileset)[1:]:
         kind = int(entry.split("\n", 1)[0])
-        sprites_part = entry.split("tint:")[0]
         theme["tiles"][KINDS[kind]] = {
-            "sprites": [sprite(*r) for r in ref(sprites_part)],
+            "sprites": [sprite(*r) for r in ref(yaml_list(entry, "sprites", 4))],
+            "left": [sprite(*r) for r in ref(yaml_list(entry, "left", 4))],
+            "right": [sprite(*r) for r in ref(yaml_list(entry, "right", 4))],
             "tint": color(entry, "tint"),
             "scale": tuple(float(v) for v in re.search(r"scale: \{x: (-?[\d.]+), y: (-?[\d.]+)", entry).groups()),
             "offset": tuple(float(v) for v in re.search(r"offset: \{x: (-?[\d.]+), y: (-?[\d.]+)", entry).groups()),
@@ -145,7 +147,37 @@ def load_theme(name):
         m = re.search(field + r": (\{[^}]*\})", tileset)
         theme[key] = sprite(*ref(m.group(1))[0]) if m and ref(m.group(1)) else None
     theme["interiorTop"] = theme["interiorTop"] or theme["interior"]
+    for key in ("interiorVariants", "interiorTopVariants", "interiorDetails"):
+        theme[key] = [sprite(*r) for r in ref(yaml_list(tileset, key, 2))]
+    m = re.search(r"interiorDetailChance: ([\d.]+)", tileset)
+    theme["interiorDetailChance"] = float(m.group(1)) if m else 0.0
     return theme
+
+
+def yaml_list(text, name, indent):
+    """The lines of the list `name:` at the given indent, up to the next key ('' if empty)."""
+    m = re.search(rf"^{' ' * indent}{name}:(?: \[\]\n|\n((?:{' ' * indent}- .*\n)*))", text, re.M)
+    return m.group(1) or "" if m else ""
+
+
+def cell_hash(x, y, seed):
+    """BuildingTileset.CellHash: which open room cells get a detail, and which one."""
+    u = lambda v: v & 0xFFFFFFFF
+    h = u(u(seed * 73856093) ^ u(x * 19349663) ^ u(y * 83492791))
+    h ^= h >> 13
+    h = u(h * 0x5bd1e995)
+    h ^= h >> 15
+    return h
+
+
+def interior_sprite(theme, storey, under, seed):
+    """BuildingTileset.InteriorFor: the storey's wallpaper, the base look and the variants in turn."""
+    count = 1 + len(theme["interiorVariants"])
+    i = ((seed & 0xFFFFFFFF) + storey) % count
+    if i == 0:
+        return theme["interiorTop"] if under else theme["interior"]
+    tops = theme["interiorTopVariants"]
+    return tops[i - 1] if under and i - 1 < len(tops) and tops[i - 1] else theme["interiorVariants"][i - 1]
 
 
 def tinted(img, tint):
@@ -194,12 +226,16 @@ def render(level):
     y0 = min(solid) - 5
     c = Canvas(-2, width + 2, y0, top, theme["sky"])
 
-    # Backdrops where LevelBootstrap spawns them (no parallax), repeated along the level.
-    for spr, b in theme["backdrop"]:
+    # Backdrops where LevelBootstrap spawns them (no parallax), repeated along the level;
+    # a single layer (the sun) once, where it starts.
+    for spr, b, single, offset in theme["backdrop"]:
         if spr is None:
             continue
         w = spr[0].width / spr[1]
         h = spr[0].height / spr[1]
+        if single:
+            c.draw(spr, level["spawnX"] + 4 + offset, street + b + h * 0.5 - (0.5 - spr[2][1]) * h)
+            continue
         x = -2.0
         while x < width + 2:
             c.draw(spr, x + w * spr[2][0], street + b + h * 0.5 - (0.5 - spr[2][1]) * h)
@@ -238,20 +274,28 @@ def render(level):
         h = CARAVAN_WIDTH * caravan[0].height / caravan[0].width  # scaled to its columns (LevelBuilder.SpawnCaravan)
         c.draw(caravan, x + caravan[2][0] * CARAVAN_WIDTH, ground[x] + caravan[2][1] * h, size=(CARAVAN_WIDTH, h))
 
-    # Buildings: the back wall (BuildingInterior), then each block's visual centred on its
-    # rect (BuildingBuilder + BuildingTileset.Dress).
+    # Buildings: the back wall (BuildingInterior: one look per storey, details on some room
+    # cells), then each block's visual centred on its rect (BuildingBuilder +
+    # BuildingTileset.Dress: corner variants on the building's edges).
     for b in level["buildings"]:
-        for x, y, under in b.get("interior", []) if theme["interior"] else []:
-            c.draw(theme["interiorTop"] if under else theme["interior"], b["x"] + x + 0.5, b["y"] + y + 0.5)
+        seed = b.get("seed", 0)
+        for x, y, under, storey, see_through in b.get("interior", []) if theme["interior"] else []:
+            c.draw(interior_sprite(theme, storey, under, seed), b["x"] + x + 0.5, b["y"] + y + 0.5)
+            details = theme["interiorDetails"]
+            if details and not see_through:
+                h = cell_hash(x, y, seed)
+                if (h & 0xFFFF) / 65536 < theme["interiorDetailChance"]:
+                    c.draw(details[(h >> 16) % len(details)], b["x"] + x + 0.5, b["y"] + y + 0.5)
         blocks = sorted(b["blocks"], key=lambda k: theme["tiles"].get(k[0], {}).get("order", 0))
-        for kind, bx, by, bw, bh, variant, _ in blocks:
+        for kind, bx, by, bw, bh, variant, _, edge in blocks:
             if kind == "Glass" and theme["windowBack"]:
                 c.draw(theme["windowBack"], b["x"] + bx + bw / 2, b["y"] + by + bh / 2, tint=theme["windowBackTint"])
-        for kind, bx, by, bw, bh, variant, _ in blocks:
+        for kind, bx, by, bw, bh, variant, _, edge in blocks:
             entry = theme["tiles"].get(kind)
             if not entry or not entry["sprites"]:
                 continue
-            spr = entry["sprites"][variant % len(entry["sprites"])]
+            pool = entry["left"] if edge & 1 and entry["left"] else entry["right"] if edge & 2 and entry["right"] else entry["sprites"]
+            spr = pool[variant % len(pool)]
             c.draw(spr, b["x"] + bx + bw / 2 + entry["offset"][0], b["y"] + by + bh / 2 + entry["offset"][1],
                    scale=entry["scale"], tint=entry["tint"], rotation=entry["rotation"])
 

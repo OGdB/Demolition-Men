@@ -5,12 +5,7 @@
   "seed": 7101,
   "parTime": 0,
   "scrollSpeed": 1.8,
-  "pacing": ["start", "street", "cluster:2", "islands:2", "gate", "finish"],
-  "pickups": {
-    "dynamite": 5,
-    "axe": 1,
-    "wreckingBall": 1,
-    "resurrect": 1
-  },
-  "archetypes": []
+  "pacing": ["start", "street", "terrace:3", "islands:2", "gate", "finish"],
+  "pickups": { "dynamite": 5, "axe": 1, "wreckingBall": 1, "resurrect": 1 },
+  "archetypes": ["neon.kiosk", "neon.club", "neon.arcade"]
 }

@@ -122,7 +122,8 @@ namespace Demolition.Levels
         }
 
         // A tiled strip four wrap periods wide: the view (up to aspect 4 at max zoom) stays
-        // covered however far it has drifted before the next wrap.
+        // covered however far it has drifted before the next wrap. A single layer (the sun)
+        // is one sprite that never wraps.
         private static void SpawnBackdropLayer(BackdropLayer layer, Transform root, float x, float ground, int order)
         {
             if (layer.sprite == null)
@@ -131,11 +132,21 @@ namespace Demolition.Levels
             go.transform.SetParent(root, false);
             var sr = go.GetComponent<SpriteRenderer>();
             sr.sprite = layer.sprite;
-            sr.drawMode = SpriteDrawMode.Tiled;
-            Vector2 tile = layer.sprite.bounds.size;
-            float period = Mathf.Ceil(BackdropPeriod / tile.x) * tile.x;
-            sr.size = new Vector2(period * 4f, tile.y);
             sr.sortingOrder = order;
+            Vector2 tile = layer.sprite.bounds.size;
+            float period = -1f;
+            if (!layer.single)
+            {
+                sr.drawMode = SpriteDrawMode.Tiled;
+                period = Mathf.Ceil(BackdropPeriod / tile.x) * tile.x;
+                sr.size = new Vector2(period * 4f, tile.y);
+            }
+            else if (Camera.main != null)
+            {
+                // Starts `offset` right of the camera's centre, wherever the parallax carries it from there.
+                float camX = Camera.main.transform.position.x;
+                x = camX * (1f - layer.parallax) + layer.offset;
+            }
             go.transform.position = new Vector3(x, ground + layer.bottom + tile.y * 0.5f, 0f);
             go.AddComponent<ParallaxLayer>().Configure(layer.parallax, period);
         }

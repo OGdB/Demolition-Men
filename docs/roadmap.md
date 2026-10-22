@@ -229,8 +229,21 @@ Art and level review, 2026-10-17 (`content-work/levels/*.png`, drawn headless by
   (crate piles, cars, rows of gas tanks that set each other off, Port containers) and
   cosmetic decor (lamp posts, fences that join neighbouring buildings, hedges / tyres /
   bags, bins, signs), all generated per theme.
-- Still open: set pieces (cranes, billboards), a sky gradient, Town's near-black ground
-  fill, theme-specific archetypes.
+- Art pass 2 (2026-10-22): a sky per theme (dithered gradient the clear colour continues,
+  clouds / stratus / stars, a sun or moon glued to the camera), corner trim on every
+  building edge (Town quoins, Port steel posts, Neon neon pilasters; `BuildingSpec.EdgeOf`
+  + tileset `left`/`right` lists), pillow brick in the object set's look (Town's walls are
+  now generated too, with corners; its trusses, glass columns and supports stay
+  hand-drawn), precast panels (Neon), back walls with one look per storey and pictures,
+  shelves, posters, pipes, clocks and boards on some room cells, window variants (blinds,
+  boarded up), roof props as chimney variants (water tank, AC unit, vent, neon sign box),
+  decor variants (sign faces, hydrant, cone, post box, pallets), Town pavement over soil.
+  Levels: `terrace:n` (one archetype at one size, a continuous roofline) and `yard:n`
+  (a lot of breakables), two archetypes per theme (shop, townhouse; silo, cannery; arcade,
+  hotel), every campaign level re-paced with hills, yards and terraces and its own
+  archetype subset.
+- Still open: set pieces (cranes, billboards), gable roofs and awnings (riders), ground
+  tile variants (manholes, drains).
 
 Original plan (design in §6):
 - Style-bible schema, procedural tile generator, normalizer, QA and contact sheets.
@@ -467,11 +480,12 @@ Example archetype (`Assets/Content/town/archetypes/rowhouse.json`):
 ### 5.2 Levels: pacing → segments → build
 - A level spec gives the theme, length, seed, scroll speed and **pacing**: a sequence of
   segment types with an intensity curve (build-up, peaks, breathers).
-- **Segment library:** `start`, `street`, `cluster:n` (n buildings), `islands:n` (n
-  buildings with a pit and a landing strip between each), `gap` (jump), `tower`
-  (vertical climb, camera zooms), `hill`, `plateau` (a building on high ground), `sewer`
-  (camera rail dips), `gate` (a wall that must be broken to pass: forced destruction),
-  `breather`, `finish`. Not built: `hazard-yard`.
+- **Segment library:** `start`, `street`, `cluster:n` (n buildings), `terrace:n` (n
+  buildings of one archetype at one size: a continuous roofline), `islands:n` (n
+  buildings with a pit and a landing strip between each), `yard:n` (n breakable props in
+  a row), `gap` (jump), `tower` (vertical climb, camera zooms), `hill`, `plateau` (a
+  building on high ground), `sewer` (camera rail dips), `gate` (a wall that must be broken
+  to pass: forced destruction), `breather`, `finish`.
 - Segments keep today's contract: they connect at an entry/exit ground height, like the
   current `EndPosition`. Ground comes from theme tiles on a Tilemap. Buildings fill the
   slots from the theme's archetypes, weighted by intensity.

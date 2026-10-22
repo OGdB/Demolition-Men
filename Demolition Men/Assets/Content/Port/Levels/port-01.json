@@ -5,13 +5,8 @@
   "seed": 5101,
   "parTime": 0,
   "scrollSpeed": 1.6,
-  "pacing": ["start", "street", "islands:2", "breather", "cluster:2", "finish"],
-  "pickups": {
-    "dynamite": 4,
-    "axe": 1,
-    "wreckingBall": 1,
-    "resurrect": 1
-  },
+  "pacing": ["start", "street", "yard:3", "islands:2", "breather", "terrace:2", "finish"],
+  "pickups": { "dynamite": 4, "axe": 1, "wreckingBall": 1, "resurrect": 1 },
   "props": ["crate", "car", "barrel", "container"],
-  "archetypes": []
+  "archetypes": ["port.shed", "port.office", "port.cannery"]
 }

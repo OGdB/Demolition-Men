@@ -18,8 +18,22 @@ SPRITES = {
     "brick_2":     ((32, 32), "xy", True),
     "brick_tall":  ((32, 64), "xy", True),
     "concrete":    ((32, 32), "xy", True),
+    "concrete_1":  ((32, 32), "xy", True),
     "wood":        ((32, 32), "xy", True),
+    # the building's corners (<wall>_l / _r): the same walls with the theme's corner trim
+    "brick_l":     ((32, 32), "y", True),
+    "brick_l_1":   ((32, 32), "y", True),
+    "brick_r":     ((32, 32), "y", True),
+    "brick_r_1":   ((32, 32), "y", True),
+    "brick_tall_l": ((32, 64), "y", True),
+    "brick_tall_r": ((32, 64), "y", True),
+    "concrete_l":  ((32, 32), "y", True),
+    "concrete_r":  ((32, 32), "y", True),
+    "wood_l":      ((32, 32), "y", True),
+    "wood_r":      ((32, 32), "y", True),
     "glass":       ((32, 64), "", True),
+    "glass_1":     ((32, 64), "", True),
+    "glass_2":     ((32, 64), "", True),
     "door":        ((32, 64), "", True),
     "plank":       ((32, 32), "x", True),
     "metal_truss": ((64, 32), "", True),
@@ -27,9 +41,19 @@ SPRITES = {
     "brick_cap":   ((64, 32), "x", True),
     "support":     ((32, 32), "y", True),
     "chimney":     ((32, 32), "", True),
+    "chimney_1":   ((32, 32), "", True),
+    "chimney_2":   ((32, 32), "", True),
     "window_back": ((32, 64), "x", False),
+    # back walls: one wallpaper per storey, details scattered over open cells
     "interior":    ((32, 32), "xy", False),
+    "interior_1":  ((32, 32), "xy", False),
+    "interior_2":  ((32, 32), "xy", False),
     "interior_top": ((32, 32), "x", False),
+    "interior_top_1": ((32, 32), "x", False),
+    "interior_top_2": ((32, 32), "x", False),
+    "interior_detail": ((32, 32), "", False),
+    "interior_detail_1": ((32, 32), "", False),
+    "interior_detail_2": ((32, 32), "", False),
     # street props (breakable) and dressing (cosmetic)
     "crate":       ((32, 32), "", True),
     "car":         ((64, 32), "", True),
@@ -38,10 +62,16 @@ SPRITES = {
     "lamp":        ((32, 96), "", True),
     "fence":       ((32, 32), "x", True),
     "bush":        ((32, 32), "", True),
+    "bush_1":      ((32, 32), "", True),
     "bin":         ((32, 32), "", True),
+    "bin_1":       ((32, 32), "", True),
     "sign":        ((32, 64), "", True),
+    "sign_1":      ((32, 64), "", True),
+    "sign_2":      ((32, 64), "", True),
     "ground_top":  ((32, 32), "x", True),
     "ground_fill": ((32, 32), "xy", True),
+    "backdrop_sky":  ((512, 384), "x", False),
+    "backdrop_sun":  ((64, 64), "", False),
     "backdrop_far":  ((512, 192), "x", False),
     "backdrop_mid":  ((512, 192), "x", False),
     "backdrop_near": ((512, 192), "x", False),
@@ -129,38 +159,118 @@ def hazard_stripes(a, x0, y0, x1, y1, light, dark, width=3):
 
 # --- walls -----------------------------------------------------------------------------
 
+def draw_brick(a, rng, r, x, y0, ln, course, style):
+    """One brick of a running bond at (x, y0), `ln` wide, `course` tall, x wrapping."""
+    if style == "brick":
+        # pillow brick: 2 px mortar all round (1 px each side), rounded corners, lit top-left
+        dark = rng.random() < 0.18
+        body, hi, lo = (r[1], r[2], r[0]) if dark else (r[2], r[3], r[1])
+        x0, x1, y1 = x + 1, x + ln - 1, y0 + course - 1
+        for j in range(y0 + 1, y1):
+            for i in range(x0, x1):
+                corner = (i in (x0, x1 - 1)) and (j in (y0 + 1, y1 - 1))
+                if corner:
+                    continue
+                c = body
+                if j == y0 + 1 or (i == x0 and j < y1 - 1):
+                    c = hi
+                elif j == y1 - 1 or i == x1 - 1:
+                    c = lo
+                put(a, i, j, c)
+        put(a, x0 + 1, y0 + 2, hi)                      # the pillow's gleam
+        for _ in range(rng.integers(0, 3)):             # chips
+            put(a, x0 + rng.integers(2, max(3, ln - 4)), y0 + rng.integers(3, course - 2), lo)
+        return
+    # flat cast block or precast panel: 1 px joint, bevel top-left, shade bottom-right
+    dark = rng.random() < 0.2
+    body, hi, lo = (r[1], r[2], r[0]) if dark else (r[2], r[3], r[1])
+    for j in range(y0 + 1, y0 + course):
+        for i in range(x + 1, x + ln):
+            c = body
+            if j == y0 + 1 or i == x + 1:
+                c = hi
+            elif j == y0 + course - 1 or i == x + ln - 1:
+                c = lo
+            put(a, i, j, c)
+    for _ in range(rng.integers(2, 6)):
+        put(a, x + rng.integers(2, ln - 1), y0 + rng.integers(2, course - 1), lo)
+    if style == "panel":
+        if rng.random() < 0.6:  # weathering streak from the top joint
+            sx = x + rng.integers(4, ln - 4)
+            for k in range(rng.integers(3, course - 3)):
+                if k % 2 == 0:
+                    put(a, sx, y0 + 2 + k, lo)
+        for hx in (x + 5, x + ln - 6):  # tie holes
+            put(a, hx, y0 + 4, r[0])
+            put(a, hx + 1, y0 + 4, r[0])
+            put(a, hx + 1, y0 + 5, hi)
+
+
+def edge_trim(a, t, side, material):
+    """The building's corner on a wall tile: the theme's treatment (quoin stones, a steel
+    corner post, a neon pilaster) on brick; a recessed pilaster on concrete when the theme
+    uses quoins; a corner board on wood. 6 px flush with the outer edge, lit top-left."""
+    h, w = a.shape[:2]
+    m = t["materials"]["edge"]
+    style, trim = m["style"], m.get("trim")
+    if material == "wood":
+        style, r = "board", palette.ramp(t, t["materials"]["wood"]["ramp"])
+    elif material == "concrete" and style == "quoin":
+        style, r = "pilaster", palette.ramp(t, t["materials"]["concrete"]["ramp"])
+    else:
+        r = palette.ramp(t, m["ramp"])
+    x0 = 0 if side == "l" else w - 6
+    if style == "quoin":
+        for c in range(h // 8):
+            wd = 7 if c % 2 == 0 else 5
+            sx = 0 if side == "l" else w - wd
+            y = c * 8
+            rect(a, sx, y, sx + wd, y + 8, r[0])
+            bx0 = sx if side == "l" else sx + 1
+            bx1 = sx + wd - 1 if side == "l" else sx + wd
+            rect(a, bx0, y, bx1, y + 6, r[2])
+            rect(a, bx0, y, bx1, y + 1, r[3])
+            rect(a, bx0, y, bx0 + 1, y + 5, r[3])
+            rect(a, bx0 + 1, y + 5, bx1, y + 6, r[1])
+            rect(a, bx1 - 1, y + 1, bx1, y + 6, r[1])
+        return
+    cols = {
+        "post": [r[0], r[3], r[2], r[2], r[1], r[0]],
+        "pilaster": [r[0], r[1], r[2], r[2], r[1], r[0]],
+        "board": [r[0], r[3], r[2], r[2], r[1], r[0]],
+    }[style]
+    if trim and style == "pilaster":
+        g = palette.ramp(t, trim)
+        cols = [r[0], r[1], g[1], g[2], g[1], r[1]] if side == "l" else [r[1], g[1], g[2], g[1], r[1], r[0]]
+    for i, c in enumerate(cols):
+        rect(a, x0 + i, 0, x0 + i + 1, h, c)
+    if style == "post":
+        for y in range(3, h, 8):
+            rect(a, x0 + 2, y, x0 + 4, y + 1, r[3])
+            rect(a, x0 + 2, y + 1, x0 + 4, y + 2, r[0])
+    elif style == "board":
+        for y in range(3, h, 8):
+            put(a, x0 + 2, y, r[0])
+            put(a, x0 + 3, y + 4, r[0])
+
+
 def masonry(r, rng, w, h, course=8, length=16, style="brick"):
-    """Running bond. 'brick': rounded lit bricks (object-set look); 'block': flat cast
-    blocks with speckle. Joints sit on the tile edge so tiles repeat seamlessly."""
+    """Running bond. 'brick': pillow bricks with wide mortar, lit top-left, the odd half
+    brick (the object-set look); 'block': flat cast blocks; 'panel': precast panels, two per
+    tile. Courses start on the tile edge so the corner quoins line up with them; the mortar
+    row meets itself across the seam."""
     a = canvas(w, h)
     rect(a, 0, 0, w, h, r[0])
+    if style == "panel":
+        course, length = 16, 32
     for c in range(h // course):
         y0 = c * course
-        off = 0 if c % 2 == 0 else length // 2
-        for b in range(w // length):
-            xs = off + b * length
-            dark = rng.random() < 0.22
-            body, hi = (r[1], r[2]) if dark else (r[2], r[3])
-            for i in range(1, length):
-                for j in range(1, course):
-                    col = body
-                    if j == 1 or (i == 1 and j < course - 1):
-                        col = hi
-                    if j == course - 1 or i == length - 1:
-                        col = r[1]
-                    put(a, xs + i, y0 + j, col)
-            if style == "brick":
-                # chipped corners + bottom speckles, like the hand-drawn set
-                for _ in range(rng.integers(1, 4)):
-                    put(a, xs + rng.integers(3, length - 2), y0 + rng.integers(course - 3, course - 1), r[1] if not dark else r[0])
-                if rng.random() < 0.4:
-                    put(a, xs + length - 2, y0 + 1, r[0])
-            else:
-                for _ in range(rng.integers(2, 6)):
-                    put(a, xs + rng.integers(2, length - 1), y0 + rng.integers(2, course - 1), r[1] if not dark else r[0])
-                for _ in range(rng.integers(0, 2)):
-                    put(a, xs + rng.integers(2, length - 1), y0 + rng.integers(2, course - 2), r[3])
-    return np.roll(a, (3, 4), axis=(0, 1))  # keep joints off the tile edge
+        x, left = (0 if c % 2 == 0 else length // 2), w
+        while left > 0:
+            ln = length // 2 if style == "brick" and left >= length and rng.random() < 0.15 else min(length, left)
+            draw_brick(a, rng, r, x, y0, ln, course, style)
+            x, left = x + ln, left - ln
+    return a if style == "brick" else np.roll(a, (3, 4), axis=(0, 1))
 
 
 def corrugated(r, rng, w, h):
@@ -188,33 +298,46 @@ def corrugated(r, rng, w, h):
     return np.roll(a, 5, axis=0)  # keep the lap seam off the tile edge
 
 
-def wall(t, rng, w, h):
+def wall(t, rng, w, h, side=None):
     m = t["materials"]["wall"]
     r = palette.ramp(t, m["ramp"])
-    if m["style"] == "corrugated":
-        return corrugated(r, rng, w, h)
-    return masonry(r, rng, w, h, style=m["style"])
+    a = corrugated(r, rng, w, h) if m["style"] == "corrugated" else masonry(r, rng, w, h, style=m["style"])
+    if side:
+        edge_trim(a, t, side, "wall")
+    return a
 
 
-def concrete(t, rng, w=32, h=32):
+def concrete(t, rng, w=32, h=32, side=None, detail=None):
+    """A precast panel per cell: lit bevel top-left, a joint bottom-right (kept a hair
+    inside the tile), two form-tie holes, the odd stain; `detail` adds a vent grille."""
     r = palette.ramp(t, t["materials"]["concrete"]["ramp"])
     a = canvas(w, h)
     rect(a, 0, 0, w, h, r[2])
-    speckle(a, rng, np.ones((h, w), bool), [(r[1], 0.08), (r[3], 0.03)])
-    rect(a, 0, h - 1, w, h, r[1])
-    rect(a, w - 1, 0, w, h, r[1])
-    rect(a, 1, 1, w, 2, r[3])
-    rect(a, 1, 1, 2, h, r[3])
-    rect(a, 0, 0, w, 1, r[0])
-    rect(a, 0, 0, 1, h, r[0])
-    for hx, hy in ((7, 7), (23, 7), (7, 23), (23, 23)):  # form-tie holes
-        rect(a, hx, hy, hx + 2, hy + 2, r[0])
-        put(a, hx + 2, hy + 1, r[3])
-        put(a, hx + 1, hy + 2, r[3])
+    speckle(a, rng, np.ones((h, w), bool), [(r[1], 0.07), (r[3], 0.03)])
+    rect(a, 0, 0, w, 1, r[3])
+    rect(a, 0, 0, 1, h, r[3])
+    rect(a, 1, h - 2, w, h - 1, r[1])
+    rect(a, w - 2, 1, w - 1, h, r[1])
+    rect(a, 0, h - 1, w, h, r[0])
+    rect(a, w - 1, 0, w, h, r[0])
+    for hx in (9, 21):  # form-tie holes
+        rect(a, hx, 7, hx + 2, 9, r[0])
+        put(a, hx + 2, 8, r[3])
+        put(a, hx + 1, 9, r[3])
         if rng.random() < 0.5:  # water stain under the tie
-            for k in range(rng.integers(2, 6)):
-                put(a, hx + rng.integers(0, 2), hy + 3 + k, r[1])
-    return np.roll(a, (16, 16), axis=(0, 1))  # panel joints inside the tile, edges mid-panel
+            for k in range(rng.integers(2, 7)):
+                put(a, hx + rng.integers(0, 2), 10 + k, r[1])
+    if detail == "vent":  # a louvred grille
+        rect(a, 10, 15, 22, 25, r[1])
+        rect(a, 10, 15, 22, 16, r[0])
+        rect(a, 10, 15, 11, 25, r[0])
+        for y in range(17, 25, 2):
+            rect(a, 11, y, 21, y + 1, r[0])
+            rect(a, 11, y + 1, 21, y + 2, r[3])
+    a = np.roll(a, (3, 3), axis=(0, 1))
+    if side:
+        edge_trim(a, t, side, "concrete")
+    return a
 
 
 def wood_planks(r, rng, a, y0, y1, w, joints=1, outline_rows=True):
@@ -245,16 +368,21 @@ def wood_planks(r, rng, a, y0, y1, w, joints=1, outline_rows=True):
             put(a, jx + 3, py + 5, r[0])
 
 
-def wood(t, rng, w=32, h=32):
+def wood(t, rng, w=32, h=32, side=None):
     r = palette.ramp(t, t["materials"]["wood"]["ramp"])
     a = canvas(w, h)
     wood_planks(r, rng, a, 0, h, w)
-    return np.roll(a, 4, axis=0)  # board seams off the tile edge
+    a = np.roll(a, 4, axis=0)  # board seams off the tile edge
+    if side:
+        edge_trim(a, t, side, "wood")
+    return a
 
 
 # --- openings --------------------------------------------------------------------------
 
-def glass(t, rng, w=32, h=64):
+def glass(t, rng, w=32, h=64, variant=0):
+    """A window two cells tall: lintel and a sill that drips, a 2x2 pane grid with a
+    diagonal reflection. Variants: blinds half down (1), boarded up (2)."""
     m = t["materials"]["glass"]
     f, p = palette.ramp(t, m["frame"]), palette.ramp(t, m["pane"])
     hl = [palette.ramp(t, n)[i] for n, i in m["highlights"]]
@@ -263,7 +391,10 @@ def glass(t, rng, w=32, h=64):
     mask[h - 5:, :] = True        # sill
     mask[:, 8:24] = True          # pane + jambs (the collider's middle half)
     a = shade(mask, f)
-    # pane
+    rect(a, 0, h - 5, w, h - 4, f[3])  # the sill's lit top, its drip shadow under
+    rect(a, 1, h - 1, w - 1, h, f[0])
+    rect(a, 12, 2, 20, 4, f[1])        # a keystone in the lintel
+    rect(a, 13, 2, 19, 3, f[3])
     py0, py1 = 5, h - 5
     rect(a, 10, py0, 22, py1, p[1])
     rect(a, 10, py0, 22, py0 + 1, p[0])
@@ -278,7 +409,7 @@ def glass(t, rng, w=32, h=64):
                 a[y, x] = (*step(p, 2), 255)
             elif d == 7 and len(hl) > 1:
                 a[y, x] = (*hl[1], 255)
-    # frame: jamb bevel and a transom bar
+    # frame: jamb bevels, a transom bar and a mullion
     rect(a, 8, py0, 9, py1, f[0])
     rect(a, 9, py0, 10, py1, f[3])
     rect(a, 22, py0, 23, py1, f[1])
@@ -288,6 +419,27 @@ def glass(t, rng, w=32, h=64):
     rect(a, 8, ty, 24, ty + 1, f[0])
     rect(a, 9, ty + 1, 23, ty + 2, f[3])
     rect(a, 8, ty + 3, 24, ty + 4, f[0])
+    rect(a, 15, py0, 17, py1, f[2])
+    rect(a, 15, py0, 16, py1, f[3])
+    rect(a, 17, py0, 18, py1, f[0])
+    if variant == 1:  # blinds, drawn to a random height in each pane
+        for x0, x1 in ((10, 15), (18, 22)):
+            for yy in (py0 + 1, ty + 4):
+                drop = int(rng.integers(6, 18))
+                for y in range(yy, yy + drop, 2):
+                    rect(a, x0, y, x1, y + 1, f[2])
+                rect(a, x0, yy + drop, x1, yy + drop + 1, f[0])
+    elif variant == 2:  # boarded up: two planks nailed across each half
+        wd = palette.ramp(t, t["materials"]["wood"]["ramp"])
+        for yy in (py0 + 6, py0 + 16, ty + 10, ty + 20):
+            tilt = int(rng.integers(-2, 3))
+            for k in range(16):
+                y = yy + (k * tilt) // 16
+                rect(a, 8 + k, y, 9 + k, y + 5, wd[2])
+                put(a, 8 + k, y, wd[3], wrap=False)
+                put(a, 8 + k, y + 4, wd[0], wrap=False)
+            put(a, 10, yy + 2, wd[0], wrap=False)
+            put(a, 21, yy + 2 + tilt, wd[0], wrap=False)
     return a
 
 
@@ -377,12 +529,13 @@ def window_back(t, rng, w=32, h=64):
     return a
 
 
-def interior(t, rng, w=32, h=32, top=False):
+def interior(t, rng, w=32, h=32, top=False, variant=0):
     """A building's back wall, behind open rooms (BuildingInterior): background, so no
-    outline, low contrast and darker than the walls in front. 'wallpaper': stripes with a
-    small motif; 'blocks': dark cast blocks; 'boards': vertical panelling. `top` adds the
-    shadow a ceiling casts on the wall right under it."""
-    m = t["materials"]["interior"]
+    outline, low contrast and darker than the walls in front. Styles: 'wallpaper' (stripes
+    with a small motif), 'blocks' (dark cast blocks), 'boards' (vertical panelling),
+    'plaster' (plain over a wainscot), 'tiles' (a small tile grid). `top` adds the shadow a
+    ceiling casts on the wall right under it; each storey draws one `variant`."""
+    m = interior_spec(t, variant)
     r = palette.ramp(t, m["ramp"])
     base, line = r[m.get("base", 1)], r[m.get("pattern", 0)]
     a = canvas(w, h)
@@ -404,7 +557,7 @@ def interior(t, rng, w=32, h=32, top=False):
                 rect(a, x % w, y, x % w + 1, y + 8, line)
         speckle(a, rng, np.ones((h, w), bool), [(line, 0.04)])
         a = np.roll(a, (3, 5), axis=(0, 1))
-    else:  # boards
+    elif style == "boards":
         for x in range(0, w, 8):
             rect(a, x, 0, x + 1, h, line)
         for _ in range(rng.integers(3, 6)):
@@ -412,6 +565,18 @@ def interior(t, rng, w=32, h=32, top=False):
             for k in range(rng.integers(3, 8)):
                 put(a, gx, gy + k, line)
         a = np.roll(a, 4, axis=1)
+    elif style == "plaster":
+        speckle(a, rng, np.ones((h, w), bool), [(line, 0.015)])
+        rect(a, 0, h - 9, w, h, line)           # wainscot
+        rect(a, 0, h - 10, w, h - 9, r[min(m.get("base", 1) + 1, len(r) - 1)])
+        for x in range(2, w, 8):
+            rect(a, x, h - 8, x + 1, h, base)
+    else:  # tiles
+        for y in range(0, h, 8):
+            rect(a, 0, y, w, y + 1, line)
+        for x in range(0, w, 8):
+            rect(a, x, 0, x + 1, h, line)
+        a = np.roll(a, (4, 4), axis=(0, 1))
     if top:
         shadow = r[0] if m.get("pattern", 0) != 0 else line
         rect(a, 0, 0, w, 3, shadow)
@@ -571,14 +736,69 @@ def support(t, rng, w=32, h=32):
     return a
 
 
-def chimney(t, rng, w=32, h=32):
-    m = t["materials"]["chimney"]
+def chimney(t, rng, w=32, h=32, variant=0):
+    """A roof block: the theme's chimney (a brick stack or a pipe), or one of its roof
+    props (water tank, AC unit, vent cowl, sign box); all fill most of the cell."""
+    m = variant_spec(t["materials"]["chimney"], variant)
+    style = m["style"]
     r = palette.ramp(t, m["ramp"])
+    if style == "tank":
+        tr = r
+        mask = np.zeros((h, w), bool)
+        mask[9:25, 6:26] = True
+        for i in range(6):  # conical lid
+            mask[3 + i, 16 - i * 2 - 1:16 + i * 2 + 1] = True
+        mask[25:h, 8:11] = mask[25:h, 21:24] = True
+        a = shade(mask, tr, edges=(True, False, True, True))
+        for y in (12, 20):
+            rect(a, 7, y, 25, y + 1, tr[0])
+        rect(a, 7, 9, 25, 10, tr[0])
+        rect(a, 8, 10, 11, 23, step(tr, 3))     # the lit flank
+        rect(a, 6, 24, 26, 25, tr[0])
+        return a
+    if style == "ac":
+        mask = np.zeros((h, w), bool)
+        mask[10:h, 3:29] = True
+        a = shade(mask, r, edges=(True, False, True, True))
+        fan = disc(np.zeros((h, w), bool), 13, 21, 6)
+        a[fan] = (*r[0], 255)
+        rim = fan & ~disc(np.zeros((h, w), bool), 13, 21, 5)
+        a[rim] = (*r[1], 255)
+        for k in range(-4, 5):  # blades
+            put(a, 13 + k, 21, r[2], wrap=False)
+            put(a, 13, 21 + k, r[2], wrap=False)
+        for y in range(13, 30, 3):  # louvres
+            rect(a, 21, y, 27, y + 1, r[0])
+        rect(a, 3, 10, 29, 11, r[3])
+        return a
+    if style == "vent":
+        mask = np.zeros((h, w), bool)
+        mask[5:11, 6:26] = True
+        mask[11:h, 12:20] = True
+        a = shade(mask, r, edges=(True, False, True, True))
+        rect(a, 7, 10, 25, 11, r[0])
+        rect(a, 10, 7, 22, 8, r[0])
+        for y in range(14, h, 6):
+            rect(a, 13, y, 19, y + 1, r[0])
+        return a
+    if style == "sign":
+        neon = palette.ramp(t, m.get("beacon", m.get("band", "magenta")))
+        mask = np.zeros((h, w), bool)
+        mask[3:23, 2:30] = True
+        mask[23:h, 7:10] = mask[23:h, 22:25] = True
+        a = shade(mask, r, edges=(True, False, True, True))
+        rect(a, 4, 5, 28, 21, r[0])
+        neon_tube(a, 5, 5, 27, 8, neon)
+        neon_tube(a, 5, 18, 27, 21, neon)
+        for x in range(7, 25, 5):
+            rect(a, x, 10, x + 3, 16, neon[-1])
+            rect(a, x + 1, 11, x + 2, 15, neon[1])
+        return a
     mask = np.zeros((h, w), bool)
     mask[3:9, 7:25] = True
     mask[9:, 9:23] = True
     a = shade(mask, r, edges=(True, False, True, True))
-    if m["style"] == "pipe":
+    if style == "pipe":
         for x, i in zip(range(10, 22), (2, 3, 3, 2, 2, 2, 2, 2, 1, 2, 1, 1)):
             rect(a, x, 9, x + 1, h, r[i])
         rect(a, 10, 9, 22, 10, r[0])  # shadow under the lip
@@ -786,9 +1006,10 @@ def fence(t, rng, w=32, h=32):
     return a
 
 
-def bush(t, rng, w=32, h=32):
-    """Ground clutter: a hedge, a stack of tyres or bin bags."""
-    m = t["materials"]["bush"]
+def bush(t, rng, w=32, h=32, variant=0):
+    """Ground clutter: a hedge, a stack of tyres, bin bags, pallets; `variant` picks one
+    of the theme's `variants` (0 = its base look)."""
+    m = variant_spec(t["materials"]["bush"], variant)
     r = palette.ramp(t, m["ramp"])
     style = m["style"]
     mask = np.zeros((h, w), bool)
@@ -805,20 +1026,27 @@ def bush(t, rng, w=32, h=32):
         for y0 in (h - 8, h - 15, h - 22):
             rect(a, 6, y0, 26, y0 + 1, r[0])
             rect(a, 12, y0 + 2, 20, y0 + 4, r[0])  # the hole
-    else:  # bags
+    elif style == "bags":
         for cx, cy, rad in ((10, 24, 8), (22, 23, 8), (16, 15, 7)):
             disc(mask, cx, cy, rad)
         mask[h - 4:, 3:29] = True
         a = shade(mask, r, edges=(True, False, True, True))
         for x, y in ((15, 8), (16, 8), (21, 15), (9, 16)):  # tied tops
             put(a, x, y, step(r, 3), wrap=False)
+    else:  # pallets: a short stack of wooden pallets
+        for y0 in (h - 6, h - 12, h - 18):
+            mask[y0:y0 + 5, 3:29] = True
+        a = shade(mask, r, edges=(True, False, True, True))
+        for y0 in (h - 6, h - 12, h - 18):
+            for x in range(6, 27, 7):
+                rect(a, x, y0 + 1, x + 2, y0 + 4, r[0])
     outline(a, r[0])
     return a
 
 
-def bin_(t, rng, w=32, h=32):
-    """A small kerbside thing: a dustbin, a bollard or a hydrant."""
-    m = t["materials"]["bin"]
+def bin_(t, rng, w=32, h=32, variant=0):
+    """A small kerbside thing: a dustbin, a bollard, a hydrant, a post box, a cone."""
+    m = variant_spec(t["materials"]["bin"], variant)
     r = palette.ramp(t, m["ramp"])
     style = m["style"]
     mask = np.zeros((h, w), bool)
@@ -829,11 +1057,18 @@ def bin_(t, rng, w=32, h=32):
     elif style == "bollard":
         mask[14:h, 11:21] = True
         mask[11:14, 10:22] = True
-    else:  # hydrant
+    elif style == "hydrant":
         mask[12:h, 11:21] = True
         mask[9:12, 12:20] = True
         mask[15:19, 7:25] = True
         mask[h - 3:h, 9:23] = True
+    elif style == "postbox":
+        mask[6:h, 10:22] = True
+        mask[4:6, 11:21] = True
+    else:  # cone
+        for i in range(20):
+            mask[10 + i, 15 - i * 5 // 20 - 1:17 + i * 5 // 20 + 1] = True
+        mask[h - 3:h, 7:25] = True
     a = shade(mask, r, edges=(True, False, True, True))
     if style == "can":
         for y in (16, 22, 28):
@@ -841,14 +1076,22 @@ def bin_(t, rng, w=32, h=32):
     elif style == "bollard":
         band = palette.ramp(t, m["band"])
         rect(a, 11, 18, 21, 21, step(band, 3))
+    elif style == "postbox":
+        rect(a, 12, 10, 20, 12, r[0])
+        rect(a, 11, 19, 21, 20, r[0])
+    elif style == "cone":
+        band = palette.ramp(t, m.get("band", m["ramp"]))
+        rect(a, 12, 17, 20, 20, step(band, 3))
     outline(a, r[0])
     return a
 
 
-def sign(t, rng, w=32, h=64):
-    """A sign on a post: a plain board, or a neon board."""
+def sign(t, rng, w=32, h=64, variant=0):
+    """A sign on a post: a plain board (faces: symbol, arrow, stop, p) or a neon board."""
     m = t["materials"]["sign"]
     post, face = palette.ramp(t, m["post"]), palette.ramp(t, m["face"])
+    faces = m.get("faces", ["symbol"])
+    which = faces[variant % len(faces)]
     mask = np.zeros((h, w), bool)
     mask[20:h, 14:18] = True
     mask[2:22, 4:28] = True
@@ -858,8 +1101,25 @@ def sign(t, rng, w=32, h=64):
     if m.get("style") == "neon":
         neon_tube(a, 6, 4, 26, 7, face)
         neon_tube(a, 6, 17, 26, 20, face)
-        for x in range(9, 24, 4):
-            rect(a, x, 10, x + 2, 14, step(face, 2))
+        if which == "arrow":
+            for k in range(6):
+                put(a, 10 + k, 12 - k, step(face, 2), wrap=False)
+                put(a, 10 + k, 12 + k, step(face, 2), wrap=False)
+            rect(a, 10, 12, 22, 13, step(face, 2))
+        else:
+            for x in range(9, 24, 4):
+                rect(a, x, 10, x + 2, 14, step(face, 2))
+    elif which == "arrow":
+        rect(a, 8, 11, 20, 14, step(face, 3))
+        for k in range(5):
+            rect(a, 19 + k, 8 + k, 20 + k, 17 - k, step(face, 3))
+    elif which == "stop":
+        rect(a, 9, 7, 23, 17, step(face, 3))
+        rect(a, 11, 11, 21, 13, face[0])
+    elif which == "p":
+        rect(a, 12, 7, 15, 17, step(face, 3))
+        rect(a, 15, 7, 20, 13, step(face, 3))
+        rect(a, 15, 9, 18, 11, face[1])
     else:
         rect(a, 13, 8, 19, 16, step(face, 3))     # a symbol
         rect(a, 15, 10, 17, 14, face[0])
@@ -869,15 +1129,23 @@ def sign(t, rng, w=32, h=64):
 
 # --- ground ----------------------------------------------------------------------------
 
-def ground_mass(r, rng, a, y0, y1, row_offset, blocks):
+def ground_mass(r, rng, a, y0, y1, row_offset, style, stone=None):
     """Ground below the surface. 'blocks': 16-row courses whose absolute course index keeps
-    the bond continuous from ground_top into ground_fill. Otherwise asphalt: aggregate
-    speckle with a few hairline cracks kept off the tile edges."""
+    the bond continuous from ground_top into ground_fill. 'asphalt': aggregate speckle with
+    a few hairline cracks. 'soil': earth with the odd stone."""
     w = a.shape[1]
     rect(a, 0, y0, w, y1, r[1])
-    speckle(a, rng, np.pad(np.ones((y1 - y0, w), bool), ((y0, a.shape[0] - y1), (0, 0))),
-            [(r[0], 0.06), (r[2], 0.07), (step(r, 3), 0.01 if not blocks else 0)])
-    if not blocks:
+    region = np.pad(np.ones((y1 - y0, w), bool), ((y0, a.shape[0] - y1), (0, 0)))
+    if style == "soil":
+        speckle(a, rng, region, [(r[0], 0.12), (r[2], 0.08)])
+        for _ in range(rng.integers(2, 5)):
+            x, y = rng.integers(2, w - 5), rng.integers(y0 + 1, max(y0 + 2, y1 - 4))
+            rect(a, x, y, x + 3, y + 2, stone[1] if stone else r[2])
+            put(a, x, y, stone[2] if stone else r[2], wrap=False)
+            put(a, x + 2, y + 1, stone[0] if stone else r[0], wrap=False)
+        return
+    speckle(a, rng, region, [(r[0], 0.06), (r[2], 0.07), (step(r, 3), 0.01 if style != "blocks" else 0)])
+    if style != "blocks":
         for _ in range(rng.integers(1, 3)):
             x, y = rng.integers(4, w - 12), rng.integers(y0 + 3, y1 - 8)
             for _ in range(rng.integers(4, 8)):
@@ -899,8 +1167,9 @@ def ground_mass(r, rng, a, y0, y1, row_offset, blocks):
 def ground_top(t, rng, w=32, h=32):
     m = t["materials"]["ground"]
     fill = palette.ramp(t, m["fill"])
+    stone = palette.ramp(t, m["stone"]) if m.get("stone") else None
     a = canvas(w, h)
-    ground_mass(fill, rng, a, 8, h, 8, m.get("fill_style", "blocks") == "blocks")
+    ground_mass(fill, rng, a, 8, h, 8, m.get("fill_style", "blocks"), stone)
     top = palette.ramp(t, m["top"])
     if m["style"] == "dock":
         rect(a, 0, 0, w, 8, top[2])
@@ -922,6 +1191,20 @@ def ground_top(t, rng, w=32, h=32):
         for bx in (12, 28):             # deck bolts into the quay
             put(a, bx, 10, bolt[-1])
             put(a, bx, 11, bolt[0])
+    elif m["style"] == "pavement":   # paving slabs on a kerb
+        rect(a, 0, 0, w, 7, top[2])
+        speckle(a, rng, np.pad(np.ones((4, w), bool), ((2, h - 6), (0, 0))), [(top[1], 0.08), (top[3], 0.05)])
+        rect(a, 0, 0, w, 1, top[3])
+        rect(a, 0, 5, w, 6, top[1])
+        rect(a, 0, 6, w, 7, top[0])
+        for jx in (3, 19):              # slab joints
+            rect(a, jx, 0, jx + 1, 6, top[0])
+            rect(a, jx + 1, 1, jx + 2, 5, top[3])
+        rect(a, 0, 7, w, 8, fill[0])
+        if rng.random() < 0.5:          # a weed in a joint
+            leaf = palette.ramp(t, m.get("weed", m["fill"]))
+            put(a, 19, 0, leaf[2], wrap=False)
+            put(a, 20, -1 + 1, leaf[1], wrap=False)
     else:  # kerb
         rect(a, 0, 0, w, 7, top[2])
         speckle(a, rng, np.pad(np.ones((4, w), bool), ((2, h - 6), (0, 0))), [(top[1], 0.12), (top[3], 0.05)])
@@ -944,8 +1227,79 @@ def ground_top(t, rng, w=32, h=32):
 def ground_fill(t, rng, w=32, h=32):
     m = t["materials"]["ground"]
     fill = palette.ramp(t, m["fill"])
+    stone = palette.ramp(t, m["stone"]) if m.get("stone") else None
     a = canvas(w, h)
-    ground_mass(fill, rng, a, 0, h, 8, m.get("fill_style", "blocks") == "blocks")
+    ground_mass(fill, rng, a, 0, h, 8, m.get("fill_style", "blocks"), stone)
+    return a
+
+
+def variant_spec(m, variant):
+    """A material block for one of its variants: the base look (0), or the base with the
+    n-th entry of its `variants` list laid over it."""
+    variants = m.get("variants", [])
+    if variant == 0 or not variants:
+        return m
+    return {**m, **variants[(variant - 1) % len(variants)]}
+
+
+def interior_spec(t, variant):
+    """The theme's back-wall look for a storey variant (0 = the base look)."""
+    return variant_spec(t["materials"]["interior"], variant)
+
+
+def interior_detail(t, rng, which, w=32, h=32):
+    """Something on the back wall of an open room (drawn over the wallpaper of one cell):
+    a picture, a shelf with boxes, a poster, a pipe, a clock, a notice board. Background:
+    no outline, in the wall's line colour plus the theme's accent."""
+    m = t["materials"]["interior"]
+    kinds = m.get("details", ["picture", "shelf", "poster"])
+    kind = kinds[which % len(kinds)]
+    r = palette.ramp(t, m["ramp"])
+    line, dark = r[m.get("pattern", 0)], r[0]
+    acc = palette.ramp(t, m.get("accent", "warm"))
+    a = canvas(w, h)
+    if kind == "picture":
+        rect(a, 9, 7, 23, 19, line)
+        rect(a, 10, 8, 22, 18, acc[0])
+        rect(a, 11, 12, 21, 18, acc[1])        # a landscape: ground, a hill, the sun
+        rect(a, 13, 10, 19, 13, acc[1])
+        rect(a, 17, 9, 19, 11, step(acc, 3))
+    elif kind == "shelf":
+        rect(a, 5, 18, 27, 20, line)
+        rect(a, 5, 20, 27, 21, dark)
+        rect(a, 8, 12, 14, 18, dark)
+        rect(a, 9, 13, 13, 17, line)
+        rect(a, 17, 14, 21, 18, acc[1])
+        rect(a, 22, 11, 25, 18, acc[0])
+    elif kind == "poster":
+        rect(a, 10, 4, 22, 20, acc[0])
+        rect(a, 11, 5, 21, 10, step(acc, 3))
+        rect(a, 11, 11, 21, 19, acc[1])
+        for y in (13, 15, 17):
+            rect(a, 12, y, 18 if y != 15 else 20, y + 1, acc[0])
+        put(a, 10, 4, dark, wrap=False)
+        put(a, 21, 19, dark, wrap=False)
+    elif kind == "pipe":
+        rect(a, 6, 0, 9, h, dark)
+        rect(a, 7, 0, 8, h, line)
+        for y in (6, 22):
+            rect(a, 5, y, 10, y + 2, line)
+        rect(a, 9, 14, 20, 16, dark)           # a branch with a valve
+        rect(a, 9, 14, 20, 15, line)
+        rect(a, 18, 11, 22, 14, acc[1])
+    elif kind == "clock":
+        for dy, (lo, hi) in enumerate(((13, 19), (11, 21), (10, 22), (10, 22), (9, 23), (9, 23), (9, 23), (9, 23), (10, 22), (10, 22), (11, 21), (13, 19))):
+            rect(a, lo, 6 + dy, hi, 7 + dy, line)
+        for dy, (lo, hi) in enumerate(((13, 19), (12, 20), (11, 21), (11, 21), (11, 21), (11, 21), (12, 20), (13, 19))):
+            rect(a, lo, 8 + dy, hi, 9 + dy, step(acc, 3))
+        rect(a, 15, 9, 16, 12, dark)
+        rect(a, 15, 11, 19, 12, dark)
+    else:  # board
+        rect(a, 7, 6, 25, 20, line)
+        rect(a, 8, 7, 24, 19, acc[0])
+        for x, y, c in ((10, 9, step(acc, 3)), (16, 10, acc[2]), (12, 14, acc[2]), (19, 15, step(acc, 3))):
+            rect(a, x, y, x + 4, y + 3, c)
+            put(a, x + 1, y, dark, wrap=False)
     return a
 
 
@@ -955,8 +1309,21 @@ GENERATORS = {
     "brick_2": lambda t, g: wall(t, g, 32, 32),
     "brick_tall": lambda t, g: wall(t, g, 32, 64),
     "concrete": concrete,
+    "concrete_1": lambda t, g: concrete(t, g, detail="vent"),
     "wood": wood,
+    "brick_l": lambda t, g: wall(t, g, 32, 32, "l"),
+    "brick_l_1": lambda t, g: wall(t, g, 32, 32, "l"),
+    "brick_r": lambda t, g: wall(t, g, 32, 32, "r"),
+    "brick_r_1": lambda t, g: wall(t, g, 32, 32, "r"),
+    "brick_tall_l": lambda t, g: wall(t, g, 32, 64, "l"),
+    "brick_tall_r": lambda t, g: wall(t, g, 32, 64, "r"),
+    "concrete_l": lambda t, g: concrete(t, g, side="l"),
+    "concrete_r": lambda t, g: concrete(t, g, side="r"),
+    "wood_l": lambda t, g: wood(t, g, side="l"),
+    "wood_r": lambda t, g: wood(t, g, side="r"),
     "glass": glass,
+    "glass_1": lambda t, g: glass(t, g, variant=1),
+    "glass_2": lambda t, g: glass(t, g, variant=2),
     "door": door,
     "plank": plank,
     "metal_truss": metal_truss,
@@ -964,9 +1331,18 @@ GENERATORS = {
     "brick_cap": brick_cap,
     "support": support,
     "chimney": chimney,
+    "chimney_1": lambda t, g: chimney(t, g, variant=1),
+    "chimney_2": lambda t, g: chimney(t, g, variant=2),
     "window_back": window_back,
     "interior": interior,
+    "interior_1": lambda t, g: interior(t, g, variant=1),
+    "interior_2": lambda t, g: interior(t, g, variant=2),
     "interior_top": lambda t, g: interior(t, g, top=True),
+    "interior_top_1": lambda t, g: interior(t, g, top=True, variant=1),
+    "interior_top_2": lambda t, g: interior(t, g, top=True, variant=2),
+    "interior_detail": lambda t, g: interior_detail(t, g, 0),
+    "interior_detail_1": lambda t, g: interior_detail(t, g, 1),
+    "interior_detail_2": lambda t, g: interior_detail(t, g, 2),
     "crate": crate,
     "car": car,
     "barrel": barrel,
@@ -974,10 +1350,16 @@ GENERATORS = {
     "lamp": lamp,
     "fence": fence,
     "bush": bush,
+    "bush_1": lambda t, g: bush(t, g, variant=1),
     "bin": bin_,
+    "bin_1": lambda t, g: bin_(t, g, variant=1),
     "sign": sign,
+    "sign_1": lambda t, g: sign(t, g, variant=1),
+    "sign_2": lambda t, g: sign(t, g, variant=2),
     "ground_top": ground_top,
     "ground_fill": ground_fill,
+    "backdrop_sky": lambda t, g: backdrop(t, g, "sky"),
+    "backdrop_sun": lambda t, g: backdrop(t, g, "sun"),
     "backdrop_far": lambda t, g: backdrop(t, g, "far"),
     "backdrop_mid": lambda t, g: backdrop(t, g, "mid"),
     "backdrop_near": lambda t, g: backdrop(t, g, "near"),
