@@ -26,12 +26,19 @@ public sealed class ClipLab : EditorWindow
     private const string QueueKey = "Demolition.Clips.Queue";
     private const string CurrentKey = "Demolition.Clips.Current";
     private const double BootTimeout = 30;
+    /// <summary>A director still setting up after this long (the building never streamed in,
+    /// the run never started) ends its take, so an unattended batch moves on.</summary>
+    private const double SetupTimeout = 60;
+    /// <summary>A take that was started but whose play mode never came (a compile error) is
+    /// given up after this long, so the queue doesn't wait for it forever.</summary>
+    private const double StartTimeout = 15;
 
     public static string ShotsFolder => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "content-work", "shots"));
     public static string MediaFolder => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "content-work", "media", "raw"));
 
     private static RecorderController _recorder;
     private static double _enteredAt;
+    private static double _requestedAt;
     private Vector2 _scroll;
     private int _takes;
 
@@ -64,6 +71,8 @@ public sealed class ClipLab : EditorWindow
         SessionState.EraseString(QueueKey);
         if (EditorApplication.isPlaying && Current != null)
             EditorApplication.isPlaying = false;
+        else
+            SessionState.EraseString(CurrentKey); // a take whose play mode never came
     }
 
     /// <summary>A still of the Game view as it is now (menus, results, the shop: the store
@@ -146,9 +155,15 @@ public sealed class ClipLab : EditorWindow
             Debug.LogError($"Clip Lab: {id}: {string.Join("; ", errors)}");
             return;
         }
+        if (EditorApplication.isPlaying && Current == null)
+        {
+            Debug.LogWarning("Clip Lab: stop play mode first; each take starts its own.");
+            return;
+        }
         List<string> queue = Queue();
         int count = takes > 0 ? takes : record ? shot.takes : 1;
-        for (int take = 1; take <= count; take++)
+        int first = record ? NextTake(id, queue) : 1;
+        for (int take = first; take < first + count; take++)
             queue.Add($"{id}|{take}|{(record ? 1 : 0)}");
         SaveQueue(queue);
         if (EditorApplication.isPlayingOrWillChangePlaymode || Current != null)
@@ -157,6 +172,24 @@ public sealed class ClipLab : EditorWindow
             StartNext();
         else
             SessionState.EraseString(QueueKey);
+    }
+
+    // New takes never overwrite recorded ones: the cut lists in content-work/edits point at them.
+    private static int NextTake(string id, List<string> queue)
+    {
+        int last = 0;
+        string folder = Path.Combine(MediaFolder, id);
+        if (Directory.Exists(folder))
+            foreach (string file in Directory.GetFiles(folder, "take*.mp4"))
+                if (int.TryParse(Path.GetFileNameWithoutExtension(file).Substring(4), out int n))
+                    last = Mathf.Max(last, n);
+        foreach (string entry in queue)
+        {
+            string[] parts = entry.Split('|');
+            if (parts[0] == id && parts[2] == "1" && int.TryParse(parts[1], out int n))
+                last = Mathf.Max(last, n);
+        }
+        return last + 1;
     }
 
     private static void StartNext()
@@ -188,6 +221,7 @@ public sealed class ClipLab : EditorWindow
         PlayerPrefs.SetString(ClipDirector.RequestKey, $"{PathOf(id)}|{parts[1]}|{outputBase}|{(record ? 1 : 0)}|{now}");
         PlayerPrefs.Save();
         SessionState.SetString(CurrentKey, entry);
+        _requestedAt = EditorApplication.timeSinceStartup;
         EditorSceneManager.OpenScene("Assets/Scenes/Run.unity");
         EditorApplication.isPlaying = true;
     }
@@ -219,7 +253,19 @@ public sealed class ClipLab : EditorWindow
     // While a take plays: start the recorder when the director is ready, stop at the end.
     private static void Tick()
     {
-        if (!EditorApplication.isPlaying || Current == null)
+        if (Current == null)
+            return;
+        if (!EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            if (EditorApplication.timeSinceStartup - _requestedAt > StartTimeout)
+            {
+                Debug.LogError($"Clip Lab: {Current} never entered play mode (compile errors?); the queue is dropped.");
+                SessionState.EraseString(CurrentKey);
+                SessionState.EraseString(QueueKey);
+            }
+            return;
+        }
+        if (!EditorApplication.isPlaying)
             return;
         ClipDirector director = ClipDirector.Current;
         if (director == null)
@@ -229,6 +275,12 @@ public sealed class ClipLab : EditorWindow
                 Debug.LogError("Clip Lab: the shot never started; see the Console for why.");
                 EditorApplication.isPlaying = false;
             }
+            return;
+        }
+        if (director.State == ClipDirector.Stage.Setup && EditorApplication.timeSinceStartup - _enteredAt > SetupTimeout)
+        {
+            Debug.LogError($"Clip Lab: {Current} never got ready (its building didn't stream in, or the run didn't start); skipped.");
+            EditorApplication.isPlaying = false;
             return;
         }
         if (director.State == ClipDirector.Stage.Ready && director.Records && _recorder == null)

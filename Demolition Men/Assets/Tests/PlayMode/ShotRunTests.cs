@@ -27,11 +27,14 @@ namespace Demolition.Tests
                 .Where(id => !id.StartsWith("broll-"))
                 .OrderBy(id => id);
 
-        [TearDown]
-        public void TearDown()
+        // Destroy is deferred to the end of the frame: wait for it, so the time scale and the
+        // profile are back before the next shot's director starts.
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
             if (ClipDirector.Current != null)
-                Object.Destroy(ClipDirector.Current.gameObject); // puts the time scale and profile back
+                Object.Destroy(ClipDirector.Current.gameObject);
+            yield return null;
         }
 
         [UnityTest, Timeout(180000)]

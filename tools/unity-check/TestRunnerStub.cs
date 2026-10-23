@@ -6,4 +6,7 @@ namespace UnityEngine.TestTools
     {
         public UnityTestAttribute() : base(new NUnit.Framework.Internal.Builders.CombinatorialStrategy(), new NUnit.Framework.Internal.Builders.ParameterDataSourceProvider()) { }
     }
+
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class UnityTearDownAttribute : NUnit.Framework.NUnitAttribute { }
 }

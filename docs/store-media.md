@@ -218,6 +218,10 @@ the HUD.
   included).
 - **Frame:** `width` × `height`, `fps`, `takes`. Square frames keep the subject in the
   middle 9/16, so every crop holds it.
+- **What the director takes care of:** a temporary profile (your save is untouched) with the
+  shot's upgrades, quality HIGH and no music; the level's pickups between the start and the
+  building are removed, so the kit is exactly the shot's; recording again adds takes after
+  the ones on disk (take4, take5…) instead of overwriting them.
 
 ### 3.3 What clip mode changes while a shot plays
 
@@ -229,7 +233,9 @@ the HUD.
   falling blocks don't interpolate. At 60 fps the debris would judder, and badly so in slow
   motion. The director sets `Time.fixedDeltaTime = Time.timeScale / 60`, one physics step
   per recorded frame. `RunJuice`'s hit-stop puts the time scale back to 1 afterwards; in a
-  shot, it must return to the director's scale instead. The same judder shows in normal play
+  shot, it returns to the director's scale instead (`RunJuice.BaseTimeScale`). Hit-stop and
+  shake run on video time while a recorder fixes the frame rate (`CameraShake.Clock`), so a
+  slow editor frame doesn't cut them short in the video. The same judder shows in normal play
   on a 60 Hz phone, players included: every `Rigidbody2D` in the prefabs and the generated
   blocks has interpolation off. Fix it for the game in R2, with Interpolate on the players
   and the falling blocks, or a 1/60 s timestep.
@@ -243,8 +249,10 @@ One take then gives three formats by cropping: 1080×1920 (the middle strip), 19
 middle band) and 1080×1080 (scaled down). It is the same take in every format, with nothing
 to re-run (`media.py edit` crops from the master by itself). The ads images (1:1, 1.91:1,
 4:5) come from the stills in the same way. A tall subject gets its own frame instead:
-`tower` records at 1080×1920, because the ground under a square frame of a 30-storey tower
-would run out (the level has 8 rows of ground below its lowest street).
+`tower` records at 1080×1920, because a square frame of a 30-storey tower is mostly sky.
+Levels have 12 rows of ground below their lowest street (`LevelLayout.GroundDepth`), so a
+square frame never sees under it; `ShotTests` checks that, and that no frame starts left of
+the level, for every `frame` and `pan` shot.
 
 Store screenshots are their own shots (`store-*`): 1920×1080 with the HUD, stills at
 `stillScale` 2, so 3840×2160.

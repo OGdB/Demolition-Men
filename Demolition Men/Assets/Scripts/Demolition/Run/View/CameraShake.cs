@@ -18,6 +18,11 @@ namespace Demolition.Run
 
         public static void Add(float trauma) => _trauma = Mathf.Clamp01(_trauma + trauma);
 
+        /// <summary>Real seconds, or recorded ones while a recorder fixes the frame rate (the
+        /// Clip Lab): <c>Time.unscaledTime</c> keeps running in real time then, so a slow editor
+        /// frame would cut a hit-stop short or jolt the shake in the video.</summary>
+        public static float Clock => Time.captureDeltaTime > 0f ? Time.frameCount * Time.captureDeltaTime : Time.unscaledTime;
+
         /// <summary>This frame's offset; call once per frame.</summary>
         public static Vector3 Tick(float dt)
         {
@@ -27,7 +32,7 @@ namespace Demolition.Run
             if (!Enabled || _trauma <= 0f)
                 return Vector3.zero;
             float amount = _trauma * _trauma * MaxOffset;
-            float t = Time.unscaledTime * Frequency;
+            float t = Clock * Frequency;
             return new Vector3((Mathf.PerlinNoise(t, 0.3f) - 0.5f) * 2f * amount,
                                (Mathf.PerlinNoise(0.7f, t) - 0.5f) * 2f * amount, 0f);
         }

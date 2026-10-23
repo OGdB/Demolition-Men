@@ -18,8 +18,6 @@ namespace Demolition.Levels
         /// <summary>...and despawn this far behind its left edge, at least (more if the camera
         /// can zoom out further than it shows now, so nothing visibly pops away).</summary>
         private const float KeepBehind = 25f;
-        /// <summary>Solid ground below the lowest surface, so pits and sewers have walls.</summary>
-        private const int GroundDepth = 8;
         /// <summary>Street dressing sorts with the building back walls, a hair in front of them.</summary>
         private const int DecorOrder = -1;
         private const float DecorDepth = -0.02f;
@@ -112,7 +110,7 @@ namespace Demolition.Levels
             // Same order as the hand-made level parts: in front of the sky (-5) and backdrop (-3..-1).
             map.GetComponent<TilemapRenderer>().sortingOrder = 0;
 
-            int bottom = _layout.LowestGround - GroundDepth;
+            int bottom = _layout.LowestGround - LevelLayout.GroundDepth;
             for (int x = 0; x < _layout.Width; x++)
             {
                 int top = _layout.Ground[x];
@@ -204,8 +202,8 @@ namespace Demolition.Levels
         private void BuildWalls()
         {
             int top = 60;
-            Wall("WallStart", new Vector2(-0.5f, top * 0.5f - GroundDepth), new Vector2(1f, top));
-            Wall("WallEnd", new Vector2(_layout.Width + 0.5f, top * 0.5f - GroundDepth), new Vector2(1f, top));
+            Wall("WallStart", new Vector2(-0.5f, top * 0.5f - LevelLayout.GroundDepth), new Vector2(1f, top));
+            Wall("WallEnd", new Vector2(_layout.Width + 0.5f, top * 0.5f - LevelLayout.GroundDepth), new Vector2(1f, top));
         }
 
         private void Wall(string name, Vector2 position, Vector2 size)

@@ -117,6 +117,7 @@ namespace Demolition.Clips
                 Profile.Data.SetUpgradeLevel(upgrade.Id, Mathf.Clamp(shot.upgrades, 0, upgrade.MaxLevel));
             GameSettings settings = Profile.Data.settings;
             settings.musicVolume = 0f;
+            settings.quality = (int)QualityChoice.High; // full resolution, every block falls as a body
             settings.touchControls = (int)(shot.hud && shot.touch ? TouchControlsMode.On : TouchControlsMode.Off);
             Platform.TouchMode = (TouchControlsMode)settings.touchControls;
             LevelBootstrap.Players = shot.players;
@@ -160,10 +161,11 @@ namespace Demolition.Clips
 
         private void OnDestroy()
         {
+            if (Current != this && Current != null)
+                return; // destroyed late, after the next shot began: leave that one's setup alone
             Restore();
             Profile.UseDisk();
-            if (Current == this)
-                Current = null;
+            Current = null;
         }
 
         // ---------------- Setup ----------------
@@ -181,20 +183,25 @@ namespace Demolition.Clips
                     Tick();
                     break;
             }
-            if (State != Stage.Done) // one physics step per frame, also in slow motion
-                Time.fixedDeltaTime = Mathf.Max(0.0001f, Time.timeScale / Shot.fps);
+            // One physics step per frame, also in slow motion. Not while time stands still (the
+            // Recorder holds it at 0 while it resizes the Game view): the step would stay tiny.
+            if (State != Stage.Done && Time.timeScale > 0f)
+                Time.fixedDeltaTime = Time.timeScale / Shot.fps;
         }
 
         private void TrySetup()
         {
             if (_run == null)
             {
-                _run = RunController.Current;
-                _level = FindAnyObjectByType<LevelBuilder>();
-                if (_run == null || _level == null || _level.Layout == null || _run.Camera == null)
+                RunController run = RunController.Current;
+                LevelBuilder level = FindAnyObjectByType<LevelBuilder>();
+                if (run == null || level == null || level.Layout == null || run.Camera == null)
                     return;
+                _run = run;
+                _level = level;
                 Configure();
             }
+            ClearPickups();
             _setupFrames++;
             if (_run.State.Phase != RunPhase.Playing)
                 return;
@@ -286,6 +293,24 @@ namespace Demolition.Clips
             _log.shot = Shot.id;
             _log.take = Take;
             _log.fps = Shot.fps;
+        }
+
+        // Pickups on the way would change the kit: marked taken so they don't stream in, and the
+        // ones already there go (every Setup frame: a segment can stream in after Configure).
+        private void ClearPickups()
+        {
+            if (Shot.building < 0)
+                return;
+            float x0 = _anchor.x + Shot.offset - 1.5f * Shot.players - 2f;
+            float x1 = _anchor.x + (_placement != null ? _placement.Spec.Width : 0) + 2f;
+            float ox = _level.transform.position.x;
+            List<PickupPlacement> pickups = _level.Layout.Pickups;
+            for (int i = 0; i < pickups.Count; i++)
+                if (pickups[i].X + ox >= x0 && pickups[i].X + ox <= x1)
+                    Pickup.MarkTaken(i);
+            foreach (Pickup pickup in FindObjectsByType<Pickup>(FindObjectsSortMode.None))
+                if (pickup.transform.position.x >= x0 && pickup.transform.position.x <= x1)
+                    Destroy(pickup.gameObject);
         }
 
         // ---------------- Timeline ----------------
@@ -483,7 +508,7 @@ namespace Demolition.Clips
                     canvas.enabled = false;
             if (Shot.camera.mode != "run")
             {
-                PlaceCamera(Mathf.Clamp01(Time.unscaledDeltaTime * 4f));
+                PlaceCamera(1f - Mathf.Exp(-4f / Shot.fps)); // per video frame: a slow editor frame doesn't snap it
                 _camera.transform.position = _framed + CameraShake.Tick(Time.deltaTime);
             }
         }
@@ -517,16 +542,11 @@ namespace Demolition.Clips
                     break;
                 }
                 default: // frame
-                {
-                    float x0 = _anchor.x, x1 = _anchor.x + (_placement != null ? _placement.Spec.Width : 8);
-                    float top = _anchor.y + (_placement != null ? _placement.Spec.Height : 6) + 1f;
-                    if (Shot.building >= 0)
-                        x0 = Mathf.Min(x0, _anchor.x + Shot.offset - 1f); // the players' start too
-                    ShotPlanning.Frame(x0 - cam.pad, x1 + cam.pad, ground, top + cam.pad, Shot.width, Shot.height, 5f,
-                        out x, out y, out size);
+                    ShotPlanning.FrameBuilding(Shot, _anchor.x, _anchor.y, _placement != null ? _placement.Spec.Width : 8,
+                        _placement != null ? _placement.Spec.Height : 6, _level.transform.position.x, out x, out y, out size);
                     break;
-                }
             }
+            x = ShotPlanning.ClampLeft(x, size, Shot, _level.transform.position.x);
             _framed = Vector3.Lerp(_framed, new Vector3(x, y, _framed.z), blend);
             _camera.orthographicSize = Mathf.Lerp(_camera.orthographicSize, size, blend);
         }
@@ -576,7 +596,6 @@ namespace Demolition.Clips
                 _setCaptureRate = false;
             }
             LevelBootstrap.Players = 0;
-            Profile.UseDisk();
         }
     }
 }

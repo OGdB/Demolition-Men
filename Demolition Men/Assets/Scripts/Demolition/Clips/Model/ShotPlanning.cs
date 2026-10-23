@@ -48,5 +48,26 @@ namespace Demolition.Clips
             centerX = (x0 + x1) * 0.5f;
             centerY = y0 + size * share;
         }
+
+        /// <summary>
+        /// The <c>frame</c> camera of a shot about a building whose bottom-left corner is at
+        /// (<paramref name="left"/>, <paramref name="ground"/>): the building, every player's
+        /// start and a strip of street, plus the shot's padding.
+        /// </summary>
+        public static void FrameBuilding(ShotSpec shot, float left, float ground, int width, int height, float levelLeft,
+            out float centerX, out float centerY, out float size)
+        {
+            float x0 = left, x1 = left + width;
+            if (shot.building >= 0) // player 2 starts 1.5 behind player 1
+                x0 = Math.Min(x0, left + shot.offset - 1.5f * (shot.players - 1) - 1f);
+            float pad = shot.camera.pad;
+            Frame(x0 - pad, x1 + pad, ground - 1f, ground + height + 1f + pad, shot.width, shot.height, 5f,
+                out centerX, out centerY, out size);
+            centerX = ClampLeft(centerX, size, shot, levelLeft);
+        }
+
+        /// <summary>Keep the camera's left edge on the level: there is no street before it.</summary>
+        public static float ClampLeft(float centerX, float size, ShotSpec shot, float levelLeft) =>
+            Math.Max(centerX, levelLeft + size * shot.width / (float)shot.height);
     }
 }

@@ -17,6 +17,7 @@ namespace Demolition.Run
         [SerializeField, Range(0f, 1f)] private float hitStopTimeScale = 0.05f;
 
         private float _hitStopUntil = -1f;
+        private float _hitStopFrom;
 
         /// <summary>The time scale a hit-stop returns to (the Clip Lab's slow motion); 1 in play.</summary>
         public static float BaseTimeScale = 1f;
@@ -38,7 +39,8 @@ namespace Demolition.Run
 
         private void Update()
         {
-            if (_hitStopUntil >= 0f && Time.unscaledTime >= _hitStopUntil)
+            // Also when the clock jumped back (a recorder started mid-stop and changed its base).
+            if (_hitStopUntil >= 0f && (CameraShake.Clock >= _hitStopUntil || CameraShake.Clock < _hitStopFrom))
                 EndHitStop();
         }
 
@@ -63,7 +65,8 @@ namespace Demolition.Run
         {
             if (PauseController.MenuOpen)
                 return;
-            _hitStopUntil = Time.unscaledTime + seconds;
+            _hitStopFrom = CameraShake.Clock;
+            _hitStopUntil = _hitStopFrom + seconds;
             Time.timeScale = hitStopTimeScale * BaseTimeScale;
         }
 

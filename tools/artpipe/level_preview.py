@@ -25,7 +25,7 @@ from qa import ASSETS, ROOT, font  # noqa: E402
 OUT = os.path.join(ROOT, "content-work", "levels")
 PPU = 16           # preview pixels per world unit (the art is 32)
 STRIP = 70         # world units per strip
-GROUND_DEPTH = 8   # LevelBuilder.GroundDepth
+GROUND_DEPTH = 12  # LevelLayout.GroundDepth
 CARAVAN_WIDTH = 6  # LevelLayout.CaravanWidth
 KINDS = ["Brick", "BrickTall", "Concrete", "Wood", "Glass", "Door", "Plank", "MetalTruss", "Beam", "BrickCap",
          "Support", "Chimney", "Crate", "Car", "Barrel", "Container"]

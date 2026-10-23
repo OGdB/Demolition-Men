@@ -112,6 +112,25 @@ namespace Demolition.Tests
             Assert.IsFalse(placement.IsProp && shot.Lane(1).Any(s => s.to == "weakpoint"), $"{shot.id}: building {shot.building} is a {placement.Spec.Archetype}");
             if (shot.steps.Any(s => s.to == "weakpoint"))
                 Assert.IsNotNull(ShotPlanning.WeakPoint(placement.Spec, out _), $"{shot.id}: no weak point at ground level");
+
+            // The camera never sees past the level's ground: not left of it, not under it (with
+            // room for the screen shake), where only the sky colour would show.
+            float x, y, size;
+            if (shot.camera.mode == "frame")
+                ShotPlanning.FrameBuilding(shot, placement.X, placement.GroundY, placement.Spec.Width, placement.Spec.Height, 0f,
+                    out x, out y, out size);
+            else if (shot.camera.mode == "pan")
+            {
+                size = shot.camera.size > 0f ? shot.camera.size : 7f;
+                y = placement.GroundY - 1f + size * ShotPlanning.SafeShare(shot.width, shot.height);
+                x = ShotPlanning.ClampLeft(placement.X + shot.camera.from, size, shot, 0f);
+            }
+            else
+                return;
+            const float shake = 0.6f;
+            Assert.GreaterOrEqual(y - size, layout.LowestGround - LevelLayout.GroundDepth + shake,
+                $"{shot.id}: the frame's bottom is under the level's ground");
+            Assert.GreaterOrEqual(x - size * shot.width / (float)shot.height, -1e-3f, $"{shot.id}: the frame starts left of the level");
         }
     }
 }

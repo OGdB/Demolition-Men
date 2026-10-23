@@ -61,6 +61,9 @@ namespace Demolition.Levels
         public const int NoGround = int.MinValue;
         /// <summary>Columns the crew's caravan stands on past the finish (its sprite is scaled to them).</summary>
         public const int CaravanWidth = 6;
+        /// <summary>Rows of solid ground below the lowest surface, so pits and sewers have walls
+        /// and a zoomed-out camera (the Clip Lab's square frames) never sees under the street.</summary>
+        public const int GroundDepth = 12;
 
         public LevelLayout(LevelSpec spec) => Spec = spec;
 
