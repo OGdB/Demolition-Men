@@ -168,8 +168,8 @@ namespace Demolition
             if (!other.CompareTag(TrapTag) || IsProxy || IsDead || Time.time < _invulnUntil)
                 return;
             TakeDamage(trapDamage);
-            if (_rb != null && !IsDead)
-                _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, Mathf.Max(_rb.linearVelocity.y, trapHop));
+            if (!IsDead && TryGetComponent(out PlayerMotor motor))
+                motor.Hop(trapHop);
         }
 
         private void Respawn()

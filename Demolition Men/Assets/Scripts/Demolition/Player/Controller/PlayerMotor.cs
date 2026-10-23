@@ -48,6 +48,7 @@ namespace Demolition
         private Animator _anim;
         private AudioSource _audio;
         private bool _jumpQueued;
+        private bool _launched; // jumped or thrown, and still rising
         private float _staggerUntil;
         private ContactFilter2D _groundFilter;
 
@@ -60,9 +61,27 @@ namespace Demolition
         {
             _rb.linearVelocity = velocity;
             _staggerUntil = Time.time + StaggerSeconds;
+            LeaveGround();
+        }
+
+        /// <summary>A flinch upwards (a trap): rising at least this fast.</summary>
+        public void Hop(float speed)
+        {
+            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, Mathf.Max(_rb.linearVelocity.y, speed));
+            LeaveGround();
         }
 
         private bool Staggered => Time.time < _staggerUntil;
+
+        // Contacts are a physics step old: right after a launch they still report the ground the
+        // player just left, and a jump in that step would stack on the launch (a jump on a jump
+        // goes four times as high). Rising along a wall of stacked blocks, the feet also touch
+        // every seam. So the player is off the ground until they stop rising.
+        private void LeaveGround()
+        {
+            _launched = true;
+            IsGrounded = false;
+        }
 
         private void Awake()
         {
@@ -128,6 +147,7 @@ namespace Demolition
                 _jumpQueued = false;
                 PlayClip(jumpSound);
                 _rb.AddForce(new Vector2(0f, jumpImpulse), ForceMode2D.Impulse);
+                LeaveGround();
             }
 
             // "Better jump" gravity shaping, unchanged — including the original quirk
@@ -147,7 +167,9 @@ namespace Demolition
 
         private void GroundCheck()
         {
-            IsGrounded = _rb.IsTouching(_groundFilter);
+            if (_launched && _rb.linearVelocity.y <= 0f)
+                _launched = false;
+            IsGrounded = !_launched && _rb.IsTouching(_groundFilter);
             if (_anim != null)
                 _anim.SetBool(InAirParam, !IsGrounded);
         }
