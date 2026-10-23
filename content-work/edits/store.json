@@ -1,0 +1,54 @@
+{
+  "out": "content-work/media/store",
+  "ads": true,
+  "screenshots": [
+    {
+      "image": "content-work/media/raw/store-1-one-hit/take1-b.png",
+      "name": "01-weak-point",
+      "caption": "FIND THE WEAK POINT",
+      "alt": "A muscled demolition man punches a support column and a red brick row house collapses into dust."
+    },
+    {
+      "image": "content-work/media/raw/store-2-co-op/take1-b.png",
+      "name": "02-co-op",
+      "caption": "WRECK IT WITH A FRIEND",
+      "alt": "Two demolition men smash a building from both sides while bricks and glass rain down."
+    },
+    {
+      "image": "content-work/media/raw/store-3-night-tnt/take1-a.png",
+      "name": "03-dynamite",
+      "caption": "BRING DYNAMITE",
+      "alt": "A stick of dynamite explodes against a neon-lit building at night and the floors above start to fall."
+    },
+    {
+      "image": "content-work/media/raw/store-4-tower/take1-b.png",
+      "name": "04-tower",
+      "caption": "TOPPLE THE TOWER",
+      "alt": "A tall dockside crane tower topples onto the street."
+    },
+    {
+      "image": "content-work/media/raw/store-5-wrecking-ball/take1-b.png",
+      "name": "05-wrecking-ball",
+      "caption": "SWING THE WRECKING BALL",
+      "alt": "A wrecking ball swings through the glass front of a neon arcade."
+    },
+    {
+      "image": "content-work/media/stills/level-select.png",
+      "name": "06-cities",
+      "caption": "3 CITIES + A DAILY STREET",
+      "alt": "The level select with three cities, Town, Port and Neon, each with four streets and a daily street."
+    },
+    {
+      "image": "content-work/media/stills/results.png",
+      "name": "07-rainbow-stars",
+      "caption": "BEAT PAR FOR RAINBOW STARS",
+      "alt": "The results screen: three rainbow stars for a finish within par, score and cash counting up."
+    },
+    {
+      "image": "content-work/media/stills/shop.png",
+      "name": "08-shop",
+      "caption": "UPGRADE YOUR CREW",
+      "alt": "The skill shop: upgrades for power, health, speed, dynamite and tools."
+    }
+  ]
+}

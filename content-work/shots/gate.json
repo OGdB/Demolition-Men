@@ -1,0 +1,17 @@
+{
+  "id": "gate",
+  "level": "town-02",
+  "building": 12,
+  "offset": -5,
+  "upgrades": 3,
+  "camera": {"mode": "frame", "pad": 3},
+  "width": 1920,
+  "height": 1920,
+  "length": 25,
+  "steps": [
+    {"p": 1, "do": "walk", "to": "building"},
+    {"p": 1, "do": "hit", "until": "collapse", "cells": 3, "seconds": 8},
+    {"p": 0, "do": "wait", "until": "collapse", "cells": 3, "seconds": 20},
+    {"p": 0, "do": "wait", "seconds": 4}
+  ]
+}

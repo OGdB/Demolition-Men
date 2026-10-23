@@ -1,0 +1,22 @@
+{
+  "id": "wrecking-ball",
+  "level": "neon-04",
+  "building": 3,
+  "offset": -2,
+  "upgrades": 3,
+  "weapon": "wreckingball",
+  "weaponHits": 40,
+  "camera": {"mode": "frame", "pad": 2},
+  "width": 1920,
+  "height": 1920,
+  "length": 30,
+  "steps": [
+    {"p": 1, "do": "walk", "to": "building"},
+    {"p": 1, "do": "hit", "until": "collapse", "cells": 20, "seconds": 10},
+    {"p": 0, "do": "wait", "until": "break", "seconds": 15},
+    {"p": 0, "do": "slowmo", "scale": 0.5, "seconds": 1},
+    {"p": 0, "do": "wait", "until": "collapse", "cells": 20, "seconds": 12},
+    {"p": 0, "do": "slowmo", "scale": 0.3, "seconds": 1.5},
+    {"p": 0, "do": "wait", "seconds": 5}
+  ]
+}

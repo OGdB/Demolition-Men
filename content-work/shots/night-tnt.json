@@ -1,0 +1,20 @@
+{
+  "id": "night-tnt",
+  "level": "neon-02",
+  "building": 10,
+  "offset": -5,
+  "upgrades": 5,
+  "dynamite": 3,
+  "camera": {"mode": "frame", "pad": 2},
+  "width": 1920,
+  "height": 1920,
+  "length": 30,
+  "steps": [
+    {"p": 1, "do": "walk", "to": "weakpoint"},
+    {"p": 1, "do": "tnt"},
+    {"p": 1, "do": "back", "seconds": 1.2},
+    {"p": 0, "do": "wait", "until": "blast", "seconds": 20},
+    {"p": 0, "do": "slowmo", "scale": 0.4, "seconds": 1.5},
+    {"p": 0, "do": "wait", "seconds": 5}
+  ]
+}

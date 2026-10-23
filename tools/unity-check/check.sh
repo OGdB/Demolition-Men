@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Compile-check the project's runtime assemblies (Demolition, Demolition.Online, Demolition.Lighting on URP stubs,
-# Demolition.Ads.AdMob, Assembly-CSharp) against
+# Demolition.Ads.AdMob, Assembly-CSharp, the Clip Lab on Recorder stubs) against
 # Unity's reference assemblies, then run the EditMode model tests on plain .NET.
 #   tools/unity-check/check.sh            build + tests
 #   tools/unity-check/check.sh build      build only
@@ -39,6 +39,7 @@ if [ "$mode" = all ] || [ "$mode" = build ]; then
   [ $rc -eq 0 ] && { build Assembly-CSharp || rc=1; }
   [ $rc -eq 0 ] && { build Demolition.EditorDefines || rc=1; }
   [ $rc -eq 0 ] && { build Assembly-CSharp-Editor || rc=1; }
+  [ $rc -eq 0 ] && { build Demolition.Clips.Editor || rc=1; }
   [ $rc -eq 0 ] && { build PlayModeTests || rc=1; }
 fi
 if [ "$mode" = all ] || [ "$mode" = test ]; then

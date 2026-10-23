@@ -1,0 +1,104 @@
+{
+  "out": "content-work/media/edits/trailer.mp4",
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 60,
+  "store": true,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.7,
+  "segments": [
+    {
+      "file": "content-work/media/raw/one-hit/take1.mp4",
+      "at": "collapse",
+      "before": 0.8,
+      "after": 2.2,
+      "text": "FIND THE WEAK POINT"
+    },
+    {
+      "file": "content-work/media/raw/night-tnt/take1.mp4",
+      "at": "blast",
+      "before": 0.6,
+      "after": 2.4
+    },
+    {
+      "file": "content-work/media/raw/gas-chain/take1.mp4",
+      "at": "blast",
+      "before": 0.5,
+      "after": 2.5
+    },
+    {
+      "file": "content-work/media/raw/co-op/take1.mp4",
+      "at": "collapse",
+      "before": 1.0,
+      "after": 2.0,
+      "text": "WRECK IT WITH A FRIEND"
+    },
+    {
+      "pair": [
+        {
+          "file": "content-work/media/phone/online-host.mp4",
+          "start": 0
+        },
+        {
+          "file": "content-work/media/raw/online-client.mp4",
+          "start": 0
+        }
+      ],
+      "seconds": 3,
+      "text": "ONLINE CO-OP"
+    },
+    {
+      "file": "content-work/media/raw/wrecking-ball/take1.mp4",
+      "at": "break",
+      "before": 0.3,
+      "after": 1.2
+    },
+    {
+      "file": "content-work/media/raw/headbutt/take1.mp4",
+      "at": "break",
+      "before": -1.5,
+      "after": 3.0
+    },
+    {
+      "file": "content-work/media/raw/gate/take1.mp4",
+      "at": "collapse",
+      "before": 0.5,
+      "after": 1.0
+    },
+    {
+      "file": "content-work/media/raw/keep-up/take1.mp4",
+      "start": 12,
+      "end": 16,
+      "text": "KEEP UP"
+    },
+    {
+      "file": "content-work/media/raw/tower/take1.mp4",
+      "at": "blast",
+      "before": 0.5,
+      "after": 3.5
+    },
+    {
+      "file": "content-work/media/raw/cities-town/take1.mp4",
+      "start": 2,
+      "end": 3
+    },
+    {
+      "file": "content-work/media/raw/cities-port/take1.mp4",
+      "start": 2,
+      "end": 3
+    },
+    {
+      "file": "content-work/media/raw/cities-neon/take1.mp4",
+      "start": 2,
+      "end": 3,
+      "text": "3 CITIES + A DAILY STREET"
+    },
+    {
+      "image": "brand/logo.png",
+      "seconds": 4,
+      "text": "ONLINE CO-OP"
+    }
+  ]
+}

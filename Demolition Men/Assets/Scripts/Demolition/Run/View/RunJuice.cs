@@ -18,6 +18,9 @@ namespace Demolition.Run
 
         private float _hitStopUntil = -1f;
 
+        /// <summary>The time scale a hit-stop returns to (the Clip Lab's slow motion); 1 in play.</summary>
+        public static float BaseTimeScale = 1f;
+
         private void OnEnable()
         {
             DestructionEvents.Collapsed += OnCollapsed;
@@ -61,7 +64,7 @@ namespace Demolition.Run
             if (PauseController.MenuOpen)
                 return;
             _hitStopUntil = Time.unscaledTime + seconds;
-            Time.timeScale = hitStopTimeScale;
+            Time.timeScale = hitStopTimeScale * BaseTimeScale;
         }
 
         private void EndHitStop()
@@ -70,7 +73,7 @@ namespace Demolition.Run
                 return;
             _hitStopUntil = -1f;
             if (!PauseController.Frozen)
-                Time.timeScale = 1f;
+                Time.timeScale = BaseTimeScale;
         }
     }
 }

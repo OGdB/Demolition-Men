@@ -1,0 +1,16 @@
+{
+  "id": "broll-port-04",
+  "level": "port-04",
+  "upgrades": 3,
+  "hud": true,
+  "camera": {"mode": "run"},
+  "width": 1920,
+  "height": 1080,
+  "length": 440,
+  "takes": 1,
+  "steps": [
+    {"p": 1, "do": "bot", "until": "over", "seconds": 420},
+    {"p": 0, "do": "wait", "until": "over", "seconds": 420},
+    {"p": 0, "do": "wait", "seconds": 6}
+  ]
+}

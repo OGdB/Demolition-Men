@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- PlayMode tests compile only (they need the editor to run). -->
+  <!-- PlayMode tests compile only (they need the editor to run, so UNITY_EDITOR is defined). -->
+  <PropertyGroup><ExtraDefines>UNITY_EDITOR</ExtraDefines></PropertyGroup>
   <ItemGroup><Compile Include="$(ProjectAssets)/Tests/PlayMode/**/*.cs;../TestRunnerStub.cs" />
   <PackageReference Include="NUnit" Version="3.14.0" />
-  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" /></ItemGroup>
+  <Reference Include="$(UnityCheckHome)/out/Demolition.EditorDefines/Demolition.dll" Private="false" /></ItemGroup>
 </Project>

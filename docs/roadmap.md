@@ -354,8 +354,9 @@ declarations that depend on them.
    - tune scroll speeds, upgrade costs and the cash rate from closed-test feedback;
    - touch glyphs in the tutorial prompts;
    - from app start to the first falling building in under a minute.
-6. **Clip mode** for marketing: hide the HUD, 9:16 framing, slow motion. Planned as an
-   editor tool that records shot files by script (Clip Lab, `store-media.md` §3).
+6. **Clip mode** for marketing: hide the HUD, 9:16 framing, slow motion. Built 2026-10-23
+   as an editor tool that records shot files by script (Clip Lab, `tools/media/media.py`,
+   `store-media.md` §3); not yet run in Unity.
 7. **Pre-launch report**: Play runs every closed-track upload on real devices for free. Fix
    every crash it finds.
 

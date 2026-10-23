@@ -1,0 +1,19 @@
+{
+  "out": "content-work/media/edits/short-3-tower.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/tower/take1.mp4",
+      "at": "blast",
+      "before": 1.5,
+      "after": 5.0,
+      "text": "TOWER VS ONE STICK OF DYNAMITE"
+    }
+  ]
+}

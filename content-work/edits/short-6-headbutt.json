@@ -1,0 +1,19 @@
+{
+  "out": "content-work/media/edits/short-6-headbutt.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/headbutt/take1.mp4",
+      "at": "break",
+      "before": 1.5,
+      "after": 6.0,
+      "text": "NO HELMET, NO PROBLEM"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "cities-neon",
+  "level": "neon-04",
+  "building": 12,
+  "offset": -2,
+  "upgrades": 5,
+  "camera": {"mode": "follow", "size": 8, "lead": 3},
+  "width": 1920,
+  "height": 1080,
+  "length": 12,
+  "takes": 2,
+  "steps": [
+    {"p": 1, "do": "bot", "seconds": 10},
+    {"p": 0, "do": "wait", "seconds": 10}
+  ]
+}

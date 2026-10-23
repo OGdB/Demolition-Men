@@ -14,6 +14,8 @@ namespace Demolition
         private const float StuckSeconds = 1.2f;
         /// <summary>Hold jump this long: a one-frame tap can fall between physics steps.</summary>
         private const float JumpHold = 0.25f;
+        /// <summary>How far ahead of the feet a swing reaches (the far edge of <see cref="BlockAhead"/>).</summary>
+        private const float Reach = 1.5f;
 
         private static readonly ContactFilter2D Solid = new ContactFilter2D { useTriggers = false };
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[4];
@@ -30,6 +32,13 @@ namespace Demolition
         private float _nextDynamite;
         private bool _jumpHeld;
 
+        /// <summary>Stop once a swing would reach this world x (the Clip Lab walks players up to a
+        /// block without hitting it). Infinity: run to the finish.</summary>
+        public float StopX { get; set; } = float.PositiveInfinity;
+        /// <summary>Throws dynamite at the supports it meets.</summary>
+        public bool ThrowsDynamite { get; set; } = true;
+        public bool Arrived { get; private set; }
+
         private void Awake()
         {
             _motor = GetComponent<PlayerMotor>();
@@ -42,6 +51,13 @@ namespace Demolition
         private void Update()
         {
             Vector2 feet = transform.position;
+            if (feet.x + Reach >= StopX)
+            {
+                Arrived = true;
+                _source.Next = new PlayerInputFrame { JumpReleased = _jumpHeld };
+                _jumpHeld = false;
+                return;
+            }
             BuildingBlock block = BlockAhead(feet);
             bool attack = block != null;
             if (CanArmJump && _motor.IsGrounded && !attack && (StepAhead(feet) || PitAhead(feet)))
@@ -59,7 +75,7 @@ namespace Demolition
             }
             bool jump = Time.time < _jumpUntil;
 
-            if (block != null && block.Material == BlockMaterial.Support && _combat.DynamiteCount > 0 && Time.time >= _nextDynamite)
+            if (ThrowsDynamite && block != null && block.Material == BlockMaterial.Support && _combat.DynamiteCount > 0 && Time.time >= _nextDynamite)
             {
                 _source.Next.DynamitePressed = true;
                 _nextDynamite = Time.time + 3f;

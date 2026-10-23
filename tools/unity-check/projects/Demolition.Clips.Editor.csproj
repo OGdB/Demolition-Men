@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Editor/Clips is its own asmdef (Demolition.Clips.Editor), compiled by Unity only once the
+       Recorder is installed. Here it builds against RecorderStubs.cs and the old UnityEditor.dll:
+       a signature check, not a Recorder build. -->
+  <PropertyGroup><ExtraDefines>UNITY_EDITOR</ExtraDefines></PropertyGroup>
+  <ItemGroup><Compile Include="$(ProjectAssets)/Editor/Clips/**/*.cs" />
+  <Compile Include="$(MSBuildThisFileDirectory)../RecorderStubs.cs" />
+  <Reference Include="$(UnityCheckHome)/editor/sdk/lib/UnityEditor.dll" Private="false" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition.EditorDefines/Demolition.dll" Private="false" /></ItemGroup>
+</Project>

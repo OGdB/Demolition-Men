@@ -1,0 +1,19 @@
+{
+  "id": "gas-chain",
+  "level": "neon-04",
+  "building": 16,
+  "offset": -4,
+  "upgrades": 5,
+  "camera": {"mode": "pan", "from": 5, "to": 6, "seconds": 12, "size": 11},
+  "width": 1920,
+  "height": 1920,
+  "length": 25,
+  "steps": [
+    {"p": 1, "do": "walk", "to": "building"},
+    {"p": 1, "do": "hit", "until": "blast", "seconds": 4},
+    {"p": 1, "do": "back", "seconds": 2},
+    {"p": 0, "do": "wait", "until": "blast", "seconds": 15},
+    {"p": 0, "do": "slowmo", "scale": 0.5, "seconds": 3},
+    {"p": 0, "do": "wait", "seconds": 6}
+  ]
+}

@@ -75,6 +75,9 @@ namespace Demolition.Run
         /// <summary>Online client: the host's <see cref="DestroyedFraction"/>, -1 until it arrives.</summary>
         public float NetFraction { get; set; } = -1f;
 
+        /// <summary>Nobody goes out of bounds (the Clip Lab frames shots with its own camera).</summary>
+        public bool IgnoreBounds { get; set; }
+
         public string LevelId => string.IsNullOrEmpty(levelId) ? SceneManager.GetActiveScene().name : levelId;
 
         /// <summary>What the profile got from this run, once it is over.</summary>
@@ -201,7 +204,7 @@ namespace Demolition.Run
                 Vector3 pos = _players[i].Transform.position;
                 if (NetRole.IsClient)
                     continue; // online, the host's RunState decides
-                State.SetInBounds(i, IsInBounds(pos));
+                State.SetInBounds(i, IgnoreBounds || IsInBounds(pos));
                 if (finish != null && pos.x >= finish.X)
                     State.ReportCrossedFinish(i);
             }

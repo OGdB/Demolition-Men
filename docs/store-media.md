@@ -1,6 +1,7 @@
 # Store media and clips: what we show and how we record it
 
-**Status:** plan, 2026-10-22, for the first recording session on 2026-10-23. It covers the
+**Status:** plan 2026-10-22; the recording tools built 2026-10-23 (§3), compile-checked and
+model-tested without the editor, not yet run in Unity. It covers the
 listing graphics of roadmap R4, the clip mode of R2 step 6, and the first marketing clips
 (`marketing.md` §2–3). Section 6 lists what else Play and the first ads still need.
 
@@ -66,16 +67,16 @@ the level previews.
 
 | ID | What happens | Where | Camera | Slow motion | Used for |
 |---|---|---|---|---|---|
-| `one-hit` | P1 walks in and hits the building's weak-point support; the building comes down | `town-01` terrace | Frame the building | 0.3× for 1.5 s from the collapse | Short 1, trailer opening, screenshot 1, ads |
-| `night-tnt` | P1 throws dynamite at a support and backs off; a flash, then the floors drop | `neon-02` cluster | Frame | 0.4× from the blast | Screenshot 3, a Short, trailer |
-| `tower` | Dynamite at the base of the tower; it falls | `neon-02` or `port-04` tower | Tall frame (made for 9:16) | 0.5× | A Short, trailer climax, screenshot 4 |
-| `gas-chain` | One hit on the first gas tank; the row sets itself off | `port-02` yard:5 | Pan along the row | None, then 0.5× on the last blast | A Short, trailer |
-| `wrecking-ball` | Swings through a glass front | A Neon building with glass | Frame | 0.5× on the first impact | Screenshot 5, a Short |
-| `co-op` | P1 and P2 hit two supports from both sides | `town-03` cluster | Frame | 0.3× | Screenshot 2, trailer |
-| `gate` | Knock out the wooden footing; the wall turns to dust | `town-02` gate | Frame | None | A Short |
-| `headbutt` | A jump head-first into a block | Any Town building | Tight follow | 0.5× | A Short (the funny one) |
+| `one-hit` | P1 walks in and hits the building's weak-point support; the building comes down | `town-04` rowhouse (#0) | Frame the building | 0.3× for 1.5 s from the collapse | Short 1, trailer opening, screenshot 1, ads |
+| `night-tnt` | P1 throws dynamite at a support and backs off; a flash, then the floors drop | `neon-02` arcade (#10) | Frame | 0.4× from the blast | Screenshot 3, a Short, trailer |
+| `tower` | Dynamite at the base of the tower; it falls | `port-04` crane tower (#1), 1080×1920 | Tall frame (made for 9:16) | 0.5× | A Short, trailer climax, screenshot 4 |
+| `gas-chain` | One hit on the first gas tank; the row sets itself off | `neon-04` yard (#16–19) | Pan along the row | None, then 0.5× on the last blast | A Short, trailer |
+| `wrecking-ball` | Swings through a glass front | `neon-04` arcade (#3) | Frame | 0.5× on the first impact | Screenshot 5, a Short |
+| `co-op` | P1 takes the weak point, P2 (the bot) smashes the rest | `town-04` rowhouse (#0) | Frame | 0.3× | Screenshot 2, trailer |
+| `gate` | Knock out the wooden footing; the wall turns to dust | `town-02` gate (#12) | Frame | None | A Short |
+| `headbutt` | Inside, jumps head-first into the ceiling | `town-01` shop (#1) | Tight follow | 0.5× | A Short (the funny one) |
 | `keep-up` | P1 falls behind, the out-of-bounds sign counts down, P1 jumps the pit and it clears | `town-02` islands | The run's own camera, with the HUD on | None | Trailer, a Short |
-| `cities` | No action: a slow pan along one street per theme | `town-04`, `port-04`, `neon-04` | Pan | — | Trailer montage |
+| `cities-*` | The bot runs along one street per theme | `town-02` terrace, `port-04` silos, `neon-04` hotels | Follow | — | Trailer montage |
 
 **Bot footage** runs alongside these: the `BotPilot` plays whole levels (one per theme, plus
 `town-04`) while the recorder runs, with the HUD on. It is raw material for the trailer, and
@@ -91,8 +92,8 @@ captions are drafts.
 |---|---|---|---|
 | 1 | `one-hit`, mid-collapse, Town | FIND THE WEAK POINT | A muscled demolition man punches a support column and a red brick row house collapses into dust. |
 | 2 | `co-op`, both players and falling glass | WRECK IT WITH A FRIEND | Two demolition men smash a building from both sides while bricks and glass rain down. |
-| 3 | `night-tnt`, the flash, Neon | BRING DYNAMITE | A stick of dynamite explodes against a neon-lit tower at night and the floors above start to fall. |
-| 4 | `tower`, leaning, Port | TOPPLE THE TOWER | A ten-storey dockside tower topples sideways onto the street. |
+| 3 | `night-tnt`, the flash, Neon | BRING DYNAMITE | A stick of dynamite explodes against a neon-lit building at night and the floors above start to fall. |
+| 4 | `tower`, leaning, Port | TOPPLE THE TOWER | A tall dockside crane tower topples onto the street. |
 | 5 | `wrecking-ball`, with the touch controls | SWING THE WRECKING BALL | A wrecking ball swings through the glass front of a neon arcade. |
 | 6 | Level select | 3 CITIES + A DAILY STREET | The level select with three cities, Town, Port and Neon, each with four streets and a daily street. |
 | 7 | Results, three rainbow stars | BEAT PAR FOR RAINBOW STARS | The results screen: three rainbow stars for a finish within par, score and cash counting up. |
@@ -112,7 +113,7 @@ played by you, or by the bot with the upgrades maxed, on a level it can finish w
 | 0:15–0:20 | `wrecking-ball`, `headbutt`, `gate`, about 1.5 s each | — |
 | 0:20–0:24 | `keep-up` | KEEP UP |
 | 0:24–0:28 | `tower`, in slow motion (the biggest moment comes late) | — |
-| 0:28–0:31 | `cities` (3 × 1 s), then the rainbow stars | 3 CITIES · A DAILY STREET |
+| 0:28–0:31 | `cities-*` (3 × 1 s), then the rainbow stars | 3 CITIES + A DAILY STREET |
 | 0:31–0:35 | End card: the logo from `brand.py` | Store version: ONLINE CO-OP. Ad version: the Google Play badge. |
 
 Music: one of the game's own tracks, cut on the beat ("Summon the Rawk" or "Rock_Theme",
@@ -151,17 +152,21 @@ Clip 8 is for r/gamedev, r/Unity2D and Bluesky, where how-it-works posts do well
 
 ## 3. How we record
 
-### 3.1 Pieces to build (agent, compile-checked without the editor)
+### 3.1 What is built (2026-10-23)
 
 | Piece | What it does | Where |
 |---|---|---|
-| Unity Recorder | `com.unity.recorder` (5.x) in `Packages/manifest.json`. It records the Game view at a constant 60 fps and sets `Time.captureFramerate`, so a heavy collapse never drops a frame in the video, even if the editor slows down. | Package |
-| `ShotSpec` | Model: parses a shot file and turns it into a list of timed steps. Unit-tested. | `Scripts/Demolition/Clips/Model/` |
-| `ClipDirector` | Plays a shot in a run: places the players, gives them their kit, drives them through a `ScriptedInputSource`, owns the camera and the time scale, and logs every collapse and blast to a JSON sidecar. Editor only. | `Scripts/Demolition/Clips/Controller/` |
-| `ClipLab` | Tools ▸ Demolition ▸ Clip Lab: a list of shots, with Preview, Record (N takes) and Record all. It hands the shot over through `PlayerPrefs`, like the Level Lab's play request, starts the Recorder, and stops at the end of the shot. Static `RecordCli(id, takes)` and `RecordAllCli()` so the Unity MCP (`RunCommand`) can drive it. Its own editor asmdef, compiled only when the Recorder package is present (as `Demolition.Lighting` does with URP). | `Assets/Editor/Clips/` |
-| `tools/media/media.py` | Python and ffmpeg. `crop` makes the 9:16, 16:9 and 1:1 versions; `cut` makes highlight clips from a sidecar; `contact` makes a contact sheet of frames from every take; `gif`; `store` captions the screenshots and makes the ads images; `edit` renders a Short or the trailer from a JSON cut list, with text overlays in Black Ops One and a music track. | `tools/media/` |
+| Unity Recorder | `com.unity.recorder` 5.1.7 in `Packages/manifest.json` (it brings Timeline). It records the Game view at a constant frame rate and sets `Time.captureFramerate`, so a heavy collapse never drops a frame in the video, even if the editor slows down. | Package |
+| `ShotSpec`, `ShotPlanning` | Models: a shot file, its checks (`Errors()`), its lanes, the take's event log (`ShotLog`), the framing maths and the weak-point finder. Unit-tested (`ShotTests`), including every file in `content-work/shots`. | `Scripts/Demolition/Clips/Model/` |
+| `ClipDirector` | Plays a shot in the Run scene (editor only): a temporary profile with the shot's upgrades and no music, the players placed at the building with their kit and driven through `ScriptedInputSource`s (walks go through the `BotPilot`), the camera framed, the HUD hidden, the time scale owned. Logs every collapse, break and blast at its video time to `take<n>.json`, plus any step that timed out. | `Scripts/Demolition/Clips/Controller/` |
+| `ClipLab` | Tools ▸ Demolition ▸ Clip Lab: every shot file with Preview and Record, Record all, Stop, Still (the Game view at 2x, for menus), Open media folder. Takes run one after another, each in its own play mode. For agents through the Unity MCP: `ClipLab.Record("one-hit")`, `ClipLab.Record("one-hit", 1)`, `ClipLab.RecordAll()`, `ClipLab.Preview(id)`, `ClipLab.Status()`, `ClipLab.Stop()`, `ClipLab.Still()`. Its own asmdef (`Demolition.Clips.Editor`), compiled only when the Recorder is installed. | `Assets/Editor/Clips/` |
+| Game hooks | `BotPilot.StopX` / `ThrowsDynamite` / `Arrived`, `LevelBootstrap.Players`, `RunController.IgnoreBounds`, `RunJuice.BaseTimeScale`. Nothing changes in normal play. | |
+| `ShotRunTests` | PlayMode: every shot except bot footage plays to its end without recording, and no step timed out. Run it after changing a shot or the levels. | `Tests/PlayMode/` |
+| `tools/media/media.py` | Python, Pillow and ffmpeg. `crop` (9:16, 16:9, 1:1), `cut` (clips around the biggest collapses in a take's log), `contact` (a sheet of frames from every take, timeouts in red), `gif`, `store` (captioned screenshots, ads images, alt texts; refuses words Play bans), `edit` (a Short or the trailer from a cut list, text in the title's look, music laid under). Tested on generated videos. | `tools/media/` |
+| Shot files | 21: the clips of §2.1, `cities-*`, `broll-*` (whole levels with the bot) and `store-1…5` (16:9 with the HUD, stills at 3840×2160). Buildings and weak points picked from the level dump (`check.sh levels` now writes each building's `weak`: x, y, w, h, share it brings down). | `content-work/shots/` |
+| Cut lists | `short-1…7` (9:16), `trailer.json` (16:9, store version), `store.json` (the 8 screenshots with captions and alt texts). They point at `take1`; change the take number after picking. | `content-work/edits/` |
 
-The roadmap's "clip mode in development builds" becomes this editor tool. A clip mode on the
+The roadmap's "clip mode in development builds" became this editor tool. A clip mode on the
 phone is skipped: footage from the phone is there to show the touch controls, so it keeps
 the HUD.
 
@@ -170,34 +175,49 @@ the HUD.
 ```json
 {
   "id": "one-hit",
-  "level": "town-01", "seed": 0,
-  "players": 1,
-  "start": { "building": 2, "offset": -5 },
-  "kit": { "power": 5, "dynamite": 0, "weapon": "none" },
-  "camera": { "mode": "frame", "building": 2, "pad": 2 },
-  "hud": false,
+  "level": "town-04",
+  "building": 0,
+  "offset": -5,
+  "upgrades": 5,
+  "camera": {"mode": "frame", "pad": 2},
+  "width": 1920,
+  "height": 1920,
+  "length": 35,
   "steps": [
-    { "p": 1, "do": "walk", "to": "weakpoint" },
-    { "p": 1, "do": "hit", "until": "collapse" },
-    { "on": "collapse", "do": "slowmo", "scale": 0.3, "for": 1.5 },
-    { "do": "wait", "for": 4 }
-  ],
-  "stills": ["collapse+0.5"],
-  "frame": [1920, 1920],
-  "takes": 3
+    {"p": 1, "do": "walk", "to": "weakpoint"},
+    {"p": 1, "do": "hit", "until": "collapse", "cells": 15, "seconds": 12},
+    {"p": 0, "do": "wait", "until": "collapse", "cells": 15, "seconds": 25},
+    {"p": 0, "do": "slowmo", "scale": 0.3, "seconds": 1.5},
+    {"p": 0, "do": "wait", "seconds": 5}
+  ]
 }
 ```
 
-- **Steps:** `walk` (to an x, a building or its weak point), `hit` (for some seconds, or
-  until a block breaks or the building collapses), `tnt`, `jump`, `swap`, `wait`, `slowmo`.
-  `weakpoint` is the ground-level block whose loss detaches the most cells. The
-  `BuildingValidator` already replays every ground-level block, so the director asks it.
-- **Camera:** `frame` (a building's bounds plus padding, the ground at the bottom), `pan`
-  (from one x to another over some time), `follow` (the run's own `ScrollCamera` without
-  scrolling), and `run` (the run as it plays, scrolling and out-of-bounds included, for
-  `keep-up` and the screenshots).
-- **Profile:** a temporary profile, as `BotRunTests` uses, so your save is untouched. `kit`
-  sets the upgrades and pickups the shot needs.
+- **Where:** `level` (a campaign id), `seed` (0: the level's own), `building` (index in the
+  level's buildings, props included; -1: the spawn), `offset` (players start this far from
+  its left edge; the take nudges it by 0.37 per take so takes differ), `players` (1 or 2).
+- **Kit:** `upgrades` (every shop upgrade at this level), `dynamite`, `weapon` (`axe`,
+  `wreckingball`) with `weaponHits`.
+- **Lanes:** `p` 0 is the director, 1 and 2 the players; write `p` on every step. Each lane
+  runs its steps in order, side by side. The shot ends when lane 0 runs out (or at
+  `length`). Seconds are video seconds.
+- **Player steps:** `walk` (`to`: `weakpoint`, `building` (its left edge), `end` (past it), or
+  `x` from the left edge; the bot breaks what's in the way and stops where a swing would
+  reach the target), `hit` (for `seconds`, or `until` an event), `tnt`, `jump` (`x` + or -
+  moves while jumping), `back` (walk left for `seconds`), `swap`, `wait`, `bot` (the
+  `BotPilot` plays, dynamite included, for `seconds` or `until`).
+- **Director steps:** `wait` (`seconds`, or `until` an event with `seconds` as the
+  timeout), `slowmo` (`scale` for `seconds`; the lane goes on meanwhile), `still` (`name`;
+  `stillScale` times the frame), `end`.
+- **Events:** `collapse` (of at least `cells`), `break`, `blast`, `over` (the run ended).
+- `weakpoint` is the ground-level block whose loss brings down the most of the building,
+  replayed the way `BuildingValidator` judges weak points.
+- **Camera:** `frame` (the building and the players' start, plus `pad`, standing on the
+  ground), `pan` (`from` to `to` over `seconds`, at `size`), `follow` (the front player
+  plus `lead`, at `size`), `run` (the run's own camera, scrolling and out-of-bounds
+  included).
+- **Frame:** `width` × `height`, `fps`, `takes`. Square frames keep the subject in the
+  middle 9/16, so every crop holds it.
 
 ### 3.3 What clip mode changes while a shot plays
 
@@ -221,10 +241,13 @@ the HUD.
 Clips are recorded at **1920×1920** with the subject framed in the central 1080×1080 square.
 One take then gives three formats by cropping: 1080×1920 (the middle strip), 1920×1080 (the
 middle band) and 1080×1080 (scaled down). It is the same take in every format, with nothing
-to re-run. The ads images (1:1, 1.91:1, 4:5) come from the stills in the same way. If a crop
-looks cramped, the shot file can ask for its own frame size instead.
+to re-run (`media.py edit` crops from the master by itself). The ads images (1:1, 1.91:1,
+4:5) come from the stills in the same way. A tall subject gets its own frame instead:
+`tower` records at 1080×1920, because the ground under a square frame of a 30-storey tower
+would run out (the level has 8 rows of ground below its lowest street).
 
-Store screenshots are recorded separately at 3840×2160, with the HUD laid out for 16:9.
+Store screenshots are their own shots (`store-*`): 1920×1080 with the HUD, stills at
+`stillScale` 2, so 3840×2160.
 
 **Highlights:** the director's sidecar lists every collapse with its time, its size in cells
 and its position. `media.py cut` takes the N biggest and cuts from 2 s before the hit to
@@ -252,32 +275,39 @@ The game runs full screen, so the status bar never shows. Android's own screen r
 
 ## 4. Session plan, 2026-10-23
 
-**Before the session (agent, tonight or at the start):** build section 3.1, write the shot
-files and pick their buildings and weak points headless.
-
 **Setup (you, about 20 minutes):**
+- Open the project: Unity installs the Recorder (and Timeline). Commit the
+  `Packages/packages-lock.json` change it makes.
 - `winget install Gyan.FFmpeg Genymobile.scrcpy`, and Python with Pillow for `media.py`.
 - Run Claude Code locally in the project, with the Unity MCP connected, so the agent can
-  start shots and look at the contact sheets.
+  start shots (`ClipLab.Record(...)`) and look at the contact sheets.
 
 **The session:**
 1. **Decisions** (section 5): the letterbox, and the name check. Both change what we record.
-2. **Smoke test:** record `one-hit` once. Check that the video is smooth at 60 fps, that the
-   sound is in sync, and that the three crops work. Fix anything before recording the batch.
-3. **Batch:** every directed shot × 3 takes (about 15 minutes of recording, unattended).
-   Meanwhile, the bot plays four levels and the recorder runs.
-4. **Pick takes** from the contact sheets.
-5. **Takes with you:** online co-op (phone + editor), touch play on the phone, local co-op
-   with gamepads, and the run for screenshot 7.
-6. **Stills:** the screenshots in section 2.2, captioned by `media.py store`.
-7. **Edit:** the first three Shorts and a rough cut of the trailer (`media.py edit`).
+2. **Smoke test:** Clip Lab ▸ `one-hit` ▸ Preview, then Record with 1 take. Check that the
+   video is smooth at 60 fps, that the sound is in sync, that the weak point is the one
+   that falls, and that the crops work
+   (`python tools/media/media.py crop content-work/media/raw/one-hit/take1.mp4`). Then run
+   `ShotRunTests` (PlayMode): any shot whose steps time out is listed and gets tuned first.
+3. **Batch:** Record all (the clips × 3 takes, the store shots × 2, the bot footage once:
+   roughly 30 minutes, unattended).
+4. **Pick takes:** `python tools/media/media.py contact content-work/media/raw`; the agent
+   proposes a take per shot, you confirm, and the take numbers go into
+   `content-work/edits/*.json`.
+5. **Takes with you:** online co-op (the phone with scrcpy into
+   `content-work/media/phone/online-host.mp4`, the editor client with Window ▸ General ▸
+   Recorder into `content-work/media/raw/online-client.mp4`), touch play on the phone,
+   local co-op with gamepads, and a run for screenshot 7.
+6. **Stills:** level select, results and shop with Clip Lab ▸ Still, saved as
+   `content-work/media/stills/level-select.png`, `results.png`, `shop.png`; then
+   `python tools/media/media.py store content-work/edits/store.json`.
+7. **Edit:** `media.py edit` on `short-1…3` and on `trailer.json` (run `brand.py` first for
+   `brand/logo.png`).
 8. **Upload:** the trailer to YouTube as unlisted. Check YouTube Studio ▸ Copyright for
    claims on the music before the video goes anywhere.
 
 What the session should produce: 8 screenshots, 8 Shorts ready to post, a 35 s trailer
 draft, 3 GIFs, and the material for the tester call.
-
----
 
 ## 5. Decisions for the start of the session
 

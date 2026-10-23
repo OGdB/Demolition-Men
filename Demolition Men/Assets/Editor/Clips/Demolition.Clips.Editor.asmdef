@@ -1,0 +1,28 @@
+{
+    "name": "Demolition.Clips.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Demolition",
+        "Unity.Recorder",
+        "Unity.Recorder.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "DEMOLITION_RECORDER"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.recorder",
+            "expression": "5.0",
+            "define": "DEMOLITION_RECORDER"
+        }
+    ],
+    "noEngineReferences": false
+}

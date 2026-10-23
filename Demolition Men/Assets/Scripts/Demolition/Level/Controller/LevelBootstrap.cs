@@ -22,6 +22,9 @@ namespace Demolition.Levels
         /// Tools ▸ Demolition ▸ Bot Run menu).</summary>
         public static bool AutoPilot;
 
+        /// <summary>Spawn this many players whoever joined (the Clip Lab's two-player shots); 0: the session's.</summary>
+        public static int Players;
+
         private void Awake()
         {
             GameConfig config = GameConfig.Instance;
@@ -153,7 +156,7 @@ namespace Demolition.Levels
 
         private static int SpawnPlayers(GameConfig config, Vector3 spawn)
         {
-            int count = Mathf.Clamp(Session.PlayerCount, 1, config.playerPrefabs.Length);
+            int count = Mathf.Clamp(Players > 0 ? Players : Session.PlayerCount, 1, config.playerPrefabs.Length);
             for (int i = 0; i < count; i++)
             {
                 GameObject player = Instantiate(config.playerPrefabs[i], spawn + new Vector3(-1.5f * i, 0f, 0f), Quaternion.identity);
