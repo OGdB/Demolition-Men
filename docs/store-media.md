@@ -1,8 +1,9 @@
 # Store media and clips: what we show and how we record it
 
 **Status:** plan 2026-10-22; the recording tools built 2026-10-23 (§3) and run in Unity the
-same day (on Linux): every shot recorded and tuned, the Shorts, GIFs, 7 of 8 screenshots and a
-trailer draft made; what is left is at the end of §4. It covers the
+same day (on Linux): every shot recorded and tuned, the takes that need you recorded (§2.5), and
+the Shorts, GIFs, all 8 screenshots and the trailer made; what is left is at the end of §4. It
+covers the
 listing graphics of roadmap R4, the clip mode of R2 step 6, and the first marketing clips
 (`marketing.md` §2–3). Section 6 lists what else Play and the first ads still need.
 
@@ -77,11 +78,12 @@ building and its weak point headless, from the level layouts that
 | `gate` | Knock out the wooden footing; the wall turns to dust | `town-02` gate (#12) | Frame | 0.35× for 2 s from the collapse | A Short |
 | `headbutt` | Breaks in, jumps head-first into the first floor's planks; the wall and a beam come down on the player | `town-02` rowhouse (#2): a ceiling at row 4 is the lowest a jump reaches | Tight follow | None | A Short (the funny one) |
 | `keep-up` | P1 stands still while the camera scrolls on, the out-of-bounds sign counts down, P1 sprints back into view and it clears (a standing jump over the islands' pits falls short) | `town-02` street before the shop (#0) | The run's own camera, already scrolling, with the HUD on | None | Trailer, a Short |
-| `cities-*` | The bot runs along one street per theme | `town-02` terrace, `port-04` silos, `neon-04` hotels | Follow | — | Trailer montage |
+| `cities-*` | The bot runs along one street per theme | `town-02` terrace, `port-04` silos, `neon-04` hotels | Follow | — | Spare: the trailer's montage uses runs by hand (§2.5) |
 
 **Bot footage** runs alongside these: the `BotPilot` plays whole levels (one per theme, plus
-`town-04`) while the recorder runs, with the HUD on. It is raw material for the trailer, and
-a cutter turns its biggest collapses into short clips (section 3.4).
+`town-04`) while the recorder runs, with the HUD on. It is raw material, and a cutter turns
+its biggest collapses into short clips (section 3.4). Runs played by hand look human where the
+bot doesn't, so the trailer uses those (§2.5).
 
 ### 2.2 Store screenshots (order matters: the first three are seen most)
 
@@ -136,18 +138,23 @@ on top.
 
 Clip 8 is for r/gamedev, r/Unity2D and Bluesky, where how-it-works posts do well.
 
-### 2.5 Takes that need you
+### 2.5 Takes that need you (recorded 2026-10-23)
 
-- **Online co-op on two devices:** the phone hosts and the editor joins (as in the
-  2026-10-22 test). Record both screens at once: the phone with scrcpy and the editor with the
-  recorder. They are cut side by side for the trailer and Short 4. This is the strongest
-  proof of the co-op hook, so it is worth doing well: one building, both players on it.
-- **Touch play on the phone:** one level played with the touch controls visible, recorded
-  with scrcpy. It shows that the game plays well on a phone, and it is the real performance
-  check (the dust, the worst collapse).
-- **Local co-op with two gamepads** in the editor, recorded: bot-free footage that looks
-  human, for the trailer.
-- A run for screenshot 7, unless the bot manages one within par.
+- **Online co-op on two devices:** the phone hosts `town-01` and the editor joins
+  (`OnlineSession.Join(code)`), its player the `BotPilot`. Both screens record at once: the
+  phone with `adb shell screenrecord` (§3.5), the editor with `ClipLab.RecordTake` at 960×540,
+  30 fps, which keeps real time (§3.1). The strongest proof of the co-op hook: in the trailer
+  and Short 4 (`short-4-online`), lined up by the HUD timers. Each device simulates its own
+  debris, so the same collapse falls a little differently on each screen.
+  `raw/online-phone/`, `raw/online-pc/`.
+- **Touch play on the phone:** the tutorial and Main Street with the touch controls, on a
+  release build: a steady 60 fps while it recorded. `raw/phone-touch-town-01/`.
+- **Runs by hand** in the editor with the HUD on: `town-04`, `port-04` and `neon-02`, each
+  finished within par. Recorded at a fixed step, so the game ran at about a quarter speed for
+  the player; the video is smooth 60 fps. The trailer's three-cities montage and its rainbow
+  stars. `raw/play-*/` (`play-neon-02` has no sound: it was converted by hand).
+- A run for screenshot 7: `town-01` within par at 82%.
+- Not done: **local co-op with two gamepads** in the editor.
 
 ---
 
@@ -160,12 +167,12 @@ Clip 8 is for r/gamedev, r/Unity2D and Bluesky, where how-it-works posts do well
 | Unity Recorder | `com.unity.recorder` 5.1.7 in `Packages/manifest.json` (it brings Timeline). It records the Game view at a constant frame rate and sets `Time.captureFramerate`, so a heavy collapse never drops a frame in the video, even if the editor slows down. On Linux it has no H.264: the Clip Lab records VP8 WebM at a high bitrate and, when the take ends, ffmpeg turns it into `take<n>.mp4` in the background (libx264, else the GPU's `h264_nvenc`, else `libopenh264`; `ClipLab.Status()` counts the takes still converting). The Game view's Mute Audio is switched off while a take records, or the take is silent. | Package |
 | `ShotSpec`, `ShotPlanning` | Models: a shot file, its checks (`Errors()`), its lanes, the take's event log (`ShotLog`), the framing maths and the weak-point finder. Unit-tested (`ShotTests`), including every file in `content-work/shots`. | `Scripts/Demolition/Clips/Model/` |
 | `ClipDirector` | Plays a shot in the Run scene (editor only): a temporary profile with the shot's upgrades and no music, the players placed at the building with their kit and driven through `ScriptedInputSource`s (walks go through the `BotPilot`), the camera framed, the HUD hidden, the time scale owned. Logs every collapse, break and blast at its video time to `take<n>.json`, plus any step that timed out or was still waiting when the shot ended. | `Scripts/Demolition/Clips/Controller/` |
-| `ClipLab` | Tools ▸ Demolition ▸ Clip Lab: every shot file with Preview and Record, Record all, Stop, Still (the Game view at 2x, for menus), Open media folder. Takes run one after another, each in its own play mode. For agents through the Unity MCP: `ClipLab.Record("one-hit")`, `ClipLab.Record("one-hit", 1)`, `ClipLab.RecordAll()`, `ClipLab.Preview(id)`, `ClipLab.Status()`, `ClipLab.Stop()`, `ClipLab.Still()`. Its own asmdef (`Demolition.Clips.Editor`), compiled only when the Recorder is installed. | `Assets/Editor/Clips/` |
-| Game hooks | `BotPilot.StopX` / `ThrowsDynamite` / `Arrived`, `LevelBootstrap.Players`, `RunController.IgnoreBounds`, `RunJuice.BaseTimeScale`, `ScrollCamera.Pushed` (a `run` shot at a building starts with the camera already scrolling). Nothing changes in normal play. | |
+| `ClipLab` | Tools ▸ Demolition ▸ Clip Lab: every shot file with Preview and Record, Record all, Stop, Still (the Game view at 2x, for menus), Open media folder. Takes run one after another, each in its own play mode. For agents through the Unity MCP: `ClipLab.Record("one-hit")`, `ClipLab.Record("one-hit", 1)`, `ClipLab.RecordAll()`, `ClipLab.Preview(id)`, `ClipLab.Status()`, `ClipLab.Stop()`, `ClipLab.Still()`; `ClipLab.RecordTake(name, w, h, fps)` and `StopTake()` record whatever plays (a run by hand, online play) into `raw/<name>/`. Like a shot, a take records at a fixed step: at 1080p60 the game runs at about a quarter speed for whoever plays it (the encoder can't keep up), while 960×540 at 30 fps with `Application.targetFrameRate` about 34 keeps real time, which online play needs. Its own asmdef (`Demolition.Clips.Editor`), compiled only when the Recorder is installed. | `Assets/Editor/Clips/` |
+| Game hooks | `BotPilot.StopX` / `ThrowsDynamite` / `Arrived`, `PlayerHealth.Invincible` (a shot's `invincible`), `LevelBootstrap.Players`, `RunController.IgnoreBounds`, `RunJuice.BaseTimeScale`, `ScrollCamera.Pushed` (a `run` shot at a building starts with the camera already scrolling). Nothing changes in normal play. | |
 | `ShotRunTests` | PlayMode: every shot except bot footage plays to its end without recording, and no step timed out. Run it after changing a shot or the levels, from the Test Runner window: started from a Unity MCP command (`TestRunnerApi.Execute`, 2026-10-23 on Linux) the editor hung right after the play mode domain reload. Agents can record one take of each shot instead; its log lists the same timeouts. | `Tests/PlayMode/` |
-| `tools/media/media.py` | Python, Pillow, numpy (through `tools/artpipe/brand.py`) and ffmpeg; H.264 from libx264, else `h264_nvenc`, else `libopenh264` (Fedora's ffmpeg has no x264). `crop` (9:16, 16:9, 1:1), `cut` (clips around the biggest collapses in a take's log), `contact` (a sheet of frames from every take, timeouts in red), `gif`, `store` (captioned screenshots, ads images, alt texts; refuses words Play bans), `edit` (a Short or the trailer from a cut list, text in the title's look, music laid under; a segment can crop closer with `zoom`, `x`, `y`, which the Shorts need: the square master leaves the subject small in 9:16). `store` skips stills that aren't there yet. | `tools/media/` |
+| `tools/media/media.py` | Python, Pillow, numpy (through `tools/artpipe/brand.py`) and ffmpeg; H.264 from libx264, else `h264_nvenc`, else `libopenh264` (Fedora's ffmpeg has no x264). `crop` (9:16, 16:9, 1:1), `cut` (clips around the biggest collapses in a take's log), `contact` (a sheet of frames from every take, timeouts in red), `gif`, `store` (captioned screenshots, ads images, alt texts; refuses words Play bans), `edit` (a Short or the trailer from a cut list, text in the title's look, music laid under; a segment can crop closer with `zoom`, `x`, `y`, which the Shorts need: the square master leaves the subject small in 9:16; a `pair` puts two devices in one frame, on 16:9 top left and bottom right with the text in the free corner, on 9:16 one above the other, each whole or cropped around the action). `store` skips stills that aren't there yet. | `tools/media/` |
 | Shot files | 21: the clips of §2.1, `cities-*`, `broll-*` (whole levels with the bot) and `store-1…5` (16:9 with the HUD, stills at 3840×2160). Buildings and weak points picked from the level dump (`check.sh levels` now writes each building's `weak`: x, y, w, h, share it brings down). | `content-work/shots/` |
-| Cut lists | `short-1…7` (9:16), `trailer.json` (16:9, store version), `store.json` (the 8 screenshots with captions and alt texts). They point at `take1`; change the take number after picking. | `content-work/edits/` |
+| Cut lists | `short-1…8` and `short-4-online` (9:16), `gif-1…3`, `trailer.json` (16:9, store version; `trailer-draft.json` is the cut before the takes of §2.5), `store.json` (the 8 screenshots with captions and alt texts). They point at `take1` unless a pick said otherwise. | `content-work/edits/` |
 
 The roadmap's "clip mode in development builds" became this editor tool. A clip mode on the
 phone is skipped: footage from the phone is there to show the touch controls, so it keeps
@@ -277,8 +284,16 @@ phone on the PC and records it, sound included:
 scrcpy --record=content-work/media/phone/take1.mp4 --max-fps=60 --video-bit-rate=16M --no-window
 ```
 
-The game runs full screen, so the status bar never shows. Android's own screen recorder
-(with "media sound") is the fallback.
+The game runs full screen, so the status bar never shows. Without scrcpy, adb records it
+(no sound; the music goes under it in the edit anyway). This is how the takes of §2.5 were made:
+
+```
+adb shell screenrecord --time-limit 0 --bit-rate 30M /sdcard/Movies/take.mp4   # adb shell pkill -INT screenrecord stops it
+adb pull /sdcard/Movies/take.mp4 content-work/media/raw/<name>/take1.mp4
+```
+
+It records at the screen's size (2410×1080 on the Pixel 10 Pro), and its frame times show the
+game's real frame rate. Android's own screen recorder (with "media sound") is the other fallback.
 
 ---
 
@@ -304,10 +319,8 @@ The game runs full screen, so the status bar never shows. Android's own screen r
 4. **Pick takes:** `python tools/media/media.py contact content-work/media/raw`; the agent
    proposes a take per shot, you confirm, and the take numbers go into
    `content-work/edits/*.json`.
-5. **Takes with you:** online co-op (the phone with scrcpy into
-   `content-work/media/phone/online-host.mp4`, the editor client with Window ▸ General ▸
-   Recorder into `content-work/media/raw/online-client.mp4`), touch play on the phone,
-   local co-op with gamepads, and a run for screenshot 7.
+5. **Takes with you** (§2.5): online co-op, touch play on the phone, runs by hand, local
+   co-op with gamepads, and a run for screenshot 7.
 6. **Stills:** level select, results and shop with Clip Lab ▸ Still, saved as
    `content-work/media/stills/level-select.png`, `results.png`, `shop.png`; then
    `python tools/media/media.py store content-work/edits/store.json`.
@@ -321,20 +334,21 @@ draft, 3 GIFs, and the material for the tester call.
 
 **Where it stands (2026-10-23):** in `content-work/media/` (gitignored): every shot in `raw/`
 (3 takes of the clips, 2 of the store and city shots, the bot runs once, with `-hl*` highlight
-cuts), Shorts 1–8 and the GIFs in `edits/`, screenshots 1–6 and 8 with the ads images and
-`alt.txt` in `store/`, `edits/trailer-draft.mp4` (31 s: `trailer.json` without the online
-pair). The takes of a shot barely differ (the 0.37 nudge hardly changes the physics), so the
+cuts) and the takes of §2.5; Shorts 1–8, `short-4-online` and the GIFs in `edits/`; all 8
+screenshots with the ads images and `alt.txt` in `store/`; `edits/trailer.mp4` (35.7 s: the
+plan of §2.3 with the online pair, the runs by hand as the three cities and their rainbow
+stars). The takes of a shot barely differ (the 0.37 nudge hardly changes the physics), so the
 cut lists use take 1 except the gate (take 3) and keep-up (take 2). Still to do:
-- Screenshot 7 (`stills/results.png`): a real run within par at 80%+, then `media.py store` again.
-- The takes with you (§2.5); the online pair goes into `trailer.json`.
-- Neon reads nearly black on video (`NeonTheme.ambientIntensity` 0.2: average luma about 10/255
-  against 140 in Town). Seven shot files are Neon, two of them store screenshots; brighten it and
-  re-record them.
-- The bot dies within 20–50 s of a whole level (it throws dynamite at the support in front of it
-  and punches gas tanks, and blasts now hurt players), so the bot footage is short.
+- Short 4: post `short-4-online` (phone and PC, the real thing) or `short-4-co-op` (scripted,
+  two players on one screen); the hook differs.
+- Neon stays as dark as the game ships it (`NeonTheme.ambientIntensity` 0.2, kept on purpose),
+  so its shots read dark on video (average luma about 10/255 against 140 in Town). Tested
+  2026-10-23: a brighter ambient lifts the buildings only a little (0.65: +40%) and washes the
+  player out to white under the headlamp unless the headlamp dims as the ambient rises.
+- Local co-op with two gamepads (§2.5), if wanted.
 - The menu stills use a temporary profile (Town cleared, Port begun, $2,450, a few upgrades):
   the save on disk was empty. Retake them from your own save if you prefer.
-- Upload: Shorts as they are; the trailer once the pair is in (check for music claims first).
+- Upload: Shorts as they are; the trailer to YouTube as unlisted after checking for music claims.
 
 ## 5. Decisions for the start of the session
 

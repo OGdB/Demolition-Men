@@ -17,6 +17,7 @@ A cut list (edit) has "out", "size", "fps", optional "music", "musicStart", "mus
   {"file": take, "start": s, "end": e}            a stretch of a take, centre-cropped to the size
   {"file": take, "at": "collapse", "before": 2, "after": 3}   around its biggest collapse (or first blast/break)
   {"pair": [{"file": a, "start": s}, {"file": b, "start": s}], "seconds": d}   two devices at once
+                                                  (a leg with "x", "y", "zoom" is cropped to fill its half)
   {"image": png, "seconds": d}                    a card (the logo at the end)
 and any of them may carry "text"; a stretch of a take may carry "zoom" (above 1: closer) with "x" and
 "y" (the crop's centre, shares of the width and height). Store screenshots (store) take "out", "ads" and "screenshots":
@@ -160,15 +161,17 @@ def wrap(words, size, max_w):
     return [l for l in lines if l]
 
 
-def text_layer(text, w, h, y_share=None):
-    """A full-frame transparent PNG with the text centred at y_share of the height: by default
-    below the top bar Shorts and TikTok draw on 9:16, near the top on 16:9."""
+def text_layer(text, w, h, y_share=None, x_share=0.5, max_w=None):
+    """A full-frame transparent PNG with the text centred at (x_share, y_share) of the frame, at
+    most max_w wide: by default across the middle, below the top bar Shorts and TikTok draw on
+    9:16, near the top on 16:9."""
     layer = Image.new("RGBA", (w, h))
     if y_share is None:
         y_share = 0.2 if h > w else 0.15
     if text:
-        im = caption(text, int(w * 0.9), int(h * 0.16))
-        layer.alpha_composite(im, ((w - im.width) // 2, max(0, int(h * y_share) - im.height // 2)))
+        im = caption(text, max_w or int(w * 0.9), int(h * 0.16))
+        x = min(max(0, int(w * x_share) - im.width // 2), w - im.width)
+        layer.alpha_composite(im, (x, max(0, int(h * y_share) - im.height // 2)))
     return layer
 
 
@@ -356,6 +359,7 @@ def cmd_edit(a):
             return sum(1 for x in inputs if x == "-i") - 1
 
         for i, seg in enumerate(spec["segments"]):
+            place = {}
             if "image" in seg:
                 dur = float(seg.get("seconds", 2.5))
                 n = add(["-loop", "1", "-t", f"{dur:.3f}", "-framerate", str(fps), "-i", path(seg["image"])])
@@ -364,22 +368,36 @@ def cmd_edit(a):
                 filters.append(f"anullsrc=r=48000:cl=stereo,atrim=duration={dur:.3f}[a{i}]")
                 y_share = 0.8 if w > h else None  # under the logo; on 9:16 at the top, clear of the buttons
             elif "pair" in seg:
-                # Two devices at once (the phone host and the PC client): side by side on 16:9,
-                # one above the other on 9:16. The sound is the first one's.
+                # Two devices at once (the phone host and the PC client), each as tall as half the
+                # frame: on 16:9 the first top left and the second bottom right (side by side, two
+                # landscape screens would be strips), the text in the corner they leave; on 9:16 one
+                # above the other, meeting in the middle. The sound is the first one's that has any
+                # (a phone's screen recording has none).
                 dur = float(seg["seconds"])
                 tall = h > w
-                cw, ch = (w, even(h / 2)) if tall else (even(w / 2), h)
+                bw, bh = (w, even(h / 2)) if tall else (even(w * 0.64), even(h / 2))
                 legs = []
                 for k, leg in enumerate(seg["pair"]):
                     leg_path = path(leg["file"])
+                    info = probe(leg_path)
                     n = add(["-ss", f"{leg.get('start', 0):.3f}", "-t", f"{dur:.3f}", "-i", leg_path])
-                    filters.append(f"[{n}:v]scale={cw}:{ch}:force_original_aspect_ratio=decrease,"
-                                   f"pad={cw}:{ch}:(ow-iw)/2:(oh-ih)/2:color=0x{bytes(BACKGROUND).hex()},fps={fps},setsar=1[p{i}_{k}]")
-                    legs.append((n, probe(leg_path)["audio"]))
-                filters.append(f"[p{i}_0][p{i}_1]{'vstack' if tall else 'hstack'}=inputs=2,format=yuv420p[v{i}]")
-                n, has_audio = legs[0]
+                    if "x" in leg:  # cropped to fill its half around the action, else whole
+                        shape = crop_filter(info["width"], info["height"], bw, bh, leg.get("zoom", 1.0), leg["x"], leg.get("y", 0.5))
+                        lw = bw
+                    else:
+                        shape = f"scale={bw}:{bh}:force_original_aspect_ratio=decrease:force_divisible_by=2"
+                        lw = min(bw, even(bh * info["width"] / info["height"]))
+                    filters.append(f"[{n}:v]{shape},fps={fps},setsar=1[p{i}_{k}]")
+                    legs.append((n, info["audio"], lw))
+                at = ["(W-w)/2:H/2-h", "(W-w)/2:H/2"] if tall else ["0:0", "W-w:H-h"]
+                filters.append(f"color=c=0x{bytes(BACKGROUND).hex()}:s={w}x{h}:r={fps}:d={dur:.3f}[b{i}];"
+                               f"[b{i}][p{i}_0]overlay={at[0]}[q{i}];[q{i}][p{i}_1]overlay={at[1]},format=yuv420p[v{i}]")
+                n, has_audio, _ = next((leg for leg in legs if leg[1]), legs[0])
                 filters.append(audio_of(n, has_audio, dur, i))
-                y_share = None
+                y_share = 0.15 if tall else 0.25
+                if not tall:
+                    free = w - legs[0][2]
+                    place = {"x_share": (w - free / 2) / w, "max_w": int(free * 0.9)}
             else:
                 video = path(seg["file"])
                 info = probe(video)
@@ -391,7 +409,7 @@ def cmd_edit(a):
                 filters.append(audio_of(n, info["audio"], dur, i))
                 y_share = None
             layer = os.path.join(tmp, f"text{i}.png")
-            text_layer(seg.get("text", ""), w, h, y_share).save(layer)
+            text_layer(seg.get("text", ""), w, h, y_share, **place).save(layer)
             n = add(["-loop", "1", "-t", f"{dur:.3f}", "-framerate", str(fps), "-i", layer])
             filters.append(f"[v{i}][{n}:v]overlay=0:0:shortest=1,format=yuv420p[t{i}]")
             pairs.append(f"[t{i}][a{i}]")

@@ -14,7 +14,10 @@
       "at": "collapse",
       "before": 0.8,
       "after": 2.2,
-      "text": "FIND THE WEAK POINT"
+      "text": "FIND THE WEAK POINT",
+      "zoom": 1.3,
+      "x": 0.58,
+      "y": 0.52
     },
     {
       "file": "content-work/media/raw/night-tnt/take1.mp4",
@@ -33,17 +36,20 @@
       "at": "collapse",
       "before": 1.0,
       "after": 2.0,
-      "text": "WRECK IT WITH A FRIEND"
+      "text": "WRECK IT WITH A FRIEND",
+      "zoom": 1.3,
+      "x": 0.58,
+      "y": 0.52
     },
     {
       "pair": [
         {
-          "file": "content-work/media/phone/online-host.mp4",
-          "start": 0
+          "file": "content-work/media/raw/online-phone/take1.mp4",
+          "start": 27.6
         },
         {
-          "file": "content-work/media/raw/online-client.mp4",
-          "start": 0
+          "file": "content-work/media/raw/online-pc/take1.mp4",
+          "start": 27.7
         }
       ],
       "seconds": 3,
@@ -62,38 +68,49 @@
       "after": 3.0
     },
     {
-      "file": "content-work/media/raw/gate/take1.mp4",
+      "file": "content-work/media/raw/gate/take3.mp4",
       "at": "collapse",
       "before": 0.5,
-      "after": 1.0
+      "after": 1.0,
+      "zoom": 1.2,
+      "x": 0.58,
+      "y": 0.55
     },
     {
-      "file": "content-work/media/raw/keep-up/take1.mp4",
-      "start": 12,
-      "end": 16,
+      "file": "content-work/media/raw/keep-up/take2.mp4",
+      "start": 3.4,
+      "end": 7.4,
       "text": "KEEP UP"
     },
     {
       "file": "content-work/media/raw/tower/take1.mp4",
       "at": "blast",
       "before": 0.5,
-      "after": 3.5
+      "after": 3.5,
+      "y": 0.76
     },
     {
-      "file": "content-work/media/raw/cities-town/take1.mp4",
-      "start": 2,
-      "end": 3
-    },
-    {
-      "file": "content-work/media/raw/cities-port/take1.mp4",
-      "start": 2,
-      "end": 3
-    },
-    {
-      "file": "content-work/media/raw/cities-neon/take1.mp4",
-      "start": 2,
-      "end": 3,
+      "file": "content-work/media/raw/play-town-04/take2.mp4",
+      "start": 43.0,
+      "end": 44.0,
       "text": "3 CITIES + A DAILY STREET"
+    },
+    {
+      "file": "content-work/media/raw/play-port-04/take1.mp4",
+      "start": 37.6,
+      "end": 38.6,
+      "text": "3 CITIES + A DAILY STREET"
+    },
+    {
+      "file": "content-work/media/raw/play-neon-02/take1.mp4",
+      "start": 15.8,
+      "end": 16.8,
+      "text": "3 CITIES + A DAILY STREET"
+    },
+    {
+      "file": "content-work/media/raw/play-port-04/take1.mp4",
+      "start": 65.6,
+      "end": 67.0
     },
     {
       "image": "brand/logo.png",

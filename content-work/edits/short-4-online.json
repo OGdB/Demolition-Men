@@ -1,0 +1,30 @@
+{
+  "out": "content-work/media/edits/short-4-online.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "pair": [
+        {
+          "file": "content-work/media/raw/online-phone/take1.mp4",
+          "start": 23.1,
+          "x": 0.64,
+          "y": 0.5
+        },
+        {
+          "file": "content-work/media/raw/online-pc/take1.mp4",
+          "start": 23.2,
+          "x": 0.68,
+          "y": 0.5
+        }
+      ],
+      "seconds": 9,
+      "text": "PHONE + PC.\nONE WRECKING CREW."
+    }
+  ]
+}
