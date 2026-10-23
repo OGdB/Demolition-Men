@@ -116,6 +116,8 @@ namespace Demolition
         public int WeaponUses => weapon == WeaponType.Fists ? -1 : _uses[(int)weapon];
         public int DynamiteCount { get => dynamiteCount; set => dynamiteCount = Mathf.Max(0, value); }
         public bool DynamiteFull => dynamiteCount >= maxDynamite;
+        /// <summary>A thrown stick hasn't finished going off yet (one at a time).</summary>
+        public bool DynamiteOut => !_canDynamite;
         /// <summary>Extra sticks on every dynamite pickup (skill shop).</summary>
         public int DynamitePickupBonus { get; set; }
         public float DamageMultiplier { get => damageMultiplier; set => damageMultiplier = Mathf.Max(0f, value); }

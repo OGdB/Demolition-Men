@@ -67,7 +67,9 @@ namespace Demolition.Run
         public float MaxZoom => maxZoom;
         /// <summary>Set by the run controller: scrolling only happens while playing.</summary>
         public bool Scrolling { get; set; }
-        public bool Pushed { get; private set; }
+        /// <summary>A player has pushed the camera: from then on it auto-scrolls. The Clip Lab
+        /// sets it for a shot that starts mid-level, as the run would be by then.</summary>
+        public bool Pushed { get; set; }
         /// <summary>World x the camera stops at (the finish line sits on the push line).</summary>
         public float StopX { get; set; } = float.PositiveInfinity;
 
@@ -136,15 +138,28 @@ namespace Demolition.Run
             foreach (Transform t in _targets)
             {
                 Vector3 p = t.position;
+                if (FallingIntoPit(p))
+                    continue;
                 minX = Mathf.Min(minX, p.x);
                 maxX = Mathf.Max(maxX, p.x);
                 minY = Mathf.Min(minY, p.y);
                 maxY = Mathf.Max(maxY, p.y);
             }
 
-            Frame(minX, maxX, minY, maxY);
+            if (minX <= maxX)
+                Frame(minX, maxX, minY, maxY);
             if (Scrolling)
                 Scroll(maxX);
+        }
+
+        // Below the street with no floor under it: the player is gone (the run takes them out at
+        // the bottom), and the camera doesn't dive after them.
+        private bool FallingIntoPit(Vector3 p)
+        {
+            if (p.y > _floorY - 1f)
+                return false;
+            float ground = LowestGround != null ? LowestGround(p.x - 0.5f, p.x + 0.5f) : float.PositiveInfinity;
+            return float.IsInfinity(ground) || p.y < ground - 2f;
         }
 
         private void Frame(float minX, float maxX, float minY, float maxY)

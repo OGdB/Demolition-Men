@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,6 +29,10 @@ namespace Demolition
         [Tooltip("Seconds before the spawned effect is removed (its particle system loops).")]
         [SerializeField] private float effectLifetime = 2f;
 
+        /// <summary>A gas tank's blast reaches this much further than a stick's: across the free
+        /// column between two props, so the next one's tanks go too.</summary>
+        private const float GasReach = 1.25f;
+
         private PlayerCombat _owner;
         private int _instigator = -1; // credited when no thrower owns the stick (a gas tank's blast)
         private Rigidbody2D _rb;
@@ -41,6 +46,9 @@ namespace Demolition
         /// <summary>A stick went off here (screen shake and other feedback).</summary>
         public static event System.Action<Vector3> Exploded;
 
+        /// <summary>True while a blast deals its damage: what it breaks was blown up, not hit.</summary>
+        public static bool Blasting { get; private set; }
+
         /// <summary>Online, a copy flown for the other device's player: it looks and sounds the
         /// same but damages nothing (the thrower's device sends the damage), and goes off when
         /// the thrower's stick does (<see cref="ExplodeAt"/>), not on its own fuse.</summary>
@@ -52,9 +60,10 @@ namespace Demolition
             Explode();
         }
 
-        /// <summary>A blast nobody threw (a gas tank going up), credited to <paramref name="instigator"/>.
+        /// <summary>A gas tank going up, credited to <paramref name="instigator"/>, after
+        /// <paramref name="delay"/> seconds (a chain of tanks ripples instead of going off in one frame).
         /// Online, a client's blast is only the show: the host's reaches it as cells.</summary>
-        public static void Detonate(GameObject prefab, Vector3 position, int instigator)
+        public static void Detonate(GameObject prefab, Vector3 position, int instigator, float delay = 0f)
         {
             GameObject go = prefab != null ? Instantiate(prefab, position, Quaternion.identity) : CreatePrimitive(position);
             var dynamite = go.GetComponent<Dynamite>();
@@ -62,7 +71,28 @@ namespace Demolition
                 dynamite = go.AddComponent<Dynamite>();
             dynamite._instigator = instigator;
             dynamite.Cosmetic = NetRole.IsClient;
-            dynamite.ExplodeAt(position);
+            dynamite.areaOfEffect *= GasReach;
+            if (delay <= 0f)
+            {
+                dynamite.ExplodeAt(position);
+                return;
+            }
+            dynamite._rb.bodyType = RigidbodyType2D.Static;
+            dynamite.SetVisible(false); // nothing to see before the bang
+            dynamite.StartCoroutine(dynamite.ExplodeAfter(position, delay));
+        }
+
+        private IEnumerator ExplodeAfter(Vector3 position, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            SetVisible(true);
+            ExplodeAt(position);
+        }
+
+        private void SetVisible(bool visible)
+        {
+            foreach (var sr in GetComponentsInChildren<SpriteRenderer>(true))
+                sr.enabled = visible;
         }
 
         public void Init(PlayerCombat owner, Collider2D[] ignoreColliders)
@@ -144,12 +174,14 @@ namespace Demolition
             var damaged = new HashSet<BuildingBlock>();
             if (!Cosmetic)
             {
+                Blasting = true;
                 foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect * 0.5f))
                 {
                     var block = hit != null ? hit.GetComponentInParent<BuildingBlock>() : null;
                     if (block != null && damaged.Add(block))
                         block.TakeDamage(damage, _owner != null ? _owner.PlayerIndex : _instigator);
                 }
+                Blasting = false;
             }
 
             foreach (var hit in Physics2D.OverlapCircleAll(transform.position, areaOfEffect))

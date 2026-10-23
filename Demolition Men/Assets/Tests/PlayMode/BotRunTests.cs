@@ -48,6 +48,9 @@ namespace Demolition.Tests
 
             RunController run = RunController.Current;
             Assert.IsNotNull(run, "the run scene builds a run");
+            // The level is under test, not the bot's dodging: debris and blasts don't end the run
+            // (pits and the camera's edge still do).
+            run.Players[0].Health.Invincible = true;
             float simulated = 0f;
             while (!run.State.IsOver && simulated < TimeLimit)
             {

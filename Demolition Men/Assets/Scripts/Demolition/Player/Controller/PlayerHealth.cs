@@ -36,6 +36,8 @@ namespace Demolition
         public float Current { get; private set; }
         /// <summary>Out of play: hidden, no physics, no controls (see <see cref="Kill"/>).</summary>
         public bool IsDead { get; private set; }
+        /// <summary>Takes no damage: a Clip Lab cheat for bot footage (pits and the camera's edge still count).</summary>
+        public bool Invincible { get; set; }
 
         /// <summary>Set by the run controller: depletion only raises <see cref="Depleted"/>
         /// instead of the bench respawn.</summary>
@@ -142,7 +144,7 @@ namespace Demolition
         /// <param name="capped">False for a blast: <see cref="maxDamagePerHit"/> is for debris piling up.</param>
         public void TakeDamage(float amount, bool capped = true)
         {
-            if (IsProxy || IsDead || amount <= 0f || Time.time < _invulnUntil)
+            if (IsProxy || IsDead || Invincible || amount <= 0f || Time.time < _invulnUntil)
                 return;
 
             Current = Mathf.Max(0f, Current - (capped ? Mathf.Min(amount, maxDamagePerHit) : amount));

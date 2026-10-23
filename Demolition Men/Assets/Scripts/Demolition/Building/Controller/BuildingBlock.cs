@@ -24,6 +24,8 @@ namespace Demolition
         [SerializeField] private float settleLinearThreshold = 0.25f;
         [SerializeField] private float settleAngularThreshold = 12f;
         [SerializeField] private float settleTime = 0.5f;
+        [Tooltip("Settled debris takes at most this much damage to break, whatever it was: a heap in the street is quick to dig through.")]
+        [SerializeField] private float rubbleHealth = 40f;
 
         [Header("Impact damage to player")]
         [SerializeField] private float minImpactSpeed = 3.5f;
@@ -86,6 +88,10 @@ namespace Demolition
         private float _targetDrift;
         private float _tremblePhase;
         private float _trembleBoost = 1f;
+        // A walk-through block (a support) that started falling: solid once no player stands in it.
+        private bool _solidWhenClear;
+        private static readonly Collider2D[] Overlaps = new Collider2D[16];
+        private static readonly ContactPoint2D[] Contacts = new ContactPoint2D[16];
 
         /// <summary>Registered with a building (loose, unregistered blocks still take
         /// damage and die; they just trigger no structural collapse).</summary>
@@ -320,9 +326,9 @@ namespace Demolition
             }
             if (_building != null)
                 _building.OnBlockDestroyed(this);
-            if (Explosive)
+            if (Explosive) // set off by another blast: a beat later, so a chain of tanks ripples
                 Dynamite.Detonate(Levels.GameConfig.Instance != null ? Levels.GameConfig.Instance.dynamitePrefab : null,
-                    transform.position, LastInstigator);
+                    transform.position, LastInstigator, Dynamite.Blasting ? Random.Range(0.12f, 0.22f) : 0f);
             Vanish();
         }
 
@@ -445,6 +451,9 @@ namespace Demolition
             foreach (var joint in GetComponents<Joint2D>())
                 Destroy(joint);
 
+            // Supports are walk-through triggers: falling as one, a support would sink through the street.
+            foreach (var col in GetComponents<Collider2D>())
+                _solidWhenClear |= col.isTrigger;
             _rb.bodyType = RigidbodyType2D.Dynamic;
             _rb.gravityScale = 1f;
             _rb.AddForce(new Vector2((Random.value - 0.5f) * detachImpulse, 0f), ForceMode2D.Impulse);
@@ -456,14 +465,42 @@ namespace Demolition
         {
             if (!IsFalling)
                 return;
+            if (_solidWhenClear && !InPlayer())
+            {
+                _solidWhenClear = false;
+                foreach (var col in GetComponents<Collider2D>())
+                    col.isTrigger = false;
+            }
 
             // Settle detection: once it has come to rest, freeze it into persistent rubble.
+            // Never on a player's head: settled there it would hang in the air once they walk away.
             bool slow = _rb.linearVelocity.magnitude < settleLinearThreshold
-                        && Mathf.Abs(_rb.angularVelocity) < settleAngularThreshold;
+                        && Mathf.Abs(_rb.angularVelocity) < settleAngularThreshold
+                        && !RestsOnPlayer();
             _settleTimer = slow ? _settleTimer + Time.fixedDeltaTime : 0f;
 
             if (_settleTimer >= settleTime)
                 BecomeRubble();
+        }
+
+        private bool RestsOnPlayer()
+        {
+            int count = _rb.GetContacts(Contacts);
+            for (int i = 0; i < count; i++)
+                if (Contacts[i].collider.GetComponentInParent<PlayerHealth>() != null
+                    || Contacts[i].otherCollider.GetComponentInParent<PlayerHealth>() != null)
+                    return true;
+            return false;
+        }
+
+        // A player overlaps it (turning solid there would shove them out).
+        private bool InPlayer()
+        {
+            int count = _rb.Overlap(new ContactFilter2D { useTriggers = true }, Overlaps);
+            for (int i = 0; i < count; i++)
+                if (Overlaps[i].GetComponentInParent<PlayerHealth>() != null)
+                    return true;
+            return false;
         }
 
         private void BecomeRubble()
@@ -471,6 +508,10 @@ namespace Demolition
             IsFalling = false;
             IsRubble = true;
             _wasRubble = true;
+            // Health and maximum scale together, so the damage tint stays as it was.
+            float scale = _resolvedMaxHealth > rubbleHealth ? rubbleHealth / _resolvedMaxHealth : 1f;
+            _health *= scale;
+            _resolvedMaxHealth *= scale;
             _rb.bodyType = RigidbodyType2D.Static; // leaves the solver; stays visible as debris
             RefreshColor();
         }
