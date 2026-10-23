@@ -57,7 +57,7 @@ namespace Demolition
             if (_root == null)
                 return;
             RunController run = RunController.Current;
-            bool show = !PauseController.IsPaused && (run == null || run.State == null || !run.State.IsOver);
+            bool show = !PauseController.MenuOpen && (run == null || run.State == null || !run.State.IsOver);
             if (_root.activeSelf != show)
                 _root.SetActive(show);
             _group.alpha = Opacity;

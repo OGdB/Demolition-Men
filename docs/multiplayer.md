@@ -115,7 +115,7 @@ Two rules:
 | `Claim` / `Taken` | client → host / host → all | pickup index (+ player) | per pickup |
 | `Thrown` / `Exploded` | owner → others | position (+ velocity) | per stick of dynamite |
 | `Ready` | client → host | nothing | once per run, when the client's Run scene is up |
-| `State` | host → client | layout hash, phase, countdown, elapsed, last call, destroyed fraction, per player status bits + timers + points, unattributed points ≈ 40 B | 10 per second |
+| `State` | host → client | layout hash, phase, countdown, elapsed, last call, destroyed fraction, per player status bits + timers + points, unattributed points, host paused ≈ 40 B | 10 per second |
 | Start | host → client | campaign level index or daily date | once per run, before NGO loads the scene |
 | `Check` (dev builds) | host → client | hash of the standing cells per loaded building | every 5 s |
 
@@ -232,7 +232,7 @@ Seams in the existing code (all in O1; offline nothing changes):
 | `PlayerCombat`, `PlayerMotor`, `PlayerHealth` | off on a proxy; a proxy ignores damage. Guard `applyDamage` explicitly: animation events reach disabled components. |
 | `RunController` | client mode: no `RunState` tick and no scoring; phase, timers, score and player status come from `RunNet` (`RunState.ApplySnapshot`, `RunScore.Restore`, `NetFraction`); banks the host's result. |
 | `LevelBootstrap` | online: the host network-spawns the players; the client spawns none. Every device names them `Player_1` / `Player_2` (the name contract). |
-| `PauseController` | online: the menu is an overlay, `Time.timeScale` stays 1. |
+| `PauseController` | online: the host's pause freezes both devices (the client reads it from the `State` snapshot and shows "the host paused the game"); a client's own menu is an overlay, `Time.timeScale` stays 1. |
 | `AdManager.BetweenRuns` | no ads while connected (D16). |
 
 O1 put in the guards: a client doesn't tick `RunState`, doesn't score and doesn't report
@@ -341,7 +341,7 @@ Check both. 1 TB a month is about 30,000 match-hours.
 | D14 | Who decides damage to a player | The player's own device, from the debris it sees. |
 | D15 | Out of bounds | The host decides with its own camera. Each device frames its own camera from both players, so the two views differ by about the latency; the 3 s grace absorbs that. Sync the camera only if playtests show it matters. |
 | D16 | Ads online | None while connected: an ad pauses the app, and a paused host times out the client. A due interstitial shows after the session ends. |
-| D17 | Pause online | An overlay only; the run keeps going. |
+| D17 | Pause online | **Changed (2026-10-22):** the host's pause freezes the run on both devices; only the host resumes it. A client's own pause is an overlay only; the run keeps going. |
 | D18 | When | O1 any time (offline, low risk). O2–O4 before the Android launch (roadmap R2, D4 since 2026-10-20); O5 only if playtests ask for it. |
 | D19 | Platforms online | **Decided (2026-10-17):** PC, phones and WebGL, in any mix; each can host. |
 
