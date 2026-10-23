@@ -1,0 +1,4 @@
+# Google Mobile Ads (com.google.ads.mobile 11.6) ships wrappers for its Next-Gen Android SDK
+# next to the legacy ones; this project builds against the legacy SDK, so the Next-Gen classes
+# they reference are absent and R8 would fail the release build on them.
+-dontwarn com.google.android.libraries.ads.mobile.sdk.**
