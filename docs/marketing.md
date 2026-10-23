@@ -23,7 +23,7 @@ down, with a friend."**
 
 | Asset | How |
 |---|---|
-| Clips (5–15 s) | One collapse per clip, already moving in the first second. A **clip mode** in development builds (hide the HUD, 9:16 vertical framing, slow motion on a key; roadmap R2) makes them straight from the game. A phone's screen recorder works too. |
+| Clips (5–15 s) | One collapse per clip, already moving in the first second. A **clip mode** (hide the HUD, 9:16 vertical framing, slow motion; roadmap R2) records them by script from the editor; shot list and plan in `store-media.md`. The phone, recorded with scrcpy, for the touch controls and online co-op. |
 | Trailer (30–60 s) | The best clips cut together: a weak-point collapse, a TNT chain, online co-op, the three themes, the store badge at the end. |
 | Store graphics | Icon and feature graphic from the art pipeline; screenshots with one caption each, one feature per screenshot. |
 | Press kit | One page (on the VPS or itch.io): a short description, the facts (platform, price, release date, co-op), the trailer, 5 screenshots, 3 GIFs, the logo, a contact address. |

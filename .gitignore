@@ -35,6 +35,9 @@ ExportedObj/
 # Unity3D Generated File On Crash Reports
 sysinfo.txt
 
+# Recorded footage and stills (docs/store-media.md): too big for git
+content-work/media/
+
 # Builds
 *.apk
 *.aab

@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `docs/marketing.md` — reaching players on a €100–500 budget: audience, clips and the clip mode, free channels, the paid launch push, the calendar to launch, what to measure.
 - `docs/multiplayer.md` — the online co-op plan: player-hosted NGO over a self-hosted WebSocket relay on the VPS (no game server, no paid services, works in WebGL), who decides what, every message and its size, milestones O1–O5, what the VPS is for.
 - `docs/rendering.md` — URP 2D: what the lighting code does, the one-time editor steps (install URP, the 2D pipeline asset, the converter), what to check.
+- `docs/store-media.md` — store screenshots, the trailer and clips: what we show, the shot list, recording by script from the editor (Clip Lab, shot files, `tools/media/`), the phone takes, and what else Play and the first ads need.
 - `docs/monetization.md` — the ads seam (free game with ads on phones), placements, wiring AdMob with UMP consent, store/consent checklist.
 - `tools/unity-check/` — compile-check and model tests without the Unity editor (see Commands).
 - `server/relay/` — the online co-op WebSocket relay for the VPS (ASP.NET Core, .NET 10, no game code) with its tests (`dotnet test Relay.Tests`) and `deploy/deploy.sh <ssh-target> <domain>`; see its README.

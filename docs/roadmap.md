@@ -354,8 +354,8 @@ declarations that depend on them.
    - tune scroll speeds, upgrade costs and the cash rate from closed-test feedback;
    - touch glyphs in the tutorial prompts;
    - from app start to the first falling building in under a minute.
-6. **Clip mode** for marketing, development builds only: hide the HUD, 9:16 framing, slow
-   motion on a key (`marketing.md` §2).
+6. **Clip mode** for marketing: hide the HUD, 9:16 framing, slow motion. Planned as an
+   editor tool that records shot files by script (Clip Lab, `store-media.md` §3).
 7. **Pre-launch report**: Play runs every closed-track upload on real devices for free. Fix
    every crash it finds.
 
@@ -381,7 +381,8 @@ passes the pre-launch report with no crashes, and closed testers finish the camp
 ### R4 — Store listing and run-up — 1 Dec 2026 to launch
 - The listing: title (30 characters), short description (80), full description, icon
   512×512, feature graphic 1024×500, 4–8 landscape screenshots with a caption each, and a
-  30–60 s trailer on YouTube. The art pipeline and the clip mode make most of these.
+  30–60 s trailer on YouTube. The art pipeline and the clip mode make most of these
+  (shot list, captions and the recording plan: `store-media.md`).
 - **You:** EU trader status, a self-declaration under the Digital Services Act; earning
   money through ads points towards trader, and a trader's address, e-mail and phone number
   appear on the store page. Settle which address may be public (a business address or a
