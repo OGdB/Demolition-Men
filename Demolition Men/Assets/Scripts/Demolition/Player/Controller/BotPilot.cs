@@ -117,7 +117,7 @@ namespace Demolition
                 if (now < _backUntil)
                     move = _escape;
                 else if (move > 0f && DebrisAhead(feet))
-                    move = 0f; // running into tumbling blocks hurts as much as being hit by them
+                    move = 0f; // tumbling blocks ahead may yet come down on its head
                 else if (_combat.DynamiteOut)
                     move = Mathf.Min(move, 0f); // ours is about to go off ahead: thrown from out of its reach, so stay there
                 if (move < 0f)

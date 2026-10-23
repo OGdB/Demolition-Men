@@ -28,10 +28,14 @@ namespace Demolition
         [SerializeField] private float rubbleHealth = 40f;
 
         [Header("Impact damage to player")]
+        [Tooltip("Falling speed below which a block lands on a player's head harmlessly.")]
         [SerializeField] private float minImpactSpeed = 3.5f;
         [SerializeField] private float impactDamageScale = 6f;
         [SerializeField] private float maxImpactDamage = 45f;
         [SerializeField] private float impactCooldown = 0.4f;
+        [Tooltip("Hurts only coming down within this many degrees of straight down onto the player's head: "
+               + "jumped on, run into or knocked sideways, it does nothing.")]
+        [SerializeField, Range(0f, 90f)] private float maxImpactAngle = 45f;
 
         [Header("Fall impact (self-damage)")]
         [Tooltip("Relative impact speed below which a falling block lands without crumbling.")]
@@ -76,6 +80,8 @@ namespace Demolition
         // Settled once already: keeps the rubble dimming if it is knocked loose again.
         private bool _wasRubble;
         private float _lastImpactTime = -999f;
+        // Its velocity before this physics step: by the collision callback the hit has changed it.
+        private Vector2 _fallVelocity;
         private bool _destroyed;
         // Points for this block were already awarded (collapse credit, or a cosmetic
         // rider released by its host), so destroying it later scores nothing.
@@ -465,6 +471,7 @@ namespace Demolition
         {
             if (!IsFalling)
                 return;
+            _fallVelocity = _rb.linearVelocity;
             if (_solidWhenClear && !InPlayer())
             {
                 _solidWhenClear = false;
@@ -523,13 +530,16 @@ namespace Demolition
 
             float impact = collision.relativeVelocity.magnitude;
 
-            // Hurt the player it lands on.
+            // Hurt the player it comes down on, head first.
             var health = collision.collider.GetComponentInParent<PlayerHealth>();
-            if (health != null && impact >= minImpactSpeed
+            float fall = -_fallVelocity.y;
+            if (health != null && fall >= minImpactSpeed
+                && Vector2.Angle(_fallVelocity, Vector2.down) <= maxImpactAngle
+                && OnHead(collision)
                 && Time.time - _lastImpactTime >= impactCooldown)
             {
                 _lastImpactTime = Time.time;
-                float damage = Mathf.Clamp((impact - minImpactSpeed) * impactDamageScale, 0f, maxImpactDamage);
+                float damage = Mathf.Clamp((fall - minImpactSpeed) * impactDamageScale, 0f, maxImpactDamage);
                 health.TakeDamage(damage);
                 Particles.Burst(collision.GetContact(0).point, new Color(0.95f, 0.8f, 0.2f), 8, 4f, 0.12f, 0.5f);
             }
@@ -547,6 +557,13 @@ namespace Demolition
             // enough drop shatters it outright (TakeDamage handles particles/destruction).
             if (impact >= selfDamageMinImpact)
                 TakeDamage((impact - selfDamageMinImpact) * selfDamageScale);
+        }
+
+        // Struck above the player's middle: the head, not the feet of a player landing on it.
+        private static bool OnHead(Collision2D collision)
+        {
+            Rigidbody2D body = collision.collider.attachedRigidbody;
+            return body != null && collision.GetContact(0).point.y > body.worldCenterOfMass.y;
         }
     }
 }
