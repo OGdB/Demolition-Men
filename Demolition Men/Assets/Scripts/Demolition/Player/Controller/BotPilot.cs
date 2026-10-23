@@ -99,7 +99,10 @@ namespace Demolition
             }
 
             BuildingBlock block = BlockAhead(feet);
-            bool attack = block != null;
+            bool headroom = Headroom(feet);
+            // A heap in the way gets punched through as a player would, rather than walked into:
+            // a step of it is jumped where there's room overhead (under a floor there isn't).
+            bool attack = block != null || HeapAhead(feet, !headroom);
             bool throwNow = false;
             float move = 1f;
             if (float.IsPositiveInfinity(StopX))
@@ -149,7 +152,6 @@ namespace Demolition
                 attack = false; // a swing locks the facing: turn round first, or it punches the air behind
 
             bool grounded = _motor.IsGrounded;
-            bool headroom = Headroom(feet);
             bool pit = PitAhead(feet);
             // Under a wall's overhang (a doorway) a jump only bumps the head: out from under it
             // first, and wait at a pit's edge for that rather than walk into it.
@@ -311,6 +313,22 @@ namespace Demolition
             return above;
         }
 
+        // Rubble against the front of the body: at chest height (a heap too tall to step onto), or
+        // from the ground up when there's no room to jump it. A loose block that has stopped
+        // moving counts; one still tumbling is waited out (DebrisAhead).
+        private bool HeapAhead(Vector2 feet, bool fromGround)
+        {
+            float bottom = fromGround ? 0.15f : 0.9f;
+            int count = Physics2D.OverlapBox(feet + new Vector2(0.8f, (bottom + 1.7f) * 0.5f), new Vector2(0.9f, 1.7f - bottom), 0f, Solid, _overlaps);
+            for (int i = 0; i < count; i++)
+            {
+                var block = _overlaps[i].GetComponentInParent<BuildingBlock>();
+                if (block != null && !block.Explosive && (block.IsRubble || (block.IsFalling && !Tumbling(_overlaps[i]))))
+                    return true;
+            }
+            return false;
+        }
+
         // Loose blocks still tumbling just in front, at body height.
         private bool DebrisAhead(Vector2 feet)
         {
@@ -318,11 +336,14 @@ namespace Demolition
             for (int i = 0; i < count; i++)
             {
                 var block = _overlaps[i].GetComponentInParent<BuildingBlock>();
-                if (block != null && block.IsFalling)
+                if (block != null && block.IsFalling && Tumbling(_overlaps[i]))
                     return true;
             }
             return false;
         }
+
+        private static bool Tumbling(Collider2D debris) =>
+            debris.attachedRigidbody != null && debris.attachedRigidbody.linearVelocity.sqrMagnitude > 0.25f;
 
         // -1 to back up, or 0 where that would end over a drop or past the camera's edge (backing up
         // carries on a little after letting go).
@@ -354,13 +375,15 @@ namespace Demolition
             return false;
         }
 
-        // Room over the head for a jump: nothing just above it, from the back of the body (whose top
-        // is 1.77 up, 0.44 behind the feet) to a little ahead; a block coming down counts too.
+        // Room over the head for a jump: no block just above it, from the back of the body (whose top
+        // is 1.77 up, 0.44 behind the feet) to a little ahead; a block coming down counts too. The
+        // ground doesn't: it is a height map, never overhead, so what it puts there is the top of
+        // a taller step in front, the very thing to jump onto.
         private bool Headroom(Vector2 feet)
         {
             int count = Physics2D.OverlapBox(feet + new Vector2(0.25f, 2.6f), new Vector2(1.4f, 1.6f), 0f, Solid, _overlaps);
             for (int i = 0; i < count; i++)
-                if (_overlaps[i].GetComponentInParent<PlayerHealth>() == null)
+                if (_overlaps[i].GetComponentInParent<BuildingBlock>() != null)
                     return false;
             return true;
         }
