@@ -5,12 +5,8 @@
   "seed": 7421,
   "parTime": 0,
   "scrollSpeed": 2.1,
-  "pacing": ["start", "tower", "islands:3", "tower", "plateau", "gate", "tower", "cluster:2", "finish"],
-  "pickups": {
-    "dynamite": 8,
-    "axe": 2,
-    "wreckingBall": 2,
-    "resurrect": 1
-  },
+  "pacing": ["start", "tower", "islands:3", "tower", "plateau", "gate", "terrace:3", "tower", "yard:4", "cluster:2", "finish"],
+  "pickups": { "dynamite": 8, "axe": 2, "wreckingBall": 2, "resurrect": 1 },
+  "props": ["car", "barrel", "crate", "container"],
   "archetypes": []
 }

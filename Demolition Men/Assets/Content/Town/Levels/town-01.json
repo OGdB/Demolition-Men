@@ -5,7 +5,7 @@
   "seed": 1101,
   "parTime": 0,
   "scrollSpeed": 1.3,
-  "pacing": ["start", "street", "cluster:2", "breather", "plateau", "finish"],
+  "pacing": ["start", "street", "terrace:3", "breather", "hill", "cluster:2", "finish"],
   "pickups": { "dynamite": 3, "axe": 1, "wreckingBall": 0, "resurrect": 1 },
-  "archetypes": ["town.shack", "town.rowhouse"]
+  "archetypes": ["town.shack", "town.rowhouse", "town.shop"]
 }

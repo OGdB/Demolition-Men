@@ -5,12 +5,8 @@
   "seed": 7207,
   "parTime": 0,
   "scrollSpeed": 1.9,
-  "pacing": ["start", "cluster:3", "plateau", "gap", "tower", "breather", "islands:2", "finish"],
-  "pickups": {
-    "dynamite": 6,
-    "axe": 1,
-    "wreckingBall": 1,
-    "resurrect": 1
-  },
-  "archetypes": []
+  "pacing": ["start", "cluster:3", "plateau", "gap", "tower", "breather", "yard:3", "islands:2", "finish"],
+  "pickups": { "dynamite": 6, "axe": 1, "wreckingBall": 1, "resurrect": 1 },
+  "props": ["car", "barrel", "crate"],
+  "archetypes": ["neon.kiosk", "neon.club", "neon.arcade", "neon.tower"]
 }

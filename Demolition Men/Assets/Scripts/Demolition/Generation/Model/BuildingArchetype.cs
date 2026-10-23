@@ -52,6 +52,18 @@ namespace Demolition.Generation
             return copy;
         }
 
+        /// <summary>A copy with one massing rolled once: width, storeys and storey height
+        /// pinned, so a row of buildings made from it shares one roofline (a terrace).</summary>
+        public BuildingArchetype Pinned(Pcg32 rng)
+        {
+            var copy = (BuildingArchetype)MemberwiseClone();
+            int w = width.Pick(rng), f = floors.Pick(rng), h = floorHeight.Pick(rng);
+            copy.width = new IntRange(w, w);
+            copy.floors = new IntRange(f, f);
+            copy.floorHeight = new IntRange(h, h);
+            return copy;
+        }
+
         /// <summary>Rough size, for ordering archetypes from small to big.</summary>
         public int Bulk => width.max * floors.max * floorHeight.max;
 

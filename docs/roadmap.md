@@ -54,10 +54,10 @@ devices over the internet yet.
 
 | Area | What's missing |
 |---|---|
-| Android build | No package name, company still `DefaultCompany`, no upload keystore, no app icon. Target API is "highest installed", but Play needs **API 36** for new apps since 31 Aug 2026. App category not confirmed as Game; internet permission not forced on (online needs it). Never built, installed or profiled on a phone. |
+| Android build | Player Settings done (2026-10-22): `com.ogstudio.demolitionmen`, OG Studio, 1.0.0, target API 36, category Game, internet required, R8 minify for release, managed stripping Medium, the adaptive icon from `Assets/Brand/`. Build entry point (Tools ▸ Demolition ▸ Build), profile saved when the app loses focus, unused packages out. Missing: an upload keystore (**you**, R1). Never built, installed or profiled on a phone. |
 | Play account | None yet. A new personal account must run a **closed test with 12+ testers for 14 days** before it may publish to production. |
 | Ads | The plugin's Android dependency resolution in the editor and a first test on a phone (`monetization.md`, What's left). The privacy policy is live and the AdMob consent message is published. |
-| Online | O2 play tests, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other over mobile data), O4 hardening (a backgrounded app, timeouts, version mismatch, relay down). |
+| Online | O2 passed its first play test (2026-10-22: phone host on Wi-Fi, editor client, through the VPS relay: join code, level load, poses, hits and score both ways, the host playing on after the client left). Left: a phone-to-phone test and mobile data, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other), O4: a phone sent to the background mid-run is handled on both sides (tried 2026-10-22); left to try on a device: the relay down, a version mismatch, a hidden browser tab; a soak test with the bot driving both players. |
 | Legal and store | Privacy policy, Data safety form, content rating, target audience, ads declaration, EU trader status, store listing text and graphics, trailer. |
 | Audio | A track per theme and synthesised break and collapse sounds are in, with every source in `Credits.txt`, except `OOF Sound` (player hurt): its source is unknown. |
 | Polish | Crack overlays, the phone letterbox question, tuning (scroll speeds, upgrade costs and cash rate are first guesses), a phone-first first five minutes. |
@@ -229,8 +229,21 @@ Art and level review, 2026-10-17 (`content-work/levels/*.png`, drawn headless by
   (crate piles, cars, rows of gas tanks that set each other off, Port containers) and
   cosmetic decor (lamp posts, fences that join neighbouring buildings, hedges / tyres /
   bags, bins, signs), all generated per theme.
-- Still open: set pieces (cranes, billboards), a sky gradient, Town's near-black ground
-  fill, theme-specific archetypes.
+- Art pass 2 (2026-10-22): a sky per theme (dithered gradient the clear colour continues,
+  clouds / stratus / stars, a sun or moon glued to the camera), corner trim on every
+  building edge (Town quoins, Port steel posts, Neon neon pilasters; `BuildingSpec.EdgeOf`
+  + tileset `left`/`right` lists), pillow brick in the object set's look (Town's walls are
+  now generated too, with corners; its trusses, glass columns and supports stay
+  hand-drawn), precast panels (Neon), back walls with one look per storey and pictures,
+  shelves, posters, pipes, clocks and boards on some room cells, window variants (blinds,
+  boarded up), roof props as chimney variants (water tank, AC unit, vent, neon sign box),
+  decor variants (sign faces, hydrant, cone, post box, pallets), Town pavement over soil.
+  Levels: `terrace:n` (one archetype at one size, a continuous roofline) and `yard:n`
+  (a lot of breakables), two archetypes per theme (shop, townhouse; silo, cannery; arcade,
+  hotel), every campaign level re-paced with hills, yards and terraces and its own
+  archetype subset.
+- Still open: set pieces (cranes, billboards), gable roofs and awnings (riders), ground
+  tile variants (manholes, drains).
 
 Original plan (design in §6):
 - Style-bible schema, procedural tile generator, normalizer, QA and contact sheets.
@@ -469,11 +482,12 @@ Example archetype (`Assets/Content/town/archetypes/rowhouse.json`):
 ### 5.2 Levels: pacing → segments → build
 - A level spec gives the theme, length, seed, scroll speed and **pacing**: a sequence of
   segment types with an intensity curve (build-up, peaks, breathers).
-- **Segment library:** `start`, `street`, `cluster:n` (n buildings), `islands:n` (n
-  buildings with a pit and a landing strip between each), `gap` (jump), `tower`
-  (vertical climb, camera zooms), `hill`, `plateau` (a building on high ground), `sewer`
-  (camera rail dips), `gate` (a wall that must be broken to pass: forced destruction),
-  `breather`, `finish`. Not built: `hazard-yard`.
+- **Segment library:** `start`, `street`, `cluster:n` (n buildings), `terrace:n` (n
+  buildings of one archetype at one size: a continuous roofline), `islands:n` (n
+  buildings with a pit and a landing strip between each), `yard:n` (n breakable props in
+  a row), `gap` (jump), `tower` (vertical climb, camera zooms), `hill`, `plateau` (a
+  building on high ground), `sewer` (camera rail dips), `gate` (a wall that must be broken
+  to pass: forced destruction), `breather`, `finish`.
 - Segments keep today's contract: they connect at an entry/exit ground height, like the
   current `EndPosition`. Ground comes from theme tiles on a Tilemap. Buildings fill the
   slots from the theme's archetypes, weighted by intensity.
@@ -597,7 +611,7 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D10 | Business model | **Decided (2026-10-17):** free, with ads on phones only (interstitials between runs, opt-in rewarded "2x cash"); a "remove ads" purchase later. See `docs/monetization.md`. |
 | D20 | Release target | **Decided (2026-10-20):** Google Play first, week of 11 Jan 2027, from a new personal developer account (so a closed test first, R3). Other platforms after launch. |
 | D21 | Marketing budget | **Decided (2026-10-20):** €100–500 for launch and the first months. Plan: `marketing.md`. |
-| D22 | Package name and developer name | Developer name **decided (2026-10-22): OG Studio**, contact `OGpriv@proton.me`. The package name is still open and needed in R1; it is permanent. Suggested: `com.ogstudio.demolitionmen`. |
+| D22 | Package name and developer name | Developer name **decided (2026-10-22): OG Studio**, contact `OGpriv@proton.me`. The package name `com.ogstudio.demolitionmen` is set in Player Settings (2026-10-22); it becomes permanent with the first upload to Play. |
 | D23 | Ad network | AdMob directly, with its UMP consent form: one SDK, consent included and Google-certified for the EEA/UK. LevelPlay (the earlier pick) mediates more networks but needs a consent tool on top; mediation can come later through AdMob. |
 | D24 | Public trader details | Before declaring trader status (R4): which address and phone number may be shown on the store page. |
 | D25 | Game name | Search the Play Store and the EU/US trademark registers for the name before the listing goes up; renaming after marketing has started loses the audience built so far. A subtitle in the title helps search (e.g. "Demolition Men: Wreck Co-op"). |

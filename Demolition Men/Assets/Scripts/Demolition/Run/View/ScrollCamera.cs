@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Demolition.Levels;
 using UnityEngine;
 
 namespace Demolition.Run
@@ -9,8 +10,10 @@ namespace Demolition.Run
     /// auto-scrolls at <see cref="scrollSpeed"/>. Vertically it keeps the authored
     /// ground framing and zooms out so every target stays in view: jumping players
     /// raise the top, and players below the ground (sewers) lower the bottom. The players
-    /// can zoom it a little on top of that (<see cref="Zoom"/>): out to see upper floors,
-    /// in as far as the framing still holds every target.
+    /// can zoom it a little on top of that (<see cref="Zoom"/>, unless
+    /// <see cref="GameConfig.playerZoom"/> is off): out to see upper floors, in as far as
+    /// the framing still holds every target. Zooming keeps the bottom and left edges, so a
+    /// wider view only shows more sky and more of what's ahead, never more room behind.
     ///
     /// The run controller decides when it scrolls and which players it frames, and
     /// judges out-of-bounds from its viewport.
@@ -159,13 +162,18 @@ namespace Demolition.Run
             float fit = Mathf.Max((top - bottom) * 0.5f, halfWidth / Camera.aspect);
             float wanted = Mathf.Clamp(fit, minZoom, maxZoom);
             // Zooming in never crops a target, which would put them out of bounds.
-            wanted = Mathf.Min(Mathf.Max(wanted * _playerZoom, fit), maxZoom);
+            GameConfig config = GameConfig.Instance;
+            if (config == null || config.playerZoom)
+                wanted = Mathf.Min(Mathf.Max(wanted * _playerZoom, fit), maxZoom);
 
-            float speed = wanted > Camera.orthographicSize ? zoomOutSpeed : zoomInSpeed;
-            Camera.orthographicSize = Mathf.MoveTowards(Camera.orthographicSize, wanted, speed * Time.deltaTime);
+            float size = Camera.orthographicSize;
+            float speed = wanted > size ? zoomOutSpeed : zoomInSpeed;
+            Camera.orthographicSize = Mathf.MoveTowards(size, wanted, speed * Time.deltaTime);
 
-            // Anchor the bottom edge, so extra height from zooming out goes to the sky.
+            // Anchor the bottom edge, so extra height from zooming out goes to the sky, and the
+            // left edge, so extra width goes ahead: zooming out never buys time against the scroll.
             Vector3 pos = transform.position;
+            pos.x += (Camera.orthographicSize - size) * Camera.aspect;
             pos.y = Mathf.Lerp(pos.y, bottom + Camera.orthographicSize, Time.deltaTime * verticalFollowSpeed);
             transform.position = pos;
         }

@@ -18,11 +18,12 @@ def canvas():
 def wrect(a, x0, y0, x1, y1, c, on=None):
     """Fill columns x0..x1 (wrapping) between rows y0..y1. With `on`, only repaint pixels
     that currently hold that colour (highlights that stay inside a shape)."""
-    y0, y1 = max(int(y0), 0), min(int(y1), H)
+    h, w = a.shape[:2]
+    y0, y1 = max(int(y0), 0), min(int(y1), h)
     if y1 <= y0:
         return
     for x in range(int(x0), int(x1)):
-        col = a[y0:y1, x % W]
+        col = a[y0:y1, x % w]
         if on is None:
             col[:] = (*c, 255)
         else:
@@ -31,8 +32,8 @@ def wrect(a, x0, y0, x1, y1, c, on=None):
 
 
 def wput(a, x, y, c):
-    if 0 <= y < H:
-        a[int(y), int(x) % W] = (*c, 255)
+    if 0 <= y < a.shape[0]:
+        a[int(y), int(x) % a.shape[1]] = (*c, 255)
 
 
 def disc(a, cx, cy, r, c, on=None):
@@ -401,8 +402,126 @@ def neon_near(t, rng, h, win, signs):
     return a
 
 
+# --- Sky: a dithered gradient the camera's clear colour continues, with clouds or stars;
+# the sun or moon is its own small sprite so it never repeats across a wide view ----------
+
+SKY_W, SKY_H = 512, 384
+BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16.0
+
+
+def gradient(a, ramp, top_rows):
+    """Rows 0..top_rows solid ramp[0] (the clear colour), then ordered-dithered bands down
+    to the lightest step at the horizon."""
+    h, w = a.shape[:2]
+    steps = len(ramp)
+    span = (h - top_rows) / (steps - 1)
+    for y in range(h):
+        if y < top_rows:
+            a[y] = (*ramp[0], 255)
+            continue
+        f = (y - top_rows) / span            # fractional step index
+        i = min(int(f), steps - 2)
+        frac = f - i
+        for x in range(w):
+            a[y, x] = (*(ramp[i + 1] if frac > BAYER[y % 4, x % 4] else ramp[i]), 255)
+
+
+def cloud(a, rng, cx, cy, wd, body, lit, shade):
+    """A flat-bottomed cumulus: overlapping lumps cut off at the base line, lit along the
+    top-left of every lump, a shadow row along the base."""
+    h, w = a.shape[:2]
+    mask = np.zeros((h, w), bool)
+    yy, xx = np.mgrid[0:h, 0:w]
+    for k in range(max(2, wd // 9)):
+        r = int(rng.integers(max(4, wd // 7), max(6, wd // 3)))
+        x = cx + int(rng.integers(-wd // 2 + r, wd // 2 - r + 1))
+        y = cy - r // 2 - int(rng.integers(0, 3))
+        dx = (xx - x + w // 2) % w - w // 2  # wrap round in x
+        mask |= dx * dx + (yy - y) ** 2 <= r * r
+    mask[cy + 1:, :] = False
+    pad = np.pad(mask, 1)
+    rim = mask & (~pad[:-2, 1:-1] | ~pad[1:-1, :-2])
+    a[mask] = (*body, 255)
+    a[rim] = (*lit, 255)
+    base = mask & ~pad[2:, 1:-1]
+    a[base] = (*shade, 255)
+
+
+def sky(t, rng):
+    m = t["materials"]["backdrop"]
+    s = palette.ramp(t, m["sky"])
+    a = np.zeros((SKY_H, SKY_W, 4), np.uint8)
+    gradient(a, s, SKY_H // 3)
+    style = m["style"]
+    if style == "neon":
+        # stars, denser towards the top, a few twinkling bigger; thin cloud wisps low down
+        star = [palette.ramp(t, n)[-1] for n in m.get("stars", ["cyan", "warm"])]
+        for _ in range(140):
+            x, y = int(rng.integers(SKY_W)), int(rng.integers(0, SKY_H * 2 // 3))
+            if rng.random() < (1 - y / SKY_H) ** 2:
+                c = star[int(rng.integers(len(star)))] if rng.random() < 0.25 else s[3]
+                a[y, x] = (*c, 255)
+                if rng.random() < 0.12:
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        a[(y + dy) % SKY_H, (x + dx) % SKY_W] = (*s[4], 255)
+        for _ in range(4):
+            y = int(rng.integers(SKY_H * 2 // 3, SKY_H - 20))
+            x0, ln = int(rng.integers(SKY_W)), int(rng.integers(40, 120))
+            for k in range(ln):
+                wput(a, x0 + k, y + (k // 17) % 2, s[min(4, 2 + (k * 3 // ln))])
+        return a
+    # day: cumulus (town) or long stratus bands (port)
+    body, lit, shade = s[3], s[4], s[2]
+    if style == "port":
+        for _ in range(5):
+            y = int(rng.integers(SKY_H // 4, SKY_H * 3 // 4))
+            x0, ln, th = int(rng.integers(SKY_W)), int(rng.integers(90, 220)), int(rng.integers(3, 7))
+            for k in range(ln):
+                fade = k < 10 or k > ln - 10
+                wrect(a, x0 + k, y, x0 + k + 1, y + th - (2 if fade else 0), body)
+            wrect(a, x0 + 6, y, x0 + ln - 6, y + 1, lit)
+            wrect(a, x0 + 10, y + th - 1, x0 + ln - 10, y + th, shade)
+        for _ in range(3):  # gulls
+            x, y = int(rng.integers(SKY_W)), int(rng.integers(SKY_H // 3, SKY_H * 2 // 3))
+            for dx, dy in ((-2, -1), (-1, 0), (0, 0), (1, 0), (2, -1)):
+                wput(a, x + dx, y + dy, s[1])
+        return a
+    for _ in range(int(rng.integers(5, 8))):
+        wd = int(rng.integers(40, 110))
+        cloud(a, rng, int(rng.integers(SKY_W)), int(rng.integers(SKY_H // 4, SKY_H * 3 // 4)), wd, body, lit, shade)
+    return a
+
+
+def sun(t, rng):
+    """The sun (day) or a moon (night), 64x64: drawn once, glued to the camera."""
+    m = t["materials"]["backdrop"]
+    a = np.zeros((64, 64, 4), np.uint8)
+    if m["style"] == "neon":
+        w = palette.ramp(t, m.get("moon", "warm"))
+        disc(a, 32, 32, 20, w[3])
+        disc(a, 24, 26, 18, w[2], on=w[3])  # the lit limb bottom-right, a shaded crescent top-left
+        disc(a, 40, 36, 3, w[2], on=w[3])   # craters
+        disc(a, 30, 44, 2, w[2], on=w[3])
+        disc(a, 44, 24, 2, w[2], on=w[3])
+        return a
+    if m["style"] == "port":  # a pale disc behind the overcast
+        s = palette.ramp(t, m["sky"])
+        disc(a, 32, 32, 22, s[3])
+        disc(a, 32, 32, 18, s[4])
+        return a
+    w = palette.ramp(t, m.get("sun", "warm"))
+    disc(a, 32, 32, 22, w[2])
+    disc(a, 32, 32, 19, w[3])
+    disc(a, 28, 28, 12, w[3])
+    return a
+
+
 def backdrop(t, rng, layer):
     m = t["materials"]["backdrop"]
+    if layer == "sky":
+        return sky(t, rng)
+    if layer == "sun":
+        return sun(t, rng)
     h = palette.ramp(t, m["ramp"])
     style = m["style"]
     if style == "town":

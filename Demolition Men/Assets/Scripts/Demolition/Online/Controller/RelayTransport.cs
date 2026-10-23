@@ -19,6 +19,8 @@ namespace Demolition.Online
     public sealed class RelayTransport : NetworkTransport
     {
         public const int Protocol = 1;
+        /// <summary><see cref="CloseCode"/>s this side sets itself when <see cref="LinkWatch"/> gives up.</summary>
+        public const int PeerSilent = 4900, Away = 4901;
         private const ulong Peer = 1; // the one remote client, as the host's transport numbers it
         private const float PingEvery = 1f; // also the keep-alive: the relay closes a pair quiet for 60 s
 
@@ -36,6 +38,7 @@ namespace Demolition.Online
 
         private readonly Queue<(NetworkEvent type, ulong id, ArraySegment<byte> data, float time)> _events =
             new Queue<(NetworkEvent, ulong, ArraySegment<byte>, float)>();
+        private readonly LinkWatch _watch = new LinkWatch();
         private WebSocket _socket;
         private bool _server;
         private bool _paired;
@@ -65,6 +68,7 @@ namespace Demolition.Online
             Code = null;
             _paired = false;
             _events.Clear();
+            _watch.Opened(Time.realtimeSinceStartup);
             var socket = new WebSocket(url);
             _socket = socket;
             // A socket replaced or closed by us still reports in: only the current one counts.
@@ -79,13 +83,15 @@ namespace Demolition.Online
         private void Received(byte[] data)
         {
             float now = Time.realtimeSinceStartup;
+            _watch.Heard(now);
             if (data.Length > 0 && data[0] <= (byte)Kind.Drop)
             {
                 ulong from = _server ? Peer : ServerClientId;
                 switch ((Kind)data[0])
                 {
                     case Kind.Data:
-                        _events.Enqueue((NetworkEvent.Data, from, new ArraySegment<byte>(data, 1, data.Length - 1), now));
+                        if (_paired) // a host that gave up on a frozen client ignores what it sends on waking
+                            _events.Enqueue((NetworkEvent.Data, from, new ArraySegment<byte>(data, 1, data.Length - 1), now));
                         break;
                     case Kind.Ping:
                         data[0] = (byte)Kind.Pong;
@@ -109,11 +115,13 @@ namespace Demolition.Online
             if (text.StartsWith("code:", StringComparison.Ordinal))
             {
                 Code = text.Substring(5);
+                _watch.Ready();
                 CodeReady?.Invoke(Code);
             }
             else if (text == "joined" || text == "peer-joined")
             {
                 _paired = true;
+                _watch.Ready();
                 _events.Enqueue((NetworkEvent.Connect, _server ? Peer : ServerClientId, default, now));
             }
             else if (text == "peer-left")
@@ -156,10 +164,19 @@ namespace Demolition.Online
             Write(message);
         }
 
-        // Pings measure the round trip and keep the pair from timing out on the relay.
+        // Pings measure the round trip and keep the pair from timing out on the relay; the
+        // peer's pings tell the watch it is still there.
         protected override void OnEarlyUpdate()
         {
             float now = Time.realtimeSinceStartup;
+            if (_socket == null)
+                return;
+            LinkVerdict verdict = _watch.Tick(now, _paired);
+            if (verdict != LinkVerdict.Ok)
+            {
+                GiveUp(verdict);
+                return;
+            }
             if (!_paired || now - _lastPing < PingEvery)
                 return;
             _lastPing = now;
@@ -167,6 +184,22 @@ namespace Demolition.Online
             ping[0] = (byte)Kind.Ping;
             BitConverter.GetBytes(now).CopyTo(ping, 1);
             Write(ping);
+        }
+
+        private void GiveUp(LinkVerdict verdict)
+        {
+            CloseCode = verdict == LinkVerdict.PeerSilent ? PeerSilent : verdict == LinkVerdict.Away ? Away : 0;
+            float now = Time.realtimeSinceStartup;
+            if (_server && verdict == LinkVerdict.PeerSilent)
+            {
+                // Only the client froze: tell it to leave when it wakes, and lose it here.
+                Write(new[] { (byte)Kind.Drop });
+                _paired = false;
+                _events.Enqueue((NetworkEvent.Disconnect, Peer, default, now));
+                return;
+            }
+            Close();
+            _events.Enqueue((_server ? NetworkEvent.TransportFailure : NetworkEvent.Disconnect, ServerClientId, default, now));
         }
 
         private void Write(byte[] message)

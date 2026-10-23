@@ -13,32 +13,50 @@ MonoBehaviour:
   m_Name: TownTheme
   m_EditorClassIdentifier: Demolition::Demolition.Levels.LevelTheme
   displayName: TOWN
-  groundTop: {fileID: 11400000, guid: 922fa45008ef2614cb71298bea581616, type: 2}
-  groundFill: {fileID: 11400000, guid: a12ff2aabff7e864fb09c40e31f5150b, type: 2}
+  groundTop: {fileID: 11400000, guid: 1557b977508544f681b16d0ff112ffc7, type: 2}
+  groundFill: {fileID: 11400000, guid: 8763307dcc41429abdebf6feb2bd5193, type: 2}
   tileset: {fileID: 11400000, guid: 799172363abac054faaac92cc47b7816, type: 2}
   archetypes:
-  - {fileID: 4900000, guid: c9e97ef69e2473f4e8e1b9be3157a49e, type: 3}
-  - {fileID: 4900000, guid: 2ab3c29ddc44e0b4fb84a6720c263fc0, type: 3}
-  - {fileID: 4900000, guid: 4ce346711604c8b4895a74672a6346f3, type: 3}
   - {fileID: 4900000, guid: 1d6e2b2be2596554caa4c30bd1994758, type: 3}
+  - {fileID: 4900000, guid: 2ab3c29ddc44e0b4fb84a6720c263fc0, type: 3}
+  - {fileID: 4900000, guid: c9e97ef69e2473f4e8e1b9be3157a49e, type: 3}
+  - {fileID: 4900000, guid: 98238f7ee1ff4338aa5a4200e6993454, type: 3}
   - {fileID: 4900000, guid: a20aa954f2b70a943a94dd5e08fe3efc, type: 3}
+  - {fileID: 4900000, guid: 262148a7927547a5b14ae52827a3ebe2, type: 3}
+  - {fileID: 4900000, guid: 4ce346711604c8b4895a74672a6346f3, type: 3}
   levels:
   - {fileID: 4900000, guid: 4325404521a04cb2bdcf93e99141c832, type: 3}
   - {fileID: 4900000, guid: b5bbce57d7e44987ab60f7093cd12468, type: 3}
   - {fileID: 4900000, guid: 7703dac8b9ce405194bd87b4601ff5dd, type: 3}
   - {fileID: 4900000, guid: 4b997ea5de8e439abf0d708c50d0690a, type: 3}
-  sky: {r: 0.53, g: 0.75, b: 0.92, a: 1}
+  sky: {r: 0.5294, g: 0.749, b: 0.9216, a: 1}
   backdropTint: {r: 1, g: 1, b: 1, a: 1}
   backdrop:
+  - sprite: {fileID: 21300000, guid: 171e0047d94b4fb096b8a37a6741d46a, type: 3}
+    parallax: 0.97
+    bottom: -0.5
+    single: 0
+    offset: 0
+  - sprite: {fileID: 21300000, guid: 52d97b2529f64e47b23c4f59492663b6, type: 3}
+    parallax: 1.0
+    bottom: 6.5
+    single: 1
+    offset: 6
   - sprite: {fileID: 21300000, guid: 99f6257675644c928448069f595b4fcc, type: 3}
     parallax: 0.9
     bottom: -0.5
+    single: 0
+    offset: 0
   - sprite: {fileID: 21300000, guid: 773dd0e25a754349be7861c1498fe3aa, type: 3}
     parallax: 0.75
     bottom: -0.5
+    single: 0
+    offset: 0
   - sprite: {fileID: 21300000, guid: 26f6b3df12a646cebd69598c428584eb, type: 3}
     parallax: 0.55
     bottom: -0.5
+    single: 0
+    offset: 0
   music: {fileID: 8300000, guid: 86512f20b60f4788b3445b07ec0c74af, type: 3}
   decor:
   - kind: 0
@@ -50,9 +68,13 @@ MonoBehaviour:
   - kind: 2
     sprites:
     - {fileID: 21300000, guid: 7020077088154c798deb3b000e5a9aa3, type: 3}
+    - {fileID: 21300000, guid: d56e13c67cd94fa2a2539d617aa3a6e1, type: 3}
   - kind: 3
     sprites:
     - {fileID: 21300000, guid: 79eaa20fa99045eb86b6d4cfe734d9e6, type: 3}
+    - {fileID: 21300000, guid: c0bf851ac92f4f538800404b896ef5e2, type: 3}
   - kind: 4
     sprites:
     - {fileID: 21300000, guid: da8b74328d064fe6b8186d184fe09bc7, type: 3}
+    - {fileID: 21300000, guid: a506650090a24dc083128b8fb664bbc2, type: 3}
+    - {fileID: 21300000, guid: 85ee7e885d9b4349adc13edba7d10d27, type: 3}

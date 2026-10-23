@@ -33,6 +33,11 @@ RAMPS = {
     "haze_town":  [(52, 78, 116), (68, 100, 144), (86, 124, 170), (104, 148, 196), (120, 170, 218)],
     "haze_port":  [(66, 90, 104), (88, 114, 128), (110, 140, 152), (132, 164, 176), (150, 186, 196)],
     "haze_neon":  [(12, 8, 26), (26, 18, 48), (36, 27, 66), (48, 37, 86), (62, 50, 108)],
+    # Sky gradients, one per sky: step 0 is the camera's clear colour (the top of the
+    # picture continues into it seamlessly), the last step the horizon.
+    "sky_town":   [(135, 191, 235), (152, 203, 240), (172, 215, 244), (196, 228, 248), (222, 240, 250)],
+    "sky_port":   [(168, 204, 214), (182, 212, 220), (198, 220, 226), (214, 228, 232), (232, 238, 240)],
+    "sky_neon":   [(18, 13, 41), (24, 18, 54), (32, 24, 68), (44, 32, 88), (60, 44, 112)],
 }
 
 MASTER = [c for ramp in RAMPS.values() for c in ramp]

@@ -1,6 +1,9 @@
 # MADE BY
 The Demolition Men team
 
+# PIXEL ART
+Schuylar Cheng
+
 # MUSIC
 "Summon the Rawk" by Kevin MacLeod (incompetech.com) - CC BY 4.0, silence trimmed
 "Rock_Theme" by Alexandr Zhelanov (soundcloud.com/alexandr-zhelanov) - CC BY 4.0 - opengameart.org/content/rocktheme

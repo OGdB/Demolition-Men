@@ -9,7 +9,7 @@ namespace Demolition.Run
     /// Scoring rules for one run (roadmap M1, decision D3). Destroyed and collapsed
     /// cells pay their material's points; one structural event that drops many cells
     /// pays a chain multiplier, so hitting a weak point beats grinding bricks. Finishing
-    /// under par multiplies the total.
+    /// under par multiplies the total and turns the stars rainbow.
     /// </summary>
     public sealed class RunScore
     {
@@ -99,6 +99,9 @@ namespace Demolition.Run
             if (destroyedFraction >= GradeB) return Grade.B;
             return Grade.C;
         }
+
+        /// <summary>A finish within par turns the stars rainbow. No par means no time limit.</summary>
+        public static bool WithinPar(float time, float parTime) => parTime <= 0f || time <= parTime;
 
         /// <summary>Players see a grade as stars: one per grade above C.</summary>
         public const int MaxStars = 3;

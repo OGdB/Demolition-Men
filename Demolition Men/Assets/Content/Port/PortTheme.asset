@@ -17,27 +17,45 @@ MonoBehaviour:
   groundFill: {fileID: 11400000, guid: 7e934b2a17ce454bb3461feb45ccb0ee, type: 2}
   tileset: {fileID: 11400000, guid: a499661a7ab9467599b5cca14a2d34c7, type: 2}
   archetypes:
+  - {fileID: 4900000, guid: bc5d4f1dca91453a9718588ac9afe9f6, type: 3}
   - {fileID: 4900000, guid: 7458a391e0fe422ebdaaf774fb03e6cb, type: 3}
   - {fileID: 4900000, guid: ef97113fae19405292de63502b30b1ca, type: 3}
   - {fileID: 4900000, guid: a51008ff24d1421f9e587ad82b4d6dfc, type: 3}
+  - {fileID: 4900000, guid: 54f267f410ce46c6aa744de774826a18, type: 3}
   - {fileID: 4900000, guid: e628896ebc64407a9c9f100690ffcfd1, type: 3}
   levels:
   - {fileID: 4900000, guid: 4e8a2cd5290248259407004125877b16, type: 3}
   - {fileID: 4900000, guid: 3e795b468f244986bdafb22ed643a064, type: 3}
   - {fileID: 4900000, guid: 2129232d82024bacae5b72069d73540a, type: 3}
   - {fileID: 4900000, guid: 6ffdf3e70fa84b13b0af555ed5ab6e19, type: 3}
-  sky: {r: 0.66, g: 0.8, b: 0.84, a: 1}
+  sky: {r: 0.6588, g: 0.8, b: 0.8392, a: 1}
   backdropTint: {r: 0.82, g: 0.9, b: 0.92, a: 1}
   backdrop:
+  - sprite: {fileID: 21300000, guid: 9de321d6d86f48e28fcd90398b62b85d, type: 3}
+    parallax: 0.97
+    bottom: -0.5
+    single: 0
+    offset: 0
+  - sprite: {fileID: 21300000, guid: d2b6c09a0bef4394801bce403a88c76e, type: 3}
+    parallax: 1.0
+    bottom: 6.5
+    single: 1
+    offset: 6
   - sprite: {fileID: 21300000, guid: b2543d18bdb845f2a409470eebe7a142, type: 3}
     parallax: 0.9
     bottom: -0.5
+    single: 0
+    offset: 0
   - sprite: {fileID: 21300000, guid: 7dac6b143a5f4f9fa39bb2712a69801a, type: 3}
     parallax: 0.75
     bottom: -0.5
+    single: 0
+    offset: 0
   - sprite: {fileID: 21300000, guid: 917a3c42f18845c89679702e20c93c27, type: 3}
     parallax: 0.55
     bottom: -0.5
+    single: 0
+    offset: 0
   music: {fileID: 8300000, guid: 3eb6e95c3b3444c4969e3a2633e6ad68, type: 3}
   decor:
   - kind: 0
@@ -49,9 +67,13 @@ MonoBehaviour:
   - kind: 2
     sprites:
     - {fileID: 21300000, guid: d806b9dd493c48bfae20295727b876f0, type: 3}
+    - {fileID: 21300000, guid: 0b6e21d44f8b42e4a7b8ee150e9f787f, type: 3}
   - kind: 3
     sprites:
     - {fileID: 21300000, guid: da07f0f79dfe413cb101c3dd9b025e1c, type: 3}
+    - {fileID: 21300000, guid: 95718688865e41aa9898c269415314ac, type: 3}
   - kind: 4
     sprites:
     - {fileID: 21300000, guid: 8de7cd7723cc4acb9c7376b44fc8e7d3, type: 3}
+    - {fileID: 21300000, guid: 7e62f52befb447b68d07bcd73f6e7902, type: 3}
+    - {fileID: 21300000, guid: 05421e4d76c64b19b27eb9eef4695c63, type: 3}

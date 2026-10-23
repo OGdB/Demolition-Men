@@ -63,7 +63,8 @@ namespace Demolition.Levels
         public Sprite[] sprites = new Sprite[0];
     }
 
-    /// <summary>One parallax layer of a theme's backdrop: a horizontally tileable picture.</summary>
+    /// <summary>One parallax layer of a theme's backdrop: a horizontally tileable picture,
+    /// or a single sprite (the sun, the moon) that rides along with the camera.</summary>
     [System.Serializable]
     public sealed class BackdropLayer
     {
@@ -72,5 +73,9 @@ namespace Demolition.Levels
         [Range(0f, 1f)] public float parallax = 0.7f;
         [Tooltip("Bottom of the picture relative to the street, in units.")]
         public float bottom = -0.5f;
+        [Tooltip("One copy, not tiled along the level: the sun or the moon.")]
+        public bool single;
+        [Tooltip("Single layers: where it starts, in units right of the spawn.")]
+        public float offset;
     }
 }

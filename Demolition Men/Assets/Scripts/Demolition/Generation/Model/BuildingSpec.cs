@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace Demolition.Generation
 {
+    /// <summary>Which of a building's outer corners a block forms (see <see cref="BuildingSpec.EdgeOf"/>).</summary>
+    [System.Flags]
+    public enum BlockEdge { None = 0, Left = 1, Right = 2 }
+
     /// <summary>One block of a generated building: a rectangle of cells.</summary>
     public sealed class SpecBlock
     {
@@ -35,6 +39,10 @@ namespace Demolition.Generation
         public Vector2Int Host;
         /// <summary>Right under a ceiling (draws the ceiling's shadow).</summary>
         public bool UnderCeiling;
+        /// <summary>Storey the cell is on (0 = street level): each storey gets one back-wall look.</summary>
+        public int Storey;
+        /// <summary>Behind a see-through block (a support, a slab) rather than an open room.</summary>
+        public bool SeeThrough;
     }
 
     public sealed class BuildingSpec
@@ -77,21 +85,58 @@ namespace Demolition.Generation
             return true;
         }
 
+        /// <summary>The outermost occupied columns of row y, or false for an empty row.</summary>
+        private bool RowExtent(int y, out int min, out int max)
+        {
+            min = int.MaxValue;
+            max = int.MinValue;
+            for (int x = 0; x < Width; x++)
+                if (!IsFree(x, y))
+                {
+                    min = Mathf.Min(min, x);
+                    max = Mathf.Max(max, x);
+                }
+            return max >= min;
+        }
+
+        /// <summary>The building's silhouette edges a block forms: Left when it is the
+        /// outermost block of every row it spans, Right likewise. The tileset draws corner
+        /// trim (quoins, posts, pilasters) on those; a one-column building is both.</summary>
+        public BlockEdge EdgeOf(SpecBlock block)
+        {
+            BlockEdge edge = BlockEdge.Left | BlockEdge.Right;
+            for (int y = block.Rect.yMin; y < block.Rect.yMax && edge != BlockEdge.None; y++)
+            {
+                RowExtent(y, out int min, out int max);
+                if (block.Rect.xMin != min)
+                    edge &= ~BlockEdge.Left;
+                if (block.Rect.xMax - 1 != max)
+                    edge &= ~BlockEdge.Right;
+            }
+            return edge;
+        }
+
+        private static bool IsFloor(TileKind kind) =>
+            kind == TileKind.Plank || kind == TileKind.Beam || kind == TileKind.MetalTruss;
+
         /// <summary>Where the back wall shows: every open or see-through cell between a row's
         /// outermost blocks. An open cell hangs from the nearest block above it (its ceiling;
-        /// below if there is none), a see-through cell from its own block.</summary>
+        /// below if there is none), a see-through cell from its own block. Storeys count up
+        /// from the street at every row holding a floor slab.</summary>
         public List<InteriorCell> Interior()
         {
             var cells = new List<InteriorCell>();
+            var slabRows = new HashSet<int>();
+            foreach (SpecBlock b in Blocks)
+                if (IsFloor(b.Kind))
+                    slabRows.Add(b.Rect.yMin);
+            int storey = 0;
             for (int y = 0; y < Height; y++)
             {
-                int min = int.MaxValue, max = int.MinValue;
-                for (int x = 0; x < Width; x++)
-                    if (!IsFree(x, y))
-                    {
-                        min = Mathf.Min(min, x);
-                        max = Mathf.Max(max, x);
-                    }
+                if (y > 0 && slabRows.Contains(y))
+                    storey++;
+                if (!RowExtent(y, out int min, out int max))
+                    continue;
                 for (int x = min + 1; x < max; x++)
                 {
                     var cell = new Vector2Int(x, y);
@@ -101,7 +146,11 @@ namespace Demolition.Generation
                     Vector2Int host = cell;
                     if (block == null && !TryFind(x, y, 1, out host) && !TryFind(x, y, -1, out host))
                         continue;
-                    cells.Add(new InteriorCell { Cell = cell, Host = host, UnderCeiling = y + 1 < Height && !IsFree(x, y + 1) });
+                    cells.Add(new InteriorCell
+                    {
+                        Cell = cell, Host = host, Storey = storey, SeeThrough = block != null,
+                        UnderCeiling = y + 1 < Height && !IsFree(x, y + 1),
+                    });
                 }
             }
             return cells;

@@ -32,7 +32,7 @@ namespace Demolition.Generation
                 go.transform.SetParent(root.transform, false);
                 go.transform.localPosition = new Vector3(b.Rect.center.x, b.Rect.center.y, 0f);
                 if (tileset != null)
-                    tileset.Dress(go, b);
+                    tileset.Dress(go, b, spec.EdgeOf(b));
 
                 go.AddComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Static;
                 var collider = go.AddComponent<BoxCollider2D>();

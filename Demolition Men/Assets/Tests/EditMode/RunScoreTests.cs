@@ -86,5 +86,13 @@ namespace Demolition.Tests
                 Assert.AreEqual(star, RunScore.Stars(RunScore.GradeFor(RunScore.StarThreshold(star) - 0.01f)), $"just short of star {star}");
             }
         }
+
+        [Test]
+        public void WithinPar_AtOrUnderPar_NoParNoLimit()
+        {
+            Assert.IsTrue(RunScore.WithinPar(90f, 90f));
+            Assert.IsFalse(RunScore.WithinPar(91f, 90f));
+            Assert.IsTrue(RunScore.WithinPar(500f, 0f));
+        }
     }
 }

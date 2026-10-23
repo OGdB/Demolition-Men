@@ -31,10 +31,19 @@ namespace Demolition.Meta
             Profile.SettingsChanged += Apply;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneLoaded += OnSceneLoaded;
+            Application.focusChanged -= OnFocusChanged;
+            Application.focusChanged += OnFocusChanged;
             Apply();
         }
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Apply();
+
+        // Android kills a backgrounded app without quitting it.
+        private static void OnFocusChanged(bool focused)
+        {
+            if (!focused)
+                Profile.Save();
+        }
 
         public static void Apply()
         {
