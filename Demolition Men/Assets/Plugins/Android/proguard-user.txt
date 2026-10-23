@@ -2,3 +2,8 @@
 # next to the legacy ones; this project builds against the legacy SDK, so the Next-Gen classes
 # they reference are absent and R8 would fail the release build on them.
 -dontwarn com.google.android.libraries.ads.mobile.sdk.**
+
+# The ads SDK starts WorkManager (work-runtime 2.7), whose Room 2.2 keeps RoomDatabase subclasses
+# without their constructors; R8 full mode then strips WorkDatabase_Impl's, which Room creates by
+# reflection, and the release build crashes at launch. Newer Room ships this rule itself.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }

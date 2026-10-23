@@ -45,7 +45,7 @@ The generated csproj files list sources explicitly (`<Compile Include>`), so a n
   ```
   Single test: add `-testFilter "Demolition.Tests.BuildingStructureTests.RemoveMidColumn_DetachesEverythingAbove"`. Don't pass `-quit` with `-runTests`.
 
-**Android build:** Tools ▸ Demolition ▸ Build ▸ Android AAB (release / development), or batch `-buildTarget Android -executeMethod AndroidBuild.ReleaseCli` (`Assets/Editor/Android/AndroidBuild.cs`): raises the versionCode, writes `Builds/Android/DemolitionMen-<version>-<code>.aab`, signs with the keystore named by `DEMOLITION_KEYSTORE` / `DEMOLITION_KEYSTORE_PASS` / `DEMOLITION_KEYALIAS` / `DEMOLITION_KEYALIAS_PASS` (unset: debug-signed, Play refuses it).
+**Android build:** Tools ▸ Demolition ▸ Build ▸ Android AAB (release / development), or batch `-buildTarget Android -executeMethod AndroidBuild.ReleaseCli` (`Assets/Editor/Android/AndroidBuild.cs`): raises the versionCode, writes `Builds/Android/DemolitionMen-<version>-<code>.aab`, signs with the keystore named by `DEMOLITION_KEYSTORE` / `DEMOLITION_KEYSTORE_PASS` / `DEMOLITION_KEYALIAS` / `DEMOLITION_KEYALIAS_PASS` (unset: debug-signed, Play refuses it). Release builds shrink Java with R8 in full mode; `Assets/Plugins/Android/proguard-user.txt` (Player Settings ▸ custom proguard file) holds the rules the ads SDK needs: without them the build fails, or the app closes at launch (WorkManager's Room database). A development build doesn't shrink, so check a release build on a phone.
 
 **PlayMode tests** (`Assets/Tests/PlayMode/`): `BotRunTests` plays every campaign level to the finish with the `BotPilot` at 3x speed (minutes; editor only). `ShotRunTests` plays every Clip Lab shot (bar `broll-*`) to its end and fails on steps that timed out.
 
