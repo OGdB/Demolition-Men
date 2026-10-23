@@ -11,7 +11,7 @@
   "height": 1920,
   "length": 30,
   "steps": [
-    {"p": 1, "do": "walk", "to": "building"},
+    {"p": 1, "do": "walk", "to": "weakpoint"},
     {"p": 1, "do": "hit", "until": "collapse", "cells": 20, "seconds": 10},
     {"p": 0, "do": "wait", "until": "break", "seconds": 15},
     {"p": 0, "do": "slowmo", "scale": 0.5, "seconds": 1},

@@ -1,0 +1,17 @@
+{
+  "out": "content-work/media/edits/gif-2-tower.mp4",
+  "size": [
+    1080,
+    1350
+  ],
+  "fps": 60,
+  "segments": [
+    {
+      "file": "content-work/media/raw/tower/take1.mp4",
+      "at": "blast",
+      "before": 0.5,
+      "after": 4.0,
+      "y": 0.6
+    }
+  ]
+}

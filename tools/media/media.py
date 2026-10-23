@@ -18,7 +18,8 @@ A cut list (edit) has "out", "size", "fps", optional "music", "musicStart", "mus
   {"file": take, "at": "collapse", "before": 2, "after": 3}   around its biggest collapse (or first blast/break)
   {"pair": [{"file": a, "start": s}, {"file": b, "start": s}], "seconds": d}   two devices at once
   {"image": png, "seconds": d}                    a card (the logo at the end)
-and any of them may carry "text". Store screenshots (store) take "out", "ads" and "screenshots":
+and any of them may carry "text"; a stretch of a take may carry "zoom" (above 1: closer) with "x" and
+"y" (the crop's centre, shares of the width and height). Store screenshots (store) take "out", "ads" and "screenshots":
 [{"image", "name", "caption", "alt"}].
 """
 import argparse
@@ -38,7 +39,10 @@ from brand import FONT, INK, hazard_tape, wordmark  # noqa: E402
 
 ASPECTS = {"9x16": (1080, 1920), "16x9": (1920, 1080), "1x1": (1080, 1080)}
 ADS = {"1x1": (1200, 1200), "191x100": (1200, 628), "4x5": (1200, 1500)}
-VIDEO = ["-c:v", "libx264", "-crf", "17", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+# H.264 encoders in the order tried: x264, else the GPU's (Fedora's ffmpeg leaves x264 out).
+H264 = [["-c:v", "libx264", "-crf", "17", "-preset", "slow"],
+        ["-c:v", "h264_nvenc", "-preset", "p7", "-tune", "hq", "-rc", "vbr", "-cq", "19", "-b:v", "0", "-profile:v", "high"],
+        ["-c:v", "libopenh264", "-b:v", "20M"]]
 AUDIO = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000"]
 BACKGROUND = INK[:3]
 # Play refuses these in listing graphics and the preview video (ranking, price, calls to action).
@@ -73,6 +77,24 @@ def probe(video):
             "audio": any(s["codec_type"] == "audio" for s in info["streams"])}
 
 
+_h264 = None
+
+
+def h264():
+    """Output options for H.264: the first encoder in H264 this ffmpeg can run."""
+    global _h264
+    if _h264 is None:
+        for encoder in H264:
+            test = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=s=256x256:d=0.1"]
+                                  + encoder + ["-f", "null", "-"], capture_output=True)
+            if test.returncode == 0:
+                _h264 = encoder + ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+                break
+        else:
+            die("ffmpeg has no H.264 encoder that runs (libx264, h264_nvenc or libopenh264)")
+    return _h264
+
+
 def log_of(video):
     log = os.path.splitext(video)[0] + ".json"
     return json.load(open(log)) if os.path.exists(log) else None
@@ -82,14 +104,18 @@ def even(x):
     return max(2, int(round(x / 2.0)) * 2)
 
 
-def crop_filter(src_w, src_h, out_w, out_h):
-    """Centre crop to the output's shape, then scale to it."""
+def crop_filter(src_w, src_h, out_w, out_h, zoom=1.0, x=0.5, y=0.5):
+    """Crop to the output's shape, then scale to it: centred, or closer with zoom (above 1)
+    around (x, y), the crop's centre as shares of the width and height."""
     aspect = out_w / out_h
     if src_w / src_h > aspect:
         cw, ch = even(src_h * aspect), src_h
     else:
         cw, ch = src_w, even(src_w / aspect)
-    return f"crop={cw}:{ch}:(iw-{cw})/2:(ih-{ch})/2,scale={out_w}:{out_h}:flags=lanczos,setsar=1"
+    cw, ch = even(cw / zoom), even(ch / zoom)
+    left = min(max(0, int(src_w * x - cw / 2)), src_w - cw)
+    top = min(max(0, int(src_h * y - ch / 2)), src_h - ch)
+    return f"crop={cw}:{ch}:{left}:{top},scale={out_w}:{out_h}:flags=lanczos,setsar=1"
 
 
 def claims(text):
@@ -156,7 +182,7 @@ def cmd_crop(a):
         if name not in ASPECTS:
             die(f"unknown format {name}: {', '.join(ASPECTS)}")
         out = f"{stem}-{name}.mp4"
-        ffmpeg(["-i", video, "-vf", crop_filter(info["width"], info["height"], *ASPECTS[name])] + VIDEO
+        ffmpeg(["-i", video, "-vf", crop_filter(info["width"], info["height"], *ASPECTS[name])] + h264()
                + (AUDIO if info["audio"] else []) + [out])
         print(out)
 
@@ -179,7 +205,7 @@ def cmd_cut(a):
     stem = os.path.splitext(video)[0]
     for i, (start, end, e) in enumerate(sorted(picked, key=lambda p: p[0]), 1):
         out = f"{stem}-hl{i}.mp4"
-        ffmpeg(["-ss", f"{start:.3f}", "-i", video, "-t", f"{end - start:.3f}"] + VIDEO
+        ffmpeg(["-ss", f"{start:.3f}", "-i", video, "-t", f"{end - start:.3f}"] + h264()
                + (AUDIO if info["audio"] else []) + [out])
         print(f"{out}: {e['kind']} of {e['cells']} cells at {e['t']:.1f}s")
 
@@ -272,6 +298,9 @@ def cmd_store(a):
         die("\n  " + "\n  ".join(problems))
     alt = []
     for shot in spec["screenshots"]:
+        if not os.path.exists(path(shot["image"])):  # a still that comes later (a run of yours, a menu)
+            print(f"{shot['name']}: no {shot['image']} yet, skipped")
+            continue
         src = Image.open(path(shot["image"])).convert("RGB")
         src = crop_image(src, 16 / 9)
         w, h = src.size
@@ -333,7 +362,7 @@ def cmd_edit(a):
                 filters.append(f"[{n}:v]scale={int(w * 0.8)}:{int(h * 0.6)}:force_original_aspect_ratio=decrease,"
                                f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=0x{bytes(BACKGROUND).hex()},fps={fps},setsar=1,format=yuv420p[v{i}]")
                 filters.append(f"anullsrc=r=48000:cl=stereo,atrim=duration={dur:.3f}[a{i}]")
-                y_share = 0.8
+                y_share = 0.8 if w > h else None  # under the logo; on 9:16 at the top, clear of the buttons
             elif "pair" in seg:
                 # Two devices at once (the phone host and the PC client): side by side on 16:9,
                 # one above the other on 9:16. The sound is the first one's.
@@ -357,7 +386,8 @@ def cmd_edit(a):
                 start, end = moment(seg, video, info["duration"])
                 dur = end - start
                 n = add(["-ss", f"{start:.3f}", "-t", f"{dur:.3f}", "-i", video])
-                filters.append(f"[{n}:v]{crop_filter(info['width'], info['height'], w, h)},fps={fps},format=yuv420p[v{i}]")
+                crop = crop_filter(info["width"], info["height"], w, h, seg.get("zoom", 1.0), seg.get("x", 0.5), seg.get("y", 0.5))
+                filters.append(f"[{n}:v]{crop},fps={fps},format=yuv420p[v{i}]")
                 filters.append(audio_of(n, info["audio"], dur, i))
                 y_share = None
             layer = os.path.join(tmp, f"text{i}.png")
@@ -377,7 +407,7 @@ def cmd_edit(a):
         else:
             filters.append("[game]anull[a]")
         ffmpeg(inputs + ["-filter_complex", ";".join(filters), "-map", "[v]", "-map", "[a]", "-r", str(fps)]
-               + VIDEO + AUDIO + [out])
+               + h264() + AUDIO + [out])
     print(f"{out}: {total:.1f}s")
 
 

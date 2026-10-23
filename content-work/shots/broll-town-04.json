@@ -1,7 +1,7 @@
 {
   "id": "broll-town-04",
   "level": "town-04",
-  "upgrades": 3,
+  "upgrades": 5,
   "hud": true,
   "camera": {"mode": "run"},
   "width": 1920,

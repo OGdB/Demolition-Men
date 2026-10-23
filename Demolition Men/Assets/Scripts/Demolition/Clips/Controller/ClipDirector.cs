@@ -256,6 +256,7 @@ namespace Demolition.Clips
                         body.linearVelocity = Vector2.zero;
                     }
                 }
+                player.Health.Invincible = Shot.invincible;
                 if (Shot.dynamite > 0)
                     player.Combat.DynamiteCount = Shot.dynamite;
                 if (Shot.weapon == "axe")
@@ -272,11 +273,13 @@ namespace Demolition.Clips
             {
                 if (!float.IsNaN(start) && _scroll != null)
                 {
-                    // Start the run camera at the shot's building instead of the spawn.
+                    // Start the run camera at the shot's building instead of the spawn, already
+                    // scrolling, as it would be by then in a run.
                     float half = _camera.orthographicSize * _camera.aspect;
                     Vector3 pos = _camera.transform.position;
                     _camera.transform.position = new Vector3(start + half * 0.6f, pos.y, pos.z);
                     _scroll.ResetFloor();
+                    _scroll.Pushed = true;
                 }
             }
             else
@@ -570,6 +573,17 @@ namespace Demolition.Clips
         {
             _log.length = VideoTime;
             State = Stage.Done;
+            // A walk or an until the shot ended on never got there: as much a mistuned shot as a timeout.
+            for (int p = 1; p < _lanes.Length && p <= _run.Players.Count; p++)
+            {
+                ShotStep step = _lanes[p].Step;
+                if (step != null && (step.@do == "walk" || step.until != ""))
+                {
+                    int number = Array.IndexOf(Shot.steps, step) + 1;
+                    _log.timeouts.Add($"step {number} ({step.@do} {step.until}{step.to}) still running at the end");
+                    Debug.LogWarning($"Clip Lab: {Shot.id} step {number} ({step.@do} {step.until}{step.to}) still running at the end");
+                }
+            }
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(OutputBase));

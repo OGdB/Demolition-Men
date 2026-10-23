@@ -1,0 +1,19 @@
+{
+  "out": "content-work/media/edits/gif-1-one-hit.mp4",
+  "size": [
+    1280,
+    720
+  ],
+  "fps": 60,
+  "segments": [
+    {
+      "file": "content-work/media/raw/one-hit/take1.mp4",
+      "at": "collapse",
+      "before": 1.0,
+      "after": 4.0,
+      "zoom": 1.3,
+      "x": 0.58,
+      "y": 0.52
+    }
+  ]
+}

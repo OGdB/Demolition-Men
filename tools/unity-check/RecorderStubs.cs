@@ -47,6 +47,8 @@ namespace UnityEditor.Recorder.Encoder
     {
         public OutputCodec Codec { get; set; }
         public VideoEncodingQuality EncodingQuality { get; set; }
+        public float TargetBitRate { get; set; }
+        public uint KeyframeDistance { get; set; }
         public enum OutputCodec { MP4 = 0, WEBM = 1 }
         public enum VideoEncodingQuality { Low = 0, Medium = 1, High = 2, Custom = 3 }
     }

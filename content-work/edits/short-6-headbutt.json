@@ -10,10 +10,9 @@
   "segments": [
     {
       "file": "content-work/media/raw/headbutt/take1.mp4",
-      "at": "break",
-      "before": 1.5,
-      "after": 6.0,
-      "text": "NO HELMET, NO PROBLEM"
+      "text": "NO HELMET, NO PROBLEM",
+      "start": 1.0,
+      "end": 8.0
     }
   ]
 }

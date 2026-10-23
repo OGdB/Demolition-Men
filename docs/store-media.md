@@ -1,7 +1,8 @@
 # Store media and clips: what we show and how we record it
 
-**Status:** plan 2026-10-22; the recording tools built 2026-10-23 (§3), compile-checked and
-model-tested without the editor, not yet run in Unity. It covers the
+**Status:** plan 2026-10-22; the recording tools built 2026-10-23 (§3) and run in Unity the
+same day (on Linux): every shot recorded and tuned, the Shorts, GIFs, 7 of 8 screenshots and a
+trailer draft made; what is left is at the end of §4. It covers the
 listing graphics of roadmap R4, the clip mode of R2 step 6, and the first marketing clips
 (`marketing.md` §2–3). Section 6 lists what else Play and the first ads still need.
 
@@ -62,20 +63,20 @@ Rules for every clip:
 
 Each shot is a JSON file in `content-work/shots/` (section 3.2). The agent picks the exact
 building and its weak point headless, from the level layouts that
-`tools/unity-check/check.sh levels` writes. The places below are first picks, chosen from
-the level previews.
+`tools/unity-check/check.sh levels` writes. The places below were tuned by recording them
+(2026-10-23).
 
 | ID | What happens | Where | Camera | Slow motion | Used for |
 |---|---|---|---|---|---|
 | `one-hit` | P1 walks in and hits the building's weak-point support; the building comes down | `town-04` rowhouse (#0) | Frame the building | 0.3× for 1.5 s from the collapse | Short 1, trailer opening, screenshot 1, ads |
-| `night-tnt` | P1 throws dynamite at a support and backs off; a flash, then the floors drop | `neon-02` arcade (#10) | Frame | 0.4× from the blast | Screenshot 3, a Short, trailer |
-| `tower` | Dynamite at the base of the tower; it falls | `port-04` crane tower (#1), 1080×1920 | Tall frame (made for 9:16) | 0.5× | A Short, trailer climax, screenshot 4 |
-| `gas-chain` | One hit on the first gas tank; the row sets itself off | `neon-04` yard (#16–19) | Pan along the row | None, then 0.5× on the last blast | A Short, trailer |
-| `wrecking-ball` | Swings through a glass front | `neon-04` arcade (#3) | Frame | 0.5× on the first impact | Screenshot 5, a Short |
-| `co-op` | P1 takes the weak point, P2 (the bot) smashes the rest | `town-04` rowhouse (#0) | Frame | 0.3× | Screenshot 2, trailer |
-| `gate` | Knock out the wooden footing; the wall turns to dust | `town-02` gate (#12) | Frame | None | A Short |
-| `headbutt` | Inside, jumps head-first into the ceiling | `town-01` shop (#1) | Tight follow | 0.5× | A Short (the funny one) |
-| `keep-up` | P1 falls behind, the out-of-bounds sign counts down, P1 jumps the pit and it clears | `town-02` islands | The run's own camera, with the HUD on | None | Trailer, a Short |
+| `night-tnt` | P1 punches the weak-point support for 2 s, throws dynamite at it and backs off; a flash, then the floors drop (one stick does 300, a support has 400) | `neon-02` arcade (#10) | Frame | 0.4× from the collapse | Screenshot 3, a Short, trailer |
+| `tower` | Punches, then dynamite at the base of the tower; it drops in one piece | `port-04` crane tower (#1), 1080×1920 | Tall frame (made for 9:16) | 0.5× | A Short, trailer climax, screenshot 4 |
+| `gas-chain` | P1 stands right of the row, turns and hits its last tank; the three set each other off (separate props don't: the gap between them is the blast's reach) | `neon-04` yard, three tanks (#19) | Pan along the row | 0.5× from the blast | A Short, trailer |
+| `wrecking-ball` | Swings in through the glass front to the weak-point support; the floors crumble down a moment later (the arcade's columns hang from its roof, so overload does it) | `neon-04` arcade (#3) | Frame | 0.5× on the first impact, 0.3× on the collapse | Screenshot 5, a Short |
+| `co-op` | P1 (in front) walks through to the far wall and smashes it from inside; P2 follows and takes the weak point (players collide, so the one behind can't pass) | `town-04` rowhouse (#0) | Frame | 0.3× | Screenshot 2, trailer |
+| `gate` | Knock out the wooden footing; the wall turns to dust | `town-02` gate (#12) | Frame | 0.35× for 2 s from the collapse | A Short |
+| `headbutt` | Breaks in, jumps head-first into the first floor's planks; the wall and a beam come down on the player | `town-02` rowhouse (#2): a ceiling at row 4 is the lowest a jump reaches | Tight follow | None | A Short (the funny one) |
+| `keep-up` | P1 stands still while the camera scrolls on, the out-of-bounds sign counts down, P1 sprints back into view and it clears (a standing jump over the islands' pits falls short) | `town-02` street before the shop (#0) | The run's own camera, already scrolling, with the HUD on | None | Trailer, a Short |
 | `cities-*` | The bot runs along one street per theme | `town-02` terrace, `port-04` silos, `neon-04` hotels | Follow | — | Trailer montage |
 
 **Bot footage** runs alongside these: the `BotPilot` plays whole levels (one per theme, plus
@@ -156,13 +157,13 @@ Clip 8 is for r/gamedev, r/Unity2D and Bluesky, where how-it-works posts do well
 
 | Piece | What it does | Where |
 |---|---|---|
-| Unity Recorder | `com.unity.recorder` 5.1.7 in `Packages/manifest.json` (it brings Timeline). It records the Game view at a constant frame rate and sets `Time.captureFramerate`, so a heavy collapse never drops a frame in the video, even if the editor slows down. | Package |
+| Unity Recorder | `com.unity.recorder` 5.1.7 in `Packages/manifest.json` (it brings Timeline). It records the Game view at a constant frame rate and sets `Time.captureFramerate`, so a heavy collapse never drops a frame in the video, even if the editor slows down. On Linux it has no H.264: the Clip Lab records VP8 WebM at a high bitrate and, when the take ends, ffmpeg turns it into `take<n>.mp4` in the background (libx264, else the GPU's `h264_nvenc`, else `libopenh264`; `ClipLab.Status()` counts the takes still converting). The Game view's Mute Audio is switched off while a take records, or the take is silent. | Package |
 | `ShotSpec`, `ShotPlanning` | Models: a shot file, its checks (`Errors()`), its lanes, the take's event log (`ShotLog`), the framing maths and the weak-point finder. Unit-tested (`ShotTests`), including every file in `content-work/shots`. | `Scripts/Demolition/Clips/Model/` |
-| `ClipDirector` | Plays a shot in the Run scene (editor only): a temporary profile with the shot's upgrades and no music, the players placed at the building with their kit and driven through `ScriptedInputSource`s (walks go through the `BotPilot`), the camera framed, the HUD hidden, the time scale owned. Logs every collapse, break and blast at its video time to `take<n>.json`, plus any step that timed out. | `Scripts/Demolition/Clips/Controller/` |
+| `ClipDirector` | Plays a shot in the Run scene (editor only): a temporary profile with the shot's upgrades and no music, the players placed at the building with their kit and driven through `ScriptedInputSource`s (walks go through the `BotPilot`), the camera framed, the HUD hidden, the time scale owned. Logs every collapse, break and blast at its video time to `take<n>.json`, plus any step that timed out or was still waiting when the shot ended. | `Scripts/Demolition/Clips/Controller/` |
 | `ClipLab` | Tools ▸ Demolition ▸ Clip Lab: every shot file with Preview and Record, Record all, Stop, Still (the Game view at 2x, for menus), Open media folder. Takes run one after another, each in its own play mode. For agents through the Unity MCP: `ClipLab.Record("one-hit")`, `ClipLab.Record("one-hit", 1)`, `ClipLab.RecordAll()`, `ClipLab.Preview(id)`, `ClipLab.Status()`, `ClipLab.Stop()`, `ClipLab.Still()`. Its own asmdef (`Demolition.Clips.Editor`), compiled only when the Recorder is installed. | `Assets/Editor/Clips/` |
-| Game hooks | `BotPilot.StopX` / `ThrowsDynamite` / `Arrived`, `LevelBootstrap.Players`, `RunController.IgnoreBounds`, `RunJuice.BaseTimeScale`. Nothing changes in normal play. | |
-| `ShotRunTests` | PlayMode: every shot except bot footage plays to its end without recording, and no step timed out. Run it after changing a shot or the levels. | `Tests/PlayMode/` |
-| `tools/media/media.py` | Python, Pillow and ffmpeg. `crop` (9:16, 16:9, 1:1), `cut` (clips around the biggest collapses in a take's log), `contact` (a sheet of frames from every take, timeouts in red), `gif`, `store` (captioned screenshots, ads images, alt texts; refuses words Play bans), `edit` (a Short or the trailer from a cut list, text in the title's look, music laid under). Tested on generated videos. | `tools/media/` |
+| Game hooks | `BotPilot.StopX` / `ThrowsDynamite` / `Arrived`, `LevelBootstrap.Players`, `RunController.IgnoreBounds`, `RunJuice.BaseTimeScale`, `ScrollCamera.Pushed` (a `run` shot at a building starts with the camera already scrolling). Nothing changes in normal play. | |
+| `ShotRunTests` | PlayMode: every shot except bot footage plays to its end without recording, and no step timed out. Run it after changing a shot or the levels, from the Test Runner window: started from a Unity MCP command (`TestRunnerApi.Execute`, 2026-10-23 on Linux) the editor hung right after the play mode domain reload. Agents can record one take of each shot instead; its log lists the same timeouts. | `Tests/PlayMode/` |
+| `tools/media/media.py` | Python, Pillow, numpy (through `tools/artpipe/brand.py`) and ffmpeg; H.264 from libx264, else `h264_nvenc`, else `libopenh264` (Fedora's ffmpeg has no x264). `crop` (9:16, 16:9, 1:1), `cut` (clips around the biggest collapses in a take's log), `contact` (a sheet of frames from every take, timeouts in red), `gif`, `store` (captioned screenshots, ads images, alt texts; refuses words Play bans), `edit` (a Short or the trailer from a cut list, text in the title's look, music laid under; a segment can crop closer with `zoom`, `x`, `y`, which the Shorts need: the square master leaves the subject small in 9:16). `store` skips stills that aren't there yet. | `tools/media/` |
 | Shot files | 21: the clips of §2.1, `cities-*`, `broll-*` (whole levels with the bot) and `store-1…5` (16:9 with the HUD, stills at 3840×2160). Buildings and weak points picked from the level dump (`check.sh levels` now writes each building's `weak`: x, y, w, h, share it brings down). | `content-work/shots/` |
 | Cut lists | `short-1…7` (9:16), `trailer.json` (16:9, store version), `store.json` (the 8 screenshots with captions and alt texts). They point at `take1`; change the take number after picking. | `content-work/edits/` |
 
@@ -286,7 +287,8 @@ The game runs full screen, so the status bar never shows. Android's own screen r
 **Setup (you, about 20 minutes):**
 - Open the project: Unity installs the Recorder (and Timeline). Commit the
   `Packages/packages-lock.json` change it makes.
-- `winget install Gyan.FFmpeg Genymobile.scrcpy`, and Python with Pillow for `media.py`.
+- `winget install Gyan.FFmpeg Genymobile.scrcpy`, and Python with Pillow and numpy for `media.py`
+  (on Fedora: `dnf install python3-pillow python3-numpy`; its `ffmpeg-free` will do).
 - Run Claude Code locally in the project, with the Unity MCP connected, so the agent can
   start shots (`ClipLab.Record(...)`) and look at the contact sheets.
 
@@ -316,6 +318,23 @@ The game runs full screen, so the status bar never shows. Android's own screen r
 
 What the session should produce: 8 screenshots, 8 Shorts ready to post, a 35 s trailer
 draft, 3 GIFs, and the material for the tester call.
+
+**Where it stands (2026-10-23):** in `content-work/media/` (gitignored): every shot in `raw/`
+(3 takes of the clips, 2 of the store and city shots, the bot runs once, with `-hl*` highlight
+cuts), Shorts 1–8 and the GIFs in `edits/`, screenshots 1–6 and 8 with the ads images and
+`alt.txt` in `store/`, `edits/trailer-draft.mp4` (31 s: `trailer.json` without the online
+pair). The takes of a shot barely differ (the 0.37 nudge hardly changes the physics), so the
+cut lists use take 1 except the gate (take 3) and keep-up (take 2). Still to do:
+- Screenshot 7 (`stills/results.png`): a real run within par at 80%+, then `media.py store` again.
+- The takes with you (§2.5); the online pair goes into `trailer.json`.
+- Neon reads nearly black on video (`NeonTheme.ambientIntensity` 0.2: average luma about 10/255
+  against 140 in Town). Seven shot files are Neon, two of them store screenshots; brighten it and
+  re-record them.
+- The bot dies within 20–50 s of a whole level (it throws dynamite at the support in front of it
+  and punches gas tanks, and blasts now hurt players), so the bot footage is short.
+- The menu stills use a temporary profile (Town cleared, Port begun, $2,450, a few upgrades):
+  the save on disk was empty. Retake them from your own save if you prefer.
+- Upload: Shorts as they are; the trailer once the pair is in (check for music claims first).
 
 ## 5. Decisions for the start of the session
 

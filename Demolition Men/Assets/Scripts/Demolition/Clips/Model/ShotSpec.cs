@@ -38,6 +38,8 @@ namespace Demolition.Clips
         public int dynamite;
         public string weapon = "";
         public int weaponHits = 40;
+        /// <summary>Cheat for bot footage: the players take no damage (pits and the camera's edge still count).</summary>
+        public bool invincible;
         /// <summary>Show the HUD (and the touch controls with <see cref="touch"/>).</summary>
         public bool hud;
         public bool touch;

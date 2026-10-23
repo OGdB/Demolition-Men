@@ -11,9 +11,10 @@
   "length": 35,
   "steps": [
     {"p": 1, "do": "walk", "to": "weakpoint"},
+    {"p": 1, "do": "hit", "seconds": 2},
     {"p": 1, "do": "tnt"},
     {"p": 1, "do": "back", "seconds": 1.5},
-    {"p": 0, "do": "wait", "until": "blast", "seconds": 20},
+    {"p": 0, "do": "wait", "until": "collapse", "cells": 15, "seconds": 22},
     {"p": 0, "do": "slowmo", "scale": 0.5, "seconds": 2},
     {"p": 0, "do": "wait", "seconds": 6}
   ]

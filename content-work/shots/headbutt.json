@@ -1,20 +1,20 @@
 {
   "id": "headbutt",
-  "level": "town-01",
-  "building": 1,
-  "offset": -5,
+  "level": "town-02",
+  "building": 2,
+  "offset": -3,
   "upgrades": 2,
   "camera": {"mode": "follow", "size": 5, "lead": 1},
   "width": 1920,
   "height": 1920,
   "length": 20,
   "steps": [
-    {"p": 1, "do": "walk", "x": 4},
-    {"p": 1, "do": "jump"},
+    {"p": 1, "do": "walk", "x": 2.5},
+    {"p": 1, "do": "jump", "seconds": 0.6},
     {"p": 1, "do": "wait", "seconds": 0.6},
-    {"p": 1, "do": "jump"},
+    {"p": 1, "do": "jump", "seconds": 0.6},
     {"p": 1, "do": "wait", "seconds": 0.6},
-    {"p": 1, "do": "jump"},
+    {"p": 1, "do": "jump", "seconds": 0.6},
     {"p": 0, "do": "wait", "seconds": 16}
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "out": "content-work/media/edits/short-8-dev-weak-point.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "image": "content-work/media/stills/lab-rowhouse-marked.png",
+      "seconds": 3,
+      "text": "HOW THE GAME KNOWS WHERE TO HIT"
+    },
+    {
+      "file": "content-work/media/raw/one-hit/take1.mp4",
+      "at": "collapse",
+      "before": 1.0,
+      "after": 5.0,
+      "zoom": 1.6,
+      "x": 0.58,
+      "y": 0.5
+    }
+  ]
+}

@@ -14,9 +14,10 @@
   "stillScale": 2,
   "steps": [
     {"p": 1, "do": "walk", "to": "weakpoint"},
+    {"p": 1, "do": "hit", "seconds": 2},
     {"p": 1, "do": "tnt"},
     {"p": 1, "do": "back", "seconds": 1.5},
-    {"p": 0, "do": "wait", "until": "blast", "cells": 0, "seconds": 20},
+    {"p": 0, "do": "wait", "until": "blast", "seconds": 20},
     {"p": 0, "do": "wait", "seconds": 1.0},
     {"p": 0, "do": "still", "name": "a"},
     {"p": 0, "do": "wait", "seconds": 0.8},

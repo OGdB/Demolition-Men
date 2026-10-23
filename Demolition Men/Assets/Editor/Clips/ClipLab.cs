@@ -37,8 +37,11 @@ public sealed class ClipLab : EditorWindow
     public static string MediaFolder => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "content-work", "media", "raw"));
 
     private static RecorderController _recorder;
+    private static string _recording; // the output base of the take being recorded
+    private static bool _wasMuted;
     private static double _enteredAt;
-    private static double _requestedAt;
+    private static double _requestedAt; // 0 once play mode came
+    private static bool _skipping;      // the take is given up, the queue goes on
     private Vector2 _scroll;
     private int _takes;
 
@@ -93,11 +96,46 @@ public sealed class ClipLab : EditorWindow
         return path;
     }
 
+    /// <summary>Record the Game view as it plays now, until <see cref="StopTake"/> or the end of play
+    /// mode: takes that aren't shots (online play, a run by hand), into
+    /// content-work/media/raw/<paramref name="name"/>/take&lt;n&gt;.mp4. At a fixed step like a shot, so
+    /// the video is smooth, but the game slows down for whoever is playing while the encoder can't
+    /// keep up (on Linux, about a quarter of real speed at 1080p). Returns the take's path without
+    /// extension, or null.</summary>
+    public static string RecordTake(string name, int width = 1920, int height = 1080, int fps = 60)
+    {
+        if (!EditorApplication.isPlaying || _recorder != null)
+        {
+            Debug.LogWarning("Clip Lab: a take needs play mode, and nothing else recording.");
+            return null;
+        }
+        string outputBase = Path.Combine(MediaFolder, name, "take" + NextTake(name, new List<string>()));
+        Directory.CreateDirectory(Path.GetDirectoryName(outputBase));
+        _recorder = StartRecorder(new ShotSpec { id = name, width = width, height = height, fps = fps }, outputBase);
+        if (_recorder == null)
+            return null;
+        Debug.Log($"Clip Lab: recording {outputBase}");
+        return outputBase;
+    }
+
+    /// <summary>End the take <see cref="RecordTake"/> started.</summary>
+    public static void StopTake()
+    {
+        if (Current == null)
+            StopRecorder();
+    }
+
     /// <summary>What is playing and how many takes wait, for agents polling the Clip Lab.</summary>
     public static string Status()
     {
         int waiting = Queue().Count;
-        return Current == null ? $"idle, {waiting} queued" : $"playing {Current} ({ClipDirector.Current?.State}), {waiting} queued";
+        string status = Current == null ? $"idle, {waiting} queued" : $"playing {Current} ({ClipDirector.Current?.State}), {waiting} queued";
+#if UNITY_EDITOR_LINUX
+        int converting = Directory.Exists(MediaFolder) ? Directory.GetFiles(MediaFolder, "*.webm", SearchOption.AllDirectories).Length : 0;
+        if (converting > 0)
+            status += $", {converting} converting to MP4";
+#endif
+        return status;
     }
 
     public static IEnumerable<string> ShotFiles()
@@ -180,10 +218,20 @@ public sealed class ClipLab : EditorWindow
         int last = 0;
         string folder = Path.Combine(MediaFolder, id);
         if (Directory.Exists(folder))
-            foreach (string file in Directory.GetFiles(folder, "take*.mp4"))
-                if (int.TryParse(Path.GetFileNameWithoutExtension(file).Substring(4), out int n))
+            foreach (string file in Directory.GetFiles(folder, "take*"))
+            {
+                // take<n>.mp4, its log, crops and stills, and on Linux the .webm still converting
+                string name = Path.GetFileName(file);
+                int end = 4;
+                while (end < name.Length && char.IsDigit(name[end]))
+                    end++;
+                if (int.TryParse(name.Substring(4, end - 4), out int n))
                     last = Mathf.Max(last, n);
-        foreach (string entry in queue)
+            }
+        var entries = new List<string>(queue);
+        if (Current != null)
+            entries.Add(Current); // still setting up: nothing of it on disk yet
+        foreach (string entry in entries)
         {
             string[] parts = entry.Split('|');
             if (parts[0] == id && parts[2] == "1" && int.TryParse(parts[1], out int n))
@@ -232,10 +280,12 @@ public sealed class ClipLab : EditorWindow
         {
             case PlayModeStateChange.EnteredPlayMode:
                 _enteredAt = EditorApplication.timeSinceStartup;
+                _requestedAt = 0;
+                _skipping = false;
                 break;
             case PlayModeStateChange.ExitingPlayMode:
                 StopRecorder();
-                if (Current != null && ClipDirector.Current != null && ClipDirector.Current.State != ClipDirector.Stage.Done)
+                if (Current != null && ClipDirector.Current != null && ClipDirector.Current.State != ClipDirector.Stage.Done && !_skipping)
                 {
                     Debug.Log("Clip Lab: stopped before the shot ended; the queue is dropped.");
                     SessionState.EraseString(QueueKey);
@@ -257,7 +307,7 @@ public sealed class ClipLab : EditorWindow
             return;
         if (!EditorApplication.isPlayingOrWillChangePlaymode)
         {
-            if (EditorApplication.timeSinceStartup - _requestedAt > StartTimeout)
+            if (_requestedAt > 0 && EditorApplication.timeSinceStartup - _requestedAt > StartTimeout)
             {
                 Debug.LogError($"Clip Lab: {Current} never entered play mode (compile errors?); the queue is dropped.");
                 SessionState.EraseString(CurrentKey);
@@ -280,6 +330,7 @@ public sealed class ClipLab : EditorWindow
         if (director.State == ClipDirector.Stage.Setup && EditorApplication.timeSinceStartup - _enteredAt > SetupTimeout)
         {
             Debug.LogError($"Clip Lab: {Current} never got ready (its building didn't stream in, or the run didn't start); skipped.");
+            _skipping = true;
             EditorApplication.isPlaying = false;
             return;
         }
@@ -310,14 +361,26 @@ public sealed class ClipLab : EditorWindow
         var movie = CreateInstance<MovieRecorderSettings>();
         movie.name = shot.id;
         movie.Enabled = true;
+#if UNITY_EDITOR_LINUX
+        // The Recorder has no H.264 on Linux: VP8 at a bitrate that keeps the pixel art crisp
+        // (0.25 bits a pixel), turned into the MP4 the media tools expect when the take ends.
+        movie.EncoderSettings = new CoreEncoderSettings
+        {
+            Codec = CoreEncoderSettings.OutputCodec.WEBM,
+            EncodingQuality = CoreEncoderSettings.VideoEncodingQuality.Custom,
+            TargetBitRate = Mathf.Max(20f, shot.width * shot.height * shot.fps * 0.25f / 1e6f),
+            KeyframeDistance = (uint)shot.fps,
+        };
+#else
         movie.EncoderSettings = new CoreEncoderSettings
         {
             Codec = CoreEncoderSettings.OutputCodec.MP4,
             EncodingQuality = CoreEncoderSettings.VideoEncodingQuality.High,
         };
+#endif
         movie.ImageInputSettings = new GameViewInputSettings { OutputWidth = shot.width, OutputHeight = shot.height };
         movie.CaptureAudio = true;
-        movie.OutputFile = outputBase; // the Recorder adds .mp4
+        movie.OutputFile = outputBase; // the Recorder adds .mp4 (.webm on Linux)
         settings.AddRecorderSettings(movie);
         settings.SetRecordModeToManual();
         settings.FrameRatePlayback = FrameRatePlayback.Constant;
@@ -325,7 +388,14 @@ public sealed class ClipLab : EditorWindow
         settings.CapFrameRate = true;
         var recorder = new RecorderController(settings);
         recorder.PrepareRecording();
-        return recorder.StartRecording() ? recorder : null;
+        _recording = outputBase;
+        // The Recorder hears what the Game view plays: its Mute Audio would make a silent take.
+        _wasMuted = EditorUtility.audioMasterMute;
+        EditorUtility.audioMasterMute = false;
+        if (recorder.StartRecording())
+            return recorder;
+        EditorUtility.audioMasterMute = _wasMuted;
+        return null;
     }
 
     private static void StopRecorder()
@@ -335,7 +405,44 @@ public sealed class ClipLab : EditorWindow
         if (_recorder.IsRecording())
             _recorder.StopRecording();
         _recorder = null;
+        EditorUtility.audioMasterMute = _wasMuted;
+#if UNITY_EDITOR_LINUX
+        Transcode(_recording);
+#endif
     }
+
+#if UNITY_EDITOR_LINUX
+    // H.264 encoders in the order tried: x264, else the GPU's (Fedora's ffmpeg leaves x264 out).
+    private static readonly string[] H264 =
+    {
+        "-c:v libx264 -crf 14 -preset medium",
+        "-c:v h264_nvenc -preset p7 -tune hq -rc vbr -cq 16 -b:v 0 -profile:v high",
+        "-c:v libopenh264 -b:v 40M",
+    };
+
+    // take<n>.webm → take<n>.mp4 (H.264, near lossless) with ffmpeg, in the background while the
+    // next take records. A shell does it, so it finishes across the next play mode's domain
+    // reload: the MP4 appears whole (renamed from .part) and the WebM goes once it worked;
+    // a failure leaves the WebM and ffmpeg's errors in take<n>.ffmpeg.txt.
+    private static void Transcode(string outputBase)
+    {
+        string webm = outputBase + ".webm", mp4 = outputBase + ".mp4", part = mp4 + ".part", errors = outputBase + ".ffmpeg.txt";
+        if (!File.Exists(webm))
+        {
+            Debug.LogError($"Clip Lab: no {webm} to convert.");
+            return;
+        }
+        var attempts = new List<string>();
+        foreach (string encoder in H264)
+            attempts.Add($"ffmpeg -y -hide_banner -loglevel error -i {Quote(webm)} {encoder} -pix_fmt yuv420p "
+                         + $"-c:a aac -b:a 192k -movflags +faststart -f mp4 {Quote(part)} 2>> {Quote(errors)}");
+        string script = $"({string.Join(" || ", attempts)}) && mv {Quote(part)} {Quote(mp4)} && rm -f {Quote(webm)} {Quote(errors)}";
+        var start = new System.Diagnostics.ProcessStartInfo("/bin/sh", $"-c \"{script}\"") { UseShellExecute = false, CreateNoWindow = true };
+        System.Diagnostics.Process.Start(start)?.Dispose();
+    }
+
+    private static string Quote(string path) => "'" + path.Replace("'", "'\\''") + "'";
+#endif
 
     // ---------------- Window ----------------
 

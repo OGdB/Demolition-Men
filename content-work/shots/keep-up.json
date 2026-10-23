@@ -1,17 +1,19 @@
 {
   "id": "keep-up",
   "level": "town-02",
+  "building": 0,
+  "offset": -10,
   "upgrades": 0,
   "hud": true,
   "camera": {"mode": "run"},
   "width": 1920,
   "height": 1080,
-  "length": 30,
+  "length": 16,
   "takes": 1,
   "steps": [
-    {"p": 1, "do": "bot", "seconds": 7},
-    {"p": 1, "do": "wait", "seconds": 7},
-    {"p": 1, "do": "bot", "seconds": 14},
-    {"p": 0, "do": "wait", "seconds": 28}
+    {"p": 1, "do": "wait", "seconds": 5.3},
+    {"p": 1, "do": "walk", "x": -2},
+    {"p": 1, "do": "wait", "seconds": 3},
+    {"p": 0, "do": "wait", "seconds": 9}
   ]
 }

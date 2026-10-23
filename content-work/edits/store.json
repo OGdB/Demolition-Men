@@ -3,13 +3,13 @@
   "ads": true,
   "screenshots": [
     {
-      "image": "content-work/media/raw/store-1-one-hit/take1-b.png",
+      "image": "content-work/media/raw/store-1-one-hit/take1-a.png",
       "name": "01-weak-point",
       "caption": "FIND THE WEAK POINT",
       "alt": "A muscled demolition man punches a support column and a red brick row house collapses into dust."
     },
     {
-      "image": "content-work/media/raw/store-2-co-op/take1-b.png",
+      "image": "content-work/media/raw/store-2-co-op/take1-a.png",
       "name": "02-co-op",
       "caption": "WRECK IT WITH A FRIEND",
       "alt": "Two demolition men smash a building from both sides while bricks and glass rain down."
@@ -21,13 +21,13 @@
       "alt": "A stick of dynamite explodes against a neon-lit building at night and the floors above start to fall."
     },
     {
-      "image": "content-work/media/raw/store-4-tower/take1-b.png",
+      "image": "content-work/media/raw/store-4-tower/take1-a.png",
       "name": "04-tower",
       "caption": "TOPPLE THE TOWER",
-      "alt": "A tall dockside crane tower topples onto the street."
+      "alt": "A tall dockside crane tower collapses onto the street."
     },
     {
-      "image": "content-work/media/raw/store-5-wrecking-ball/take1-b.png",
+      "image": "content-work/media/raw/store-5-wrecking-ball/take1-a.png",
       "name": "05-wrecking-ball",
       "caption": "SWING THE WRECKING BALL",
       "alt": "A wrecking ball swings through the glass front of a neon arcade."

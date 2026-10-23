@@ -1,0 +1,15 @@
+{
+  "out": "content-work/media/edits/gif-3-headbutt.mp4",
+  "size": [
+    1280,
+    720
+  ],
+  "fps": 60,
+  "segments": [
+    {
+      "file": "content-work/media/raw/headbutt/take1.mp4",
+      "start": 1.5,
+      "end": 7.5
+    }
+  ]
+}
