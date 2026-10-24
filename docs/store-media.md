@@ -2,8 +2,8 @@
 
 **Status:** plan 2026-10-22; the recording tools built 2026-10-23 (§3) and run in Unity the
 same day (on Linux): every shot recorded and tuned, the takes that need you recorded (§2.5), and
-the Shorts, GIFs, all 8 screenshots and the trailer made; what is left is at the end of §4. It
-covers the
+the Shorts, GIFs, all 8 screenshots and the trailer made; reviewed that evening (§4.1), with
+what comes next in §4.2. It covers the
 listing graphics of roadmap R4, the clip mode of R2 step 6, and the first marketing clips
 (`marketing.md` §2–3). Section 6 lists what else Play and the first ads still need.
 
@@ -130,7 +130,7 @@ on top.
 | 1 | `one-hit` | ONE HIT. WHOLE BUILDING. |
 | 2 | `gas-chain` | GAS TANKS WERE A MISTAKE |
 | 3 | `tower` | TOWER VS ONE STICK OF DYNAMITE |
-| 4 | `co-op` (or the real online pair) | TWO PHONES. ONE WRECKING CREW. |
+| 4 | The real online pair, phone above PC (`short-4-online`) | PHONE + PC. ONE WRECKING CREW. |
 | 5 | `gate` | THE GATE TURNED TO DUST |
 | 6 | `headbutt` | NO HELMET, NO PROBLEM |
 | 7 | `night-tnt` | NIGHT SHIFT |
@@ -332,32 +332,65 @@ game's real frame rate. Android's own screen recorder (with "media sound") is th
 What the session should produce: 8 screenshots, 8 Shorts ready to post, a 35 s trailer
 draft, 3 GIFs, and the material for the tester call.
 
-**Where it stands (2026-10-23):** in `content-work/media/` (gitignored): every shot in `raw/`
-(3 takes of the clips, 2 of the store and city shots, the bot runs once, with `-hl*` highlight
-cuts) and the takes of §2.5; Shorts 1–8, `short-4-online` and the GIFs in `edits/`; all 8
-screenshots with the ads images and `alt.txt` in `store/`; `edits/trailer.mp4` (35.7 s: the
-plan of §2.3 with the online pair, the runs by hand as the three cities and their rainbow
-stars). The takes of a shot barely differ (the 0.37 nudge hardly changes the physics), so the
-cut lists use take 1 except the gate (take 3) and keep-up (take 2). Still to do:
-- Short 4: post `short-4-online` (phone and PC, the real thing) or `short-4-co-op` (scripted,
-  two players on one screen); the hook differs.
-- Neon stays as dark as the game ships it (`NeonTheme.ambientIntensity` 0.2, kept on purpose),
-  so its shots read dark on video (average luma about 10/255 against 140 in Town). Tested
-  2026-10-23: a brighter ambient lifts the buildings only a little (0.65: +40%) and washes the
-  player out to white under the headlamp unless the headlamp dims as the ambient rises.
-- Local co-op with two gamepads (§2.5), if wanted.
-- The menu stills use a temporary profile (Town cleared, Port begun, $2,450, a few upgrades):
-  the save on disk was empty. Retake them from your own save if you prefer.
-- Upload: Shorts as they are; the trailer to YouTube as unlisted after checking for music claims.
+**Done (2026-10-23):** every step but 8 (the upload) and the gamepad co-op take. The takes of a
+shot barely differ (the 0.37 nudge hardly changes the physics), so the cut lists use take 1
+except the gate (take 3) and keep-up (take 2). What is on disk and what it's worth: §4.1; what
+comes next: §4.2.
+
+### 4.1 Review (2026-10-23)
+
+Everything in `content-work/media/` (gitignored, 3.6 GB: back it up) against §1 and §2.
+
+| Asset | Wanted | Have | Verdict |
+|---|---|---|---|
+| Store screenshots | 4–8, 16:9, 1920×1080 or larger, PNG, caption at most 20%, alt text; the first three carry the strongest hooks | 8 at 3840×2160 RGB with captions and `alt.txt` (`store/`) | **Fix three before uploading.** 1 and 2 are nearly the same frame (the rowhouse's frame after the hit, a score popping), and 2 barely shows the second player. 3 (dynamite) and 5 (wrecking ball) are Neon and read dark at thumbnail size; the ball in 5 is hard to make out. 4 and 6–8 are fine. Every gameplay shot is full screen, the shipped game isn't (§5, decision 1). |
+| Feature graphic, icon | 1024×500 without alpha; 512×512 | `brand/` | Done. |
+| Trailer and preview video | 30–40 s, 1080p60, gameplay in the first 10 s; the first 30 s autoplay muted; on YouTube | `edits/trailer.mp4`, 35.7 s, 1080p60; not uploaded | **Re-cut, then upload.** 0:03–0:09 is two Neon shots that read nearly black, inside the muted autoplay that has to sell the game; keep-up spends 4 s on a player standing still; the rowhouse appears twice (the opener and co-op); in the online pair the phone has bars and the PC hasn't. The online pair, the runs by hand and the rainbow stars work. |
+| Shorts | 8, 1080×1920, 7–15 s, moving in the first second, ending on the dust so they loop | 9 (`short-1…8`, `short-4-online`) | **Re-cut most.** 6 of 9 run 5.6–6.5 s; gas-chain (2) and gate (5) end on 4 s of a player standing; 1, 4-co-op and 8 are the same rowhouse collapse; 2 and 7 are Neon and dark. Good as they are: 3 (tower), 4-online, 6 (headbutt), 8 (dev). Short 4 is `short-4-online`; `short-4-co-op` goes. |
+| GIFs | 640–800 px wide, 10 s or less | 3 (`edits/gif-*`), 4.5–6 s, 6–13 MB | Done. One-hit shows a sliver of the next building at its right edge. |
+| Ads images | 1200×1200, 1200×628, 1200×1500 | 24 (`store/*-ad-*`) | Done; the screenshot fixes flow through with `media.py store`. |
+| Ads copy | 5 headlines (30), 5 descriptions (90) | Drafts in §6 | Drafted 2026-10-23. |
+| Ads videos | Landscape, portrait and square, 10 s or more, on YouTube | The trailer (landscape); the Shorts are under 10 s; no square | Later: pre-registration. |
+| Ad trailer | The trailer ending on the Google Play badge | — | Later: needs the store link. |
+| Press kit | One page: description, facts, trailer, 5 screenshots, 3 GIFs, logo, contact (`marketing.md` §2) | The pieces, no page | December (R4). |
+| Raw takes | — | Every shot (3, 2 or 1 takes), the bot runs, runs by hand, touch play and the online pair | Enough for the re-cuts. The phone takes show the bars. |
+
+Three patterns behind the fixes:
+- **One building does too much.** The `town-04` rowhouse carries the trailer's opener and its
+  co-op shot, Shorts 1, 4-co-op and 8, and screenshots 1 and 2.
+- **Neon reads dark on video** with the lighting the game keeps (`NeonTheme.ambientIntensity`
+  0.2, on purpose: average luma about 10/255 against 140 in Town). Tested 2026-10-23: a
+  brighter ambient lifts the buildings only a little (0.65: +40%) and washes the player out to
+  white under the headlamp unless the headlamp dims as the ambient rises. So: show Neon where a
+  blast or the signs light it, and lead with Town and Port.
+- **Clips end on idle.** Cut where the dust settles, not seconds later.
+
+### 4.2 Next
+
+In order. The dates follow `marketing.md` §5.
+
+| # | What | Who | When |
+|---|---|---|---|
+| 1 | Decide the letterbox (§5, decision 1): it decides whether the screenshots and the editor footage show the shipped game. Full screen is a game change, and the phone takes get retaken later; keeping the bars means recording the screenshots and the trailer again with them. | You | Now |
+| 2 | The name check (§5, decision 2), then the accounts, YouTube first. Nothing gets posted or uploaded before. | You | Now, by 15 Nov |
+| 3 | Screenshots: retake 2 (co-op) on another building with both players large in a collapse; retake 3 and 5 at a blast's peak, or move them down the order; then `media.py store`. | Agent, in the editor | After 1 |
+| 4 | Shorts: re-cut to 8–10 s, ending on the dust; gas-chain and gate trimmed at the end; one building per Short (the rowhouse stays Short 1's); `short-4-co-op` removed. | Agent | Now: cut lists only |
+| 5 | Trailer: Town or Port in the first 10 s (the tower, the online pair), Neon later and at its blasts, keep-up down to 2 s, co-op on another building. | Agent | Now, and again after 1 |
+| 6 | Upload the trailer unlisted, check YouTube Studio ▸ Copyright, then link it as the preview video. The music is CC BY: credit it in the description. | You | After 2 and 5 |
+| 7 | Post the Shorts, 2–3 a week, strongest first: 3 (tower), 4-online, 6 (headbutt), 1, 8, then the re-cut Neon ones. | You | Once the accounts exist |
+| 8 | The tester call (draft in §6): it needs the closed test's opt-in link and the Discord invite. | Agent drafted, you post | Mid-November |
+| 9 | Menu stills from your own save instead of the temporary profile (Town cleared, Port begun, $2,450), if you prefer. | You and agent | Any time |
+| 10 | Local co-op with two gamepads, only if a re-cut needs it. | You | Optional |
+| 11 | The press kit page, the ads videos (portrait and square, 10 s or more) and the ad trailer with the badge. | Agent | December (R4) |
 
 ## 5. Decisions for the start of the session
 
 | # | Question | Recommendation |
 |---|---|---|
-| 1 | The letterbox: `Main Camera 1` draws into 75% of the screen's height (bars top and bottom). Keep it on phones? (`overnight-2026-10-17.md`, question 2) | **Full screen.** On a 20:9 phone the bars leave a strip about 3:1. Store screenshots would carry 25% black, or show a game that isn't the one shipped. Decide it before recording the screenshots. |
+| 1 | The letterbox: `Main Camera 1` draws into 75% of the screen's height (bars top and bottom). Keep it on phones? (`overnight-2026-10-17.md`, question 2) | **Full screen.** On a 20:9 phone the bars leave a strip about 3:1. Store screenshots would carry 25% black, or show a game that isn't the one shipped. Decide it before recording the screenshots. **Still open (2026-10-23):** the release build on the phone has the bars; every editor shot, screenshot and the trailer is full screen. |
 | 2 | The name (roadmap D25). "Demolition Men" is one letter away from *Demolition Man*, a Warner Bros. film from 1993 that had licensed games. | Search Play, EUIPO TMview and USPTO **before** opening the marketing accounts and handles. A rename after clips are out loses the audience. Clips carry the name only on the end card, so they are cheap to redo; handles and the listing are not. |
-| 3 | The look being recorded: are the URP editor steps (`rendering.md`) done? | If not, do them first. Neon's lights, bloom and blast flashes change every night shot. |
-| 4 | Upgrades in shots: `one-hit` with maxed power is still real (the shop sells it). | Fine. The upgrades are part of the game, and the screenshots show the shop. |
+| 3 | The look being recorded: are the URP editor steps (`rendering.md`) done? | If not, do them first. Neon's lights, bloom and blast flashes change every night shot. **Done:** recorded with URP lighting; Neon's ambient stays at 0.2 (§4.1). |
+| 4 | Upgrades in shots: `one-hit` with maxed power is still real (the shop sells it). | Fine. The upgrades are part of the game, and the screenshots show the shop. **Settled.** |
 
 Re-recording is cheap. When the crack overlays (R2) or the audio change, run the batch again.
 
@@ -379,7 +412,7 @@ Besides the media, the release needs the following. The status of items marked
 | App content: privacy policy URL (done), contains ads (yes), app access (everything without login), content rating (IARC questionnaire: cartoon violence, no blood), target audience 13+, Data safety (AdMob: advertising ID, approximate location, app interactions, diagnostics; the relay sees IP addresses), advertising ID declaration (the AdMob SDK adds `AD_ID`) | Agent drafts the answers, you submit | Open | Week of 9 Nov, before the closed test |
 | EU trader status and which address is public (D24) | You | Open | R4 |
 | Closed test, 12+ testers × 14 days | You | Open | From 16 Nov |
-| Tester call: a post with 1 GIF and 1 screenshot | Agent drafts, you post | Media from this session | Mid-November |
+| Tester call: a post with 1 GIF and 1 screenshot | Agent drafts, you post | Draft below | Mid-November |
 | Accounts: YouTube (needed anyway for the preview video), TikTok, Instagram, Bluesky, itch.io, Discord, with one handle across them | You | Open | After the name check |
 | Paid ads | — | Not yet | See below |
 
@@ -395,9 +428,27 @@ only once the listing converts, and use the clips that did best for free as the 
   `Demolition Men: Wreck It Co-op` (30). Settle it after the name check.
 - **Short description** (80 at most): *Find the weak point. Bring the whole building down,
   with a friend.* (66)
-- **Ads headlines** (30 at most): *One hit. Whole building.* (24) · *Two phones. One wrecking
-  crew.* (30) · *Find the weak point. Bring it down.* is 35, too long; *Wreck streets with a
-  friend* (27).
+- **Ads headlines** (5, 30 characters at most): *One hit. Whole building.* (24) · *Find the
+  weak point.* (20) · *Phone + PC. One wrecking crew.* (30) · *Wreck streets with a friend* (27)
+  · *Dynamite, gas tanks, rubble* (27).
+- **Ads descriptions** (5, 90 at most):
+  - *Find the weak point and bring the whole building down with one well-placed hit.* (79)
+  - *Co-op demolition: wreck a street together on one screen or online, phone and PC.* (80)
+  - *Dynamite, gas tanks and a wrecking ball. Three cities to level, a fresh street daily.* (85)
+  - *Beat par for rainbow stars, then upgrade your crew's power, boots and dynamite.* (79)
+  - *Join a friend online with a six-letter room code. No account needed.* (68)
+- **Tester call** (Reddit, the Discord, friends; with `gif-1-one-hit` and screenshot 1):
+
+  > **Looking for 20 Android testers for a co-op demolition game**
+  >
+  > Demolition Men is a 2D demolition game: find a building's weak point and bring the whole
+  > thing down, alone or with a friend, on one screen or online. It comes to Google Play in
+  > January, and Play wants a closed test first: 20 testers for 14 days.
+  >
+  > What it takes: an Android phone, joining the test through the link below, and playing a
+  > few streets over the two weeks. Tell us in the Discord what broke and what felt good.
+  >
+  > Join the test: `<opt-in link>` · Discord: `<invite>`
 
 ---
 
