@@ -147,6 +147,12 @@ namespace Demolition.Run
             _scaler.referenceResolution = new Vector2(1920f, 1080f) / Mathf.Max(0.5f, scale);
         }
 
+        /// <summary>Screen pixels from the top of the safe area down to the bottom of P2's panel
+        /// and life line in the top-right corner; 0 with one player.</summary>
+        public float TopRightDepth => _root != null && _panels.Count > 1
+            ? (PanelMargin + PanelSize.y + 34f) * _root.lossyScale.y
+            : 0f;
+
         public static float SafeAspect()
         {
             Rect safe = Screen.safeArea;

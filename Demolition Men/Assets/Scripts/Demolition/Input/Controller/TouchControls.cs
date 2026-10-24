@@ -15,6 +15,7 @@ namespace Demolition
     public sealed class TouchControls : MonoBehaviour
     {
         private const float StickRadius = 120f;
+        private static readonly Vector2 PauseCorner = new Vector2(-16f, -16f);
 
         /// <summary>Button size multiplier and opacity, from the settings.</summary>
         public static float Scale = 1f;
@@ -23,9 +24,12 @@ namespace Demolition
         private GameObject _root;
         private RectTransform _scaled;
         private CanvasGroup _group;
+        private RectTransform _pause;
+        private RunHud _hud;
 
         private void Start()
         {
+            _hud = GetComponent<RunHud>();
             Meta.Profile.SettingsChanged += OnSettingsChanged;
             if (Platform.IsTouch)
                 Build();
@@ -62,6 +66,9 @@ namespace Demolition
                 _root.SetActive(show);
             _group.alpha = Opacity;
             _scaled.localScale = Vector3.one * Scale;
+            // In co-op P2's panel holds the top-right corner: pause sits under it.
+            float below = _hud != null ? _hud.TopRightDepth / _pause.parent.lossyScale.y : 0f;
+            _pause.anchoredPosition = PauseCorner + Vector2.down * below;
         }
 
         private void Build()
@@ -96,10 +103,10 @@ namespace Demolition
             Button(_scaled, "TNT", new Vector2(-400f, 360f), 140f, held => { if (held) source.PressDynamite(); });
             Button(_scaled, "SWAP", new Vector2(-170f, 410f), 130f, held => { if (held) source.PressCycle(); });
 
-            RectTransform top = UiFactory.Rect(safe, "Top", new Vector2(0.5f, 1f), Vector2.zero, new Vector2(10f, 10f));
-            UnityEngine.UI.Button pause = UiFactory.Button(top, "II", new Vector2(0.5f, 1f), new Vector2(-240f, -16f), new Vector2(96f, 80f),
+            UnityEngine.UI.Button pause = UiFactory.Button(safe, "II", Vector2.one, PauseCorner, new Vector2(96f, 80f),
                 () => FindAnyObjectByType<PauseController>()?.SetPaused(true));
             pause.gameObject.name = "Pause";
+            _pause = (RectTransform)pause.transform;
         }
 
         private static void Button(RectTransform parent, string label, Vector2 position, float size, System.Action<bool> changed)
