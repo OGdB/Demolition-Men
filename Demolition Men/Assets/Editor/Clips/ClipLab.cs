@@ -270,7 +270,7 @@ public sealed class ClipLab : EditorWindow
         PlayerPrefs.Save();
         SessionState.SetString(CurrentKey, entry);
         _requestedAt = EditorApplication.timeSinceStartup;
-        EditorSceneManager.OpenScene("Assets/Scenes/Run.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/Level.unity");
         EditorApplication.isPlaying = true;
     }
 

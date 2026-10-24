@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Demolition.Clips
 {
     /// <summary>
-    /// Plays a <see cref="ShotSpec"/> in the Run scene for the Clip Lab (Tools ▸ Demolition ▸
+    /// Plays a <see cref="ShotSpec"/> in the Level scene for the Clip Lab (Tools ▸ Demolition ▸
     /// Clip Lab; editor only). The Clip Lab writes a request before entering play mode; this
     /// boots on a temporary profile, places the players at the shot's building with its kit,
     /// drives them through <see cref="ScriptedInputSource"/>s (walks through the
@@ -107,7 +107,7 @@ namespace Demolition.Clips
             Play(shot, int.TryParse(parts[1], out int take) ? take : 1, parts[2], parts[3] == "1");
         }
 
-        /// <summary>Direct the next Run scene that loads (the boot above, PlayMode tests).
+        /// <summary>Direct the next Level scene that loads (the boot above, PlayMode tests).
         /// <paramref name="records"/>: wait for <see cref="Roll"/> instead of rolling when ready.</summary>
         public static ClipDirector Play(ShotSpec shot, int take, string outputBase, bool records)
         {

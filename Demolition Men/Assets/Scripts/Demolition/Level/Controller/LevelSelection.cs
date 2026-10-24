@@ -4,7 +4,7 @@ using Demolition.Run;
 namespace Demolition.Levels
 {
     /// <summary>
-    /// Which level the run scene builds next: a campaign entry or the daily challenge.
+    /// Which level the Level scene builds next: a campaign entry or the daily challenge.
     /// Survives the scene load; set by the level select, read by <see cref="LevelBootstrap"/>.
     /// </summary>
     public static class LevelSelection
@@ -71,10 +71,10 @@ namespace Demolition.Levels
         private static void Load(GameConfig config)
         {
             ReturnToLevelSelect = true;
-            RunController.LoadScene(config.runScene);
+            RunController.LoadScene(config.levelScene);
         }
 
-        /// <summary>Forget the selection: the run scene then starts the first unfinished level.</summary>
+        /// <summary>Forget the selection: the Level scene then starts the first unfinished level.</summary>
         public static void Clear()
         {
             Spec = null;

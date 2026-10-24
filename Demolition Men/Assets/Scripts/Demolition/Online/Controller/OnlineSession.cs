@@ -229,7 +229,7 @@ namespace Demolition.Online
             GameConfig config = GameConfig.Instance;
             if (scene == config.tutorialScene)
                 return false;
-            if (scene == config.runScene)
+            if (scene == config.levelScene)
                 SendStart();
             _clientLoaded = false;
             _spawn = null;
@@ -310,7 +310,7 @@ namespace Demolition.Online
 
         private void OnLoadEventCompleted(string sceneName, LoadSceneMode mode, List<ulong> completed, List<ulong> timedOut)
         {
-            if (sceneName != GameConfig.Instance.runScene)
+            if (sceneName != GameConfig.Instance.levelScene)
                 return;
             if (timedOut.Count > 0)
             {

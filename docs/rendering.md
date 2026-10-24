@@ -68,7 +68,7 @@ Rollback point: the commit you start from. If anything goes wrong, discard the w
    *Convert Built-in to 2D (URP)* ▸ tick *Material and Material Reference Upgrade* ▸
    Initialize Converters ▸ check the list ▸ Convert Assets. This moves the scenes' and
    prefabs' sprite renderers from Sprites-Default to Sprite-Lit-Default.
-5. **Check.** Open MainMenu, Tutorial, `DemolitionTestBranch`, and a Neon level (Level Lab ▸
+5. **Check.** Open MainMenu, Tutorial, `Sandbox`, and a Neon level (Level Lab ▸
    Play). Look for:
    - nothing magenta; sprites, tilemaps, UI and TMP text look as before in daylight;
    - Neon at night: lit lamp posts, glowing signs, headlamps;

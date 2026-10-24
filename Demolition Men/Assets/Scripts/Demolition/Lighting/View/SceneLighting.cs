@@ -76,7 +76,7 @@ namespace Demolition.Lighting
         private void Update()
         {
             if (Camera.main != _camera)
-                Apply(); // the run scene's camera arrives after this
+                Apply(); // the Level scene's camera arrives after this
             if (_theme != null && _theme.headlamps && Time.time >= _nextPlayerSearch)
             {
                 _nextPlayerSearch = Time.time + 1f;

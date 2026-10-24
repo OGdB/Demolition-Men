@@ -114,7 +114,7 @@ Two rules:
 | `CellHealth` batch | host → client | per cell: building, cell, health 7 bits + instigator 1 bit ≈ 4 B | once per tick, only if something changed |
 | `Claim` / `Taken` | client → host / host → all | pickup index (+ player) | per pickup |
 | `Thrown` / `Exploded` | owner → others | position (+ velocity) | per stick of dynamite |
-| `Ready` | client → host | nothing | once per run, when the client's Run scene is up |
+| `Ready` | client → host | nothing | once per run, when the client's Level scene is up |
 | `State` | host → client | layout hash, phase, countdown, elapsed, last call, destroyed fraction, per player status bits + timers + points, unattributed points, host paused ≈ 40 B | 10 per second |
 | Start | host → client | campaign level index or daily date | once per run, before NGO loads the scene |
 | `Check` (dev builds) | host → client | hash of the standing cells per loaded building | every 5 s |
@@ -250,7 +250,7 @@ Main menu → join screen (local devices, as today) → **ONLINE** → `OnlineVi
 
 Then the host's level select opens: the host's unlocks decide. The client sees "host is
 choosing" and can open its shop. The host picks a level; `OnlineSession` sends the start
-message; NGO scene management loads the Run scene on both; the host spawns both players;
+message; NGO scene management loads the Level scene on both; the host spawns both players;
 the countdown runs on the host and reaches the client in the `State` snapshot.
 On the results screen the host picks NEXT, RETRY or MENU, and the client follows (it sees
 "the host picks what's next", SHOP and LEAVE). LEAVE on the client, or MENU's leave in the

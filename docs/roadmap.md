@@ -189,7 +189,7 @@ Design in §5.2. Code in `Scripts/Demolition/Level/` (see the Levels section of 
   islands:n, tower, gap, hill, plateau, sewer, gate, breather, finish), `LevelLayout`, `TraversalValidator` (replays
   the player's jump physics; the grammar re-rolls derived seeds until it passes).
 - ✅ `LevelBuilder`: ground tilemap up front, buildings/pickups/finish streamed in per
-  segment ahead of the camera and despawned behind it. The **Run scene** holds only
+  segment ahead of the camera and despawned behind it. The **Level scene** holds only
   `LevelBootstrap`, which assembles the level from `Resources/GameConfig`. Replaces
   `TerrainGenerator` (it went with Level 1 and its level parts on 2026-10-22).
 - ✅ **Bot playtester:** `BotPilot` drives a player through `ScriptedInputSource`;

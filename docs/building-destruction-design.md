@@ -85,7 +85,7 @@ The only physics touched is the handful of blocks currently falling. The structu
 ## 3. How to run it
 
 **Manual / PlayMode (one click):**
-1. Open **`Assets/Scenes/DemolitionTestBranch.unity`** (already wired with `DemoBootstrap`)
+1. Open **`Assets/Scenes/Sandbox.unity`** (already wired with `DemoBootstrap`)
    and press Play — or, in any empty scene, add `DemoBootstrap` to an empty GameObject.
 2. Controls: **A/D** or ◀/▶ move · **Space/W** jump · hold **Z, F or Left-Mouse** to attack ·
    **X, R or Right-Mouse** dynamite · **Q/E** switch weapon (picked-up weapons only). Gamepad:

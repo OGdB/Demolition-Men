@@ -208,7 +208,7 @@ public class LevelLab : EditorWindow
             return;
         PlayerPrefs.SetString(LevelSelection.EditorRequestKey, $"{Load(path).id}|{_seed}|{(bot ? "bot" : "")}|{System.DateTime.UtcNow.Ticks}");
         PlayerPrefs.Save();
-        EditorSceneManager.OpenScene("Assets/Scenes/Run.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/Level.unity");
         EditorApplication.isPlaying = true;
     }
 

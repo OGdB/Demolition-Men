@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Demolition.Online
 {
     /// <summary>
-    /// The run's online sync (docs/multiplayer.md §2–§4), one per run scene, as NGO named
+    /// The run's online sync (docs/multiplayer.md §2–§4), one per Level scene, as NGO named
     /// messages. The host decides the standing structure, pickups, run state and score; a
     /// client sends what its own player does to them and mirrors the rest:
     /// <list type="bullet">
@@ -21,7 +21,7 @@ namespace Demolition.Online
     /// <item>Dynamite: the thrower's device sends the throw and the blast (<c>DM.Thrown</c>,
     /// <c>DM.Blast</c>); the other flies a harmless copy.</item>
     /// <item>Run: the host's run state, score, demolition, pause and level hash at 10 Hz (<c>DM.State</c>),
-    /// once the client says its run scene is up (<c>DM.Ready</c>); in development builds a
+    /// once the client says its Level scene is up (<c>DM.Ready</c>); in development builds a
     /// standing-cells hash per building every 5 s (<c>DM.Check</c>).</item>
     /// </list>
     /// </summary>
@@ -57,7 +57,7 @@ namespace Demolition.Online
         private readonly Dictionary<int, Dynamite> _copies = new Dictionary<int, Dynamite>();
         private int _nextStick;
 
-        /// <summary><see cref="NetRole.LevelBuilt"/>: the run scene built its level.</summary>
+        /// <summary><see cref="NetRole.LevelBuilt"/>: the Level scene built its level.</summary>
         public static void Create(LevelLayout layout)
         {
             OnlineSession session = OnlineSession.Current;

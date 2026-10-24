@@ -47,7 +47,7 @@ namespace Demolition.Tests
 
             ClipDirector director = ClipDirector.Play(shot, 1, Path.Combine(Application.temporaryCachePath, "shot-" + id), false);
             LevelSelection.Select(level.Index);
-            SceneManager.LoadScene(GameConfig.Instance.runScene);
+            SceneManager.LoadScene(GameConfig.Instance.levelScene);
 
             float limit = Time.realtimeSinceStartup + 150f;
             while (director.State != ClipDirector.Stage.Done && Time.realtimeSinceStartup < limit)

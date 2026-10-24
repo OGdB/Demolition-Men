@@ -43,11 +43,11 @@ namespace Demolition.Tests
         {
             LevelBootstrap.AutoPilot = true;
             LevelSelection.Select(index);
-            SceneManager.LoadScene(GameConfig.Instance.runScene);
+            SceneManager.LoadScene(GameConfig.Instance.levelScene);
             yield return null;
 
             RunController run = RunController.Current;
-            Assert.IsNotNull(run, "the run scene builds a run");
+            Assert.IsNotNull(run, "the Level scene builds a run");
             // The level is under test, not the bot's dodging: debris and blasts don't end the run
             // (pits and the camera's edge still do).
             run.Players[0].Health.Invincible = true;

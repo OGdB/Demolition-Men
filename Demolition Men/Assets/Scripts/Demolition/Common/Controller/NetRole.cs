@@ -28,7 +28,7 @@ namespace Demolition
         /// <summary>Client: leave the session (MENU on the results screen).</summary>
         public static Action Leave;
 
-        /// <summary>Both: the run scene generated its level (hash check, then the run's sync starts).</summary>
+        /// <summary>Both: the Level scene generated its level (hash check, then the run's sync starts).</summary>
         public static Action<LevelLayout> LevelBuilt;
 
         /// <summary>Host: a player collected a pickup here; tell the client it's gone.</summary>

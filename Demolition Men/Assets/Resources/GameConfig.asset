@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameConfig
   m_EditorClassIdentifier: Demolition::Demolition.Levels.GameConfig
   menuScene: MainMenu
-  runScene: Run
+  levelScene: Level
   tutorialScene: Tutorial
   playerPrefabs:
   - {fileID: 1000000, guid: 9d26f4a8c1e35b07d2f4a6c8e0b31266, type: 3}

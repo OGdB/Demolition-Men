@@ -15,7 +15,7 @@ namespace Demolition.Levels
     /// <summary>
     /// What a runtime-built level is assembled from (players, camera, run, pickups) and
     /// the campaign's themes in order. Lives at <c>Resources/GameConfig</c> so menus and
-    /// the run scene find it without scene wiring.
+    /// the Level scene find it without scene wiring.
     /// </summary>
     [CreateAssetMenu(menuName = "Demolition/Game Config")]
     public sealed class GameConfig : ScriptableObject
@@ -24,7 +24,7 @@ namespace Demolition.Levels
 
         [Header("Scenes")]
         public string menuScene = "MainMenu";
-        public string runScene = "Run";
+        public string levelScene = "Level";
         public string tutorialScene = "Tutorial";
 
         [Header("Prefabs")]

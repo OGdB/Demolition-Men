@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Demolition.Levels
 {
     /// <summary>
-    /// The run scene's only authored object. Generates the selected level from its spec
+    /// The Level scene's only authored object. Generates the selected level from its spec
     /// and seed, then assembles the scene from <see cref="GameConfig"/>: camera, backdrop,
     /// players (named Player_1 / Player_2 for the run), the level itself, the run and
     /// the music. Order matters: the run finds the camera and players when it wakes.
