@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// "Press to join" lobby under the title, before the level select (the training yard on a
 /// new profile's first play). Any keyboard or gamepad joins with A / Space and leaves with
-/// B / Esc; Start / Enter continues once someone has joined. B / Esc from a device that
+/// B / Esc; Start / Enter continues once someone has joined; Select / Tab opens the settings. B / Esc from a device that
 /// hasn't joined is "back", which the menu turns into the quit question. On a phone the touchscreen joins as
 /// player 1 straight away and the view becomes a play menu: PLAY continues, PLAY ONLINE
 /// goes online (a gamepad can still join as player 2). Joined devices go to
@@ -48,8 +48,8 @@ public class JoinScreen : MonoBehaviour
     private void Update()
     {
         // Not on the frame it opened: the press that skipped the title or closed the level
-        // select must not also join or leave someone.
-        if (!_open || Time.frameCount == _openedFrame || QuitView.IsOpen)
+        // select must not also join or leave someone. Settings take the presses while open.
+        if (!_open || Time.frameCount == _openedFrame || QuitView.IsOpen || SettingsView.IsOpen)
             return;
 
         foreach (InputDevice device in InputSystem.devices)
@@ -72,6 +72,11 @@ public class JoinScreen : MonoBehaviour
             else if (ContinuePressed(device) && Session.PlayerCount > 0)
             {
                 Continue();
+                return;
+            }
+            else if (SettingsPressed(device))
+            {
+                SettingsView.Open(null); // not under the menu's canvas: it would rescale it
                 return;
             }
         }
@@ -135,6 +140,16 @@ public class JoinScreen : MonoBehaviour
         {
             case Gamepad pad: return pad.startButton.wasPressedThisFrame;
             case Keyboard kb: return kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame;
+            default: return false;
+        }
+    }
+
+    private static bool SettingsPressed(InputDevice device)
+    {
+        switch (device)
+        {
+            case Gamepad pad: return pad.selectButton.wasPressedThisFrame;
+            case Keyboard kb: return kb.tabKey.wasPressedThisFrame;
             default: return false;
         }
     }

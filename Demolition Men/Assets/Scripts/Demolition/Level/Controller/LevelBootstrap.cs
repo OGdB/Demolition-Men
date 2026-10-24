@@ -46,7 +46,10 @@ namespace Demolition.Levels
 
             ScrollCamera scroll = SpawnCamera(config, theme, spec, spawn, ground);
             SpawnBackdrop(config, theme, spawn.x, ground);
-            int players = NetRole.IsOnline ? NetRole.SpawnPlayers?.Invoke(spawn) ?? 0 : SpawnPlayers(config, spawn);
+            // The players start back over the run-up, so they are never seen standing at the spawn.
+            float runUp = RunUp(config);
+            Vector3 start = spawn + Vector3.left * runUp;
+            int players = NetRole.IsOnline ? NetRole.SpawnPlayers?.Invoke(start) ?? 0 : SpawnPlayers(config, start);
             UiFactory.EnsureEventSystem();
 
             var level = new GameObject("Level").AddComponent<LevelBuilder>();
@@ -57,29 +60,38 @@ namespace Demolition.Levels
 
             // Online the players arrive over the network; the run finds them by name when it wakes.
             if (NetRole.IsOnline)
-                StartCoroutine(StartRunWhenPlayersExist(config, spec, layout));
+                StartCoroutine(StartRunWhenPlayersExist(config, spec, layout, runUp));
             else
-                StartRun(config, spec, layout);
+                StartRun(config, spec, layout, runUp);
 
             SpawnMusic(theme);
         }
 
-        private static void StartRun(GameConfig config, LevelSpec spec, LevelLayout layout)
+        // The countdown in the boots every profile starts with; faster ones wait a moment before running in.
+        private static float RunUp(GameConfig config)
+        {
+#if UNITY_EDITOR
+            if (Clips.ClipDirector.Current != null)
+                return 0f; // a Clip Lab shot places its players itself
+#endif
+            float speed = config.playerPrefabs[0].GetComponent<PlayerMotor>().MaxSpeed;
+            return Mathf.Min(speed * config.runPrefab.GetComponent<RunController>().CountdownTime, LevelGrammar.RunUp);
+        }
+
+        private static void StartRun(GameConfig config, LevelSpec spec, LevelLayout layout, float runUp)
         {
             var run = Instantiate(config.runPrefab).GetComponent<RunController>();
             run.name = "Run";
             run.Configure(spec.id, layout.Par, layout.TotalCells, LevelSelection.NextAction());
-#if UNITY_EDITOR
-            if (Clips.ClipDirector.Current == null) // a Clip Lab shot places its players itself
-#endif
-                run.RunIn(0.5f); // over the start's run-up, from the level's left edge at the furthest
+            if (runUp > 0f)
+                run.RunIn(runUp);
         }
 
-        private static IEnumerator StartRunWhenPlayersExist(GameConfig config, LevelSpec spec, LevelLayout layout)
+        private static IEnumerator StartRunWhenPlayersExist(GameConfig config, LevelSpec spec, LevelLayout layout, float runUp)
         {
             while (GameObject.Find("Player_1") == null || GameObject.Find("Player_2") == null)
                 yield return null;
-            StartRun(config, spec, layout);
+            StartRun(config, spec, layout, runUp);
         }
 
         private static ScrollCamera SpawnCamera(GameConfig config, LevelTheme theme, LevelSpec spec, Vector3 spawn, float ground)

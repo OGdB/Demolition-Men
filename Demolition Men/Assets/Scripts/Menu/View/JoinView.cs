@@ -1,5 +1,6 @@
 using System.Collections;
 using Demolition;
+using Demolition.Meta;
 using Demolition.Run;
 using TMPro;
 using UnityEngine;
@@ -9,7 +10,8 @@ using UnityEngine.UI;
 /// <summary>Join lobby panel under the title: one line per player slot plus the controls,
 /// and START / ONLINE buttons for mouse and touch. With the touchscreen joined (a phone) it
 /// is a play menu instead: big PLAY and PLAY ONLINE buttons, and a player row only while a
-/// gamepad is there to join as P2. Fades in. Reads <see cref="Session"/>.</summary>
+/// gamepad is there to join as P2. Both have SETTINGS, so the volume can be set before the
+/// first run. Fades in. Reads <see cref="Session"/>.</summary>
 public class JoinView : MonoBehaviour
 {
     private GameObject _root;
@@ -57,12 +59,14 @@ public class JoinView : MonoBehaviour
         for (int i = 0; i < _slots.Length; i++)
             _slots[i] = UiFactory.Text(lobby, $"P{i + 1}", centre, new Vector2(0f, 80f - i * 100f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);
 
-        TextMeshProUGUI hint = UiFactory.Text(lobby, "Hint", centre, new Vector2(0f, -170f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 50f));
-        hint.text = "JOIN: A / SPACE     LEAVE: B / ESC     PLAY: START / ENTER";
+        TextMeshProUGUI hint = UiFactory.Text(lobby, "Hint", centre, new Vector2(0f, -170f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 80f));
+        hint.text = "JOIN: A / SPACE     LEAVE: B / ESC\nPLAY: START / ENTER     SETTINGS: SELECT / TAB";
         hint.color = new Color(0.8f, 0.8f, 0.82f);
 
-        _start = UiFactory.Button(lobby, "START", centre, new Vector2(-200f, -310f), new Vector2(360f, 100f), () => _continue?.Invoke());
-        _online = UiFactory.Button(lobby, "ONLINE", centre, new Vector2(200f, -310f), new Vector2(360f, 100f), () => _goOnline?.Invoke());
+        _start = UiFactory.Button(lobby, "START", centre, new Vector2(-380f, -310f), new Vector2(340f, 100f), () => _continue?.Invoke());
+        _online = UiFactory.Button(lobby, "ONLINE", centre, new Vector2(0f, -310f), new Vector2(340f, 100f), () => _goOnline?.Invoke());
+        // Settings at the scene root: under the menu's canvas (this object) it would take that canvas's scaling.
+        UiFactory.Button(lobby, "SETTINGS", centre, new Vector2(380f, -310f), new Vector2(340f, 100f), () => SettingsView.Open(null));
 
         RectTransform touch = UiFactory.Stretch(root, "Touch");
         _touch = touch.gameObject;
@@ -77,6 +81,8 @@ public class JoinView : MonoBehaviour
 
         _onlineNote = UiFactory.Text(touch, "OnlineNote", centre, new Vector2(270f, -225f), 28f, TextAlignmentOptions.Center, new Vector2(600f, 80f));
         _onlineNote.text = "CO-OP WITH A FRIEND ON\nANOTHER PHONE, PC OR BROWSER";
+
+        UiFactory.Button(touch, "SETTINGS", centre, new Vector2(-270f, -235f), new Vector2(360f, 90f), () => SettingsView.Open(null));
     }
 
     private void LateUpdate()

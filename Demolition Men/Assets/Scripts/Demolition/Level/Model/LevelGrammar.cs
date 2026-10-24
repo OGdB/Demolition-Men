@@ -26,7 +26,7 @@ namespace Demolition.Levels
         /// <summary>Widest stretch of street between two buildings that gets a fence along it.</summary>
         public const int MaxFencedGap = 8;
         /// <summary>Street left of the spawn: the players run in over it during the countdown
-        /// (RunController.RunIn), 3 s in the fastest boots (10 m/s) plus player 2's step back.</summary>
+        /// (RunController.RunIn), 3 s in the starting boots (8 m/s) plus player 2's step back, with room to spare.</summary>
         public const int RunUp = 32;
 
         private struct Spot

@@ -13,6 +13,10 @@ namespace Demolition.Meta
         /// <summary>Scene objects with this name play the music (volume follows the settings).</summary>
         public const string MusicObjectName = "BackGroundMusic";
 
+        /// <summary>Master gain at VOLUME 100%: the music is mastered at -8 to -10 LUFS and the
+        /// player sounds play at full scale, so without it a run mixes to about -10.5 LUFS and clips.</summary>
+        private const float Headroom = 0.5f;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Init()
         {
@@ -48,7 +52,7 @@ namespace Demolition.Meta
         public static void Apply()
         {
             GameSettings s = Profile.Data.settings;
-            AudioListener.volume = Mathf.Clamp01(s.masterVolume);
+            AudioListener.volume = Mathf.Clamp01(s.masterVolume) * Headroom;
             Platform.TouchMode = (TouchControlsMode)s.touchControls;
             TouchControls.Scale = Mathf.Clamp(s.touchScale, 0.6f, 1.6f);
             TouchControls.Opacity = Mathf.Clamp(s.touchOpacity, 0.15f, 1f);

@@ -122,20 +122,17 @@ namespace Demolition.Run
             _nextLevel = nextLevel;
         }
 
-        /// <summary>A generated level starts on the move: the players step back to the left (no
-        /// further than <paramref name="minX"/>) and run in during the countdown, reaching where
-        /// they stand now at GO at full speed. Call before the first frame.</summary>
-        public void RunIn(float minX)
+        /// <summary>Seconds of 3-2-1 before GO.</summary>
+        public float CountdownTime => rules.countdown;
+
+        /// <summary>A generated level starts on the move: the players stand <paramref name="distance"/>
+        /// left of their spot and run in during the countdown, reaching it at GO at full speed
+        /// (faster boots wait a moment first). Call before the first frame.</summary>
+        public void RunIn(float distance)
         {
             foreach (Player p in _players)
-            {
-                if (p.Health.IsProxy)
-                    continue; // online the other device runs its own player in
-                Vector3 at = p.Transform.position;
-                _runners.Add(new Runner { Player = p, ToX = at.x });
-                at.x = Mathf.Max(minX, at.x - p.Motor.MaxSpeed * State.Countdown);
-                p.Transform.position = at;
-            }
+                if (!p.Health.IsProxy) // online the other device runs its own player in
+                    _runners.Add(new Runner { Player = p, ToX = p.Transform.position.x + distance });
         }
 
         private void OnEnable()
@@ -214,6 +211,14 @@ namespace Demolition.Run
                 PlayerUpgrades.Apply(player, Profile.Data);
                 _players.Add(player);
             }
+
+            // Online the other device's player is a kinematic copy a few frames behind: bumping into
+            // it shoves ours, which shoves our copy on their screen into theirs, and so on until
+            // both are pushed off the level. So online the players pass through each other.
+            if (NetRole.IsOnline && _players.Count == 2)
+                foreach (Collider2D a in _players[0].Transform.GetComponentsInChildren<Collider2D>(true))
+                    foreach (Collider2D b in _players[1].Transform.GetComponentsInChildren<Collider2D>(true))
+                        Physics2D.IgnoreCollision(a, b);
         }
 
         private void Update()
