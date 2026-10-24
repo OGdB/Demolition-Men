@@ -22,7 +22,7 @@ MonoBehaviour:
     autoResolutionDisabledWarning:
       value: 1
     promptBeforeAutoResolution:
-      value: 1
+      value: 0
     patchAndroidManifest:
       value: 1
     useJetifier:
