@@ -60,7 +60,7 @@ devices over the internet yet.
 | Online | O2 passed its first play test (2026-10-22: phone host on Wi-Fi, editor client, through the VPS relay: join code, level load, poses, hits and score both ways, the host playing on after the client left). Left: a phone-to-phone test and mobile data, the rest of O3 (a WebGL build on itch.io; phone, PC and browser joining each other), O4: a phone sent to the background mid-run is handled on both sides (tried 2026-10-22); left to try on a device: the relay down, a version mismatch, a hidden browser tab; a soak test with the bot driving both players. |
 | Legal and store | Privacy policy, Data safety form, content rating, target audience, ads declaration, EU trader status, store listing text and graphics, trailer. |
 | Audio | A track per theme and synthesised break and collapse sounds are in, with every source in `Credits.txt`, except `OOF Sound` (player hurt): its source is unknown. |
-| Polish | Crack overlays, the phone letterbox question, tuning (scroll speeds, upgrade costs and cash rate are first guesses), a phone-first first five minutes. |
+| Polish | Crack overlays, tuning (scroll speeds, upgrade costs and cash rate are first guesses), a phone-first first five minutes. |
 | Performance | The worst collapse was never measured on a phone; composite debris (design doc Phase 2) isn't built. |
 | Marketing | Nothing yet: no accounts, clips, press kit or community. Plan: `marketing.md`. |
 
@@ -351,7 +351,7 @@ declarations that depend on them.
    (it also names the Black Ops One font, SIL OFL).
 5. **Feel and the first five minutes on a phone**:
    - crack overlays (three stages, from the art pipeline);
-   - decide the phone letterbox (`overnight-2026-10-17.md`, question 2);
+   - the phone letterbox: decided (2026-10-24), full screen everywhere with the HUD drawn over the level;
    - tune scroll speeds, upgrade costs and the cash rate from closed-test feedback;
    - touch glyphs in the tutorial prompts;
    - from app start to the first falling building in under a minute.

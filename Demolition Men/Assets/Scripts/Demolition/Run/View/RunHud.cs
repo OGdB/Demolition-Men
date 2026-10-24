@@ -7,8 +7,10 @@ using UnityEngine.UI;
 namespace Demolition.Run
 {
     /// <summary>
-    /// In-run HUD, built in code: timer and par, a hazard-striped demolition meter with
-    /// the grade marks, a panel per player (score, free life, weapon, TNT with its button),
+    /// In-run HUD, built in code, drawn straight over the level: timer and par, a
+    /// hazard-striped demolition meter with the grade marks, a steel panel per player in its
+    /// top corner (P2 mirrored: their colour's crew tag and the score, a slot for the weapon in
+    /// hand with its hits left and one for the TNT with its button; a free life under it),
     /// the 3-2-1 countdown, the last call, messages, the tutorial's signs (<see cref="TutorialSigns"/>),
     /// out-of-bounds warnings pinned to the left edge, health bars, pickup toasts above the
     /// players and floating score popups.
@@ -26,11 +28,17 @@ namespace Demolition.Run
             public float LastHealth = -1f;
             public float HealthChangedAt = float.NegativeInfinity;
             public TextMeshProUGUI Life;
+            public RectTransform Kit; // the slots; out of play the status line stands there instead
+            public TextMeshProUGUI Status;
+            public RectTransform WeaponSlot;
             public Image WeaponIcon;
-            public TextMeshProUGUI Weapon;
+            public TextMeshProUGUI WeaponHits;
+            public WeaponType LastWeapon;
+            public float WeaponPulse;
+            public RectTransform TntSlot;
             public Image TntIcon;
             public TextMeshProUGUI Tnt;
-            public RectTransform TntGroup;
+            public TextMeshProUGUI TntKey;
             public int LastTnt;
             public float TntPulse;
             public RectTransform Warning;
@@ -57,6 +65,17 @@ namespace Demolition.Run
         private const float HealthFadeSeconds = 0.5f;
         private static readonly Color[] PlayerColors = { new Color(1f, 0.85f, 0.3f), new Color(1f, 0.45f, 0.35f) };
         private static readonly Color OverPar = new Color(1f, 0.4f, 0.3f);
+        private static readonly Vector2 PanelSize = new Vector2(340f, 132f);
+        private const float PanelMargin = 20f;
+        // Big enough that the weapon sprites (up to 45 px tall) draw at full size or more at
+        // 1080p: shrunk, point filtering drops the wrecking ball's thin handle.
+        private const float SlotSize = 56f;
+        private const float TntSlotX = 140f; // from the panel's outer edge, like every x in it
+        private const int LowHits = 3; // hits left at which the weapon's count turns red
+        private static readonly Color PlateTint = new Color(0.15f, 0.16f, 0.19f, 0.88f);
+        // Light steel: the icons' dark outlines and the wooden handles read against it.
+        private static readonly Color SlotTint = new Color(0.56f, 0.6f, 0.65f, 1f);
+        private static readonly Color LifeColor = new Color(0.55f, 0.95f, 0.45f);
 
         [Tooltip("Shown at the left edge while a player is out of bounds.")]
         [SerializeField] private Sprite warningSign;
@@ -96,8 +115,8 @@ namespace Demolition.Run
                 _signs = new TutorialSigns(_root, TutorialPrompt.All); // first: the rest of the HUD draws over them
 
             var top = new Vector2(0.5f, 1f);
-            _timer = UiFactory.Text(_root, "Timer", top, new Vector2(0f, -10f), 56f, TextAlignmentOptions.Center);
-            _par = UiFactory.Text(_root, "Par", top, new Vector2(260f, -26f), 24f, TextAlignmentOptions.Center, new Vector2(220f, 34f));
+            _timer = UiFactory.Text(_root, "Timer", top, new Vector2(0f, -10f), 56f, TextAlignmentOptions.Center, outlined: true);
+            _par = Thin(UiFactory.Text(_root, "Par", top, new Vector2(260f, -26f), 24f, TextAlignmentOptions.Center, new Vector2(220f, 34f), outlined: true));
             _par.text = "PAR " + FormatTime(_run.ParTime);
             BuildMeter(top);
 
@@ -151,8 +170,8 @@ namespace Demolition.Run
         private void BuildMeter(Vector2 top)
         {
             const float y = -94f, height = 24f;
-            TextMeshProUGUI label = UiFactory.Text(_root, "MeterLabel", top, new Vector2(-MeterWidth * 0.5f - 110f, y + 2f), 22f,
-                TextAlignmentOptions.Right, new Vector2(200f, 30f));
+            TextMeshProUGUI label = Thin(UiFactory.Text(_root, "MeterLabel", top, new Vector2(-MeterWidth * 0.5f - 110f, y + 2f), 22f,
+                TextAlignmentOptions.Right, new Vector2(200f, 30f), outlined: true));
             label.rectTransform.pivot = new Vector2(0.5f, 1f);
             label.text = "DEMOLITION";
 
@@ -174,9 +193,17 @@ namespace Demolition.Run
                 _meterStars[star].rectTransform.pivot = new Vector2(0.5f, 1f);
             }
 
-            _meterValue = UiFactory.Text(_root, "MeterValue", top, new Vector2(MeterWidth * 0.5f + 70f, y + 2f), 24f,
-                TextAlignmentOptions.Center, new Vector2(120f, 30f));
+            _meterValue = Thin(UiFactory.Text(_root, "MeterValue", top, new Vector2(MeterWidth * 0.5f + 70f, y + 2f), 24f,
+                TextAlignmentOptions.Center, new Vector2(120f, 30f), outlined: true));
             _meterValue.rectTransform.pivot = new Vector2(0.5f, 1f);
+        }
+
+        // Small text: the full outline would eat into its strokes.
+        private static TextMeshProUGUI Thin(TextMeshProUGUI text)
+        {
+            if (UiFactory.ThinOutline != null)
+                text.fontSharedMaterial = UiFactory.ThinOutline;
+            return text;
         }
 
         private static void Inset(RectTransform rt, float fill, float pad)
@@ -188,32 +215,44 @@ namespace Demolition.Run
             rt.offsetMax = new Vector2(-pad, -pad);
         }
 
+        // A steel plate in the player's top corner; every x in it runs inwards from that corner.
         private PlayerPanel BuildPanel(int index)
         {
             bool left = index == 0;
             var anchor = new Vector2(left ? 0f : 1f, 1f);
             float side = left ? 1f : -1f;
-            var align = left ? TextAlignmentOptions.Left : TextAlignmentOptions.Right;
+            var align = left ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.MidlineRight;
             Color colour = PlayerColors[index % PlayerColors.Length];
             string id = $"P{index + 1}";
             var panel = new PlayerPanel();
 
-            TextMeshProUGUI name = UiFactory.Text(_root, id, anchor, new Vector2(30f * side, -20f), 30f, align, new Vector2(400f, 42f));
+            Transform plate = Plate(_root, id + " Panel", anchor, new Vector2(PanelMargin * side, -PanelMargin), PanelSize, PlateTint).transform;
+            Image tag = Plate(plate, "Tag", anchor, new Vector2(10f * side, -10f), new Vector2(72f, 48f), colour);
+            TextMeshProUGUI name = UiFactory.Text(tag.transform, "Name", new Vector2(0.5f, 0.5f), new Vector2(0f, 1f), 30f,
+                TextAlignmentOptions.Center, tag.rectTransform.sizeDelta);
             name.text = id;
-            name.color = colour;
-            panel.Score = UiFactory.Text(_root, id + " Score", anchor, new Vector2(100f * side, -16f), 40f, align, new Vector2(400f, 50f));
+            name.color = UiFactory.Ink;
+            panel.Score = UiFactory.Text(plate, "Score", anchor, new Vector2(96f * side, -10f), 40f, align, new Vector2(230f, 48f), outlined: true);
 
-            panel.Life = UiFactory.Text(_root, id + " Life", anchor, new Vector2(30f * side, -66f), 20f, align, new Vector2(140f, 28f));
-
-            panel.WeaponIcon = UiFactory.Image(_root, id + " WeaponIcon", anchor, new Vector2(30f * side, -94f), new Vector2(30f, 30f), Color.white);
-            panel.WeaponIcon.preserveAspect = true;
-            panel.Weapon = UiFactory.Text(_root, id + " Weapon", anchor, new Vector2(68f * side, -96f), 24f, align, new Vector2(300f, 30f));
-
-            panel.TntGroup = UiFactory.Rect(_root, id + " TNT", anchor, new Vector2(240f * side, -94f), new Vector2(150f, 30f));
-            panel.TntIcon = UiFactory.Image(panel.TntGroup, "Icon", anchor, Vector2.zero, new Vector2(30f, 30f), Color.white);
+            panel.Kit = UiFactory.Rect(plate, "Kit", anchor, new Vector2(10f * side, -66f), new Vector2(PanelSize.x - 20f, SlotSize));
+            panel.WeaponSlot = Slot(panel.Kit, "Weapon", anchor, 0f, side, out panel.WeaponIcon);
+            panel.WeaponHits = UiFactory.Text(panel.Kit, "Hits", anchor, new Vector2((SlotSize + 8f) * side, 0f), 30f, align,
+                new Vector2(TntSlotX - SlotSize - 12f, SlotSize), outlined: true);
+            panel.TntSlot = Slot(panel.Kit, "TNT", anchor, TntSlotX, side, out panel.TntIcon);
             panel.TntIcon.sprite = dynamiteIcon;
-            panel.TntIcon.preserveAspect = true;
-            panel.Tnt = UiFactory.Text(panel.TntGroup, "Count", anchor, new Vector2(36f * side, -2f), 24f, align, new Vector2(120f, 30f));
+            panel.Tnt = UiFactory.Text(panel.Kit, "Count", anchor, new Vector2((TntSlotX + SlotSize + 8f) * side, 0f), 30f, align,
+                new Vector2(56f, SlotSize), outlined: true);
+            panel.TntKey = UiFactory.Text(panel.Kit, "Key", anchor, new Vector2((TntSlotX + SlotSize + 62f) * side, 0f), 22f, align,
+                new Vector2(70f, SlotSize));
+            panel.Status = Thin(UiFactory.Text(plate, "Status", anchor, new Vector2(14f * side, -66f), 24f, align,
+                new Vector2(PanelSize.x - 28f, SlotSize), outlined: true));
+            panel.Status.enableAutoSizing = true; // OUT - FIND A RESURRECT fits the plate
+            panel.Status.fontSizeMin = 16f;
+            panel.Status.fontSizeMax = 24f;
+
+            panel.Life = Thin(UiFactory.Text(_root, id + " Life", anchor, new Vector2((PanelMargin + 10f) * side, -(PanelMargin + PanelSize.y + 4f)), 22f,
+                left ? TextAlignmentOptions.Left : TextAlignmentOptions.Right, new Vector2(200f, 30f), outlined: true));
+            panel.Life.color = LifeColor;
 
             panel.Warning = UiFactory.Rect(_root, id + " Warning", new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(110f, 110f));
             Image sign = UiFactory.Image(panel.Warning, "Sign", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 110f),
@@ -239,6 +278,29 @@ namespace Demolition.Run
             panel.Toast.rectTransform.pivot = new Vector2(0.5f, 0f); // centred above the head
             panel.Toast.gameObject.SetActive(false);
             return panel;
+        }
+
+        // The UI's riveted plate with its rim at half the menus' size: a HUD panel is a fraction of a menu's.
+        private static Image Plate(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, Color tint)
+        {
+            Image plate = UiFactory.Image(parent, name, anchor, position, size, tint);
+            plate.sprite = UiFactory.PlateSprite;
+            plate.type = Image.Type.Sliced;
+            plate.pixelsPerUnitMultiplier = 2f;
+            return plate;
+        }
+
+        // A light steel slot holding an icon, <paramref name="x"/> in from the corner; pivoted in
+        // its middle so it pulses in place.
+        private static RectTransform Slot(Transform parent, string name, Vector2 anchor, float x, float side, out Image icon)
+        {
+            RectTransform slot = Plate(parent, name, anchor, Vector2.zero, new Vector2(SlotSize, SlotSize), SlotTint).rectTransform;
+            slot.pivot = new Vector2(0.5f, 0.5f);
+            slot.anchoredPosition = new Vector2((x + SlotSize * 0.5f) * side, -SlotSize * 0.5f);
+            icon = UiFactory.Image(slot, "Icon", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(SlotSize - 6f, SlotSize - 6f), Color.white);
+            icon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            icon.preserveAspect = true;
+            return slot;
         }
 
         private Popup BuildPopup()
@@ -311,20 +373,17 @@ namespace Demolition.Run
             UpdateHealthBar(panel, player, alive && !state.IsOver);
             panel.Life.text = state.HasFreeRespawn(index) ? "+1 LIFE" : string.Empty;
 
+            panel.Kit.gameObject.SetActive(alive);
+            panel.Status.gameObject.SetActive(!alive);
             if (status == PlayerStatus.Rejoining)
-                panel.Weapon.text = $"BACK IN {Mathf.CeilToInt(state.RejoinRemaining(index))}";
+                panel.Status.text = $"BACK IN {Mathf.CeilToInt(state.RejoinRemaining(index))}";
             else if (status == PlayerStatus.Out)
-                panel.Weapon.text = state.HasLeft(index) ? "LEFT THE GAME" : "OUT - FIND A RESURRECT";
-            else
-                panel.Weapon.text = WeaponName(player.Combat.Weapon) +
-                                    (player.Combat.WeaponUses >= 0 ? " " + player.Combat.WeaponUses : string.Empty);
-
-            Sprite icon = alive ? WeaponIcon(player.Combat.Weapon) : null;
-            panel.WeaponIcon.gameObject.SetActive(icon != null);
-            panel.WeaponIcon.sprite = icon;
-            ((RectTransform)panel.Weapon.transform).anchoredPosition = new Vector2((icon != null ? 68f : 30f) * (index == 0 ? 1f : -1f), -96f);
-
-            UpdateTnt(panel, player, alive);
+                panel.Status.text = state.HasLeft(index) ? "LEFT THE GAME" : "OUT - FIND A RESURRECT";
+            if (alive)
+            {
+                UpdateWeapon(panel, player);
+                UpdateTnt(panel, player);
+            }
             UpdateToast(panel, player);
 
             float oob = state.OutOfBoundsRemaining(index);
@@ -334,8 +393,10 @@ namespace Demolition.Run
             {
                 panel.WarningCount.text = Mathf.CeilToInt(oob).ToString();
                 Vector2 local = ToCanvas(player.Transform.position + Vector3.up);
-                float limit = Mathf.Max(0f, _root.rect.height * 0.5f - 110f); // sign and count stay on screen
-                panel.Warning.anchoredPosition = new Vector2(20f, Mathf.Clamp(local.y, -limit, limit));
+                float half = _root.rect.height * 0.5f;
+                float below = Mathf.Max(0f, half - 110f); // sign and count stay on screen
+                float above = half - (PanelMargin + PanelSize.y + 90f); // and under P1's panel
+                panel.Warning.anchoredPosition = new Vector2(20f, Mathf.Clamp(local.y, -below, Mathf.Max(-below, above)));
             }
         }
 
@@ -365,22 +426,41 @@ namespace Demolition.Run
         private Vector2 AboveHead(RunController.Player player) =>
             ToCanvas(player.Transform.position + Vector3.up * HeadHeight) + new Vector2(0f, HealthBarGap);
 
+        // The weapon in hand and its hits left, red once it's about to break; pulses on a change.
+        private void UpdateWeapon(PlayerPanel panel, RunController.Player player)
+        {
+            WeaponType weapon = player.Combat.Weapon;
+            if (weapon != panel.LastWeapon)
+                panel.WeaponPulse = 0.3f;
+            panel.LastWeapon = weapon;
+
+            Sprite icon = WeaponIcon(weapon);
+            panel.WeaponIcon.sprite = icon;
+            panel.WeaponIcon.enabled = icon != null;
+            int uses = player.Combat.WeaponUses;
+            panel.WeaponHits.text = uses >= 0 ? "x" + uses : string.Empty; // fists never run out
+            panel.WeaponHits.color = uses >= 0 && uses <= LowHits ? OverPar : Color.white;
+
+            panel.WeaponPulse = Mathf.Max(0f, panel.WeaponPulse - Time.deltaTime);
+            panel.WeaponSlot.localScale = Vector3.one * (1f + panel.WeaponPulse * 0.75f);
+        }
+
         // TNT count with the throw button for this player's device; pulses when it goes up.
-        private void UpdateTnt(PlayerPanel panel, RunController.Player player, bool alive)
+        private void UpdateTnt(PlayerPanel panel, RunController.Player player)
         {
             int count = player.Combat.DynamiteCount;
-            panel.TntGroup.gameObject.SetActive(alive);
             if (count > panel.LastTnt)
                 panel.TntPulse = 0.4f;
             panel.LastTnt = count;
 
-            panel.Tnt.text = count > 0 ? $"x{count}  {Key(player, "X", "B", string.Empty)}" : "x0";
+            panel.Tnt.text = "x" + count;
+            panel.TntKey.text = count > 0 ? Key(player, "X", "B", string.Empty) : string.Empty;
             float alpha = count > 0 ? 1f : 0.35f;
             panel.TntIcon.color = new Color(1f, 1f, 1f, alpha);
             panel.Tnt.alpha = alpha;
 
             panel.TntPulse = Mathf.Max(0f, panel.TntPulse - Time.deltaTime);
-            panel.TntGroup.localScale = Vector3.one * (1f + panel.TntPulse * 0.75f);
+            panel.TntSlot.localScale = Vector3.one * (1f + panel.TntPulse * 0.75f);
         }
 
         private void OnPickup(PlayerCombat combat, PickupKind kind, int amount)
@@ -499,7 +579,7 @@ namespace Demolition.Run
             {
                 case WeaponType.Axe: return axeIcon;
                 case WeaponType.WreckingBall: return wreckingBallIcon;
-                default: return null;
+                default: return UiFactory.FistSprite;
             }
         }
 

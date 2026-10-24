@@ -267,7 +267,6 @@ namespace Demolition.Clips
             }
 
             _camera = _run.Camera;
-            _camera.rect = new Rect(0f, 0f, 1f, 1f); // no letterbox in a clip
             _scroll = _camera.GetComponent<ScrollCamera>();
             if (Shot.camera.mode == "run")
             {

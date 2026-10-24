@@ -10,7 +10,7 @@ namespace Demolition
 {
     /// <summary>Small helpers for views that build their uGUI in code, and the game's UI
     /// look: the stencil display font, riveted steel plates for buttons and panels,
-    /// hazard stripes, stars (sprites in <c>Resources/UI</c>, made by <c>tools/artpipe/ui.py</c>).</summary>
+    /// hazard stripes, stars, the HUD's fist (sprites in <c>Resources/UI</c>, made by <c>tools/artpipe/ui.py</c>).</summary>
     public static class UiFactory
     {
         public static readonly Color Gold = new Color(1f, 0.85f, 0.3f);
@@ -26,7 +26,8 @@ namespace Demolition
         private static bool _fontLoaded;
         private static Material _outline;
         private static Material _heading;
-        private static Sprite _plate, _hazard, _star;
+        private static Material _thinOutline;
+        private static Sprite _plate, _hazard, _star, _fist;
 
         /// <summary>Black Ops One (SIL OFL, <c>Resources/Fonts</c>) as a dynamic TMP font
         /// made at runtime; null keeps TMP's default font. Glyphs it lacks (arrows) come
@@ -52,20 +53,25 @@ namespace Demolition
         /// <summary>Outline plus a drop shadow, for titles.</summary>
         public static Material Heading => _heading != null ? _heading : _heading = Styled(true);
 
+        /// <summary>A thinner edge for small text over the level (around 20-24 pt), which the
+        /// full outline eats into.</summary>
+        public static Material ThinOutline => _thinOutline != null ? _thinOutline : _thinOutline = Styled(false, 0.12f);
+
         public static Sprite PlateSprite => _plate != null ? _plate : _plate = Resources.Load<Sprite>("UI/Plate");
         public static Sprite HazardSprite => _hazard != null ? _hazard : _hazard = Resources.Load<Sprite>("UI/Hazard");
         public static Sprite StarSprite => _star != null ? _star : _star = Resources.Load<Sprite>("UI/Star");
+        public static Sprite FistSprite => _fist != null ? _fist : _fist = Resources.Load<Sprite>("UI/Fist");
 
         // Only keyword sets the bundled TMP materials already use (outline; outline +
         // underlay), so the shader variants are in every build.
-        private static Material Styled(bool shadow)
+        private static Material Styled(bool shadow, float width = 0f)
         {
             TMP_FontAsset font = DisplayFont;
             if (font == null)
                 return Resources.Load<Material>(shadow ? "Fonts & Materials/LiberationSans SDF - Drop Shadow" : "Fonts & Materials/LiberationSans SDF - Outline");
-            var material = new Material(font.material) { name = shadow ? "Display Heading" : "Display Outline" };
+            var material = new Material(font.material) { name = shadow ? "Display Heading" : width > 0f ? "Display Thin Outline" : "Display Outline" };
             material.EnableKeyword(ShaderUtilities.Keyword_Outline);
-            material.SetFloat(ShaderUtilities.ID_OutlineWidth, shadow ? 0.3f : 0.22f);
+            material.SetFloat(ShaderUtilities.ID_OutlineWidth, width > 0f ? width : shadow ? 0.3f : 0.22f);
             material.SetColor(ShaderUtilities.ID_OutlineColor, Ink);
             if (shadow)
             {

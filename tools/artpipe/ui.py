@@ -80,7 +80,38 @@ def star():
     return im, (0, 0, 0, 0)
 
 
-SPRITES = {"Plate": plate, "Hazard": hazard, "Star": star}
+def fist():
+    """22x22 clenched fist, knuckles up, in the players' skin tones: the HUD's bare-handed weapon slot."""
+    out = OUTLINE
+    light, mid, dark, hi = (238, 195, 154, 255), (217, 160, 102, 255), (170, 104, 60, 255), (252, 228, 200, 255)
+    im = Image.new("RGBA", (22, 22), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+
+    def part(x0, y0, x1, y1, fill, rounded=True):
+        d.rectangle([x0, y0, x1, y1], fill=out)
+        d.rectangle([x0 + 1, y0 + 1, x1 - 1, y1 - 1], fill=fill)
+        if rounded:  # the top corners cut in by a pixel
+            for x, step in ((x0, 1), (x1, -1)):
+                im.putpixel((x, y0), (0, 0, 0, 0))
+                im.putpixel((x + step, y0 + 1), out)
+
+    part(4, 9, 19, 20, mid, rounded=False)  # back of the hand
+    d.rectangle([5, 10, 18, 12], fill=light)
+    d.rectangle([5, 17, 18, 19], fill=dark)
+    for i in range(4):  # fingers
+        x0 = 3 + i * 4
+        part(x0, 2, x0 + 4, 11, light)
+        d.rectangle([x0 + 1, 8, x0 + 3, 10], fill=mid)
+        im.putpixel((x0 + 1, 3), hi)
+    part(1, 10, 15, 14, light)  # thumb across the front
+    d.rectangle([2, 13, 14, 13], fill=mid)
+    im.putpixel((2, 11), hi)
+    im.putpixel((15, 10), out)  # where the thumb meets the little finger
+    im.putpixel((14, 11), out)
+    return im, (0, 0, 0, 0)
+
+
+SPRITES = {"Plate": plate, "Hazard": hazard, "Star": star, "Fist": fist}
 REPEAT = {"Hazard"}
 
 

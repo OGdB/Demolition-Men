@@ -82,22 +82,6 @@ namespace Demolition.Run
             _floorY = transform.position.y - Camera.orthographicSize;
             _framed = transform.position;
             CameraShake.Clear();
-            if (Camera.rect != new Rect(0f, 0f, 1f, 1f))
-                AddLetterboxClear();
-        }
-
-        // Outside a letterboxed camera rect nothing clears the screen, so overlay UI drawn
-        // in the bars would smear across frames. A camera behind it clears them to black.
-        private void AddLetterboxClear()
-        {
-            var go = new GameObject("LetterboxClear");
-            go.transform.SetParent(transform, false);
-            var clear = go.AddComponent<Camera>();
-            clear.depth = Camera.depth - 1f;
-            clear.clearFlags = CameraClearFlags.SolidColor;
-            clear.backgroundColor = Color.black;
-            clear.cullingMask = 0;
-            clear.orthographic = true;
         }
 
         /// <summary>Take the current framing as the ground framing (after a level placed the camera).</summary>

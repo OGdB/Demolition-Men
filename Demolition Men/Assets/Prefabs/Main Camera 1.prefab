@@ -248,14 +248,14 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0.13
-    width: 2
-    height: 0.75
+    y: 0
+    width: 1
+    height: 1
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 6
+  orthographic size: 8
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -297,7 +297,7 @@ MonoBehaviour:
   marginAbove: 1
   marginBelow: 0.5
   marginX: 3
-  minZoom: 6
+  minZoom: 8
   maxZoom: 30
   zoomInSpeed: 3
   zoomOutSpeed: 4.8
