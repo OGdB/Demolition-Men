@@ -257,6 +257,17 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Start_HasAClearRunUp_LeftOfTheSpawn([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            LevelLayout layout = LevelGrammar.Generate(spec, ArchetypesFor(path));
+            Assert.GreaterOrEqual(layout.SpawnX, LevelGrammar.RunUp, spec.id);
+            for (int x = 0; x <= layout.SpawnX; x++)
+                Assert.AreEqual(layout.GroundAt(layout.SpawnX), layout.GroundAt(x), $"{spec.id}: column {x} of the run-up isn't street");
+            Assert.IsFalse(layout.Buildings.Any(b => b.X <= layout.SpawnX), $"{spec.id}: a building or prop on the run-up");
+        }
+
+        [Test]
         public void Props_FollowTheSpec_AndContainersComeOnlyWhenAsked()
         {
             var spec = new LevelSpec { id = "test", seed = 3, pacing = new[] { "start", "breather", "breather", "breather", "finish" } };

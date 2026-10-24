@@ -40,7 +40,7 @@ devices over the internet yet.
 
 | Area | State |
 |---|---|
-| Core loop | 3-2-1 start, scrolling camera with a 3 s out-of-bounds grace, finish line with last call, timer and par, scoring with collapse credit and a chain multiplier, 0–3 stars, results screen, co-op rejoin and Resurrect. |
+| Core loop | 3-2-1 start with the crew running in from the left (generated levels), scrolling camera with a 3 s out-of-bounds grace, finish line with last call, timer and par, scoring with collapse credit and a chain multiplier, 0–3 stars, results screen, co-op rejoin and Resurrect. |
 | Destruction | Support graph, collapse on detach, stress and overload crumble, rubble that falls again when its footing goes, glass, back walls that crumble with their cells, blasts (TNT, gas tanks) that hurt and throw players. |
 | Content | 3 themes (Town, Port, Neon) × 4 campaign levels, a daily seed, the tutorial. Buildings and levels are generated from JSON + seed and validated (they stand, have weak points, every jump is passable); street props and decor. |
 | Players | Fists, axe, wrecking ball, dynamite, headbutt; pickups; skill-shop upgrades. |
@@ -119,7 +119,8 @@ account holder can) and **Agent**.
 The described game, playable start to finish with today's content. Code lives in
 `Scripts/Demolition/Run/` (see the Run loop section of `CLAUDE.md`).
 - ✅ **`RunController`** + `RunState` model: `Countdown(3-2-1) → Playing → Finished | Failed`,
-  timer, controls locked during the countdown. `EndMenu`, `ScoreManager`, `GlobalVariables`
+  timer, controls locked during the countdown; in generated levels the players run in over the
+  start's run-up meanwhile and reach the spawn at GO at full speed (the Tutorial starts standing). `EndMenu`, `ScoreManager`, `GlobalVariables`
   and `Score` are gone; menu choices go through `Session`.
 - ✅ **Finish line** (`FinishLine` in `levelPart_End`). The run finishes when all living
   players have crossed; a 5-second "last call" starts when the first one crosses.

@@ -69,6 +69,10 @@ namespace Demolition.Levels
             var run = Instantiate(config.runPrefab).GetComponent<RunController>();
             run.name = "Run";
             run.Configure(spec.id, layout.Par, layout.TotalCells, LevelSelection.NextAction());
+#if UNITY_EDITOR
+            if (Clips.ClipDirector.Current == null) // a Clip Lab shot places its players itself
+#endif
+                run.RunIn(0.5f); // over the start's run-up, from the level's left edge at the furthest
         }
 
         private static IEnumerator StartRunWhenPlayersExist(GameConfig config, LevelSpec spec, LevelLayout layout)

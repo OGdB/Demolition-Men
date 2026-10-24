@@ -25,6 +25,9 @@ namespace Demolition.Levels
         public const float PropChance = 0.65f;
         /// <summary>Widest stretch of street between two buildings that gets a fence along it.</summary>
         public const int MaxFencedGap = 8;
+        /// <summary>Street left of the spawn: the players run in over it during the countdown
+        /// (RunController.RunIn), 3 s in the fastest boots (10 m/s) plus player 2's step back.</summary>
+        public const int RunUp = 32;
 
         private struct Spot
         {
@@ -90,8 +93,8 @@ namespace Demolition.Levels
                 switch (kind)
                 {
                     case SegmentKind.Start:
-                        Flat(layout, 14, height);
-                        layout.SpawnX = segment.X0 + 4;
+                        Flat(layout, RunUp + 14, height);
+                        layout.SpawnX = segment.X0 + RunUp + 4;
                         break;
                     case SegmentKind.Street:
                         Flat(layout, rng.Range(3, 5), height, spots, index);

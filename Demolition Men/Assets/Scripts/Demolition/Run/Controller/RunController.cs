@@ -25,6 +25,16 @@ namespace Demolition.Run
             public PlayerInputReader Input;
         }
 
+        // A player running in during the countdown: the script that runs them, the input it
+        // stands in for, and the x they reach at GO.
+        private sealed class Runner
+        {
+            public Player Player;
+            public float ToX;
+            public readonly ScriptedInputSource Script = new ScriptedInputSource();
+            public IPlayerInputSource Own;
+        }
+
         // Players are found by GameObject name (see CLAUDE.md).
         private static readonly string[] PlayerNames = { "Player_1", "Player_2" };
 
@@ -44,6 +54,7 @@ namespace Demolition.Run
         [SerializeField] private string levelId;
 
         private readonly List<Player> _players = new List<Player>();
+        private readonly List<Runner> _runners = new List<Runner>();
         private ScrollCamera _camera;
         private int _totalCells;
         private int _plannedCells;
@@ -109,6 +120,22 @@ namespace Demolition.Run
             parTime = par;
             _plannedCells = plannedCells;
             _nextLevel = nextLevel;
+        }
+
+        /// <summary>A generated level starts on the move: the players step back to the left (no
+        /// further than <paramref name="minX"/>) and run in during the countdown, reaching where
+        /// they stand now at GO at full speed. Call before the first frame.</summary>
+        public void RunIn(float minX)
+        {
+            foreach (Player p in _players)
+            {
+                if (p.Health.IsProxy)
+                    continue; // online the other device runs its own player in
+                Vector3 at = p.Transform.position;
+                _runners.Add(new Runner { Player = p, ToX = at.x });
+                at.x = Mathf.Max(minX, at.x - p.Motor.MaxSpeed * State.Countdown);
+                p.Transform.position = at;
+            }
         }
 
         private void OnEnable()
@@ -195,6 +222,8 @@ namespace Demolition.Run
                 return;
             if (_camera != null)
                 _camera.Zoom(ZoomInput());
+            if (State.Phase == RunPhase.Countdown)
+                RunInTick();
 
             FinishLine finish = FinishLine.Active;
             for (int i = 0; i < _players.Count; i++)
@@ -279,9 +308,31 @@ namespace Demolition.Run
 
         // ---------------- Model → scene ----------------
 
+        // Right is held while they're behind schedule, so they reach their spot as the countdown
+        // ends however the physics ramps up and coasts.
+        private void RunInTick()
+        {
+            foreach (Runner r in _runners)
+            {
+                PlayerInputReader input = r.Player.Input;
+                if (input.Source != r.Script)
+                {
+                    r.Own = input.Source; // taken here, not in RunIn: a bot sets its own source in Start
+                    input.Source = r.Script;
+                    r.Player.Motor.enabled = true;
+                }
+                float due = r.ToX - State.Countdown * r.Player.Motor.MaxSpeed;
+                r.Script.Next.Move = new Vector2(r.Player.Transform.position.x < due ? 1f : 0f, 0f);
+            }
+        }
+
         private void OnPhaseChanged(RunPhase phase)
         {
             bool playing = phase == RunPhase.Playing;
+            foreach (Runner r in _runners)
+                if (r.Player.Input.Source == r.Script)
+                    r.Player.Input.Source = r.Own; // still running as the controls take over
+            _runners.Clear();
             SetControls(playing);
             if (_camera != null)
                 _camera.Scrolling = playing;
