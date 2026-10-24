@@ -215,7 +215,8 @@ Art and level review, 2026-10-17 (`content-work/levels/*.png`, drawn headless by
 - Generated buildings showed the sky through every room, so they read as scaffolding.
   Now each theme has a back wall (`interior`, `interior_top` with the ceiling's shadow)
   that `BuildingInterior` draws behind open and see-through cells; a piece crumbles when
-  the block cell it hangs from goes.
+  the block cell it hangs from goes. Since 2026-10-24 it also shows through the windows
+  (the separate room behind the glass, Town's and Neon's, read as a desert sunset).
 - Town's tileset borrowed object-set sprites that didn't fit: pre-cracked rebar slabs as
   concrete, a pole as the door, a log as the beam, a brick corner as the chimney, darkened
   brick behind the glass. The pipeline now draws those (plus wood siding, floors, the room

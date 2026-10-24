@@ -54,7 +54,6 @@ KINDS = [
 ]
 # DecorKind enum order (Scripts/Demolition/Level/Model/LevelLayout.cs) -> sprite file.
 DECOR = ["lamp", "fence", "bush", "bin", "sign"]
-SORTING = {"Glass": 1}  # the window back draws one below the pane
 # Parallax backdrop layers, far to near: (file, parallax, bottom above the street in units,
 # single). The sky gradient nearly rides with the camera; the sun is one sprite glued to it,
 # 7 units up and 6 right of where the camera starts.
@@ -138,15 +137,14 @@ def tileset(theme, theme_dir):
     old = open(path).read() if os.path.exists(path) else ""
     lines = [HEADER, f"  m_Script: {{fileID: 11500000, guid: {script_guid('Generation/View/BuildingTileset.cs')}, type: 3}}\n",
              f"  m_Name: {theme}Tileset\n  m_EditorClassIdentifier: Demolition::Demolition.Generation.BuildingTileset\n  entries:\n"]
-    for kind, (name, base) in enumerate(KINDS):
+    for kind, (_, base) in enumerate(KINDS):
         sprites = variants(theme_dir, base)
         if sprites:
-            lines.append(entry(kind, sprites, variants(theme_dir, base + "_l"), variants(theme_dir, base + "_r"), SORTING.get(name, 0)))
+            lines.append(entry(kind, sprites, variants(theme_dir, base + "_l"), variants(theme_dir, base + "_r")))
             continue
         kept = re.search(rf"  - kind: {kind}\n(?:    .*\n)*", old)  # hand-drawn in this theme: keep it
         if kept:
             lines.append(kept.group(0))
-    lines.append(f"  windowBack: {sprite_ref(theme_dir, 'window_back')}\n  windowBackTint: {{r: 1, g: 1, b: 1, a: 1}}\n")
     lines.append(f"  interior: {sprite_ref(theme_dir, 'interior')}\n  interiorTop: {sprite_ref(theme_dir, 'interior_top')}\n")
     lines.append(sprite_list("interiorVariants", variants(theme_dir, "interior")[1:]))
     lines.append(sprite_list("interiorTopVariants", variants(theme_dir, "interior_top")[1:]))
@@ -160,12 +158,12 @@ def sprite_list(field, refs):
     return f"  {field}: []\n" if not refs else f"  {field}:\n" + "".join(f"  - {r}\n" for r in refs)
 
 
-def entry(kind, sprites_refs, left=(), right=(), order=0):
+def entry(kind, sprites_refs, left=(), right=()):
     def lst(name, refs):
         return f"    {name}: []\n" if not refs else f"    {name}:\n" + "".join(f"    - {r}\n" for r in refs)
     return (f"  - kind: {kind}\n" + lst("sprites", sprites_refs) + lst("left", left) + lst("right", right)
             + "    tint: {r: 1, g: 1, b: 1, a: 1}\n    rotation: 0\n    scale: {x: 1, y: 1}\n"
-            f"    offset: {{x: 0, y: 0}}\n    sortingOrder: {order}\n")
+            "    offset: {x: 0, y: 0}\n    sortingOrder: 0\n")
 
 
 def decor_block(theme_dir):

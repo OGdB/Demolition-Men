@@ -43,7 +43,6 @@ SPRITES = {
     "chimney":     ((32, 32), "", True),
     "chimney_1":   ((32, 32), "", True),
     "chimney_2":   ((32, 32), "", True),
-    "window_back": ((32, 64), "x", False),
     # back walls: one wallpaper per storey, details scattered over open cells
     "interior":    ((32, 32), "xy", False),
     "interior_1":  ((32, 32), "xy", False),
@@ -484,48 +483,6 @@ def door(t, rng, w=32, h=64):
         put(a, x1 - 6, 40, k[2], wrap=False)
         if m.get("sign"):
             neon_tube(a, 1, 1, w - 1, 4, palette.ramp(t, m["sign"]))
-    return a
-
-
-def window_back(t, rng, w=32, h=64):
-    """Room seen through the glass (behind the pane, visible beside it). Background: no
-    outline. Only x 0..7 and 24..31 show, so detail sits at the sides."""
-    m = t["materials"]["window_back"]
-    r = palette.ramp(t, m["ramp"])
-    a = canvas(w, h)
-    if m["style"] == "lit":
-        rect(a, 0, 0, w, h, r[2])
-        rect(a, 0, 5, w, 14, r[3])
-        for y in range(16, 50, 4):  # blinds
-            rect(a, 0, y, w, y + 1, r[1])
-        rect(a, 0, 50, w, h, r[1])
-        rect(a, 0, 52, w, h, r[0])
-        # silhouettes: a plant on the left, a lamp on the right
-        rect(a, 3, 44, 6, 52, r[0])
-        for dx, dy in ((1, 40), (2, 38), (4, 39), (6, 41), (0, 42), (5, 43), (3, 41)):
-            rect(a, dx, dy, dx + 2, dy + 2, r[0])
-        rect(a, 27, 30, 28, 52, r[0])
-        rect(a, 25, 27, 31, 30, r[0])
-    else:
-        rect(a, 0, 0, w, h, r[1])
-        rect(a, 0, 0, w, 9, r[0])
-        dither = np.zeros((h, w), bool)
-        dither[10:30, :] = (np.add.outer(np.arange(h), np.arange(w)) % 2 == 0)[10:30, :]
-        dither[10:30, 6:26] = False
-        a[dither] = (*r[2], 255)
-        rect(a, 1, 21, 8, 22, r[2])      # shelf left
-        rect(a, 1, 22, 8, 23, r[0])
-        rect(a, 1, 35, 8, 36, r[2])
-        rect(a, 1, 36, 8, 37, r[0])
-        rect(a, 1, 31, 4, 35, r[0])      # boxes on the shelf
-        rect(a, 25, 42, 31, 52, r[0])    # crate on the right
-        rect(a, 25, 42, 31, 43, r[2])
-        rect(a, 25, 42, 26, 52, r[2])
-        rect(a, 0, 52, w, 53, r[2])      # floor line
-        rect(a, 0, 53, w, h, r[0])
-        acc = palette.ramp(t, m["accent"])
-        rect(a, 2, 13, 5, 15, acc[3])    # distant work lamp
-        rect(a, 2, 15, 5, 16, acc[1])
     return a
 
 
@@ -1333,7 +1290,6 @@ GENERATORS = {
     "chimney": chimney,
     "chimney_1": lambda t, g: chimney(t, g, variant=1),
     "chimney_2": lambda t, g: chimney(t, g, variant=2),
-    "window_back": window_back,
     "interior": interior,
     "interior_1": lambda t, g: interior(t, g, variant=1),
     "interior_2": lambda t, g: interior(t, g, variant=2),

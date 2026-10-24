@@ -77,7 +77,7 @@ MonoBehaviour:
     rotation: 0
     scale: {x: 1, y: 1}
     offset: {x: 0, y: 0}
-    sortingOrder: 1
+    sortingOrder: 0
   - kind: 5
     sprites:
     - {fileID: 21300000, guid: e11120431fbc4f9397a3083101724561, type: 3}
@@ -190,8 +190,6 @@ MonoBehaviour:
     scale: {x: 1, y: 1}
     offset: {x: 0, y: 0}
     sortingOrder: 0
-  windowBack: {fileID: 21300000, guid: 107a71658d6d462a9062d9edc9ea4a7f, type: 3}
-  windowBackTint: {r: 1, g: 1, b: 1, a: 1}
   interior: {fileID: 21300000, guid: c547dbe76e0049c5adb5f928301ff047, type: 3}
   interiorTop: {fileID: 21300000, guid: dfe3038e9ce24650a9bda945ec96f9c8, type: 3}
   interiorVariants:

@@ -143,7 +143,8 @@ def mock_street(sprites, theme):
     place("support", 5, 1)
     place("door", 2, 0)
     for x, y in ((4, 0), (2, 3), (4, 3), (6, 3)):
-        place("window_back", x, y)
+        place("interior", x, y)
+        place("interior_top", x, y + 1)
         place("glass", x, y)
     for x in (1, 3, 5):
         place("brick_cap", x, 5)

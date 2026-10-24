@@ -41,7 +41,7 @@ namespace Demolition.Generation
         public bool UnderCeiling;
         /// <summary>Storey the cell is on (0 = street level): each storey gets one back-wall look.</summary>
         public int Storey;
-        /// <summary>Behind a see-through block (a support, a slab) rather than an open room.</summary>
+        /// <summary>Behind a see-through block (a support, a slab, a window) rather than an open room.</summary>
         public bool SeeThrough;
     }
 
@@ -120,9 +120,10 @@ namespace Demolition.Generation
             kind == TileKind.Plank || kind == TileKind.Beam || kind == TileKind.MetalTruss;
 
         /// <summary>Where the back wall shows: every open or see-through cell between a row's
-        /// outermost blocks. An open cell hangs from the nearest block above it (its ceiling;
-        /// below if there is none), a see-through cell from its own block. Storeys count up
-        /// from the street at every row holding a floor slab.</summary>
+        /// outermost blocks, and every window, outer walls included. An open cell or a window
+        /// hangs from the nearest solid block above it (its ceiling, the lintel; below if there
+        /// is none), so a broken window still shows the room; a see-through cell hangs from its
+        /// own block. Storeys count up from the street at every row holding a floor slab.</summary>
         public List<InteriorCell> Interior()
         {
             var cells = new List<InteriorCell>();
@@ -137,33 +138,40 @@ namespace Demolition.Generation
                     storey++;
                 if (!RowExtent(y, out int min, out int max))
                     continue;
-                for (int x = min + 1; x < max; x++)
+                for (int x = min; x <= max; x++)
                 {
                     var cell = new Vector2Int(x, y);
                     SpecBlock block = At(cell);
-                    if (block != null && !TileKinds.SeeThrough(block.Kind))
+                    bool window = block != null && block.Kind == TileKind.Glass;
+                    if (!window && (x == min || x == max || (block != null && !TileKinds.SeeThrough(block.Kind))))
                         continue;
                     Vector2Int host = cell;
-                    if (block == null && !TryFind(x, y, 1, out host) && !TryFind(x, y, -1, out host))
+                    if ((block == null || window) && !TryFind(x, y, 1, out host) && !TryFind(x, y, -1, out host))
                         continue;
+                    SpecBlock above = At(new Vector2Int(x, y + 1));
                     cells.Add(new InteriorCell
                     {
                         Cell = cell, Host = host, Storey = storey, SeeThrough = block != null,
-                        UnderCeiling = y + 1 < Height && !IsFree(x, y + 1),
+                        UnderCeiling = above != null && above != block, // a window's lower half isn't
                     });
                 }
             }
             return cells;
         }
 
+        /// <summary>The nearest block cell from (x, y) along dy that isn't glass: a pane breaks
+        /// long before the wall around it, so it holds no back wall.</summary>
         private bool TryFind(int x, int y, int dy, out Vector2Int found)
         {
             for (int yy = y + dy; yy >= 0 && yy < Height; yy += dy)
-                if (!IsFree(x, yy))
+            {
+                SpecBlock block = At(new Vector2Int(x, yy));
+                if (block != null && block.Kind != TileKind.Glass)
                 {
                     found = new Vector2Int(x, yy);
                     return true;
                 }
+            }
             found = default;
             return false;
         }

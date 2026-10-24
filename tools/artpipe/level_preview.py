@@ -3,10 +3,10 @@
     tools/unity-check/check.sh levels [level-id...]     # layouts -> content-work/levels/*.json
     python tools/artpipe/level_preview.py [level-id...] # -> content-work/levels/<id>.png
 
-Reads the theme's real assets (ground tiles, building tileset, window backs, backdrop
-layers, sky) through their .meta GUIDs, sliced sheets included, and draws every building
-block where BuildingBuilder puts it, and the crew's caravan past the finish. Pickups, spawn,
-finish and segment names are marked.
+Reads the theme's real assets (ground tiles, building tileset, backdrop layers, sky)
+through their .meta GUIDs, sliced sheets included, and draws every building block where
+BuildingBuilder puts it, and the crew's caravan past the finish. Pickups, spawn, finish and
+segment names are marked.
 The level is cut into strips stacked top to bottom so a long level fits one image.
 Parallax and camera framing are not simulated: backdrops sit where they spawn.
 """
@@ -140,9 +140,6 @@ def load_theme(name):
             "order": int(re.search(r"sortingOrder: (-?\d+)", entry).group(1)),
             "rotation": float(re.search(r"rotation: (-?[\d.]+)", entry).group(1)),
         }
-    wb = re.search(r"windowBack: (\{[^}]*\}?[^}]*\})", tileset)
-    theme["windowBack"] = sprite(*ref(wb.group(1))[0]) if wb and ref(wb.group(1)) else None
-    theme["windowBackTint"] = color(tileset, "windowBackTint")
     for key, field in (("interior", "interior"), ("interiorTop", "interiorTop")):
         m = re.search(field + r": (\{[^}]*\})", tileset)
         theme[key] = sprite(*ref(m.group(1))[0]) if m and ref(m.group(1)) else None
@@ -287,9 +284,6 @@ def render(level):
                 if (h & 0xFFFF) / 65536 < theme["interiorDetailChance"]:
                     c.draw(details[(h >> 16) % len(details)], b["x"] + x + 0.5, b["y"] + y + 0.5)
         blocks = sorted(b["blocks"], key=lambda k: theme["tiles"].get(k[0], {}).get("order", 0))
-        for kind, bx, by, bw, bh, variant, _, edge in blocks:
-            if kind == "Glass" and theme["windowBack"]:
-                c.draw(theme["windowBack"], b["x"] + bx + bw / 2, b["y"] + by + bh / 2, tint=theme["windowBackTint"])
         for kind, bx, by, bw, bh, variant, _, edge in blocks:
             entry = theme["tiles"].get(kind)
             if not entry or not entry["sprites"]:

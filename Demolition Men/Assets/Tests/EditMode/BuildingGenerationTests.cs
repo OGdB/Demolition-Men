@@ -42,6 +42,29 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Interior_ShowsTheRoomThroughWindows_HungFromTheLintel()
+        {
+            // Walls at x 0 and 3, a window in the right wall at y 1..2, a roof at y 4.
+            var spec = new BuildingSpec("test", 1);
+            for (int y = 0; y < 4; y++)
+                spec.TryPlace(TileKind.Brick, 0, y);
+            spec.TryPlace(TileKind.Brick, 3, 0);
+            spec.TryPlace(TileKind.Glass, 3, 1);
+            spec.TryPlace(TileKind.Brick, 3, 3);
+            for (int x = 0; x < 4; x++)
+                spec.TryPlace(TileKind.Brick, x, 4);
+
+            var interior = spec.Interior().ToDictionary(c => c.Cell);
+            Assert.AreEqual(10, interior.Count, "the room (x 1..2, rows 0..3) and both window cells, though the window is the outer wall");
+            Assert.IsFalse(interior.ContainsKey(new Vector2Int(0, 1)), "a plain outer wall shows no back wall");
+            Assert.AreEqual(new Vector2Int(3, 3), interior[new Vector2Int(3, 1)].Host, "a window hangs from its lintel, so a broken one still shows the room");
+            Assert.AreEqual(new Vector2Int(3, 3), interior[new Vector2Int(3, 2)].Host);
+            Assert.IsTrue(interior[new Vector2Int(3, 2)].UnderCeiling);
+            Assert.IsFalse(interior[new Vector2Int(3, 1)].UnderCeiling, "under the pane's own top half");
+            Assert.IsTrue(interior[new Vector2Int(3, 1)].SeeThrough, "no pictures behind a pane");
+        }
+
+        [Test]
         public void Edges_AreTheOutermostBlocksOfTheirRows_AndStoreysCountSlabRows()
         {
             // Two storeys: walls at x 0 and 4, a plank slab at y 3, an inset upper left wall.

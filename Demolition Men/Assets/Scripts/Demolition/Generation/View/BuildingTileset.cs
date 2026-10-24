@@ -38,10 +38,7 @@ namespace Demolition.Generation
         }
 
         [SerializeField] private Entry[] entries = new Entry[0];
-        [Tooltip("Drawn behind window panes (dark wall seen through the glass).")]
-        [SerializeField] private Sprite windowBack;
-        [SerializeField] private Color windowBackTint = new Color(0.47f, 0.47f, 0.47f);
-        [Tooltip("The building's back wall, behind open rooms and see-through blocks. None: the sky shows through.")]
+        [Tooltip("The building's back wall, behind open rooms, see-through blocks and windows. None: the sky shows through.")]
         [SerializeField] private Sprite interior;
         [Tooltip("Back wall right under a ceiling (its shadow). None: the plain back wall.")]
         [SerializeField] private Sprite interiorTop;
@@ -94,7 +91,7 @@ namespace Demolition.Generation
             }
         }
 
-        /// <summary>Add the block's sprite as a child "Visual" (and a window back for glass).</summary>
+        /// <summary>Add the block's sprite as a child "Visual".</summary>
         public void Dress(GameObject block, SpecBlock spec, BlockEdge edge = BlockEdge.None)
         {
             Entry entry = Find(spec.Kind);
@@ -109,9 +106,6 @@ namespace Demolition.Generation
             visual.transform.localPosition = entry.offset;
             visual.transform.localRotation = Quaternion.Euler(0f, 0f, entry.rotation);
             visual.transform.localScale = new Vector3(entry.scale.x, entry.scale.y, 1f);
-
-            if (spec.Kind == TileKind.Glass && windowBack != null)
-                AddSprite(block.transform, "WindowBack", windowBack, windowBackTint, entry.sortingOrder - 1);
         }
 
         private Entry Find(TileKind kind)

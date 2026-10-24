@@ -5,9 +5,9 @@ using UnityEngine;
 namespace Demolition.Generation
 {
     /// <summary>
-    /// A generated building's back wall: one sprite per open or see-through cell
-    /// (<see cref="BuildingSpec.Interior"/>), so rooms read as rooms instead of a frame
-    /// against the sky; one wallpaper per storey, a picture or a shelf on some room cells.
+    /// A generated building's back wall: one sprite per open or see-through cell and behind
+    /// every window (<see cref="BuildingSpec.Interior"/>), so rooms read as rooms instead of a
+    /// frame against the sky; one wallpaper per storey, a picture or a shelf on some room cells.
     /// Cosmetic only: each piece hangs from a block cell and goes when that cell leaves the
     /// structure (<see cref="DestructibleBuilding.CellsRemoved"/>): in dust when the block broke,
     /// dropping and fading with the collapse when it came loose.

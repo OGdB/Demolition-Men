@@ -13,7 +13,6 @@
     "wood": {"ramp": "night"},
     "glass": {"frame": "steel", "pane": "nightglass", "highlights": [["cyan", 2], ["magenta", 1]]},
     "door": {"style": "panel", "frame": "steel", "leaf": "night", "window": "warm", "handle": "cyan", "sign": "magenta"},
-    "window_back": {"style": "lit", "ramp": "warm"},
     "interior": {"style": "wallpaper", "ramp": "night", "base": 1, "pattern": 0, "accent": "magenta",
                  "variants": [{"style": "plaster", "ramp": "night", "base": 1, "pattern": 0},
                               {"style": "tiles", "ramp": "nightglass", "base": 1, "pattern": 0}],
