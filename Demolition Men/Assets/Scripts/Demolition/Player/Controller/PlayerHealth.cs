@@ -141,6 +141,14 @@ namespace Demolition
             if (_sr != null) _sr.enabled = inPlay;
         }
 
+        /// <summary>Back up towards the maximum (an action's rest); the dead stay dead.</summary>
+        public void Heal(float amount)
+        {
+            if (IsProxy || IsDead || amount <= 0f)
+                return;
+            Current = Mathf.Min(maxHealth, Current + amount);
+        }
+
         /// <param name="capped">False for a blast: <see cref="maxDamagePerHit"/> is for debris piling up.</param>
         public void TakeDamage(float amount, bool capped = true)
         {

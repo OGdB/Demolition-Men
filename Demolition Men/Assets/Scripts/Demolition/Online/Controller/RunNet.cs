@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Demolition.Actions;
 using Demolition.Levels;
 using Demolition.Run;
 using Unity.Collections;
@@ -20,6 +21,9 @@ namespace Demolition.Online
     /// <item>Pickups: the client claims (<c>DM.Claim</c>), the host grants first come (<c>DM.Taken</c>).</item>
     /// <item>Dynamite: the thrower's device sends the throw and the blast (<c>DM.Thrown</c>,
     /// <c>DM.Blast</c>); the other flies a harmless copy.</item>
+    /// <item>Actions: each device tells the other what its player carries, fires and where it
+    /// struck (<c>DM.Act</c>); the other plays it on its copy and runs the strike, which only
+    /// damages standing blocks on the host.</item>
     /// <item>Run: the host's run state, score, demolition, pause and level hash at 10 Hz (<c>DM.State</c>),
     /// once the client says its Level scene is up (<c>DM.Ready</c>); in development builds a
     /// standing-cells hash per building every 5 s (<c>DM.Check</c>).</item>
@@ -29,8 +33,8 @@ namespace Demolition.Online
     {
         private const string Ready = "DM.Ready", Cells = "DM.Cells", Damage = "DM.Damage", Claim = "DM.Claim",
             Taken = "DM.Taken", Thrown = "DM.Thrown", Blast = "DM.Blast", State = "DM.State", Check = "DM.Check",
-            Score = "DM.Score";
-        private static readonly string[] Names = { Ready, Cells, Damage, Claim, Taken, Thrown, Blast, State, Check, Score };
+            Score = "DM.Score", Act = "DM.Act";
+        private static readonly string[] Names = { Ready, Cells, Damage, Claim, Taken, Thrown, Blast, State, Check, Score, Act };
         private const NetworkDelivery Reliable = NetworkDelivery.ReliableFragmentedSequenced;
         private const float CellsEvery = 0.05f, StateEvery = 0.1f, CheckEvery = 5f;
         private const float MaxDamage = 1000f; // one request can't flatten a building
@@ -92,6 +96,8 @@ namespace Demolition.Online
             messages.RegisterNamedMessageHandler(Blast, OnBlast);
             NetRole.DynamiteThrown = SendThrown;
             NetRole.DynamiteExploded = SendBlast;
+            messages.RegisterNamedMessageHandler(Act, OnAct);
+            NetRole.ActionEvent = SendAct;
             if (_host)
             {
                 messages.RegisterNamedMessageHandler(Ready, (sender, reader) => _clientReady = true);
@@ -127,6 +133,7 @@ namespace Demolition.Online
                 PauseController.SetHostPaused(false); // a host gone while paused leaves nothing frozen
             NetRole.DynamiteThrown = null;
             NetRole.DynamiteExploded = null;
+            NetRole.ActionEvent = null;
             NetRole.BlockHealthChanged = null;
             NetRole.PickupTaken = null;
             NetRole.RequestDamage = null;
@@ -447,6 +454,36 @@ namespace Demolition.Online
                 if (copy != null)
                     copy.ExplodeAt(new Vector3(x, y, 0f));
             }
+        }
+
+        // ---------------- Actions ----------------
+
+        // The player is the sender's own (host 0, client 1): never something the message says.
+        private void SendAct(int phase, int player, int kind, Vector2 at, int facing)
+        {
+            Send(Act, writer =>
+            {
+                writer.WriteValueSafe((byte)phase);
+                writer.WriteValueSafe((byte)kind);
+                writer.WriteValueSafe(at.x);
+                writer.WriteValueSafe(at.y);
+                writer.WriteValueSafe((sbyte)(facing < 0 ? -1 : 1));
+            });
+        }
+
+        private void OnAct(ulong sender, FastBufferReader reader)
+        {
+            reader.ReadValueSafe(out byte phase);
+            reader.ReadValueSafe(out byte kind);
+            reader.ReadValueSafe(out float x);
+            reader.ReadValueSafe(out float y);
+            reader.ReadValueSafe(out sbyte facing);
+            if (kind >= ActionCatalog.All.Count || phase > ActionUser.Struck)
+                return;
+            GameObject go = GameObject.Find(_host ? "Player_2" : "Player_1");
+            ActionUser user = go != null ? go.GetComponent<ActionUser>() : null;
+            if (user != null)
+                user.OnRemote(phase, (ActionKind)kind, new Vector2(x, y), facing);
         }
 
         // ---------------- Run state ----------------

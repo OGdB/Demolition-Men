@@ -338,6 +338,17 @@ namespace Demolition
             Vanish();
         }
 
+        /// <summary>Push loose debris (falling, or settled rubble, which wakes up and falls again).
+        /// A standing block isn't moved: standing structure takes damage, never forces.</summary>
+        public void Shove(Vector2 impulse)
+        {
+            if (_destroyed || (!IsFalling && !IsRubble))
+                return;
+            if (IsRubble)
+                Wake();
+            _rb.AddForce(impulse, ForceMode2D.Impulse);
+        }
+
         /// <summary>Remove the block without the destruction effects (debris over the
         /// falling cap, gates crumbling to dust), first waking any rubble it held up.</summary>
         public void Vanish()

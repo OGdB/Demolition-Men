@@ -13,7 +13,7 @@ namespace Demolition.Run
     public sealed class PauseView : MonoBehaviour
     {
         private const float MenuWidth = 760f, PanelHeight = 640f, Gap = 40f;
-        private const float ActionWidth = 260f, DeviceWidth = 230f, RowHeight = 62f;
+        private const float ActionWidth = 260f, DeviceWidth = 230f, RowHeight = 56f; // eight controls fit the panel
 
         private PauseController _pause;
         private RunController _run;

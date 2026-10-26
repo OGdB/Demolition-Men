@@ -88,6 +88,8 @@ namespace Demolition.Meta
         public int runsSinceAd;
         /// <summary>Bought "remove ads" (or a platform without ads).</summary>
         public bool adsRemoved;
+        /// <summary>The action each player carries into a level, by id (<c>ActionCatalog</c>); P1 first.</summary>
+        public List<string> actions = new List<string>();
 
         public LevelRecord Level(string id)
         {

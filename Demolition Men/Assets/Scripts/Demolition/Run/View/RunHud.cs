@@ -41,6 +41,12 @@ namespace Demolition.Run
             public TextMeshProUGUI TntKey;
             public int LastTnt;
             public float TntPulse;
+            public RectTransform ActionBar;
+            public RectTransform ActionFill;
+            public Image ActionFillImage;
+            public TextMeshProUGUI ActionLabel;
+            public bool ActionWasFull;
+            public float ActionPulse;
             public RectTransform Warning;
             public TextMeshProUGUI WarningCount;
             public TextMeshProUGUI Toast;
@@ -65,7 +71,9 @@ namespace Demolition.Run
         private const float HealthFadeSeconds = 0.5f;
         private static readonly Color[] PlayerColors = { new Color(1f, 0.85f, 0.3f), new Color(1f, 0.45f, 0.35f) };
         private static readonly Color OverPar = new Color(1f, 0.4f, 0.3f);
-        private static readonly Vector2 PanelSize = new Vector2(340f, 132f);
+        private static readonly Vector2 PanelSize = new Vector2(340f, 172f);
+        private const float ActionBarHeight = 32f;
+        private static readonly Color ActionCharging = new Color(0.85f, 0.6f, 0.15f);
         private const float PanelMargin = 20f;
         // Big enough that the weapon sprites (up to 45 px tall) draw at full size or more at
         // 1080p: shrunk, point filtering drops the wrecking ball's thin handle.
@@ -250,6 +258,7 @@ namespace Demolition.Run
                 new Vector2(56f, SlotSize), outlined: true);
             panel.TntKey = UiFactory.Text(panel.Kit, "Key", anchor, new Vector2((TntSlotX + SlotSize + 62f) * side, 0f), 22f, align,
                 new Vector2(70f, SlotSize));
+            BuildActionBar(panel, anchor);
             panel.Status = Thin(UiFactory.Text(plate, "Status", anchor, new Vector2(14f * side, -66f), 24f, align,
                 new Vector2(PanelSize.x - 28f, SlotSize), outlined: true));
             panel.Status.enableAutoSizing = true; // OUT - FIND A RESURRECT fits the plate
@@ -284,6 +293,27 @@ namespace Demolition.Run
             panel.Toast.rectTransform.pivot = new Vector2(0.5f, 0f); // centred above the head
             panel.Toast.gameObject.SetActive(false);
             return panel;
+        }
+
+        // Under the slots: the action meter, filling with this player's demolition, the action's
+        // name on it; full, it glows and names the button.
+        private static void BuildActionBar(PlayerPanel panel, Vector2 anchor)
+        {
+            Image bar = Plate(panel.Kit, "Action", anchor, new Vector2(0f, -(SlotSize + 10f)), new Vector2(PanelSize.x - 20f, ActionBarHeight),
+                new Color(0.08f, 0.08f, 0.1f, 0.9f));
+            panel.ActionBar = bar.rectTransform;
+            panel.ActionBar.pivot = new Vector2(0.5f, 0.5f); // pulses in place
+            panel.ActionBar.anchoredPosition += new Vector2((PanelSize.x - 20f) * 0.5f * (anchor.x < 0.5f ? 1f : -1f), -ActionBarHeight * 0.5f);
+            Image fill = UiFactory.Image(bar.transform, "Fill", Vector2.zero, Vector2.zero, Vector2.zero, ActionCharging);
+            panel.ActionFillImage = fill;
+            panel.ActionFill = fill.rectTransform;
+            Inset(panel.ActionFill, 0f, 4f);
+            panel.ActionLabel = Thin(UiFactory.Text(bar.transform, "Label", new Vector2(0.5f, 0.5f), Vector2.zero, 22f,
+                TextAlignmentOptions.Center, new Vector2(PanelSize.x - 30f, ActionBarHeight), outlined: true));
+            panel.ActionLabel.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            panel.ActionLabel.enableAutoSizing = true;
+            panel.ActionLabel.fontSizeMin = 14f;
+            panel.ActionLabel.fontSizeMax = 22f;
         }
 
         // The UI's riveted plate with its rim at half the menus' size: a HUD panel is a fraction of a menu's.
@@ -389,6 +419,7 @@ namespace Demolition.Run
             {
                 UpdateWeapon(panel, player);
                 UpdateTnt(panel, player);
+                UpdateAction(panel, player);
             }
             UpdateToast(panel, player);
 
@@ -467,6 +498,28 @@ namespace Demolition.Run
 
             panel.TntPulse = Mathf.Max(0f, panel.TntPulse - Time.deltaTime);
             panel.TntSlot.localScale = Vector3.one * (1f + panel.TntPulse * 0.75f);
+        }
+
+        // The action meter; full and ready, it flashes and shows this player's button.
+        private void UpdateAction(PlayerPanel panel, RunController.Player player)
+        {
+            Actions.ActionUser action = player.Action;
+            panel.ActionBar.gameObject.SetActive(action != null);
+            if (action == null)
+                return;
+            bool ready = action.Meter.Full && !action.Busy;
+            if (ready && !panel.ActionWasFull)
+                panel.ActionPulse = 0.45f;
+            panel.ActionWasFull = ready;
+            panel.ActionFill.anchorMax = new Vector2(Mathf.Clamp01(action.Meter.Fraction), 1f);
+            panel.ActionFillImage.color = ready
+                ? Color.Lerp(UiFactory.Gold, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.time * 9f))
+                : ActionCharging;
+            string key = ready ? Key(player, "C", "Y", "TAP ACTION") : string.Empty;
+            panel.ActionLabel.text = key.Length > 0 ? $"{action.Info.Name}  {key}" : action.Info.Name;
+            panel.ActionLabel.color = ready ? UiFactory.Ink : Color.white;
+            panel.ActionPulse = Mathf.Max(0f, panel.ActionPulse - Time.deltaTime);
+            panel.ActionBar.localScale = Vector3.one * (1f + panel.ActionPulse * 0.4f);
         }
 
         private void OnPickup(PlayerCombat combat, PickupKind kind, int amount)

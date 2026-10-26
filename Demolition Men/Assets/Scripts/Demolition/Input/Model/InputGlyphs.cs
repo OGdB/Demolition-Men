@@ -15,6 +15,7 @@ namespace Demolition
             { "{JUMP}", "JUMP", "[SPACE]", "(A)", "JUMP" },
             { "{HIT}", "HIT", "[Z]", "(X)", "HIT" },
             { "{TNT}", "THROW TNT", "[X]", "(B)", "TNT" },
+            { "{ACTION}", "ACTION", "[C]", "(Y)", "ACTION" },
             { "{SWAP}", "SWAP WEAPON", "[Q] [E]", "(LB) (RB)", "SWAP" },
             { "{ZOOM}", "ZOOM", "MOUSE WHEEL", "(R-STICK)", "PINCH" },
             { "{PAUSE}", "PAUSE", "[ESC]", "(START)", "II" },
@@ -29,7 +30,7 @@ namespace Demolition
         /// <summary><paramref name="control"/>'s buttons in <paramref name="style"/>.</summary>
         public static string Buttons(int control, InputStyle style) => Glyphs[control, (int)style + 2];
 
-        /// <summary>The message with every {MOVE}, {JUMP}, {HIT}, {TNT}, {SWAP}, {ZOOM} and {PAUSE}
+        /// <summary>The message with every {MOVE}, {JUMP}, {HIT}, {TNT}, {ACTION}, {SWAP}, {ZOOM} and {PAUSE}
         /// replaced by the buttons of each style in use, joined by " / " (a keyboard player and a
         /// gamepad player read "[SPACE] / (A)"). No styles: keyboard and gamepad.</summary>
         public static string Format(string message, IEnumerable<InputStyle> styles)

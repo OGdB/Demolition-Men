@@ -11,7 +11,7 @@ namespace Demolition
         public PlayerInputFrame Read()
         {
             PlayerInputFrame frame = Next;
-            Next.JumpPressed = Next.JumpReleased = Next.DynamitePressed = false;
+            Next.JumpPressed = Next.JumpReleased = Next.DynamitePressed = Next.ActionPressed = false;
             Next.WeaponCycle = 0;
             Next.Zoom = 0f;
             return frame;

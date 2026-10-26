@@ -86,6 +86,48 @@ namespace Demolition
             return Normalise(data, 0.7f);
         }
 
+        /// <summary>A long belch: a buzzing low pulse that wobbles, sags in pitch and gurgles
+        /// out, with a breathy rasp over it.</summary>
+        public static float[] Burp(float seconds, int seed)
+        {
+            var rng = new Random(seed);
+            int n = (int)(seconds * SampleRate);
+            var data = new float[n];
+            double phase = 0.0;
+            float lp = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)n;
+                float wobble = 1f + 0.12f * (float)Math.Sin(2.0 * Math.PI * 6.5 * t * seconds);
+                float jitter = 1f + 0.06f * (float)(rng.NextDouble() * 2.0 - 1.0);
+                phase += 82.0 * (1.0 - 0.3 * t) * wobble * jitter / SampleRate;
+                float saw = (float)(2.0 * (phase - Math.Floor(phase)) - 1.0);
+                float rasp = (float)(rng.NextDouble() * 2.0 - 1.0) * 0.35f;
+                lp += 0.18f * (saw + rasp - lp);
+                float gurgle = 0.7f + 0.3f * (float)Math.Sin(2.0 * Math.PI * 23.0 * t * seconds);
+                data[i] = lp * gurgle * Envelope(t, 0.06f, 1.4f);
+            }
+            return Normalise(data, 0.85f);
+        }
+
+        /// <summary>Two-finger whistle: a sine sweeping up to a held shriek, a little vibrato.</summary>
+        public static float[] Whistle(float seconds)
+        {
+            int n = (int)(seconds * SampleRate);
+            var data = new float[n];
+            double phase = 0.0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)n;
+                float sweep = t < 0.35f ? t / 0.35f : 1f;
+                double freq = 1400.0 + 1100.0 * sweep + 40.0 * Math.Sin(2.0 * Math.PI * 9.0 * t * seconds);
+                phase += freq / SampleRate;
+                float fade = t > 0.85f ? (1f - t) / 0.15f : 1f;
+                data[i] = (float)Math.Sin(2.0 * Math.PI * phase) * Math.Min(1f, t / 0.03f) * fade;
+            }
+            return Normalise(data, 0.6f);
+        }
+
         // Quick attack, then exponential decay; t in 0..1.
         private static float Envelope(float t, float attack, float decay) =>
             (t < attack ? t / attack : 1f) * (float)Math.Exp(-decay * t);

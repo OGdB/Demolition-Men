@@ -22,6 +22,8 @@ namespace Demolition
         public bool JumpReleased;
         public bool AttackHeld;
         public bool DynamitePressed;
+        /// <summary>Fire the action this player carries (its meter must be full).</summary>
+        public bool ActionPressed;
         /// <summary>+1 / -1 on the frame the next / previous weapon is requested, otherwise 0.</summary>
         public int WeaponCycle;
         /// <summary>Camera zoom steps this frame: + shows more, - less. A mouse wheel notch is
@@ -30,7 +32,7 @@ namespace Demolition
         public float Zoom;
 
         /// <summary>The player is doing something: moving, a button held or pressed.</summary>
-        public bool IsActive => Move.sqrMagnitude > 0.04f || JumpHeld || AttackHeld || DynamitePressed || WeaponCycle != 0;
+        public bool IsActive => Move.sqrMagnitude > 0.04f || JumpHeld || AttackHeld || DynamitePressed || ActionPressed || WeaponCycle != 0;
 
         /// <summary>Both sources at once: moves add up (clamped), buttons combine.</summary>
         public static PlayerInputFrame Merge(PlayerInputFrame a, PlayerInputFrame b) => new PlayerInputFrame
@@ -41,6 +43,7 @@ namespace Demolition
             JumpReleased = a.JumpReleased || b.JumpReleased,
             AttackHeld = a.AttackHeld || b.AttackHeld,
             DynamitePressed = a.DynamitePressed || b.DynamitePressed,
+            ActionPressed = a.ActionPressed || b.ActionPressed,
             WeaponCycle = a.WeaponCycle != 0 ? a.WeaponCycle : b.WeaponCycle,
             Zoom = a.Zoom + b.Zoom,
         };

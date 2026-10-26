@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Demolition.Actions;
 using Demolition.Levels;
 using Demolition.Meta;
 using UnityEngine;
@@ -23,6 +24,7 @@ namespace Demolition.Run
             public PlayerCombat Combat;
             public PlayerMotor Motor;
             public PlayerInputReader Input;
+            public ActionUser Action;
         }
 
         // A player running in during the countdown: the script that runs them, the input it
@@ -209,6 +211,11 @@ namespace Demolition.Run
                 player.Health.ManagedByRun = true;
                 player.Health.Depleted += OnDepleted;
                 PlayerUpgrades.Apply(player, Profile.Data);
+                if (!go.TryGetComponent(out player.Action))
+                    player.Action = go.AddComponent<ActionUser>();
+                // Online this device's loadout is its own player's (its P1 pick); the other's arrives with its announce.
+                int pick = NetRole.IsOnline ? (player.Index == NetRole.LocalPlayer ? 0 : -1) : player.Index;
+                player.Action.Configure(player.Index, pick >= 0 ? ActionCatalog.Equipped(Profile.Data, pick) : ActionCatalog.Default);
                 _players.Add(player);
             }
 

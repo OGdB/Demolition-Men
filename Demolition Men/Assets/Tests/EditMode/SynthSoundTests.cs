@@ -13,8 +13,10 @@ namespace Demolition.Tests
                 SynthSound.Rumble(1.5f, 2),
                 SynthSound.Clang(0.4f, 300f, 3),
                 SynthSound.Chime(0.8f, 1320f),
+                SynthSound.Burp(0.9f, 4),
+                SynthSound.Whistle(0.6f),
             };
-            float[] lengths = { 0.2f, 1.5f, 0.4f, 0.8f };
+            float[] lengths = { 0.2f, 1.5f, 0.4f, 0.8f, 0.9f, 0.6f };
             for (int s = 0; s < sounds.Length; s++)
             {
                 Assert.AreEqual((int)(lengths[s] * SynthSound.SampleRate), sounds[s].Length);

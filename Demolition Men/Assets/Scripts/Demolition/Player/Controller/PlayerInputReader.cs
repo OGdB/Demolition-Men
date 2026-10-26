@@ -31,10 +31,14 @@ namespace Demolition
         public bool JumpUp { get; private set; }
         public bool AttackHeld { get; private set; }
         public bool DynamiteDown { get; private set; }
+        /// <summary>The action button went down this frame.</summary>
+        public bool ActionDown { get; private set; }
         /// <summary>+1 / -1 on the frame the next / previous weapon is requested, otherwise 0.</summary>
         public int WeaponCycle { get; private set; }
         /// <summary>Camera zoom steps this frame (see <see cref="PlayerInputFrame.Zoom"/>).</summary>
         public float Zoom { get; private set; }
+        /// <summary>Hands off the controls: the player is busy with an action (an empty frame is read).</summary>
+        public bool Suppressed { get; set; }
         /// <summary>Button glyphs for this player's prompts.</summary>
         public InputStyle Style => Source.Style;
         /// <summary>The player has touched their controls since the scene started; until then
@@ -68,7 +72,7 @@ namespace Demolition
         private void Update()
         {
             PlayerInputFrame frame = Source.Read();
-            if (Run.PauseController.BlocksInput)
+            if (Run.PauseController.BlocksInput || Suppressed)
                 frame = default;
 
             MoveRaw = frame.Move;
@@ -80,6 +84,7 @@ namespace Demolition
             JumpUp = frame.JumpReleased;
             AttackHeld = frame.AttackHeld;
             DynamiteDown = frame.DynamitePressed;
+            ActionDown = frame.ActionPressed;
             WeaponCycle = frame.WeaponCycle;
             Zoom = frame.Zoom;
             Used |= frame.IsActive;

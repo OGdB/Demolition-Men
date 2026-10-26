@@ -10,7 +10,7 @@ namespace Demolition
         /// <summary>The one set of on-screen controls (a phone has one touch player).</summary>
         public static readonly TouchInputSource Shared = new TouchInputSource();
 
-        private bool _jumpHeld, _jumpPressed, _jumpReleased, _attackHeld, _dynamitePressed;
+        private bool _jumpHeld, _jumpPressed, _jumpReleased, _attackHeld, _dynamitePressed, _actionPressed;
         private int _cycle;
         private float _zoom;
 
@@ -27,6 +27,7 @@ namespace Demolition
 
         public void SetAttack(bool held) => _attackHeld = held;
         public void PressDynamite() => _dynamitePressed = true;
+        public void PressAction() => _actionPressed = true;
         public void PressCycle() => _cycle = 1;
         /// <summary>Pinch: zoom steps, added up until the next read.</summary>
         public void AddZoom(float steps) => _zoom += steps;
@@ -50,10 +51,11 @@ namespace Demolition
                 JumpReleased = _jumpReleased,
                 AttackHeld = _attackHeld,
                 DynamitePressed = _dynamitePressed,
+                ActionPressed = _actionPressed,
                 WeaponCycle = _cycle,
                 Zoom = _zoom,
             };
-            _jumpPressed = _jumpReleased = _dynamitePressed = false;
+            _jumpPressed = _jumpReleased = _dynamitePressed = _actionPressed = false;
             _cycle = 0;
             _zoom = 0f;
             return frame;

@@ -307,6 +307,7 @@ Transform:
   - {fileID: 334683493}
   - {fileID: 362225563}
   - {fileID: 1086775353}
+  - {fileID: 1086775361}
   - {fileID: 1077720015}
   - {fileID: 32514385}
   - {fileID: 992211191}
@@ -2350,6 +2351,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
   message: "KEEP UP!\nOff-screen for 3 seconds and you're out."
+--- !u!1 &1086775360
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1086775361}
+  - component: {fileID: 1086775362}
+  m_Layer: 0
+  m_Name: Prompt 70
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1086775361
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1086775360}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 70, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 73022410}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1086775362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1086775360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91bf9e256feee1547852413cb9019286, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Demolition::Demolition.Run.TutorialPrompt
+  message: "ACTION\nSmashing fills your ACTION meter. Here's a full one: {ACTION} lets it rip on the tower!"
+  chargesAction: 1
 --- !u!50 &1123219455 stripped
 Rigidbody2D:
   m_CorrespondingSourceObject: {fileID: 3045864645810956019, guid: eb553efe8038082469faaf7f2f982d19,

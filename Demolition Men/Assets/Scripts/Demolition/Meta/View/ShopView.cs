@@ -9,7 +9,8 @@ using UnityEngine.UI;
 namespace Demolition.Meta
 {
     /// <summary>The skill shop (roadmap D6): banked cash buys the next level of an upgrade.
-    /// One row per <see cref="UpgradeCatalog"/> entry. Built in code; Back (Esc / B) closes.
+    /// One row per <see cref="UpgradeCatalog"/> entry, and ACTIONS opens the crew's loadout
+    /// (<see cref="Actions.ActionsView"/>). Built in code; Back (Esc / B) closes.
     /// Opens from the level select and from the results screen between runs.</summary>
     public sealed class ShopView : MonoBehaviour
     {
@@ -48,6 +49,8 @@ namespace Demolition.Meta
 
         private void Update()
         {
+            if (Actions.ActionsView.IsOpen)
+                return; // its Back closes it, not the shop under it
             bool back = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
             foreach (Gamepad pad in Gamepad.all)
                 back |= pad.buttonEast.wasPressedThisFrame;
@@ -82,7 +85,8 @@ namespace Demolition.Meta
                     first = buy;
                 y -= 125f;
             }
-            UiFactory.Button(root, "BACK", centre, new Vector2(0f, y - 30f), new Vector2(360f, 90f), Close);
+            UiFactory.Button(root, "ACTIONS", centre, new Vector2(-200f, y - 30f), new Vector2(360f, 90f), () => Actions.ActionsView.Open(transform));
+            UiFactory.Button(root, "BACK", centre, new Vector2(200f, y - 30f), new Vector2(360f, 90f), Close);
 
             Refresh();
             if (EventSystem.current != null && first != null)

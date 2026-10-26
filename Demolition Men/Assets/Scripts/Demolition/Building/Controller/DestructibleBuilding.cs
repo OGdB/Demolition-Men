@@ -138,6 +138,18 @@ namespace Demolition
 
         public bool TryGetBlock(Vector2Int cell, out BuildingBlock block) => _blocks.TryGetValue(cell, out block);
 
+        /// <summary>Every block still standing, once each (a beam holds several cells).</summary>
+        public IEnumerable<BuildingBlock> StandingBlocks
+        {
+            get
+            {
+                var seen = new HashSet<BuildingBlock>();
+                foreach (BuildingBlock block in _blocks.Values)
+                    if (block != null && !block.IsFalling && !block.IsRubble && seen.Add(block))
+                        yield return block;
+            }
+        }
+
         /// <summary>Cells that just left the standing structure (destroyed, or detached and
         /// falling). Cosmetics hung on them (the back wall) go with them.</summary>
         public event System.Action<List<Vector2Int>> CellsRemoved;

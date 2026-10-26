@@ -46,6 +46,24 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void ActionPress_IsReadOnce_FromBotsAndTouch_AndMerges()
+        {
+            var bot = new ScriptedInputSource();
+            bot.Next.ActionPressed = true;
+            Assert.IsTrue(bot.Read().ActionPressed);
+            Assert.IsFalse(bot.Read().ActionPressed);
+
+            var touch = new TouchInputSource();
+            touch.PressAction();
+            PlayerInputFrame tapped = touch.Read();
+            Assert.IsTrue(tapped.ActionPressed && tapped.IsActive);
+            Assert.IsFalse(touch.Read().ActionPressed);
+
+            Assert.IsTrue(PlayerInputFrame.Merge(default, new PlayerInputFrame { ActionPressed = true }).ActionPressed);
+            Assert.AreEqual("[C] / (Y)", InputGlyphs.Format("{ACTION}", new InputStyle[0]));
+        }
+
+        [Test]
         public void Zoom_IsReadOnce_AndBothSourcesAddUp()
         {
             var bot = new ScriptedInputSource();

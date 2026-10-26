@@ -7,7 +7,7 @@ namespace Demolition
 {
     /// <summary>
     /// On-screen controls for phones and tablets, built in code: a floating stick on the
-    /// left half, JUMP / HIT / TNT / SWAP under the right thumb, a pause button, and two
+    /// left half, JUMP / HIT / TNT / SWAP / ACTION under the right thumb, a pause button, and two
     /// fingers anywhere else pinch-zoom the camera. Shown
     /// only when <see cref="Platform.IsTouch"/>; hidden while paused or after the run.
     /// Drives <see cref="TouchInputSource.Shared"/>.
@@ -102,6 +102,7 @@ namespace Demolition
             Button(_scaled, "HIT", new Vector2(-420f, 130f), 200f, held => source.SetAttack(held));
             Button(_scaled, "TNT", new Vector2(-400f, 360f), 140f, held => { if (held) source.PressDynamite(); });
             Button(_scaled, "SWAP", new Vector2(-170f, 410f), 130f, held => { if (held) source.PressCycle(); });
+            Button(_scaled, "ACTION", new Vector2(-610f, 300f), 150f, held => { if (held) source.PressAction(); });
 
             UnityEngine.UI.Button pause = UiFactory.Button(safe, "II", Vector2.one, PauseCorner, new Vector2(96f, 80f),
                 () => FindAnyObjectByType<PauseController>()?.SetPaused(true));

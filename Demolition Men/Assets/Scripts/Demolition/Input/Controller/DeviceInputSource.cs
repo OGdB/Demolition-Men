@@ -6,10 +6,10 @@ namespace Demolition
     /// <summary>
     /// Keyboard + mouse and/or one gamepad, read straight from the Input System.
     ///
-    /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · LB/RB weapon ·
+    /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · Y action · LB/RB weapon ·
     /// right stick up/down zoom in/out.
     /// Keyboard: A/D or ◀/▶ move · Space/W jump · Z, F or L-Mouse attack · X, R or
-    /// R-Mouse dynamite · Q/E weapon · mouse wheel zoom.
+    /// R-Mouse dynamite · C or M-Mouse action · Q/E weapon · mouse wheel zoom.
     /// </summary>
     public sealed class DeviceInputSource : IPlayerInputSource
     {
@@ -69,6 +69,7 @@ namespace Demolition
                 frame.JumpReleased |= pad.aButton.wasReleasedThisFrame;
                 frame.AttackHeld |= pad.xButton.isPressed;
                 frame.DynamitePressed |= pad.bButton.wasPressedThisFrame;
+                frame.ActionPressed |= pad.yButton.wasPressedThisFrame;
                 if (pad.rightShoulder.wasPressedThisFrame) frame.WeaponCycle = 1;
                 else if (pad.leftShoulder.wasPressedThisFrame) frame.WeaponCycle = -1;
                 float zoom = pad.rightStick.ReadValue().y; // pushed up: closer
@@ -95,6 +96,7 @@ namespace Demolition
 
                 frame.AttackHeld |= kb.zKey.isPressed || kb.fKey.isPressed;
                 frame.DynamitePressed |= kb.xKey.wasPressedThisFrame || kb.rKey.wasPressedThisFrame;
+                frame.ActionPressed |= kb.cKey.wasPressedThisFrame;
 
                 if (kb.eKey.wasPressedThisFrame) frame.WeaponCycle = 1;
                 else if (kb.qKey.wasPressedThisFrame) frame.WeaponCycle = -1;
@@ -106,7 +108,8 @@ namespace Demolition
             {
                 frame.AttackHeld |= mouse.leftButton.isPressed;
                 frame.DynamitePressed |= mouse.rightButton.wasPressedThisFrame;
-                if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)
+                frame.ActionPressed |= mouse.middleButton.wasPressedThisFrame;
+                if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame)
                     Style = InputStyle.Keyboard;
                 // One step per frame the wheel turns: its delta is pixels on some platforms and
                 // notches on others. Rolled up: closer.

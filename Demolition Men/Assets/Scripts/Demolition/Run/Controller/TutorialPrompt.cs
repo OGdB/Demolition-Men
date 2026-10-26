@@ -12,11 +12,14 @@ namespace Demolition.Run
     {
         private static readonly List<TutorialPrompt> _all = new List<TutorialPrompt>();
 
-        [Tooltip("First line: the sign's heading. {MOVE} {JUMP} {HIT} {TNT} {SWAP} become the buttons of the devices in use.")]
+        [Tooltip("First line: the sign's heading. {MOVE} {JUMP} {HIT} {TNT} {ACTION} {SWAP} become the buttons of the devices in use.")]
         [TextArea(2, 5)] [SerializeField] private string message;
+        [Tooltip("Players passing this marker get a full action meter (the stretch about actions).")]
+        [SerializeField] private bool chargesAction;
 
         public static IReadOnlyList<TutorialPrompt> All => _all;
         public string Message => message;
+        public bool ChargesAction => chargesAction;
         public Vector2 Position => transform.position;
 
         private void OnEnable() => _all.Add(this);
