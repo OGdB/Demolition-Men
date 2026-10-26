@@ -58,10 +58,12 @@ namespace Demolition
         /// <summary>A full meter waits this long for a roof before the slam goes at a wall.</summary>
         public const float SlamWait = 6f;
         public const float StandStill = 1f;
+        /// <summary>After the burp the bot steps back and waits this long for the floors to come down.</summary>
+        public const float BurpWait = 2.8f;
 
         public static bool Fire(ActionKind kind, BotSight s)
         {
-            if (s.Room < LockSeconds(ActionCatalog.Get(kind)))
+            if (s.Room < LockSeconds(ActionCatalog.Get(kind)) + (kind == ActionKind.Burp ? BurpWait : 0f))
                 return false;
             if (kind == ActionKind.HiVis)
                 return s.Debris || (s.Health < 0.5f && s.Wall < 2f);

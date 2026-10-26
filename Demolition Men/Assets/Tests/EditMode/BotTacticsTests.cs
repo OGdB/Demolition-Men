@@ -39,6 +39,11 @@ namespace Demolition.Tests
             BotSight running = AtBuilding(3f);
             running.Speed = 8f;
             Assert.IsFalse(BotTactics.Fire(ActionKind.Burp, running), "at a run it coasts on under it");
+            BotSight hurried = AtBuilding(3f);
+            hurried.Room = 3f;
+            Assert.IsFalse(BotTactics.Fire(ActionKind.Burp, hurried), "1.6 s of frames and 2.8 s waiting for the dust: the camera would leave it");
+            hurried.Room = 5f;
+            Assert.IsTrue(BotTactics.Fire(ActionKind.Burp, hurried));
             BotSight prop = AtBuilding(2f);
             prop.WallIsBuilding = false;
             Assert.IsFalse(BotTactics.Fire(ActionKind.Burp, prop), "not on a car");

@@ -214,7 +214,7 @@ namespace Demolition
                 }
                 if (feet.x - CameraLeft() < Pressed)
                     _pressedUntil = now + 1f;
-                if (move <= 0f && now < _pressedUntil)
+                if (move < 0.5f && now < _pressedUntil)
                 {
                     // Pinned against the camera's edge: run on, hitting what's in the way.
                     move = 1f;
@@ -429,7 +429,7 @@ namespace Demolition
                 float frames = BotTactics.LockSeconds(_action.Info);
                 _escape = -1f;
                 _backUntil = now + frames + 0.3f;
-                _brakeUntil = now + frames + 2.5f;
+                _brakeUntil = now + frames + BotTactics.BurpWait;
             }
             return true;
         }
