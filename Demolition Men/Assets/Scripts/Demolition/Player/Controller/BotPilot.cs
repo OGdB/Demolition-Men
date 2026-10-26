@@ -250,9 +250,9 @@ namespace Demolition
             if (pit && !headroom && move > 0f)
                 move = Brake(0f);
             if (CanArmJump && grounded && move > 0f && !attack && headroom
-                && (StepAhead(feet) || pit || ExplosiveAhead(feet)))
+                && (pit || ((StepAhead(feet) || ExplosiveAhead(feet)) && LandingClear(feet))))
                 _jumpUntil = now + JumpHold;
-            else if (move > 0f && grounded && CanArmJump && (unstickJump || (headroom && now - _progressTime > StuckSeconds)))
+            else if (move > 0f && grounded && CanArmJump && LandingClear(feet) && (unstickJump || (headroom && now - _progressTime > StuckSeconds)))
             {
                 _jumpUntil = now + JumpHold;
                 _progressTime = now;
@@ -738,6 +738,16 @@ namespace Demolition
         }
 
         private bool PitAhead(Vector2 feet) => PitAt(feet + new Vector2(1.2f, 0.2f));
+
+        // A running jump lands 5 to 9 units on: a step or heap isn't jumped with a pit there (a
+        // pit at the feet is, the level is made to be cleared from its edge).
+        private bool LandingClear(Vector2 feet)
+        {
+            for (float ahead = 5f; ahead <= 9f; ahead += 0.5f)
+                if (PitAt(feet + new Vector2(ahead, 0.2f)))
+                    return false;
+            return true;
+        }
 
         // No ground under the point: the level's map where there is one (a heap of rubble or a block
         // dropping through a pit is no ground to land on), else a ray down past falling debris.
