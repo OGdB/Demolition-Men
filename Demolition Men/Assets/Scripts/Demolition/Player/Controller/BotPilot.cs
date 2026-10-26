@@ -306,17 +306,19 @@ namespace Demolition
             return false;
         }
 
-        // The nearest standing block straight ahead at waist or chest height, if it's worth a stick.
+        // The nearest standing block straight ahead at waist or chest height, if it's worth a stick
+        // and no rubble lies in the stick's way (it goes off on the first block it touches).
         private BuildingBlock ThrowTarget(Vector2 feet, out float distance)
         {
-            BuildingBlock nearest = NearestAhead(feet, ThrowMax + 1f, out distance);
-            return nearest != null && WorthAStick(nearest) ? nearest : null;
+            BuildingBlock nearest = NearestAhead(feet, ThrowMax + 1f, out distance, out float rubble);
+            return nearest != null && rubble > distance && WorthAStick(nearest) ? nearest : null;
         }
 
-        // The nearest standing block straight ahead at waist or chest height, within reach.
-        private BuildingBlock NearestAhead(Vector2 feet, float reach, out float distance)
+        // The nearest standing block straight ahead at waist or chest height, within reach, and how
+        // near the first rubble in the way comes.
+        private BuildingBlock NearestAhead(Vector2 feet, float reach, out float distance, out float rubble)
         {
-            distance = float.PositiveInfinity;
+            distance = rubble = float.PositiveInfinity;
             BuildingBlock nearest = null;
             foreach (float height in ThrowHeights)
             {
@@ -332,9 +334,12 @@ namespace Demolition
                     if (block != null && block.IsFalling)
                         continue;
                     // The first solid thing in the way: the stick goes off on it (or stops at a wall of ground).
-                    if (block != null && !block.IsRubble && _hits[i].distance + 0.3f < distance)
+                    float near = _hits[i].distance + 0.3f;
+                    if (block != null && block.IsRubble)
+                        rubble = Mathf.Min(rubble, near);
+                    else if (block != null && near < distance)
                     {
-                        distance = _hits[i].distance + 0.3f;
+                        distance = near;
                         nearest = block;
                     }
                     break;
@@ -358,7 +363,7 @@ namespace Demolition
             _sightAt = now + SightEvery;
 
             ActionKind kind = _action.Info.Kind;
-            BuildingBlock wall = NearestAhead(feet, ActionReach, out float distance);
+            BuildingBlock wall = NearestAhead(feet, ActionReach, out float distance, out _);
             var sight = new BotSight
             {
                 FacingAhead = _motor.Facing > 0,
