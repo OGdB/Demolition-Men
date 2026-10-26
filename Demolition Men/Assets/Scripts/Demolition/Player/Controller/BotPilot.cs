@@ -48,6 +48,8 @@ namespace Demolition
         /// the top of its arc (a floor left standing over a burped-out ground floor) sets it off in
         /// the thrower's face.</summary>
         private const float ArcHeight = 2.1f, ArcReach = 3.5f;
+        /// <summary>The blast flings debris well past its own 3 units: step back from a stick this near.</summary>
+        private const float StickClear = 6.5f;
         private static readonly float[] ThrowHeights = { 0.5f, 1.3f };
         /// <summary>How far ahead it looks for a building to fire its action at.</summary>
         private const float ActionReach = BotTactics.ChargeReach + 1f;
@@ -191,7 +193,7 @@ namespace Demolition
                 else if (move > 0f && tumbling)
                     move = 0f; // tumbling blocks ahead may yet come down on its head
                 else if (_combat.DynamiteOut || StrikePending(now))
-                    move = Mathf.Min(move, 0f); // ours is about to go off ahead: thrown from out of its reach, so stay there
+                    move = Mathf.Min(move, StickNear(feet) ? -1f : 0f); // ours is about to go off ahead: out of its reach, and out of what its blast flings
                 if (move < 0f)
                 {
                     attack = false;
@@ -573,6 +575,15 @@ namespace Demolition
             return false;
         }
 
+        // A stick still to go off this near (its own: the partner's would be as bad).
+        private bool StickNear(Vector2 feet)
+        {
+            foreach (Dynamite stick in FindObjectsByType<Dynamite>(FindObjectsSortMode.None))
+                if (!stick.Cosmetic && Mathf.Abs(stick.transform.position.x - feet.x) < StickClear)
+                    return true;
+            return false;
+        }
+
         private static bool WorthAStick(BuildingBlock block) =>
             block.Explosive || (block.HealthFraction > 0.35f
                 && (block.Material == BlockMaterial.Support || block.Material == BlockMaterial.Metal));
@@ -663,7 +674,7 @@ namespace Demolition
         // -1 to back up, or 0 where that would end over a drop or past the camera's edge (backing up
         // carries on a little after letting go).
         private float Back(Vector2 feet) =>
-            feet.x - 1f < CameraLeft() + EdgeMargin || PitAt(feet + new Vector2(-0.7f, 0.2f)) || PitAt(feet + new Vector2(-1.6f, 0.2f))
+            feet.x - 1f < CameraLeft() + Pressed || PitAt(feet + new Vector2(-0.7f, 0.2f)) || PitAt(feet + new Vector2(-1.6f, 0.2f))
                 ? 0f : -1f;
 
         // The run camera's left edge (out of bounds past it), or -infinity when nothing scrolls.
