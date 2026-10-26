@@ -323,11 +323,11 @@ namespace Demolition
         }
 
         // The nearest standing block straight ahead at waist or chest height, if it's worth a stick
-        // and no rubble lies in the stick's way (it goes off on the first block it touches).
+        // and nothing loose lies in the stick's way (it goes off on the first block it touches).
         private BuildingBlock ThrowTarget(Vector2 feet, out float distance)
         {
-            BuildingBlock nearest = NearestAhead(feet, ThrowMax + 1f, out distance, out float rubble);
-            return nearest != null && rubble > distance && ArcClear(feet) && WorthAStick(nearest) ? nearest : null;
+            BuildingBlock nearest = NearestAhead(feet, ThrowMax + 1f, out distance, out float loose);
+            return nearest != null && loose > distance && ArcClear(feet) && WorthAStick(nearest) ? nearest : null;
         }
 
         private bool ArcClear(Vector2 feet)
@@ -340,10 +340,10 @@ namespace Demolition
         }
 
         // The nearest standing block straight ahead at waist or chest height, within reach, and how
-        // near the first rubble in the way comes.
-        private BuildingBlock NearestAhead(Vector2 feet, float reach, out float distance, out float rubble)
+        // near the first loose block (rubble, or one still falling) in the way comes.
+        private BuildingBlock NearestAhead(Vector2 feet, float reach, out float distance, out float loose)
         {
-            distance = rubble = float.PositiveInfinity;
+            distance = loose = float.PositiveInfinity;
             BuildingBlock nearest = null;
             foreach (float height in ThrowHeights)
             {
@@ -356,13 +356,13 @@ namespace Demolition
                     var block = hit.GetComponentInParent<BuildingBlock>();
                     if (block == null && hit.isTrigger)
                         continue; // pickups, the finish line
-                    if (block != null && block.IsFalling)
-                        continue;
-                    // The first solid thing in the way: the stick goes off on it (or stops at a wall of ground).
                     float near = _hits[i].distance + 0.3f;
-                    if (block != null && block.IsRubble)
-                        rubble = Mathf.Min(rubble, near);
-                    else if (block != null && near < distance)
+                    if (block != null && (block.IsRubble || block.IsFalling))
+                        loose = Mathf.Min(loose, near); // the stick goes off on anything loose in its way
+                    if (block != null && block.IsFalling)
+                        continue; // the sight looks past what's coming down
+                    // The first solid thing in the way: the stick goes off on it (or stops at a wall of ground).
+                    if (block != null && near < distance)
                     {
                         distance = near;
                         nearest = block;
