@@ -1,0 +1,59 @@
+{
+  "frames": 18,
+  "source": "vest.png",
+  "config": {
+    "mode": "pixel",
+    "depth": 0.005,
+    "depth_x": null,
+    "breaths": 1,
+    "lag": 0.1,
+    "rigid_row": null,
+    "axis_x": null,
+    "torso_half": null,
+    "anatomy": null
+  },
+  "phases": [
+    0.0,
+    0.05555555555555555,
+    0.1111111111111111,
+    0.16666666666666666,
+    0.2222222222222222,
+    0.2777777777777778,
+    0.3333333333333333,
+    0.3888888888888889,
+    0.4444444444444444,
+    0.5,
+    0.5555555555555556,
+    0.6111111111111112,
+    0.6666666666666666,
+    0.7222222222222222,
+    0.7777777777777778,
+    0.8333333333333334,
+    0.8888888888888888,
+    0.9444444444444444
+  ],
+  "resolved": {
+    "anatomy": {
+      "width": 49,
+      "height": 68,
+      "axis_x": 23,
+      "neck_row": 10,
+      "neck_source": "bottleneck",
+      "rigid_row": 10,
+      "rigid_source": "neck",
+      "basis_row": 10,
+      "torso_half": 14,
+      "max_half": 25,
+      "torso_source": "auto",
+      "face": null,
+      "warnings": [
+        "face-absent: 대칭 눈쌍을 못 찾아 목만으로 경계를 정했다"
+      ]
+    },
+    "matches_sidecar": true,
+    "sidecar_drift": null,
+    "warnings": [
+      "face-absent: 대칭 눈쌍을 못 찾아 목만으로 경계를 정했다"
+    ]
+  }
+}
