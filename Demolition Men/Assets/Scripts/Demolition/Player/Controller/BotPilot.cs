@@ -258,6 +258,8 @@ namespace Demolition
                 _progressTime = now;
             }
             bool jump = now < _jumpUntil;
+            if (move == 0f && grounded)
+                move = Brake(0f); // standing means standing: letting go coasts 7 units, over a pit's edge too
             Status = $"move {move:0} attack {attack} jump {jump} throw {throwNow} head {headroom} pit {pit} gnd {grounded} ahead {(block != null ? $"{block.Material}{(block.Explosive ? "!" : "")} {block.HealthFraction:0.00}" : "-")}"
                      + $" back {Mathf.Max(0f, _backUntil - now):0.0} runUp {(float.IsNegativeInfinity(_runUpFrom) ? "-" : $"{_runUpFrom:0.0}")} out {_combat.DynamiteOut} tnt {_combat.DynamiteCount}"
                      + $" action {(_action != null ? $"{_action.Info.Id} {_action.Meter.Fraction:0.00}{(fire ? " FIRE" : "")}" : "-")}";
