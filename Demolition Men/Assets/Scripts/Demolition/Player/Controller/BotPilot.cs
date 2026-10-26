@@ -50,6 +50,8 @@ namespace Demolition
         private const float ArcHeight = 2.1f, ArcReach = 3.5f;
         /// <summary>The blast flings debris well past its own 3 units: step back from a stick this near.</summary>
         private const float StickClear = 6.5f;
+        /// <summary>Seconds of room it stands punching a support in reach (walk-through, so it would run on).</summary>
+        private const float SupportRoom = 4f;
         private static readonly float[] ThrowHeights = { 0.5f, 1.3f };
         /// <summary>How far ahead it looks for a building to fire its action at.</summary>
         private const float ActionReach = BotTactics.ChargeReach + 1f;
@@ -199,6 +201,8 @@ namespace Demolition
                     attack = false;
                     move = Back(feet);
                 }
+                if (attack && move > 0f && block != null && block.Material == BlockMaterial.Support && Room(feet) > SupportRoom)
+                    move = 0f; // a support is walk-through: stand and finish it, the building comes down with it
                 fire = !throwNow && PlanAction(feet, now, headroom, falling || tumbling);
                 if (now < _brakeUntil)
                     move = Mathf.Min(move, 0f);
