@@ -44,6 +44,10 @@ namespace Demolition
         private const float Pressed = EdgeMargin + 2f;
         /// <summary>Seconds of room a throw needs: it stands through the fuse and the blast.</summary>
         private const float ThrowRoom = 4f;
+        /// <summary>The stick flies out at chest height and rises: a block over the first few units at
+        /// the top of its arc (a floor left standing over a burped-out ground floor) sets it off in
+        /// the thrower's face.</summary>
+        private const float ArcHeight = 2.1f, ArcReach = 3.5f;
         private static readonly float[] ThrowHeights = { 0.5f, 1.3f };
         /// <summary>How far ahead it looks for a building to fire its action at.</summary>
         private const float ActionReach = BotTactics.ChargeReach + 1f;
@@ -311,7 +315,16 @@ namespace Demolition
         private BuildingBlock ThrowTarget(Vector2 feet, out float distance)
         {
             BuildingBlock nearest = NearestAhead(feet, ThrowMax + 1f, out distance, out float rubble);
-            return nearest != null && rubble > distance && WorthAStick(nearest) ? nearest : null;
+            return nearest != null && rubble > distance && ArcClear(feet) && WorthAStick(nearest) ? nearest : null;
+        }
+
+        private bool ArcClear(Vector2 feet)
+        {
+            int count = Physics2D.Raycast(feet + new Vector2(0.3f, ArcHeight), Vector2.right, Any, _hits, ArcReach);
+            for (int i = 0; i < count; i++)
+                if (_hits[i].collider.GetComponentInParent<BuildingBlock>() != null)
+                    return false;
+            return true;
         }
 
         // The nearest standing block straight ahead at waist or chest height, within reach, and how
