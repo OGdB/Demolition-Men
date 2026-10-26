@@ -603,8 +603,10 @@ namespace Demolition
             return false;
         }
 
+        // A support keeps a quarter after one stick: a second finishes it from outside, fists
+        // would bring the floors down on the puncher.
         private static bool WorthAStick(BuildingBlock block) =>
-            block.Explosive || (block.HealthFraction > 0.35f
+            block.Explosive || (block.HealthFraction > 0.15f
                 && (block.Material == BlockMaterial.Support || block.Material == BlockMaterial.Metal));
 
         // A standing block at body height just in front.
