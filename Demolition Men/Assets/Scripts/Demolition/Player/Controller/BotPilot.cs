@@ -209,8 +209,7 @@ namespace Demolition
                 fire = !throwNow && PlanAction(feet, now, headroom, falling || tumbling);
                 if (now < _brakeUntil)
                 {
-                    // Stopping to aim: press back until it stands, then face ahead without pushing.
-                    move = _body != null && _body.linearVelocity.x > BotTactics.StandStill ? -1f : Face;
+                    move = Brake(Face); // stopping to aim, then facing ahead without pushing
                     attack = false;
                 }
                 if (feet.x - CameraLeft() < Pressed)
@@ -248,8 +247,8 @@ namespace Demolition
             bool pit = PitAhead(feet);
             // Under a wall's overhang (a doorway) a jump only bumps the head: out from under it
             // first, and wait at a pit's edge for that rather than walk into it.
-            if (pit && !headroom && move > 0f && PitAt(feet + new Vector2(0.45f, 0.2f)))
-                move = 0f;
+            if (pit && !headroom && move > 0f)
+                move = Brake(0f);
             if (CanArmJump && grounded && move > 0f && !attack && headroom
                 && (StepAhead(feet) || pit || ExplosiveAhead(feet)))
                 _jumpUntil = now + JumpHold;
@@ -690,6 +689,10 @@ namespace Demolition
 
         private static bool Tumbling(Collider2D debris) =>
             debris.attachedRigidbody != null && debris.attachedRigidbody.linearVelocity.sqrMagnitude > 0.25f;
+
+        // Pressing back until it stands (letting go coasts 7 units from full speed), then standing.
+        private float Brake(float standing) =>
+            _body != null && _body.linearVelocity.x > BotTactics.StandStill ? -1f : standing;
 
         // -1 to back up, or 0 where that would end over a drop or past the camera's edge (backing up
         // carries on a little after letting go).
