@@ -10,7 +10,8 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Online co-op from the lobby (docs/multiplayer.md §6), one local player per device.
-/// HOST opens a room on the relay and shows its code, big enough to read on a TV; JOIN
+/// HOST opens a room on the relay and shows its code, big enough to read on a TV (COPY, or
+/// clicking the code, puts it on the clipboard to send to a friend); JOIN
 /// takes a code from an on-screen keypad (touch, gamepad) or the keyboard. Connected, the
 /// host picks a level (the level select) and the client waits here, with the shop.
 /// Esc / B goes back a step; leaving a room ends the session.
@@ -105,7 +106,15 @@ public class OnlineView : MonoBehaviour
                 Line("Tell", 40f, "ROOM CODE FOR PLAYER 2:", 36f);
                 _code = Line("Code", -70f, OnlineSession.Current != null && OnlineSession.Current.Code != null ? Spaced(OnlineSession.Current.Code) : "CONNECTING...", 120f);
                 _code.color = UiFactory.Gold;
-                first = UiFactory.Button(_page, "CANCEL", centre, new Vector2(0f, -300f), size, Back);
+                _code.raycastTarget = true;
+                Button tap = _code.gameObject.AddComponent<Button>(); // the code itself copies too
+                tap.transition = Selectable.Transition.None;
+                tap.navigation = new Navigation { mode = Navigation.Mode.None }; // gamepads have COPY
+                Button copy = null;
+                copy = UiFactory.Button(_page, "COPY", centre, new Vector2(-180f, -300f), size, () => CopyCode(copy));
+                tap.onClick.AddListener(() => CopyCode(copy));
+                first = copy;
+                UiFactory.Button(_page, "CANCEL", centre, new Vector2(180f, -300f), size, Back);
                 break;
             case Step.Joining:
                 _code = Line("Code", 40f, string.Empty, 90f);
@@ -228,6 +237,15 @@ public class OnlineView : MonoBehaviour
         _status.text = string.Empty;
         OnlineSession.Join(_typed);
         Show(Step.Connecting);
+    }
+
+    private void CopyCode(Button copy)
+    {
+        string code = OnlineSession.Current != null ? OnlineSession.Current.Code : null;
+        if (string.IsNullOrEmpty(code))
+            return; // still connecting
+        Platform.Copy(code);
+        copy.GetComponentInChildren<TextMeshProUGUI>().text = "COPIED";
     }
 
     private void OnCode(string code)

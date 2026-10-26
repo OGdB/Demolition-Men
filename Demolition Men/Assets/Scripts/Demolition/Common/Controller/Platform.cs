@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -27,5 +28,20 @@ namespace Demolition
 
         /// <summary>A phone or tablet build (ads, no quit button, touch-first menus).</summary>
         public static bool IsMobile => Application.isMobilePlatform;
+
+        /// <summary>Put text on the system clipboard (a browser's too, through Plugins/WebGL/Clipboard.jslib).</summary>
+        public static void Copy(string text)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            DemolitionCopy(text);
+#else
+            GUIUtility.systemCopyBuffer = text;
+#endif
+        }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern void DemolitionCopy(string text);
+#endif
     }
 }
