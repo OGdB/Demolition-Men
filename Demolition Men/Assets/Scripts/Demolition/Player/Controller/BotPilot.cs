@@ -412,6 +412,14 @@ namespace Demolition
             }
             if (kind == ActionKind.CraneDrop || kind == ActionKind.Implosion)
                 _strikeUntil = now + StrikeWatch;
+            if (kind == ActionKind.Burp)
+            {
+                // The floors over the wrecked band come down right in front: a step back, then wait for the dust.
+                float frames = BotTactics.LockSeconds(_action.Info);
+                _escape = -1f;
+                _backUntil = now + frames + 0.3f;
+                _brakeUntil = now + frames + 2.5f;
+            }
             return true;
         }
 
