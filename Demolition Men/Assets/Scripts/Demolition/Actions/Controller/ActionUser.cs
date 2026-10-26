@@ -187,6 +187,7 @@ namespace Demolition.Actions
             _landed = false;
             if (local)
                 Begin(info);
+            StartCoroutine(Sounds(info.Kind)); // both devices: the other hears its copy too
 
             float holdUntil = Time.time + info.Hold;
             bool struck = false;
@@ -225,21 +226,62 @@ namespace Demolition.Actions
             _playing = null;
         }
 
-        // The moment the button goes: the slam's hop, the sip, the whistle.
+        // The moment the button goes: the slam's hop.
         private void Begin(ActionInfo info)
         {
-            switch (info.Kind)
+            if (info.Kind != ActionKind.ButtSlam)
+                return;
+            _motor.Knockback(new Vector2(_rb.linearVelocity.x * 0.3f, SlamUp)); // a stagger: no low-jump cut
+            _slam = Slam.Rising;
+        }
+
+        // What the frames sound like, timed to them (ActionCatalog); the strikes make their own.
+        private IEnumerator Sounds(ActionKind kind)
+        {
+            switch (kind)
             {
-                case ActionKind.ButtSlam:
-                    _motor.Knockback(new Vector2(_rb.linearVelocity.x * 0.3f, SlamUp)); // a stagger: no low-jump cut
-                    _slam = Slam.Rising;
+                case ActionKind.Burp: // crack the can, three gulps, a deep breath in
+                    ActionAudio.CanOpen();
+                    for (int i = 0; i < 3; i++)
+                    {
+                        yield return new WaitForSeconds(0.15f);
+                        ActionAudio.Gulp();
+                    }
+                    yield return new WaitForSeconds(0.2f);
+                    ActionAudio.Whoosh(rising: false);
                     break;
-                case ActionKind.Burp:
-                case ActionKind.CoffeeBreak:
-                    ActionAudio.Slurp();
+                case ActionKind.ButtSlam:
+                    ActionAudio.Whoosh(rising: true);
+                    yield return new WaitForSeconds(0.12f);
+                    ActionAudio.Rip();
                     break;
                 case ActionKind.CraneDrop:
                     ActionAudio.Whistle();
+                    break;
+                case ActionKind.Implosion: // the plunger pulled up
+                    ActionAudio.Clank(0.7f);
+                    break;
+                case ActionKind.CoffeeBreak:
+                    ActionAudio.Pour();
+                    yield return new WaitForSeconds(0.3f);
+                    ActionAudio.Gulp();
+                    yield return new WaitForSeconds(0.15f);
+                    ActionAudio.Gulp();
+                    break;
+                case ActionKind.Intern:
+                    ActionAudio.Paper();
+                    break;
+                case ActionKind.HiVis: // velcro, then the hard hat on
+                    ActionAudio.Rip(1.6f);
+                    yield return new WaitForSeconds(0.3f);
+                    ActionAudio.Thump();
+                    break;
+                case ActionKind.ShovelLean: // the shovel stuck in the ground
+                    ActionAudio.Clank(1.6f);
+                    break;
+                case ActionKind.SiteRadio: // set down
+                    yield return new WaitForSeconds(0.35f);
+                    ActionAudio.Thump();
                     break;
             }
         }
@@ -298,6 +340,7 @@ namespace Demolition.Actions
                 {
                     Vector2 away = (Vector2)(block.transform.position - transform.position);
                     block.Shove(away.normalized * 4f + Vector2.up * 5f);
+                    ActionAudio.Boing();
                     Particles.Burst(collision.GetContact(0).point, new Color(1f, 0.6f, 0.15f), 6, 3f, 0.1f, 0.4f);
                 }
             }
@@ -317,8 +360,10 @@ namespace Demolition.Actions
             bool start = Time.time >= _coffeeUntil;
             _coffeeUntil = Time.time + seconds;
             ActionGlow.Show(gameObject, new Color(0.55f, 0.32f, 0.15f, 0.9f), seconds);
-            if (start)
-                StartCoroutine(CoffeeRoutine());
+            if (!start)
+                return;
+            ActionAudio.PowerUp();
+            StartCoroutine(CoffeeRoutine());
         }
 
         private IEnumerator CoffeeRoutine()
@@ -358,6 +403,8 @@ namespace Demolition.Actions
             bool start = Time.time >= _vestUntil;
             _vestUntil = Time.time + seconds;
             ActionGlow.Show(gameObject, new Color(1f, 0.55f, 0.08f, 1f), seconds);
+            if (start)
+                ActionAudio.PowerUp();
             if (start && !IsProxy)
                 StartCoroutine(VestRoutine());
         }
@@ -394,6 +441,8 @@ namespace Demolition.Actions
             bool start = Time.time >= _boostUntil;
             _boostUntil = Time.time + seconds;
             ActionGlow.Show(gameObject, new Color(1f, 0.85f, 0.25f, 1f), seconds);
+            if (start)
+                ActionAudio.PowerUp();
             if (start && !IsProxy)
                 StartCoroutine(BoostRoutine());
         }

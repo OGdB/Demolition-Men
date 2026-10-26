@@ -128,6 +128,52 @@ namespace Demolition
             return Normalise(data, 0.6f);
         }
 
+        /// <summary>A tone gliding from <paramref name="from"/> to <paramref name="to"/> Hz (exponentially),
+        /// fading with <paramref name="decay"/>: a gulp, a thud, a falling bomb's whistle, a beep,
+        /// a power-up. <paramref name="square"/> buzzes instead of singing; <paramref name="wobble"/>
+        /// bends the pitch up and down like a spring (a boing).</summary>
+        public static float[] Sweep(float seconds, float from, float to, float decay = 3f, bool square = false, float wobble = 0f)
+        {
+            int n = (int)(seconds * SampleRate);
+            var data = new float[n];
+            double phase = 0.0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)n;
+                double freq = from * Math.Pow(to / from, t) * (1.0 + wobble * Math.Sin(2.0 * Math.PI * 11.0 * t * seconds));
+                phase += freq / SampleRate;
+                double wave = Math.Sin(2.0 * Math.PI * phase);
+                if (square)
+                    wave = Math.Max(-1.0, Math.Min(1.0, wave * 4.0)); // a soft square: buzzy, not harsh
+                data[i] = (float)wave * Envelope(t, 0.01f, decay);
+            }
+            return Normalise(data, 0.7f);
+        }
+
+        /// <summary>Noise through a filter whose brightness glides from <paramref name="from"/> to
+        /// <paramref name="to"/> (0..1): a hiss, a whoosh, a pour, radio static. <paramref name="highPass"/>
+        /// keeps only the fizz; <paramref name="grain"/> (0..1) chops it into crackles, a tearing rip
+        /// or rustling paper.</summary>
+        public static float[] Noise(float seconds, int seed, float from, float to, bool highPass = false,
+            float grain = 0f, float attack = 0.01f, float decay = 4f)
+        {
+            var rng = new Random(seed);
+            int n = (int)(seconds * SampleRate);
+            var data = new float[n];
+            float lp = 0f, gate = 1f;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)n;
+                float alpha = 0.02f + 0.9f * (from + (to - from) * t);
+                float noise = (float)(rng.NextDouble() * 2.0 - 1.0);
+                lp += alpha * (noise - lp);
+                if (grain > 0f && i % 64 == 0)
+                    gate = rng.NextDouble() < grain ? (float)rng.NextDouble() : 1f;
+                data[i] = (highPass ? noise - lp : lp) * gate * Envelope(t, attack, decay);
+            }
+            return Normalise(data, 0.75f);
+        }
+
         // Quick attack, then exponential decay; t in 0..1.
         private static float Envelope(float t, float attack, float decay) =>
             (t < attack ? t / attack : 1f) * (float)Math.Exp(-decay * t);

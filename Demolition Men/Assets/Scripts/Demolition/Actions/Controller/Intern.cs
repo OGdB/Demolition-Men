@@ -75,6 +75,7 @@ namespace Demolition.Actions
             intern._authoritative = authoritative;
             intern._end = Time.time + seconds;
             Particles.Burst(go.transform.position + Vector3.up, Green, 12, 3f, 0.14f, 0.5f);
+            ActionAudio.Pop();
         }
 
         private Vector2 Reach => (Vector2)transform.position + new Vector2(_facing * 1f, 1.05f);
@@ -84,6 +85,7 @@ namespace Demolition.Actions
             if (Time.time >= _end || transform.position.y < -40f)
             {
                 Particles.Burst(transform.position + Vector3.up, Green, 16, 3.5f, 0.16f, 0.6f);
+                ActionAudio.Pop();
                 Destroy(gameObject);
                 return;
             }

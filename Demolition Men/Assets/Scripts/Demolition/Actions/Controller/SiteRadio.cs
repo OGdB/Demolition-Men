@@ -44,6 +44,8 @@ namespace Demolition.Actions
             float now = Time.time;
             if (now < _showAt)
                 return;
+            if (!_sr.enabled)
+                ActionAudio.Static(); // switched on
             _sr.enabled = true;
             float bump = Mathf.Clamp01((_nextBeat - now) / Beat);
             transform.localScale = new Vector3(1f + 0.08f * bump, 1f + 0.12f * bump, 1f); // thumps with the beat
@@ -63,7 +65,7 @@ namespace Demolition.Actions
         private void Pulse()
         {
             Vector2 at = (Vector2)transform.position + Vector2.up * 0.4f;
-            ActionAudio.Note(_step);
+            ActionAudio.Beat(_step);
             ActionStrikes.Ring(at, Reach * 2f, new Color(1f, 0.85f, 0.35f, 0.35f), 0.45f);
             FxRise.Spawn(ActionSprites.Prop("note"), at + new Vector2(Random.Range(-0.4f, 0.4f), 0.4f),
                 Color.HSVToRGB((_step * 0.17f) % 1f, 0.6f, 1f), 1f, 1.2f, new Vector2(Random.Range(-0.6f, 0.6f), 1.6f), wobble: 0.8f);

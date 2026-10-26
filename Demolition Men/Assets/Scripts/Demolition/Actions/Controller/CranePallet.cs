@@ -51,6 +51,7 @@ namespace Demolition.Actions
             pallet._authoritative = authoritative;
             pallet._rb = rb;
             pallet._born = Time.time;
+            ActionAudio.Falling();
         }
 
         private void Update()

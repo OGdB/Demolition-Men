@@ -46,7 +46,6 @@ namespace Demolition.Actions
                     break;
                 case ActionKind.HiVis:
                     actor.Vest(info.Duration);
-                    ActionAudio.Clank();
                     break;
                 case ActionKind.ShovelLean:
                     actor.Rest(info.Hold, 12f);
