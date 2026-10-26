@@ -754,11 +754,12 @@ namespace Demolition
 
         private bool PitAhead(Vector2 feet) => PitAt(feet + new Vector2(1.2f, 0.2f));
 
-        // A running jump lands 5 to 9 units on: a step or heap isn't jumped with a pit there (a
-        // pit at the feet is, the level is made to be cleared from its edge).
+        // A running jump lands up to 10 units on (9.5 at full speed, less from a standstill): a
+        // step or heap isn't jumped with a pit anywhere there (a pit at the feet is, the level is
+        // made to be cleared from its edge).
         private bool LandingClear(Vector2 feet)
         {
-            for (float ahead = 5f; ahead <= 9f; ahead += 0.5f)
+            for (float ahead = 4f; ahead <= 10.5f; ahead += 0.5f)
                 if (PitAt(feet + new Vector2(ahead, 0.2f)))
                     return false;
             return true;
