@@ -59,11 +59,14 @@ namespace Demolition.Actions
         /// <summary>A full meter for free (the tutorial's stretch about actions).</summary>
         public void Fill() => Charge = Capacity;
 
-        /// <summary>Spent elsewhere: online, the other device's player fired theirs.</summary>
+        /// <summary>Spent ahead of the host's word: online, a client's player fired theirs.</summary>
         public void Empty()
         {
             Charge = 0f;
             _idle = 0f;
         }
+
+        /// <summary>Online client: the host's count for this meter (the host keeps both players').</summary>
+        public void Show(float charge) => Charge = System.Math.Max(0f, System.Math.Min(Capacity, charge));
     }
 }

@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using Demolition.Actions;
 using UnityEngine;
 
 namespace Demolition.Online
@@ -66,5 +68,67 @@ namespace Demolition.Online
             uses = (kit >> 2) & MaxKitUses;
             dynamite = (kit >> 12) & MaxKitDynamite;
         }
+
+        /// <summary>An action message: phase, player, kind and facing a byte each, where it struck,
+        /// the meter, then up to <see cref="ActionCall.MaxSpots"/> picked spots. 24 bytes, 8 per spot.</summary>
+        public static byte[] PackAction(ActionCall call)
+        {
+            using var stream = new MemoryStream();
+            using var w = new BinaryWriter(stream);
+            int spots = call.Spots != null ? Math.Min(ActionCall.MaxSpots, call.Spots.Length) : 0;
+            w.Write((byte)call.Phase);
+            w.Write((byte)call.Player);
+            w.Write((byte)call.Kind);
+            w.Write((sbyte)(call.Facing < 0 ? -1 : 1));
+            w.Write(call.At.x);
+            w.Write(call.At.y);
+            w.Write(call.Charge);
+            w.Write((byte)spots);
+            for (int i = 0; i < spots; i++)
+            {
+                w.Write(call.Spots[i].x);
+                w.Write(call.Spots[i].y);
+            }
+            return stream.ToArray();
+        }
+
+        /// <summary>The message back, or false for anything malformed (unknown phase or kind, a
+        /// player other than 0 or 1, too many spots, numbers that aren't, cut short).</summary>
+        public static bool TryUnpackAction(byte[] data, out ActionCall call)
+        {
+            call = default;
+            if (data == null)
+                return false;
+            try
+            {
+                using var r = new BinaryReader(new MemoryStream(data));
+                byte phase = r.ReadByte(), player = r.ReadByte(), kind = r.ReadByte();
+                sbyte facing = r.ReadSByte();
+                float x = r.ReadSingle(), y = r.ReadSingle(), charge = r.ReadSingle();
+                int count = r.ReadByte();
+                if (phase > (byte)ActionPhase.Struck || player > 1 || kind >= ActionCatalog.All.Count || count > ActionCall.MaxSpots
+                    || !Finite(x) || !Finite(y) || !Finite(charge))
+                    return false;
+                var spots = new Vector2[count];
+                for (int i = 0; i < count; i++)
+                {
+                    spots[i] = new Vector2(r.ReadSingle(), r.ReadSingle());
+                    if (!Finite(spots[i].x) || !Finite(spots[i].y))
+                        return false;
+                }
+                call = new ActionCall
+                {
+                    Phase = (ActionPhase)phase, Player = player, Kind = (ActionKind)kind, Facing = facing < 0 ? -1 : 1,
+                    At = new Vector2(x, y), Charge = charge, Spots = spots,
+                };
+                return true;
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
+            }
+        }
+
+        private static bool Finite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
     }
 }

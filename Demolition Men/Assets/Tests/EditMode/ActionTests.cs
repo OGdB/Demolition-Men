@@ -3,6 +3,7 @@ using Demolition.Actions;
 using Demolition.Meta;
 using Demolition.Run;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Demolition.Tests
 {
@@ -73,6 +74,74 @@ namespace Demolition.Tests
                 Assert.AreEqual(info.Kind, ActionCatalog.FromId(info.Id));
             }
             Assert.AreEqual(System.Enum.GetValues(typeof(ActionKind)).Length, kinds.Count);
+        }
+
+        [Test]
+        public void Gate_StartsOnlyOnAFullMeter_OfTheCarriedKind_OneAtATime()
+        {
+            var gate = new ActionGate();
+            var meter = new ActionMeter(50f);
+            Assert.IsFalse(gate.TryStart(meter, ActionKind.Burp, ActionKind.Burp, alive: true, now: 0f), "empty meter");
+            meter.Fill();
+            Assert.IsFalse(gate.TryStart(meter, ActionKind.SiteRadio, ActionKind.Burp, alive: true, now: 0f), "not carried");
+            Assert.IsFalse(gate.TryStart(meter, ActionKind.Burp, ActionKind.Burp, alive: false, now: 0f), "out of play");
+            Assert.IsTrue(meter.Full, "a refusal spends nothing");
+            Assert.IsTrue(gate.TryStart(meter, ActionKind.Burp, ActionKind.Burp, alive: true, now: 1f));
+            Assert.AreEqual(0f, meter.Charge, "the start spends it");
+            meter.Fill();
+            Assert.IsFalse(gate.TryStart(meter, ActionKind.Burp, ActionKind.Burp, alive: true, now: 2f), "one at a time");
+            Assert.IsTrue(meter.Full);
+        }
+
+        [Test]
+        public void Gate_StrikesOnce_OfTheKindThatStarted_InTime()
+        {
+            var gate = new ActionGate();
+            var meter = new ActionMeter(50f);
+            Assert.IsFalse(gate.TryStrike(ActionKind.Burp, 0f), "never started");
+            meter.Fill();
+            gate.TryStart(meter, ActionKind.Burp, ActionKind.Burp, true, 10f);
+            Assert.IsFalse(gate.TryStrike(ActionKind.ButtSlam, 11f), "another kind");
+            Assert.IsTrue(gate.TryStrike(ActionKind.Burp, 11f));
+            Assert.IsFalse(gate.TryStrike(ActionKind.Burp, 11.1f), "once");
+
+            meter.Fill();
+            Assert.IsTrue(gate.TryStart(meter, ActionKind.Burp, ActionKind.Burp, true, 20f), "struck: the next may start");
+            Assert.IsFalse(gate.TryStrike(ActionKind.Burp, 20f + ActionGate.StrikeWindow + 0.1f), "too late");
+            meter.Fill();
+            Assert.IsTrue(gate.TryStart(meter, ActionKind.Burp, ActionKind.Burp, true, 20f + ActionGate.StrikeWindow + 0.2f),
+                "an action that never struck stops blocking once its window is over");
+        }
+
+        [Test]
+        public void Gate_MovesFarClaimsToWhereThePlayerIsSeen()
+        {
+            var seen = new Vector2(10f, 2f);
+            Assert.AreEqual(new Vector2(12f, 2f), ActionGate.Where(new Vector2(12f, 2f), seen));
+            Assert.AreEqual(seen, ActionGate.Where(new Vector2(40f, 2f), seen));
+        }
+
+        [Test]
+        public void Meter_ShowsTheHostsCount_WithinItsCapacity()
+        {
+            var meter = new ActionMeter(80f);
+            meter.Show(30f);
+            Assert.AreEqual(30f, meter.Charge);
+            meter.Show(500f);
+            Assert.IsTrue(meter.Full);
+            meter.Show(-3f);
+            Assert.AreEqual(0f, meter.Charge);
+        }
+
+        [Test]
+        public void Calls_OnlyTheHostDecides()
+        {
+            foreach (ActionPhase phase in System.Enum.GetValues(typeof(ActionPhase)))
+            {
+                bool clientMay = phase == ActionPhase.Kind || phase == ActionPhase.Start || phase == ActionPhase.Strike;
+                Assert.AreEqual(clientMay, ActionCall.Sendable(phase, fromHost: false), phase.ToString());
+                Assert.AreEqual(phase != ActionPhase.Strike, ActionCall.Sendable(phase, fromHost: true), phase.ToString());
+            }
         }
 
         [Test]

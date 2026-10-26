@@ -21,9 +21,9 @@ namespace Demolition.Online
     /// <item>Pickups: the client claims (<c>DM.Claim</c>), the host grants first come (<c>DM.Taken</c>).</item>
     /// <item>Dynamite: the thrower's device sends the throw and the blast (<c>DM.Thrown</c>,
     /// <c>DM.Blast</c>); the other flies a harmless copy.</item>
-    /// <item>Actions: each device tells the other what its player carries, fires and where it
-    /// struck (<c>DM.Act</c>); the other plays it on its copy and runs the strike, which only
-    /// damages standing blocks on the host.</item>
+    /// <item>Actions (<c>DM.Act</c>, <see cref="ActionCall"/>): the host keeps both meters, lets
+    /// actions start and strike, picks what a strike hits and sends it; the client says what its
+    /// player carries, asks to start and says where it struck, and runs the host's strike as the show.</item>
     /// <item>Run: the host's run state, score, demolition, pause and level hash at 10 Hz (<c>DM.State</c>),
     /// once the client says its Level scene is up (<c>DM.Ready</c>); in development builds a
     /// standing-cells hash per building every 5 s (<c>DM.Check</c>).</item>
@@ -458,32 +458,35 @@ namespace Demolition.Online
 
         // ---------------- Actions ----------------
 
-        // The player is the sender's own (host 0, client 1): never something the message says.
-        private void SendAct(int phase, int player, int kind, Vector2 at, int facing)
+        private const int MaxActBytes = 64; // a packed ActionCall is at most 24 + 3 x 8
+
+        private void SendAct(ActionCall call)
         {
+            byte[] bytes = NetPacking.PackAction(call);
             Send(Act, writer =>
             {
-                writer.WriteValueSafe((byte)phase);
-                writer.WriteValueSafe((byte)kind);
-                writer.WriteValueSafe(at.x);
-                writer.WriteValueSafe(at.y);
-                writer.WriteValueSafe((sbyte)(facing < 0 ? -1 : 1));
+                BytePacker.WriteValueBitPacked(writer, bytes.Length);
+                writer.WriteBytesSafe(bytes);
             });
         }
 
+        // Only what the sender's role may say: a client speaks for its own player (1) and only
+        // asks; whatever the host decides comes from the host.
         private void OnAct(ulong sender, FastBufferReader reader)
         {
-            reader.ReadValueSafe(out byte phase);
-            reader.ReadValueSafe(out byte kind);
-            reader.ReadValueSafe(out float x);
-            reader.ReadValueSafe(out float y);
-            reader.ReadValueSafe(out sbyte facing);
-            if (kind >= ActionCatalog.All.Count || phase > ActionUser.Struck)
+            ByteUnpacker.ReadValueBitPacked(reader, out int length);
+            if (length <= 0 || length > MaxActBytes)
                 return;
-            GameObject go = GameObject.Find(_host ? "Player_2" : "Player_1");
+            var bytes = new byte[length];
+            reader.ReadBytesSafe(ref bytes, length);
+            if (!NetPacking.TryUnpackAction(bytes, out ActionCall call) || !ActionCall.Sendable(call.Phase, fromHost: !_host))
+                return;
+            if (_host)
+                call.Player = 1;
+            GameObject go = GameObject.Find(call.Player == 0 ? "Player_1" : "Player_2");
             ActionUser user = go != null ? go.GetComponent<ActionUser>() : null;
             if (user != null)
-                user.OnRemote(phase, (ActionKind)kind, new Vector2(x, y), facing);
+                user.OnRemote(call);
         }
 
         // ---------------- Run state ----------------

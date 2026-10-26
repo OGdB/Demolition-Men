@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Demolition.Actions;
 using Demolition.Core;
 using Demolition.Online;
 using NUnit.Framework;
@@ -134,6 +135,51 @@ namespace Demolition.Tests
                 Assert.Greater(Width * Height, host.CellCount);
                 CollectionAssert.AreEquivalent(host.Cells, client.Cells, $"seed {seed}");
             }
+        }
+
+        [Test]
+        public void Action_RoundTrips_WithItsSpots()
+        {
+            var call = new ActionCall
+            {
+                Phase = ActionPhase.Struck, Player = 1, Kind = ActionKind.Implosion, Facing = -1,
+                At = new Vector2(41.5f, 3.25f), Charge = 12f,
+                Spots = new[] { new Vector2(44f, 0.5f), new Vector2(47f, 0.5f), new Vector2(50f, 0.5f) },
+            };
+            Assert.IsTrue(NetPacking.TryUnpackAction(NetPacking.PackAction(call), out ActionCall back));
+            Assert.AreEqual(call.Phase, back.Phase);
+            Assert.AreEqual(call.Player, back.Player);
+            Assert.AreEqual(call.Kind, back.Kind);
+            Assert.AreEqual(call.Facing, back.Facing);
+            Assert.AreEqual(call.At, back.At);
+            Assert.AreEqual(call.Charge, back.Charge);
+            CollectionAssert.AreEqual(call.Spots, back.Spots);
+
+            Assert.IsTrue(NetPacking.TryUnpackAction(NetPacking.PackAction(new ActionCall { Phase = ActionPhase.Kind }), out back));
+            Assert.AreEqual(0, back.Spots.Length);
+        }
+
+        [Test]
+        public void Action_RejectsWhatNoDeviceSends()
+        {
+            byte[] good = NetPacking.PackAction(new ActionCall { Phase = ActionPhase.Start, Kind = ActionKind.Burp });
+            Assert.IsFalse(NetPacking.TryUnpackAction(null, out _));
+            Assert.IsFalse(NetPacking.TryUnpackAction(new byte[5], out _), "cut short");
+            byte[] bad = (byte[])good.Clone();
+            bad[0] = 99; // phase
+            Assert.IsFalse(NetPacking.TryUnpackAction(bad, out _));
+            bad = (byte[])good.Clone();
+            bad[1] = 2; // player
+            Assert.IsFalse(NetPacking.TryUnpackAction(bad, out _));
+            bad = (byte[])good.Clone();
+            bad[2] = 200; // kind
+            Assert.IsFalse(NetPacking.TryUnpackAction(bad, out _));
+            bad = (byte[])good.Clone();
+            bad[bad.Length - 1] = ActionCall.MaxSpots + 1; // spots
+            Assert.IsFalse(NetPacking.TryUnpackAction(bad, out _));
+            bad = (byte[])good.Clone();
+            System.BitConverter.GetBytes(float.NaN).CopyTo(bad, 4); // where
+            Assert.IsFalse(NetPacking.TryUnpackAction(bad, out _));
         }
     }
 }

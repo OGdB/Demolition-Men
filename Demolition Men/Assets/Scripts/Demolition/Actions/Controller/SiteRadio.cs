@@ -20,11 +20,15 @@ namespace Demolition.Actions
         private float _showAt, _end, _nextBeat;
         private int _step;
 
+        /// <summary>Where the radio stands: on the ground under where it was put down.</summary>
+        public static Vector2 Pick(Vector2 at) => ActionStrikes.GroundBelow(at + Vector2.up);
+
+        /// <param name="ground">Where it stands (<see cref="Pick"/>, by the deciding device).</param>
         /// <param name="showAfter">Seconds until it appears: the player's own frames hold the radio until then.</param>
-        public static void Place(Vector2 at, int facing, int who, float seconds, float showAfter, bool authoritative)
+        public static void Place(Vector2 ground, int facing, int who, float seconds, float showAfter, bool authoritative)
         {
             var go = new GameObject("SiteRadio");
-            go.transform.position = ActionStrikes.GroundBelow(at + Vector2.up);
+            go.transform.position = ground;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = ActionSprites.Prop("radio");
             sr.flipX = facing < 0;

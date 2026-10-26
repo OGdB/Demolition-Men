@@ -12,17 +12,19 @@ namespace Demolition.Actions
     /// (<see cref="ActionStrikes"/>). Buffs the action gives live here too, since they change
     /// this player's motor, combat and health.
     ///
-    /// Online each device fires its own player's action and tells the other (<see cref="NetRole.ActionEvent"/>):
-    /// the other device plays the frames on its copy and runs the same strike. Only the host's
-    /// (or an offline) strike damages standing blocks; a client's is the show, and the host's
-    /// arrives as cells. Debris is local, so both shove and break their own.
+    /// Online the host decides everything the players share (<see cref="ActionCall"/>, sent through
+    /// <see cref="NetRole.ActionEvent"/>): it keeps both meters from its own count of who destroyed
+    /// what and sends them to the client; it lets an action start (<see cref="ActionGate"/>: a full
+    /// meter, one at a time) and strike once; and it picks what the strike hits
+    /// (<see cref="ActionStrikes.Pick"/>), runs it for real and sends the client what it picked.
+    /// A client asks: it starts its frames on the press (denied, it stops them), says where its
+    /// player stands at the strike frame, and runs the host's strike as the show. The other
+    /// device's player plays its frames on its copy. Debris is local, so both shove their own.
     /// </summary>
     public sealed class ActionUser : MonoBehaviour
     {
-        /// <summary>What a device tells the other about its player's action.</summary>
-        public const int Announce = 0, Started = 1, Struck = 2;
-
-        private const float AnnounceEvery = 5f;
+        private const float KindEvery = 5f; // the other device may not have been listening yet
+        private const float MeterEvery = 0.25f;
         private const float SlamUp = 15f, SlamDown = 26f;
 
         private enum Slam { None, Rising, Falling }
@@ -35,11 +37,12 @@ namespace Demolition.Actions
         private Animator _anim;
         private SpriteRenderer _sr;
         private bool _player2Look;
-        private Coroutine _playing;
+        private Coroutine _playing, _sounds;
+        private readonly ActionGate _gate = new ActionGate();
         private bool _landed;
         private Slam _slam;
         private float _slamFrom;
-        private float _announceAt;
+        private float _kindAt, _meterAt;
         private float _quietUntil;
         private float _coffeeUntil, _vestUntil, _boostUntil;
         private readonly HashSet<TutorialPrompt> _charged = new HashSet<TutorialPrompt>();
@@ -114,8 +117,11 @@ namespace Demolition.Actions
             }
         }
 
+        /// <summary>This device decides the meter, starts and strikes: offline, or the host online.</summary>
+        private static bool Decides => !NetRole.IsClient;
+
         // The meter fills from this player's demolition, but not from what its own action breaks.
-        private bool Charging => Playing && !Busy && Time.time >= _quietUntil;
+        private bool Charging => Decides && Playing && !Busy && Time.time >= _quietUntil;
 
         private void OnBlockDestroyed(BlockDestroyedInfo info)
         {
@@ -132,47 +138,107 @@ namespace Demolition.Actions
         private void Update()
         {
             bool playing = Playing;
-            if (playing && !Busy)
+            if (Decides && playing && !Busy)
                 Meter.Tick(Time.deltaTime);
+            if (NetRole.IsHost && Time.time >= _meterAt)
+            {
+                _meterAt = Time.time + MeterEvery;
+                Send(ActionPhase.Meter); // both players' meters are the host's
+            }
+            if (Decides)
+                foreach (TutorialPrompt prompt in TutorialPrompt.All)
+                    if (prompt.ChargesAction && transform.position.x >= prompt.Position.x && _charged.Add(prompt))
+                        Meter.Fill();
             if (IsProxy || _input == null)
                 return;
 
-            if (NetRole.IsOnline && Time.time >= _announceAt)
+            if (NetRole.IsOnline && Time.time >= _kindAt)
             {
-                _announceAt = Time.time + AnnounceEvery; // the other device may not have been listening yet
-                NetRole.ActionEvent?.Invoke(Announce, PlayerIndex, (int)Info.Kind, transform.position, Facing);
+                _kindAt = Time.time + KindEvery;
+                Send(ActionPhase.Kind); // the loadout is this device's own
             }
 
-            foreach (TutorialPrompt prompt in TutorialPrompt.All)
-                if (prompt.ChargesAction && transform.position.x >= prompt.Position.x && _charged.Add(prompt))
-                    Meter.Fill();
-
-            if (playing && !Busy && !_health.IsDead && _input.enabled && _input.ActionDown && Meter.TrySpend())
-            {
-                NetRole.ActionEvent?.Invoke(Started, PlayerIndex, (int)Info.Kind, transform.position, Facing);
-                _playing = StartCoroutine(Play(local: true));
-            }
+            if (playing && !Busy && !_health.IsDead && _input.enabled && _input.ActionDown)
+                Fire();
         }
 
-        /// <summary>Online: what the other device says its player (this copy) did.</summary>
-        public void OnRemote(int phase, ActionKind kind, Vector2 at, int facing)
+        private void Fire()
         {
-            if (Info.Kind != kind)
-                SetKind(kind);
-            switch (phase)
+            if (NetRole.IsClient)
             {
-                case Started:
-                    Meter.Empty();
+                if (!Meter.Full)
+                    return;
+                Meter.Empty(); // ahead of the host, whose count follows
+            }
+            else if (!_gate.TryStart(Meter, Info.Kind, Info.Kind, !_health.IsDead, Time.time))
+            {
+                return;
+            }
+            Send(ActionPhase.Start); // a client asks; the host tells the client its player started
+            _playing = StartCoroutine(Play(local: true));
+        }
+
+        /// <summary>Online: a message about this player from the other device (<see cref="NetRole.ActionEvent"/>,
+        /// already checked against what the sender may say).</summary>
+        public void OnRemote(ActionCall call)
+        {
+            switch (call.Phase)
+            {
+                case ActionPhase.Kind:
+                    if (Info.Kind != call.Kind)
+                        SetKind(call.Kind);
+                    break;
+                case ActionPhase.Meter: // client: the host's count
+                    Meter.Show(call.Charge);
+                    break;
+                case ActionPhase.Start:
+                    if (Info.Kind != call.Kind)
+                        SetKind(call.Kind); // the loadout is the sender's; the meter stays the host's
+                    if (NetRole.IsHost && !_gate.TryStart(Meter, call.Kind, Info.Kind, !_health.IsDead, Time.time))
+                    {
+                        Send(ActionPhase.Deny);
+                        break;
+                    }
                     if (_playing == null)
                         _playing = StartCoroutine(Play(local: false));
                     break;
-                case Struck:
+                case ActionPhase.Deny: // client: the host's count says not yet
+                    if (_playing != null)
+                    {
+                        StopCoroutine(_playing);
+                        EndFrames(local: !IsProxy);
+                    }
+                    if (_sounds != null)
+                        StopCoroutine(_sounds);
+                    break;
+                case ActionPhase.Strike: // host: the client's player reached its strike frame
+                    if (!_gate.TryStrike(call.Kind, Time.time))
+                        break;
                     _landed = true;
-                    _quietUntil = Time.time + Quiet(Info);
-                    ActionStrikes.Run(this, kind, at, facing, authoritative: NetRole.IsHost);
+                    Decide(call.Kind, ActionGate.Where(call.At, StrikePoint(call.Kind, call.Facing)), call.Facing);
+                    break;
+                case ActionPhase.Struck: // client: the strike as the host ran it
+                    _landed = true;
+                    _quietUntil = Time.time + Quiet(ActionCatalog.Get(call.Kind));
+                    ActionStrikes.Run(this, call.Kind, call.At, call.Facing, authoritative: false, call.Spots);
                     break;
             }
         }
+
+        // The deciding device's strike: pick what it hits, tell the client, run it for real.
+        private void Decide(ActionKind kind, Vector2 at, int facing)
+        {
+            Vector2[] spots = ActionStrikes.Pick(kind, at, facing);
+            _quietUntil = Time.time + Quiet(ActionCatalog.Get(kind));
+            Send(ActionPhase.Struck, at, facing, spots);
+            ActionStrikes.Run(this, kind, at, facing, authoritative: true, spots);
+        }
+
+        private void Send(ActionPhase phase, Vector2 at = default, int facing = 1, Vector2[] spots = null) =>
+            NetRole.ActionEvent?.Invoke(new ActionCall
+            {
+                Phase = phase, Player = PlayerIndex, Kind = Info.Kind, At = at, Facing = facing, Charge = Meter.Charge, Spots = spots,
+            });
 
         private static float Quiet(ActionInfo info) => info.Duration > 0f ? info.Duration : 2.5f;
 
@@ -190,7 +256,7 @@ namespace Demolition.Actions
             _landed = false;
             if (local)
                 Begin(info);
-            StartCoroutine(Sounds(info.Kind)); // both devices: the other hears its copy too
+            _sounds = StartCoroutine(Sounds(info.Kind)); // both devices: the other hears its copy too
 
             float holdUntil = Time.time + info.Hold;
             bool struck = false;
@@ -289,22 +355,25 @@ namespace Demolition.Actions
             }
         }
 
+        // This player's strike frame: a client says where it stands and waits for the host's strike.
         private void Strike(ActionInfo info)
         {
-            Vector2 at = StrikePoint(info.Kind);
+            Vector2 at = StrikePoint(info.Kind, Facing);
             _quietUntil = Time.time + Quiet(info);
-            NetRole.ActionEvent?.Invoke(Struck, PlayerIndex, (int)info.Kind, at, Facing);
-            ActionStrikes.Run(this, info.Kind, at, Facing, authoritative: !NetRole.IsClient);
+            if (NetRole.IsClient)
+                Send(ActionPhase.Strike, at, Facing);
+            else if (_gate.TryStrike(info.Kind, Time.time))
+                Decide(info.Kind, at, Facing);
         }
 
-        private Vector2 StrikePoint(ActionKind kind)
+        private Vector2 StrikePoint(ActionKind kind, int facing)
         {
             Vector2 feet = transform.position;
             switch (kind)
             {
-                case ActionKind.Burp: return feet + new Vector2(0.7f * Facing, 1.5f);
-                case ActionKind.CraneDrop: return feet + new Vector2(5f * Facing, 0f);
-                case ActionKind.SiteRadio: return feet + new Vector2(0.85f * Facing, 0f);
+                case ActionKind.Burp: return feet + new Vector2(0.7f * facing, 1.5f);
+                case ActionKind.CraneDrop: return feet + new Vector2(5f * facing, 0f);
+                case ActionKind.SiteRadio: return feet + new Vector2(0.85f * facing, 0f);
                 default: return feet;
             }
         }

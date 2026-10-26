@@ -21,10 +21,10 @@ namespace Demolition.Actions
         private float _born, _restingSince = -1f;
         private Rigidbody2D _rb;
 
-        public static void Call(Vector2 pointedAt, int who, bool authoritative)
+        public static void Call(Vector2 pointedAt, Vector2 target, int who, bool authoritative)
         {
             var host = new GameObject("CraneCall");
-            host.AddComponent<CraneCall>().Run(pointedAt, who, authoritative, Delay);
+            host.AddComponent<CraneCall>().Run(pointedAt, target, who, authoritative, Delay);
         }
 
         /// <summary>Drop a pallet from <paramref name="top"/>.</summary>

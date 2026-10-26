@@ -18,8 +18,24 @@ namespace Demolition.Actions
         private static readonly HashSet<BuildingBlock> Seen = new HashSet<BuildingBlock>();
         private static readonly List<BuildingBlock> Found = new List<BuildingBlock>();
 
-        public static void Run(ActionUser actor, ActionKind kind, Vector2 at, int facing, bool authoritative)
+        /// <summary>What a strike picks in the world, decided once by the deciding device (the host
+        /// online) and handed to <see cref="Run"/> on both: the charges' spots, where the radio
+        /// stands, where the pallet lands. Null for strikes that pick nothing.</summary>
+        public static Vector2[] Pick(ActionKind kind, Vector2 at, int facing)
         {
+            switch (kind)
+            {
+                case ActionKind.Implosion: return ImplosionCharges.Pick(at, facing);
+                case ActionKind.SiteRadio: return new[] { SiteRadio.Pick(at) };
+                case ActionKind.CraneDrop: return new[] { CraneCall.Pick(at) };
+                default: return null;
+            }
+        }
+
+        /// <param name="spots">What <see cref="Pick"/> chose on the deciding device.</param>
+        public static void Run(ActionUser actor, ActionKind kind, Vector2 at, int facing, bool authoritative, Vector2[] spots)
+        {
+            Vector2 spot = spots != null && spots.Length > 0 ? spots[0] : at;
             int who = actor.PlayerIndex;
             ActionInfo info = ActionCatalog.Get(kind);
             switch (kind)
@@ -33,10 +49,10 @@ namespace Demolition.Actions
                     Slam(actor, at, who, authoritative);
                     break;
                 case ActionKind.CraneDrop:
-                    CranePallet.Call(at, who, authoritative);
+                    CranePallet.Call(at, spot, who, authoritative);
                     break;
                 case ActionKind.Implosion:
-                    ImplosionCharges.Place(at, facing, who, authoritative);
+                    ImplosionCharges.Place(spots ?? ImplosionCharges.Pick(at, facing), who, authoritative);
                     break;
                 case ActionKind.CoffeeBreak:
                     actor.Coffee(info.Duration);
@@ -56,7 +72,7 @@ namespace Demolition.Actions
                                 p.Action.Boost(info.Duration); // the partner's own device applies it
                     break;
                 case ActionKind.SiteRadio:
-                    SiteRadio.Place(at, facing, who, info.Duration, info.Frames[info.Frames.Length - 1], authoritative);
+                    SiteRadio.Place(spot, facing, who, info.Duration, info.Frames[info.Frames.Length - 1], authoritative);
                     break;
             }
         }

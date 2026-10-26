@@ -52,10 +52,9 @@ namespace Demolition
         /// <summary>Client: its player touched a pickup; send a Claim. The host answers Taken.</summary>
         public static Action<Pickup> ClaimPickup;
 
-        /// <summary>This device's player's action (<c>ActionUser</c>): phase (announce / started / struck),
-        /// player index, action kind, where it struck and which way the player faced. The other device
-        /// plays it on its copy.</summary>
-        public static Action<int, int, int, Vector2, int> ActionEvent;
+        /// <summary>An action message for the other device (<c>ActionUser</c>, <see cref="Actions.ActionCall"/>):
+        /// the host decides the meters, starts and strikes, a client asks for its own player.</summary>
+        public static Action<Actions.ActionCall> ActionEvent;
 
         /// <summary>Online: spawn the run's players at the spawn point (the host network-spawns
         /// both, a client none) and return how many there are.</summary>
