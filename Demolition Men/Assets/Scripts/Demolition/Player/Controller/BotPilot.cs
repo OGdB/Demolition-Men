@@ -39,6 +39,11 @@ namespace Demolition
         private const float ThrowMax = 5.8f;
         /// <summary>A retreat stops this far inside the camera's left edge (out of bounds past it).</summary>
         private const float EdgeMargin = 1.5f;
+        /// <summary>This close to the camera's edge, standing still is death (the grace is 3 s) and a
+        /// block from above a maybe: it runs on, whatever falls or is still to go off.</summary>
+        private const float Pressed = EdgeMargin + 2f;
+        /// <summary>Seconds of room a throw needs: it stands through the fuse and the blast.</summary>
+        private const float ThrowRoom = 4f;
         private static readonly float[] ThrowHeights = { 0.5f, 1.3f };
         /// <summary>How far ahead it looks for a building to fire its action at.</summary>
         private const float ActionReach = BotTactics.ChargeReach + 1f;
@@ -68,6 +73,7 @@ namespace Demolition
         private float _sightAt;
         private float _strikeUntil;
         private float _brakeUntil;   // stopping to aim its action
+        private float _pressedUntil; // running on from the camera's edge
         private string _fatalHit; // the hit that took its last health
         private bool _loggedDeath, _loggedEnd, _offScreen;
         // What it was doing over the last two seconds, oldest first from _historyAt.
@@ -190,6 +196,14 @@ namespace Demolition
                 fire = !throwNow && PlanAction(feet, now, headroom, falling || tumbling);
                 if (now < _brakeUntil)
                     move = Mathf.Min(move, 0f);
+                if (feet.x - CameraLeft() < Pressed)
+                    _pressedUntil = now + 1f;
+                if (move <= 0f && now < _pressedUntil)
+                {
+                    // Pinned against the camera's edge: run on, hitting what's in the way.
+                    move = 1f;
+                    attack = (block != null && !block.Explosive) || HeapAhead(feet, !headroom);
+                }
             }
 
             // Standing back on purpose isn't being stuck.
@@ -247,7 +261,7 @@ namespace Demolition
         // throw goes the way the player faces, so it comes walking in).
         private bool PlanThrow(Vector2 feet, float now, ref float move)
         {
-            if (!ThrowsDynamite || _combat.DynamiteCount == 0 || _combat.DynamiteOut)
+            if (!ThrowsDynamite || _combat.DynamiteCount == 0 || _combat.DynamiteOut || Room(feet) < ThrowRoom)
                 return false;
             BuildingBlock target = ThrowTarget(feet, out float distance);
             if (target == null)
