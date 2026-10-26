@@ -4,6 +4,8 @@
   "building": 9,
   "offset": -4,
   "upgrades": 5,
+  "actions": ["boer"],
+  "charged": true,
   "camera": {"mode": "follow", "size": 8, "lead": 3},
   "width": 1920,
   "height": 1080,

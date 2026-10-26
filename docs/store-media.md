@@ -205,7 +205,9 @@ the HUD.
   level's buildings, props included; -1: the spawn), `offset` (players start this far from
   its left edge; the take nudges it by 0.37 per take so takes differ), `players` (1 or 2).
 - **Kit:** `upgrades` (every shop upgrade at this level), `dynamite`, `weapon` (`axe`,
-  `wreckingball`) with `weaponHits`.
+  `wreckingball`) with `weaponHits`, `actions` (the players' actions by id, P1 first: `boer`,
+  `kontplof`, `kees`, `sloop`, `bakkie`, `stagiair`, `hesje`, `schep`, `radio`; none: the burp)
+  and `charged` (start with a full action meter). The bot fires its action by itself.
 - **Lanes:** `p` 0 is the director, 1 and 2 the players; write `p` on every step. Each lane
   runs its steps in order, side by side. The shot ends when lane 0 runs out (or at
   `length`). Seconds are video seconds.
@@ -382,6 +384,17 @@ In order. The dates follow `marketing.md` §5.
 | 9 | Menu stills from your own save instead of the temporary profile (Town cleared, Port begun, $2,450), if you prefer. | You and agent | Any time |
 | 10 | Local co-op with two gamepads, only if a re-cut needs it. | You | Optional |
 | 11 | The press kit page, the ads videos (portrait and square, 10 s or more) and the ad trailer with the badge. | Agent | December (R4) |
+
+### 4.3 Re-recording (2026-10-26)
+
+Since the takes of §4.1 the game changed under them: full screen on every device with steel
+HUD panels (decision 1 settled), back walls behind the windows, the run-in during the
+countdown, and the crew's actions with their sounds and the HUD's action bar. Every take goes
+again. The bot fires its action now (`BotTactics`), so the bot footage carries one each:
+`broll-town-02` the crane, `broll-town-04` the controlled demolition, `broll-port-04` the
+intern, `broll-neon-02` the radio; `cities-*` start charged with the burp, the crane and the
+demolition. The bot footage plays mortal with the HUD on, so first run `BotSurvivesLevel`
+(PlayMode, Test Runner window): every level the bot dies on gets tuned before the batch.
 
 ## 5. Decisions for the start of the session
 

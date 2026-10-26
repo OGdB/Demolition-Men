@@ -4,6 +4,8 @@
   "building": 12,
   "offset": -2,
   "upgrades": 5,
+  "actions": ["sloop"],
+  "charged": true,
   "camera": {"mode": "follow", "size": 8, "lead": 3},
   "width": 1920,
   "height": 1080,

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Demolition.Actions;
 using UnityEngine;
 
 namespace Demolition.Clips
@@ -38,6 +39,10 @@ namespace Demolition.Clips
         public int dynamite;
         public string weapon = "";
         public int weaponHits = 40;
+        /// <summary>The players' actions, P1 first, by id (<see cref="ActionCatalog"/>); none: the burp.</summary>
+        public string[] actions = new string[0];
+        /// <summary>The players start with a full action meter.</summary>
+        public bool charged;
         /// <summary>Cheat for bot footage: the players take no damage (pits and the camera's edge still count).</summary>
         public bool invincible;
         /// <summary>Show the HUD (and the touch controls with <see cref="touch"/>).</summary>
@@ -61,6 +66,7 @@ namespace Demolition.Clips
             // Fields a file leaves out can come back null inside arrays; the timeline compares with "".
             shot.weapon ??= "";
             shot.camera ??= new ShotCamera();
+            shot.actions ??= new string[0];
             shot.steps ??= new ShotStep[0];
             foreach (ShotStep step in shot.steps)
             {
@@ -93,6 +99,9 @@ namespace Demolition.Clips
             if (takes < 1) errors.Add("takes must be at least 1");
             if (stillScale < 1 || stillScale > 4) errors.Add($"stillScale {stillScale}: 1 to 4");
             if (Array.IndexOf(Weapons, weapon ?? "") < 0) errors.Add($"weapon '{weapon}': {string.Join(", ", Weapons)}");
+            foreach (string action in actions ?? new string[0])
+                if (ActionCatalog.FromId(action) == ActionCatalog.Default && action != ActionCatalog.Get(ActionCatalog.Default).Id)
+                    errors.Add($"action '{action}': {string.Join(", ", Ids())}");
             if (camera == null || Array.IndexOf(CameraModes, camera.mode) < 0) errors.Add($"camera mode '{camera?.mode}': {string.Join(", ", CameraModes)}");
             bool director = false;
             for (int i = 0; i < steps.Length; i++)
@@ -112,6 +121,12 @@ namespace Demolition.Clips
             }
             if (!director) errors.Add("no director step (lane 0): the shot would never end");
             return errors;
+        }
+
+        private static IEnumerable<string> Ids()
+        {
+            foreach (ActionInfo info in ActionCatalog.All)
+                yield return info.Id;
         }
     }
 

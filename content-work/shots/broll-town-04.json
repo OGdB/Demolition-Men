@@ -2,6 +2,7 @@
   "id": "broll-town-04",
   "level": "town-04",
   "upgrades": 5,
+  "actions": ["sloop"],
   "hud": true,
   "camera": {"mode": "run"},
   "width": 1920,

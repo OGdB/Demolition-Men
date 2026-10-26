@@ -2,6 +2,7 @@
   "id": "broll-town-02",
   "level": "town-02",
   "upgrades": 5,
+  "actions": ["kees"],
   "hud": true,
   "camera": {"mode": "run"},
   "width": 1920,

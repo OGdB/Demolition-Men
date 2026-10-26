@@ -1,3 +1,4 @@
+using Demolition.Actions;
 using Demolition.Levels;
 using Demolition.Run;
 using UnityEngine;
@@ -11,7 +12,9 @@ namespace Demolition
     /// jump in turn). It plays safe the way a player
     /// learns to: dynamite only from outside its blast, at what fists barely dent (supports,
     /// metal) and at gas tanks; never a punch at a gas tank (it jumps them); out from under a
-    /// collapse; and never so far back that the scrolling camera leaves it behind. Walking to a
+    /// collapse; and never so far back that the scrolling camera leaves it behind. Once its action
+    /// meter is full it fires the action where a player would (<see cref="BotTactics"/>) and
+    /// stays out of its strike (the charges' 3-2-1, the crane's pallet). Walking to a
     /// point (<see cref="StopX"/>, the Clip Lab) it only clears the way. Drives the player
     /// through a <see cref="ScriptedInputSource"/>, exactly like a real input device.
     /// </summary>
@@ -34,6 +37,13 @@ namespace Demolition
         /// <summary>A retreat stops this far inside the camera's left edge (out of bounds past it).</summary>
         private const float EdgeMargin = 1.5f;
         private static readonly float[] ThrowHeights = { 0.5f, 1.3f };
+        /// <summary>How far ahead it looks for a building to fire its action at.</summary>
+        private const float ActionReach = BotTactics.ChargeReach + 1f;
+        /// <summary>The crane's pallet lands this far ahead (<see cref="ActionUser"/>'s strike point).</summary>
+        private const float CraneReach = 5f;
+        private const float SightEvery = 0.15f;
+        /// <summary>After calling the crane or setting the charges, it watches for them this long.</summary>
+        private const float StrikeWatch = 8f;
 
         private static readonly ContactFilter2D Solid = new ContactFilter2D { useTriggers = false };
         private static readonly ContactFilter2D Any = new ContactFilter2D { useTriggers = true };
@@ -48,6 +58,13 @@ namespace Demolition
         private LevelBuilder _level; // its map knows the pits (none on the test bench)
         private PlayerMotor _motor;
         private PlayerCombat _combat;
+        private PlayerHealth _health;
+        private Rigidbody2D _body;
+        private ActionUser _action; // added by the run when it finds the players, after this wakes
+        private float _fullSince;    // the action meter filled
+        private float _sightAt;
+        private float _strikeUntil;
+        private float _brakeUntil;   // stopping to aim its action
         private float _progressX;
         private float _progressTime; // last progress or stuck hop
         private float _stuckSince;   // last progress
@@ -73,6 +90,8 @@ namespace Demolition
         {
             _motor = GetComponent<PlayerMotor>();
             _combat = GetComponent<PlayerCombat>();
+            _health = GetComponent<PlayerHealth>();
+            _body = GetComponent<Rigidbody2D>();
         }
 
         // In Start: the run assigns devices to players when it wakes, after this was added.
@@ -97,6 +116,16 @@ namespace Demolition
                 _jumpHeld = false;
                 return;
             }
+            if (_action == null)
+                _action = GetComponent<ActionUser>();
+            if (_action != null && _action.Busy)
+            {
+                // Its action's frames have the controls: not stuck, nothing to decide.
+                _progressX = feet.x;
+                _progressTime = _stuckSince = now;
+                Status = $"action {_action.Info.Id}";
+                return;
+            }
 
             BuildingBlock block = BlockAhead(feet);
             bool headroom = Headroom(feet);
@@ -104,13 +133,16 @@ namespace Demolition
             // a step of it is jumped where there's room overhead (under a floor there isn't).
             bool attack = block != null || HeapAhead(feet, !headroom);
             bool throwNow = false;
+            bool fire = false;
             float move = 1f;
             if (float.IsPositiveInfinity(StopX))
             {
                 if (block != null && block.Explosive)
                     attack = false; // the punch that breaks it goes off in our face: jumped, or blown up from afar
                 throwNow = PlanThrow(feet, now, ref move);
-                if (DebrisAbove(feet, out float escape))
+                bool falling = DebrisAbove(feet, out float escape);
+                bool tumbling = DebrisAhead(feet);
+                if (falling)
                 {
                     _backUntil = now + 0.35f;
                     // Forward only if the way is open, and never towards a pit's edge.
@@ -119,15 +151,18 @@ namespace Demolition
                 }
                 if (now < _backUntil)
                     move = _escape;
-                else if (move > 0f && DebrisAhead(feet))
+                else if (move > 0f && tumbling)
                     move = 0f; // tumbling blocks ahead may yet come down on its head
-                else if (_combat.DynamiteOut)
+                else if (_combat.DynamiteOut || StrikePending(now))
                     move = Mathf.Min(move, 0f); // ours is about to go off ahead: thrown from out of its reach, so stay there
                 if (move < 0f)
                 {
                     attack = false;
                     move = Back(feet);
                 }
+                fire = !throwNow && PlanAction(feet, now, headroom, falling || tumbling);
+                if (now < _brakeUntil)
+                    move = Mathf.Min(move, 0f);
             }
 
             // Standing back on purpose isn't being stuck.
@@ -167,11 +202,13 @@ namespace Demolition
             }
             bool jump = now < _jumpUntil;
             Status = $"move {move:0} attack {attack} jump {jump} throw {throwNow} head {headroom} pit {pit} gnd {grounded} ahead {(block != null ? $"{block.Material}{(block.Explosive ? "!" : "")} {block.HealthFraction:0.00}" : "-")}"
-                     + $" back {Mathf.Max(0f, _backUntil - now):0.0} runUp {(float.IsNegativeInfinity(_runUpFrom) ? "-" : $"{_runUpFrom:0.0}")} out {_combat.DynamiteOut} tnt {_combat.DynamiteCount}";
+                     + $" back {Mathf.Max(0f, _backUntil - now):0.0} runUp {(float.IsNegativeInfinity(_runUpFrom) ? "-" : $"{_runUpFrom:0.0}")} out {_combat.DynamiteOut} tnt {_combat.DynamiteCount}"
+                     + $" action {(_action != null ? $"{_action.Info.Id} {_action.Meter.Fraction:0.00}{(fire ? " FIRE" : "")}" : "-")}";
 
             _source.Next.Move = new Vector2(move, 0f);
             _source.Next.AttackHeld = attack;
             _source.Next.DynamitePressed = throwNow;
+            _source.Next.ActionPressed = fire;
             _source.Next.JumpPressed = jump && !_jumpHeld;
             _source.Next.JumpReleased = !jump && _jumpHeld;
             _source.Next.JumpHeld = jump;
@@ -231,11 +268,18 @@ namespace Demolition
         // The nearest standing block straight ahead at waist or chest height, if it's worth a stick.
         private BuildingBlock ThrowTarget(Vector2 feet, out float distance)
         {
-            distance = float.MaxValue;
+            BuildingBlock nearest = NearestAhead(feet, ThrowMax + 1f, out distance);
+            return nearest != null && WorthAStick(nearest) ? nearest : null;
+        }
+
+        // The nearest standing block straight ahead at waist or chest height, within reach.
+        private BuildingBlock NearestAhead(Vector2 feet, float reach, out float distance)
+        {
+            distance = float.PositiveInfinity;
             BuildingBlock nearest = null;
             foreach (float height in ThrowHeights)
             {
-                int count = Physics2D.Raycast(feet + new Vector2(0.3f, height), Vector2.right, Any, _hits, ThrowMax + 1f);
+                int count = Physics2D.Raycast(feet + new Vector2(0.3f, height), Vector2.right, Any, _hits, reach);
                 for (int i = 0; i < count; i++)
                 {
                     Collider2D hit = _hits[i].collider;
@@ -255,7 +299,133 @@ namespace Demolition
                     break;
                 }
             }
-            return nearest != null && WorthAStick(nearest) ? nearest : null;
+            return nearest;
+        }
+
+        // ---------------- The action ----------------
+
+        // Fire once the meter is full, where BotTactics says a player would (looked at a few times a second: the charges' pick searches every building).
+        private bool PlanAction(Vector2 feet, float now, bool headroom, bool debris)
+        {
+            if (_action == null || !_action.Meter.Full)
+            {
+                _fullSince = now;
+                return false;
+            }
+            if (now < _sightAt)
+                return false;
+            _sightAt = now + SightEvery;
+
+            ActionKind kind = _action.Info.Kind;
+            BuildingBlock wall = NearestAhead(feet, ActionReach, out float distance);
+            var sight = new BotSight
+            {
+                FacingAhead = _motor.Facing > 0,
+                Grounded = _motor.IsGrounded,
+                Headroom = headroom,
+                Debris = debris,
+                Retreating = now < _backUntil || _combat.DynamiteOut || StrikePending(now),
+                Health = _health != null && _health.Max > 0f ? _health.Current / _health.Max : 1f,
+                Wall = distance,
+                WallIsBuilding = wall != null && wall.Building != null && !IsProp(wall.Building),
+                FloorsBelow = FloorsBelow(feet),
+                Room = Room(feet),
+                PartnerWorking = PartnerWorking(feet),
+                FullFor = now - _fullSince,
+                Speed = _body != null ? Mathf.Abs(_body.linearVelocity.x) : 0f,
+            };
+            if (kind == ActionKind.CraneDrop)
+                sight.CraneTarget = StandingAt(CraneCall.Pick(feet + new Vector2(CraneReach, 0f)) + new Vector2(0f, -0.3f));
+            if (kind == ActionKind.Implosion)
+                sight.Charges = Charges(feet, out sight.NearestCharge);
+            if (!BotTactics.Fire(kind, sight))
+            {
+                sight.Speed = 0f;
+                if (BotTactics.Fire(kind, sight))
+                    _brakeUntil = now + SightEvery * 2f; // the right spot: stop there to aim it
+                return false;
+            }
+            if (kind == ActionKind.CraneDrop || kind == ActionKind.Implosion)
+                _strikeUntil = now + StrikeWatch;
+            return true;
+        }
+
+        // Its strike still to come down ahead (the charges' 3-2-1, the crane's pallet): keep out of it.
+        private bool StrikePending(float now) =>
+            now < _strikeUntil && (FindAnyObjectByType<ImplosionCharges>() != null
+                || FindAnyObjectByType<CraneCall>() != null || FindAnyObjectByType<CranePallet>() != null);
+
+        // The charges a controlled demolition would set from here (the action's own pick), counting
+        // only those on a standing block (with nothing ahead it sets one on the street in front),
+        // and how near the nearest comes.
+        private int Charges(Vector2 feet, out float nearest)
+        {
+            nearest = float.PositiveInfinity;
+            int count = 0;
+            foreach (Vector2 spot in ImplosionCharges.Pick(feet, 1))
+            {
+                nearest = Mathf.Min(nearest, Mathf.Abs(spot.x - feet.x));
+                if (StandingAt(spot))
+                    count++;
+            }
+            return count;
+        }
+
+        private static bool StandingAt(Vector2 point)
+        {
+            foreach (Collider2D hit in Physics2D.OverlapPointAll(point))
+            {
+                var block = hit.GetComponentInParent<BuildingBlock>();
+                if (block != null && !block.IsFalling && !block.IsRubble)
+                    return true;
+            }
+            return false;
+        }
+
+        // Standing blocks in the column under the feet, as deep as the slam goes.
+        private int FloorsBelow(Vector2 feet)
+        {
+            int floors = 0;
+            int count = Physics2D.OverlapBox(feet + new Vector2(0f, -6.05f), new Vector2(0.6f, 12f), 0f, Any, _overlaps);
+            for (int i = 0; i < count; i++)
+            {
+                var block = _overlaps[i].GetComponentInParent<BuildingBlock>();
+                if (block != null && !block.IsFalling && !block.IsRubble)
+                    floors++;
+            }
+            return floors;
+        }
+
+        // A street prop (crates, a car, a container) rather than a building, by the level's map.
+        private bool IsProp(DestructibleBuilding building)
+        {
+            LevelLayout layout = _level != null ? _level.Layout : null;
+            int index = building.NetIndex;
+            return layout != null && index >= 0 && index < layout.Buildings.Count && layout.Buildings[index].IsProp;
+        }
+
+        // Seconds it can stand still before the scrolling camera's left edge reaches it.
+        private float Room(Vector2 feet)
+        {
+            float left = CameraLeft();
+            if (float.IsNegativeInfinity(left))
+                return float.PositiveInfinity;
+            ScrollCamera scroll = RunController.Current.Camera.GetComponent<ScrollCamera>();
+            float speed = scroll != null ? Mathf.Max(scroll.ScrollSpeed, 0.1f) : 2f;
+            return (feet.x - left - EdgeMargin) / speed;
+        }
+
+        // The other player close by and swinging at something: worth the shovel lean's boost.
+        private bool PartnerWorking(Vector2 feet)
+        {
+            RunController run = RunController.Current;
+            if (run == null)
+                return false;
+            foreach (RunController.Player p in run.Players)
+                if (p.Transform != transform && !p.Health.IsDead && p.Input.AttackHeld
+                    && Mathf.Abs(p.Transform.position.x - feet.x) < 6f)
+                    return true;
+            return false;
         }
 
         private static bool WorthAStick(BuildingBlock block) =>

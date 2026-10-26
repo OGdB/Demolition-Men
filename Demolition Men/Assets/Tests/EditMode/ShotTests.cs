@@ -44,7 +44,7 @@ namespace Demolition.Tests
         [Test]
         public void Shot_ErrorsNameWhatIsWrong()
         {
-            ShotSpec shot = ShotSpec.FromJson(@"{ ""id"": ""bad"", ""level"": ""town-01"", ""width"": 1081,
+            ShotSpec shot = ShotSpec.FromJson(@"{ ""id"": ""bad"", ""level"": ""town-01"", ""width"": 1081, ""actions"": [""boer"", ""nope""],
                 ""steps"": [ { ""p"": 2, ""do"": ""hit"" }, { ""p"": 1, ""do"": ""slowmo"" }, { ""p"": 1, ""do"": ""walk"", ""to"": ""weakpoint"" } ] }");
             List<string> errors = shot.Errors();
             Assert.IsTrue(errors.Any(e => e.Contains("1081")), "odd frame size");
@@ -52,6 +52,8 @@ namespace Demolition.Tests
             Assert.IsTrue(errors.Any(e => e.Contains("not a player step")), "slowmo in a player lane");
             Assert.IsTrue(errors.Any(e => e.Contains("needs a building")), "weakpoint without a building");
             Assert.IsTrue(errors.Any(e => e.Contains("no director step")), "a shot that never ends");
+            Assert.IsTrue(errors.Any(e => e.Contains("'nope'")), "an action that doesn't exist");
+            Assert.IsFalse(errors.Any(e => e.Contains("'boer'")), "the burp is one");
         }
 
         [Test]

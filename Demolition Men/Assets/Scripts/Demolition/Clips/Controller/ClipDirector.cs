@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Demolition.Actions;
 using Demolition.Generation;
 using Demolition.Levels;
 using Demolition.Meta;
@@ -115,6 +116,8 @@ namespace Demolition.Clips
             Profile.UseTemporary();
             foreach (UpgradeDefinition upgrade in UpgradeCatalog.All)
                 Profile.Data.SetUpgradeLevel(upgrade.Id, Mathf.Clamp(shot.upgrades, 0, upgrade.MaxLevel));
+            for (int i = 0; i < shot.actions.Length; i++)
+                ActionCatalog.Equip(Profile.Data, i, ActionCatalog.FromId(shot.actions[i]));
             GameSettings settings = Profile.Data.settings;
             settings.musicVolume = 0f;
             settings.quality = (int)QualityChoice.High; // full resolution, every block falls as a body
@@ -263,6 +266,8 @@ namespace Demolition.Clips
                     player.Combat.AddWeapon(WeaponType.Axe, Shot.weaponHits);
                 else if (Shot.weapon == "wreckingball")
                     player.Combat.AddWeapon(WeaponType.WreckingBall, Shot.weaponHits);
+                if (Shot.charged && player.Action != null)
+                    player.Action.Meter.Fill();
                 player.Input.Source = _sources[i];
             }
 

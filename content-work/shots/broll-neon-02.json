@@ -2,6 +2,7 @@
   "id": "broll-neon-02",
   "level": "neon-02",
   "upgrades": 5,
+  "actions": ["radio"],
   "hud": true,
   "camera": {"mode": "run"},
   "width": 1920,
