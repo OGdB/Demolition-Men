@@ -42,11 +42,11 @@ namespace Demolition
 
     /// <summary>
     /// When the bot fires its action: where a player would, and never where it hurts itself.
-    /// The burp, the radio, the coffee and the intern at a building just ahead; the crane onto
+    /// The burp a couple of units from a building, the radio, the coffee and the intern at one just ahead; the crane onto
     /// a roof ahead; the controlled demolition at a building far enough off that its charges
     /// don't reach it; the slam on a roof (or, after a while, at the foot of a wall); the vest
     /// when debris comes down; the shovel when hurt or the partner is hitting. The charges and
-    /// the crane from a standstill (<see cref="BotSight.Speed"/>). Never in the
+    /// the crane and the burp from a standstill (<see cref="BotSight.Speed"/>). Never in the
     /// middle of falling debris, while backing off, or when the camera would leave it behind
     /// while the frames play.
     /// </summary>
@@ -72,8 +72,8 @@ namespace Demolition
             bool building = s.WallIsBuilding;
             switch (kind)
             {
-                case ActionKind.Burp: // the band wrecks 7 units ahead at chest height: from outside, or the floors drop on it
-                    return s.Headroom && building && s.Wall >= 0.5f && s.Wall <= 4f;
+                case ActionKind.Burp: // the band wrecks 7 units ahead at chest height: from outside and a couple of units off, or the floors drop on it
+                    return s.Headroom && building && s.Wall >= 2f && s.Wall <= 4f && s.Speed < StandStill;
                 case ActionKind.ButtSlam: // the hop needs the sky; down through the floors under it
                     return s.Headroom && (s.FloorsBelow >= 2 || (s.FullFor > SlamWait && building && s.Wall < 1.5f));
                 case ActionKind.CraneDrop: // from the street: up on a roof the pallet smashes the one it stands on
