@@ -54,7 +54,7 @@ namespace Demolition
         /// force threshold, over the facing deadzone. Letting go only coasts 7 units from full speed.</summary>
         private const float Face = 0.15f;
         /// <summary>Seconds of room it stands punching a support in reach (walk-through, so it would run on).</summary>
-        private const float SupportRoom = 4f;
+        private const float SupportRoom = 6f;
         private static readonly float[] ThrowHeights = { 0.5f, 1.3f };
         /// <summary>How far ahead it looks for a building to fire its action at.</summary>
         private const float ActionReach = BotTactics.ChargeReach + 1f;
