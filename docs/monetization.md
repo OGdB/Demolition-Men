@@ -93,4 +93,5 @@ as a test device (AdMob ▸ Settings ▸ Test devices) before installing a relea
 
 - Rewarded **continue** (rejoin once more in solo after going out).
 - Rewarded **daily bonus** (extra cash on the daily challenge).
-- Cosmetic skins (palette swaps of the demolition man) as IAP or cash unlocks.
+- Cosmetic skins (palette swaps of the demolition man) for cash, and a Supporter pack (remove
+  ads plus an exclusive skin): planned for v1.2, roadmap *Cosmetics shop*.
