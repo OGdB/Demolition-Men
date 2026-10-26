@@ -16,7 +16,10 @@ namespace Demolition
     /// meter is full it fires the action where a player would (<see cref="BotTactics"/>) and
     /// stays out of its strike (the charges' 3-2-1, the crane's pallet). Walking to a
     /// point (<see cref="StopX"/>, the Clip Lab) it only clears the way. Drives the player
-    /// through a <see cref="ScriptedInputSource"/>, exactly like a real input device.
+    /// through a <see cref="ScriptedInputSource"/>, exactly like a real input device. It logs
+    /// what an agent tuning it needs ("Bot: " lines): every action it fires; every hit it takes,
+    /// what dealt it and what was around; leaving the screen; its death, why, with its last
+    /// two seconds; and how the run ended.
     /// </summary>
     [RequireComponent(typeof(PlayerInputReader), typeof(PlayerMotor), typeof(PlayerCombat))]
     public sealed class BotPilot : MonoBehaviour
@@ -65,6 +68,12 @@ namespace Demolition
         private float _sightAt;
         private float _strikeUntil;
         private float _brakeUntil;   // stopping to aim its action
+        private string _fatalHit; // the hit that took its last health
+        private bool _loggedDeath, _loggedEnd, _offScreen;
+        // What it was doing over the last two seconds, oldest first from _historyAt.
+        private readonly string[] _history = new string[8];
+        private int _historyAt;
+        private float _historyNext;
         private float _progressX;
         private float _progressTime; // last progress or stuck hop
         private float _stuckSince;   // last progress
@@ -94,6 +103,18 @@ namespace Demolition
             _body = GetComponent<Rigidbody2D>();
         }
 
+        private void OnEnable()
+        {
+            if (_health != null)
+                _health.Hurt += OnHurt;
+        }
+
+        private void OnDisable()
+        {
+            if (_health != null)
+                _health.Hurt -= OnHurt;
+        }
+
         // In Start: the run assigns devices to players when it wakes, after this was added.
         private void Start()
         {
@@ -107,6 +128,12 @@ namespace Demolition
             float now = Time.time;
             RunController run = RunController.Current;
             bool over = run != null && run.State.IsOver;
+            LogHealth(feet, run);
+            if (over && !_loggedEnd)
+            {
+                _loggedEnd = true;
+                Debug.Log($"Bot: {name} run over: {run.State.Phase} after {run.State.Elapsed:0}s at x {feet.x:0.0}");
+            }
             if (feet.x + Reach >= StopX || over)
             {
                 // Arrived, or the run is over: hands off (on the results screen it would punch the air).
@@ -338,7 +365,11 @@ namespace Demolition
                 sight.CraneTarget = StandingAt(CraneCall.Pick(feet + new Vector2(CraneReach, 0f)) + new Vector2(0f, -0.3f));
             if (kind == ActionKind.Implosion)
                 sight.Charges = Charges(feet, out sight.NearestCharge);
-            if (!BotTactics.Fire(kind, sight))
+            if (BotTactics.Fire(kind, sight))
+                Debug.Log($"Bot: {name} fires {_action.Info.Id} at x {feet.x:0.0}: wall {sight.Wall:0.0}{(sight.WallIsBuilding ? " building" : "")}"
+                          + $" floors below {sight.FloorsBelow} charges {sight.Charges} nearest {sight.NearestCharge:0.0} health {sight.Health:0.00}"
+                          + $" room {sight.Room:0.0}s debris {sight.Debris} full for {sight.FullFor:0.0}s");
+            else
             {
                 sight.Speed = 0f;
                 if (BotTactics.Fire(kind, sight))
@@ -348,6 +379,88 @@ namespace Demolition
             if (kind == ActionKind.CraneDrop || kind == ActionKind.Implosion)
                 _strikeUntil = now + StrikeWatch;
             return true;
+        }
+
+        // A hit, what dealt it, what it was doing (the frame before) and what was around.
+        private void OnHurt(float amount, string source)
+        {
+            Vector2 feet = transform.position;
+            if (_health.Current <= 0f)
+                _fatalHit = source;
+            Debug.Log($"Bot: {name} hurt {amount:0} to {_health.Current:0}/{_health.Max:0} by {source} at x {feet.x:0.0} y {feet.y:0.0}"
+                      + $"\n  doing: {Status}\n  around: {Surroundings(feet)}");
+        }
+
+        // Leaving the screen, its death and why, with what it was doing in the seconds before.
+        private void LogHealth(Vector2 feet, RunController run)
+        {
+            if (_health == null)
+                return;
+            float now = Time.time;
+            if (now >= _historyNext)
+            {
+                _historyNext = now + 0.25f;
+                _history[_historyAt] = $"{(run != null ? run.State.Elapsed : now):0.00}s x {feet.x:0.0} y {feet.y:0.0} hp {_health.Current:0}: {Status}";
+                _historyAt = (_historyAt + 1) % _history.Length;
+            }
+
+            bool off = !_health.IsDead && feet.x < CameraLeft();
+            if (off && !_offScreen)
+                Debug.Log($"Bot: {name} off screen at x {feet.x:0.0}: {Status}\n  around: {Surroundings(feet)}");
+            _offScreen = off;
+
+            if (_health.IsDead && !_loggedDeath)
+            {
+                _loggedDeath = true;
+                string why = _fatalHit != null ? $"health ran out: {_fatalHit}" : "taken out of play with health left: the camera's edge or a pit";
+                var log = new System.Text.StringBuilder($"Bot: {name} died ({why}) at x {feet.x:0.0} y {feet.y:0.0}"
+                    + $"{(run != null ? $" after {run.State.Elapsed:0}s" : "")}\n  around: {Surroundings(feet)}\n  last seconds:");
+                for (int i = 0; i < _history.Length; i++)
+                {
+                    string line = _history[(_historyAt + i) % _history.Length];
+                    if (line != null)
+                        log.Append("\n    ").Append(line);
+                }
+                Debug.LogWarning(log.ToString());
+            }
+            else if (!_health.IsDead)
+            {
+                _loggedDeath = false; // revived (co-op)
+                _fatalHit = null;
+            }
+        }
+
+        // What is around it, for the log: the debris near and how it moves, the strike or
+        // dynamite still to go off, room overhead, the ground, and the camera's edge.
+        private string Surroundings(Vector2 feet)
+        {
+            int falling = 0;
+            float best = float.MaxValue;
+            Vector2 at = default, moving = default;
+            int count = Physics2D.OverlapCircle(feet + Vector2.up, 4f, Solid, _overlaps);
+            for (int i = 0; i < count; i++)
+            {
+                var block = _overlaps[i].GetComponentInParent<BuildingBlock>();
+                if (block == null || !block.IsFalling)
+                    continue;
+                falling++;
+                Vector2 offset = (Vector2)block.transform.position - feet;
+                if (offset.sqrMagnitude < best)
+                {
+                    best = offset.sqrMagnitude;
+                    at = offset;
+                    moving = _overlaps[i].attachedRigidbody != null ? _overlaps[i].attachedRigidbody.linearVelocity : Vector2.zero;
+                }
+            }
+            float left = CameraLeft();
+            return $"falling blocks {falling}{(falling > 0 ? $" (nearest at {Vec(at)} moving {Vec(moving)})" : "")}"
+                   + $", block ahead {(BlockAhead(feet) is BuildingBlock b ? b.Material.ToString() : "-")}, headroom {Headroom(feet)}"
+                   + $", pit under {PitAt(feet + new Vector2(0f, 0.2f))} ahead {PitAhead(feet)}"
+                   + $", dynamite out {_combat.DynamiteOut}, strike pending {StrikePending(Time.time)}"
+                   + (_action != null ? $", action {_action.Info.Id} {_action.Meter.Fraction:0.00}{(_action.Busy ? " playing" : "")}" : "")
+                   + (float.IsNegativeInfinity(left) ? "" : $", camera edge {feet.x - left:0.0} behind");
+
+            static string Vec(Vector2 v) => $"({v.x:0.0}, {v.y:0.0})";
         }
 
         // Its strike still to come down ahead (the charges' 3-2-1, the crane's pallet): keep out of it.

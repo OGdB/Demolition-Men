@@ -159,7 +159,9 @@ namespace Demolition
                 if (health == null || !hurt.Add(health))
                     continue;
                 float distance = Vector2.Distance(hit.ClosestPoint(transform.position), transform.position);
-                health.TakeDamage(playerDamage * Mathf.Lerp(1f, 0.3f, distance / areaOfEffect), capped: false);
+                health.TakeDamage(playerDamage * Mathf.Lerp(1f, 0.3f, distance / areaOfEffect), capped: false,
+                    _owner != null ? $"dynamite thrown by P{_owner.PlayerIndex + 1}, {distance:0.0} from it"
+                        : $"a gas tank or charge (P{_instigator + 1}'s), {distance:0.0} from it");
                 var motor = health.GetComponent<PlayerMotor>();
                 if (motor != null && !health.IsProxy && !health.IsDead)
                 {

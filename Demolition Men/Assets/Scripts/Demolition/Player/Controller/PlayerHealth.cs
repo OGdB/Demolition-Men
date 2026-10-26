@@ -45,6 +45,8 @@ namespace Demolition
 
         /// <summary>Health reached 0 while <see cref="ManagedByRun"/>.</summary>
         public event System.Action<PlayerHealth> Depleted;
+        /// <summary>A hit landed: the health it cost and what dealt it (the bot's log).</summary>
+        public event System.Action<float, string> Hurt;
 
         /// <summary>Online, the other device's player: the network moves it and its owner
         /// decides its health, so it takes no input, no local damage and no local forces.</summary>
@@ -150,12 +152,15 @@ namespace Demolition
         }
 
         /// <param name="capped">False for a blast: <see cref="maxDamagePerHit"/> is for debris piling up.</param>
-        public void TakeDamage(float amount, bool capped = true)
+        /// <param name="source">What dealt it, for <see cref="Hurt"/>.</param>
+        public void TakeDamage(float amount, bool capped = true, string source = null)
         {
             if (IsProxy || IsDead || Invincible || amount <= 0f || Time.time < _invulnUntil)
                 return;
 
+            float before = Current;
             Current = Mathf.Max(0f, Current - (capped ? Mathf.Min(amount, maxDamagePerHit) : amount));
+            Hurt?.Invoke(before - Current, source ?? "unknown");
             _flashUntil = Time.time + 0.12f;
             _invulnUntil = Time.time + hitInvulnerability;
             if (hurtSound != null && _audio != null)
@@ -175,7 +180,7 @@ namespace Demolition
         {
             if (!other.CompareTag(TrapTag) || IsProxy || IsDead || Time.time < _invulnUntil)
                 return;
-            TakeDamage(trapDamage);
+            TakeDamage(trapDamage, source: $"trap {other.name}");
             if (!IsDead && TryGetComponent(out PlayerMotor motor))
                 motor.Hop(trapHop);
         }
