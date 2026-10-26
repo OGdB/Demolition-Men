@@ -8,5 +8,45 @@
     "asset_id": "0ddf081c-d3a5-4b06-a609-12e78d224f6e",
     "sha12": "5bdbb576c0da",
     "label": "De Boer keyframes: drink, wind-up, release"
+  },
+  {
+    "asset_id": "cb92064c-9b35-45f9-bbda-04cbc5ac92db",
+    "sha12": "0604b1f6784e",
+    "label": "schep: lean"
+  },
+  {
+    "asset_id": "713d71b6-c13f-4cde-bb77-d76c2f6c9ccb",
+    "sha12": "df1d1ba463c6",
+    "label": "stagiair: point"
+  },
+  {
+    "asset_id": "3ada4fb1-89ee-45d9-97e6-a2f32a448615",
+    "sha12": "1afeebeb010d",
+    "label": "hesje: vest"
+  },
+  {
+    "asset_id": "46f7ea4e-4cd6-44d7-b6f5-0fa222c118d6",
+    "sha12": "7c6cc3c34b4e",
+    "label": "kontplof: air, impact"
+  },
+  {
+    "asset_id": "2d64fd86-ddd3-41bc-84ae-a811b7864b87",
+    "sha12": "7ae20ea0f783",
+    "label": "bakkie: sip, rush"
+  },
+  {
+    "asset_id": "ef6e4f34-f140-4a4a-86df-97e6a2f33a4e",
+    "sha12": "8c69945d77b7",
+    "label": "kees: whistle, point"
+  },
+  {
+    "asset_id": "744732df-a8d0-42a4-9fee-5f367f4f7c20",
+    "sha12": "f06fb0472c9d",
+    "label": "sloop: arm, fire"
+  },
+  {
+    "asset_id": "ce6e82b2-8ea1-44e7-a924-264099d9c317",
+    "sha12": "39d31d62db14",
+    "label": "radio: set-down, groove"
   }
 ]
