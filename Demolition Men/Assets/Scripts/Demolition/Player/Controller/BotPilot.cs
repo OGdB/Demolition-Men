@@ -19,7 +19,7 @@ namespace Demolition
     /// through a <see cref="ScriptedInputSource"/>, exactly like a real input device. It logs
     /// what an agent tuning it needs ("Bot: " lines): every action it fires; every hit it takes,
     /// what dealt it and what was around; leaving the screen; its death, why, with its last
-    /// two seconds; and how the run ended.
+    /// six seconds; and how the run ended.
     /// </summary>
     [RequireComponent(typeof(PlayerInputReader), typeof(PlayerMotor), typeof(PlayerCombat))]
     public sealed class BotPilot : MonoBehaviour
@@ -87,8 +87,8 @@ namespace Demolition
         private float _pressedUntil; // running on from the camera's edge
         private string _fatalHit; // the hit that took its last health
         private bool _loggedDeath, _loggedEnd, _offScreen;
-        // What it was doing over the last two seconds, oldest first from _historyAt.
-        private readonly string[] _history = new string[8];
+        // What it was doing over the last six seconds, oldest first from _historyAt.
+        private readonly string[] _history = new string[24];
         private int _historyAt;
         private float _historyNext;
         private float _progressX;
