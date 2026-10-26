@@ -625,8 +625,8 @@ namespace Demolition
             return false;
         }
 
-        // Blocks coming down on the player's head (a collapse it set off), and the shorter way
-        // out from under them (-1 back, +1 on; back when it's about even: ahead is still standing).
+        // Blocks coming down on the player's head (a collapse it set off), and the way out from
+        // under them (-1 back, +1 on only when nothing falls ahead).
         private bool DebrisAbove(Vector2 feet, out float escape)
         {
             escape = -1f;
@@ -646,8 +646,8 @@ namespace Demolition
                 right = Mathf.Max(right, x);
                 above |= x > feet.x - 1.1f && x < feet.x + 2.3f;
             }
-            if (above && feet.x - left > right - feet.x + 2f)
-                escape = 1f;
+            if (above && right < feet.x + 0.5f)
+                escape = 1f; // on only when all of it is behind the body: what's ahead comes down in its way
             return above;
         }
 
