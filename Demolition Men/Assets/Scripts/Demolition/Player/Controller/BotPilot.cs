@@ -189,7 +189,7 @@ namespace Demolition
                     _escape = escape > 0f && !open ? -1f : escape;
                 }
                 if (now < _backUntil)
-                    move = _escape;
+                    move = block != null ? -1f : _escape; // a forward escape that meets a wall backs off: no punching under the fall
                 else if (move > 0f && tumbling)
                     move = 0f; // tumbling blocks ahead may yet come down on its head
                 else if (_combat.DynamiteOut || StrikePending(now))
