@@ -166,6 +166,8 @@ namespace Demolition.Run
         {
             Current = this;
             FindPlayers();
+            if (Debug.isDebugBuild)
+                gameObject.AddComponent<ActionTestKeys>(); // 1-9: try any action with a full meter
             State = new RunState(_players.Count, rules);
             Score = new RunScore(_players.Count);
             State.PhaseChanged += OnPhaseChanged;

@@ -62,6 +62,9 @@ namespace Demolition.Actions
             SetKind(kind);
         }
 
+        /// <summary>Carry another action from now on (the test keys); the meter keeps its share.</summary>
+        public void Equip(ActionKind kind) => SetKind(kind);
+
         // A different action (online, the other device's loadout): the meter keeps its share.
         private void SetKind(ActionKind kind)
         {
