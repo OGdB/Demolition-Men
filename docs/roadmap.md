@@ -81,8 +81,8 @@ devices over the internet yet.
 - The audio, polish and performance work in R2.
 
 **Out of v1 (updates after launch, §4 After launch)**
-- The remove-ads purchase, a daily-challenge leaderboard, Theme 4 and more from the content
-  pipeline (M5), endless mode, a level editor.
+- The remove-ads purchase, bonus objectives, the cosmetics shop, a daily-challenge
+  leaderboard, Theme 4 and more from the content pipeline (M5), endless mode, a level editor.
 - Other stores and platforms: iOS (needs a Mac and $99 a year), an Android TV listing, PC on
   itch.io or Steam. The code already runs there; the release work for them waits.
 
@@ -411,10 +411,52 @@ An update every 2–4 weeks keeps the listing fresh and gives the clips somethin
 show:
 - **v1.1:** fixes from launch; the **remove-ads purchase** (Unity IAP on Play Billing, needs a
   payments profile); a share button that sends a join code with the store and itch links.
-- **v1.2:** **Theme 4** through the content pipeline (M5), first run end to end on one pitch.
+- **v1.2:** **bonus objectives** and the **cosmetics shop** (below): goals that make the 12
+  levels worth playing again, and a lasting use for cash, so the rewarded 2x cash still means
+  something once the five upgrades are maxed.
+- **v1.3:** **Theme 4** through the content pipeline (M5), first run end to end on one pitch.
 - A daily-challenge leaderboard (Play Games Services is free), store listings translated for
   the top countries.
 - Later: an Android TV listing, PC on itch.io or Steam, iOS, endless mode, a level editor.
+
+#### Bonus objectives (v1.2, S/M)
+Every level gets a job sheet of three bonus objectives on top of its stars, shown in the level
+select and ticked off on the results screen.
+- Kinds, all judged from what a run already counts (`RunScore`, `DestructionEvents`,
+  `PlayerHealth`): bring a building down in one collapse, a destruction share (e.g. 90%),
+  fists only (no weapon pickups), no dynamite, no damage taken, a chain multiplier reached,
+  a finish within par.
+- Picked from the level's own seed (Pcg32), so a level always has the same sheet, and only
+  objectives the level makes possible: "one collapse" needs a building whose weak point brings
+  down enough (`ShotPlanning.WeakPoint`). A campaign level can pin its sheet in its JSON. The
+  daily gets a new sheet every day.
+- Model: an objective kind and target, judged by a pure check over a run summary
+  (EditMode-tested); the objectives done saved per level in `LevelRecord`.
+- Reward: cash once per objective; all three on a level unlocks a look from the cosmetics
+  shop, which ties the two together.
+- Online co-op: the sheet is the crew's, judged on the host like the score.
+- Measure against the closed test's baseline: replays per level and the share of runs that
+  tick at least one objective. Keep it if replays per level rise by about half (an estimate,
+  to be set from the baseline); take the sheet off the results screen if players ignore it.
+
+#### Cosmetics shop (v1.2, M)
+A LOOKS tab in the shop next to the upgrades and ACTIONS. Looks only, never stronger, so
+online co-op and the stars stay fair.
+- Crew skins: palette swaps of the vest, hard hat and trousers, for the animator's sprites
+  and every action frame (`tools/artpipe/action_frames.py` already recolours P1 into P2).
+  Decide between a baked sprite set per skin (simple, a bigger atlas) and a palette-swap
+  shader in URP 2D (one sprite set, a palette per skin).
+- Effects: dust and debris colours, explosion styles, the look of the TNT.
+- Prices in cash; a few looks only from completed job sheets, and one exclusive skin in a
+  **Supporter pack**: the v1.1 remove-ads purchase bundled with it.
+- Actions cost cash too (all but the burp), so cash keeps a use after the upgrades are maxed.
+- Saved in `SaveData` like `actions` (owned looks, the look each player wears); online the
+  look goes with `NetPlayer`'s kit, so the partner sees it.
+- Not for money: themes (they would split who can play online together) and upgrades (pay to
+  win, and it breaks the stars).
+- Measure against the closed test's baseline: how often players take the 2x cash offer after
+  the first theme. Keep it if that rate stops falling once the upgrades are maxed; if it
+  keeps falling, there are too few sinks or they cost too much.
 
 ---
 
