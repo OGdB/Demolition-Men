@@ -329,7 +329,18 @@ namespace Demolition
         private BuildingBlock ThrowTarget(Vector2 feet, out float distance)
         {
             BuildingBlock nearest = NearestAhead(feet, ThrowMax + 1f, out distance, out float loose);
-            return nearest != null && loose > distance && ArcClear(feet) && WorthAStick(nearest) ? nearest : null;
+            return nearest != null && loose > distance && ArcClear(feet) && HandClear(feet) && WorthAStick(nearest) ? nearest : null;
+        }
+
+        // Nothing where the stick appears (a unit ahead at chest height, PlayerCombat's throw): it
+        // goes off at once on a block overlapping its trigger, in the thrower's face.
+        private bool HandClear(Vector2 feet)
+        {
+            int count = Physics2D.OverlapBox(feet + new Vector2(1f, 1.3f), new Vector2(1f, 1.1f), 0f, Any, _overlaps);
+            for (int i = 0; i < count; i++)
+                if (_overlaps[i].GetComponentInParent<BuildingBlock>() != null)
+                    return false;
+            return true;
         }
 
         private bool ArcClear(Vector2 feet)
