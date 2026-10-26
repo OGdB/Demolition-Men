@@ -204,7 +204,7 @@ namespace Demolition
                     attack = false;
                     move = Back(feet);
                 }
-                if (attack && move > 0f && block != null && block.Material == BlockMaterial.Support && Room(feet) > SupportRoom)
+                if (attack && move > 0f && block != null && block.Material == BlockMaterial.Support && Room(feet) > SupportRoom && Daring(feet))
                     move = 0f; // a support is walk-through: stand and finish it, the building comes down with it
                 fire = !throwNow && PlanAction(feet, now, headroom, falling || tumbling);
                 if (now < _brakeUntil)
@@ -568,6 +568,19 @@ namespace Demolition
             LevelLayout layout = _level != null ? _level.Layout : null;
             int index = building.NetIndex;
             return layout != null && index >= 0 && index < layout.Buildings.Count && layout.Buildings[index].IsProp;
+        }
+
+        // Health it can spend bringing a building down on itself (the floors over a support come
+        // down on whoever punches it out): three quarters of the bar at the start, a quarter at the finish.
+        private bool Daring(Vector2 feet)
+        {
+            if (_health == null || _health.Max <= 0f)
+                return false;
+            LevelLayout layout = _level != null ? _level.Layout : null;
+            float progress = layout != null && layout.FinishX > layout.SpawnX
+                ? Mathf.Clamp01((feet.x - _level.transform.position.x - layout.SpawnX) / (layout.FinishX - layout.SpawnX))
+                : 0f;
+            return _health.Current / _health.Max >= 0.25f + 0.5f * (1f - progress);
         }
 
         // Seconds it can stand still before the scrolling camera's left edge reaches it.
