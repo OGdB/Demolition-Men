@@ -705,15 +705,17 @@ namespace Demolition
         private static bool Tumbling(Collider2D debris) =>
             debris.attachedRigidbody != null && debris.attachedRigidbody.linearVelocity.sqrMagnitude > 0.25f;
 
-        // Pressing back until it stands (letting go coasts 7 units from full speed), then standing.
-        private float Brake(float standing) =>
-            _body != null && _body.linearVelocity.x > BotTactics.StandStill ? -1f : standing;
+        // Pressing against the motion until it stands (letting go coasts 7 units from full speed), then standing.
+        private float Brake(float standing)
+        {
+            float vx = _body != null ? _body.linearVelocity.x : 0f;
+            return vx > BotTactics.StandStill ? -1f : vx < -BotTactics.StandStill ? 1f : standing;
+        }
 
-        // -1 to back up, or 0 where that would end over a drop or past the camera's edge (backing up
-        // carries on a little after letting go).
+        // -1 to back up, or a stop where that would end over a drop or past the camera's edge.
         private float Back(Vector2 feet) =>
             feet.x - 1f < CameraLeft() + EdgeMargin || PitAt(feet + new Vector2(-0.7f, 0.2f)) || PitAt(feet + new Vector2(-1.6f, 0.2f))
-                ? 0f : -1f;
+                ? Brake(0f) : -1f;
 
         // The run camera's left edge (out of bounds past it), or -infinity when nothing scrolls.
         private static float CameraLeft()
