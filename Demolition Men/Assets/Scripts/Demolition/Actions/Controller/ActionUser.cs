@@ -259,7 +259,7 @@ namespace Demolition.Actions
                     ActionAudio.Whistle();
                     break;
                 case ActionKind.Implosion: // the plunger pulled up
-                    ActionAudio.Clank(0.7f);
+                    ActionAudio.Plunger();
                     break;
                 case ActionKind.CoffeeBreak:
                     ActionAudio.Pour();
@@ -272,12 +272,12 @@ namespace Demolition.Actions
                     ActionAudio.Paper();
                     break;
                 case ActionKind.HiVis: // velcro, then the hard hat on
-                    ActionAudio.Rip(1.6f);
+                    ActionAudio.Velcro();
                     yield return new WaitForSeconds(0.3f);
-                    ActionAudio.Thump();
+                    ActionAudio.Helmet();
                     break;
                 case ActionKind.ShovelLean: // the shovel stuck in the ground
-                    ActionAudio.Clank(1.6f);
+                    ActionAudio.Shovel();
                     break;
                 case ActionKind.SiteRadio: // set down
                     yield return new WaitForSeconds(0.35f);

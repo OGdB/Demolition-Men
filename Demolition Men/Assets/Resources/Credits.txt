@@ -9,6 +9,7 @@ Schuylar Cheng
 "Rock_Theme" by Alexandr Zhelanov (soundcloud.com/alexandr-zhelanov) - CC BY 4.0 - opengameart.org/content/rocktheme
 "Mammoth" by congusbongus - CC BY 4.0, silence trimmed - opengameart.org/content/mammoth
 "Neon Action" by Bogart VGM - CC BY 4.0, silence trimmed - opengameart.org/content/neon-action
+"Disco funk loops 001 remix 2 short loop with drums 120 bpm" by josefpres - CC0 - freesound.org/s/569377
 CC BY 4.0: creativecommons.org/licenses/by/4.0
 
 # SOUND EFFECTS
@@ -16,6 +17,25 @@ CC BY 4.0: creativecommons.org/licenses/by/4.0
 "Jump.wav" by iimck - CC BY 3.0 - freesound.org/s/386486
 "Glas_Window_Drop_Slices_On_Floor_01.clip.wav" by TheSoundcatcher - CC BY 4.0 - freesound.org/s/315646
 "explosion_high_to_low_1.wav" by eardeer - CC0 - freesound.org/s/402006
+"soda can open.WAV" by sandroschroeder - CC0 - freesound.org/s/703669
+"Gulp (2)" by OwlStorm - CC0 - freesound.org/s/151233
+"belch1.wav" by santuccie - CC0 - freesound.org/s/26762
+"Swosh / Whoosh / Air Cut" by qubodup - CC0 - freesound.org/s/60030
+"cloth_rip.mp3" by Johnny2810 - CC0 - freesound.org/s/507756
+"thud.wav" by OtisJames - CC0 - freesound.org/s/215162
+"Whistle, Finger, Short, A.wav" by InspectorJ (www.jshaw.co.uk) - CC BY 4.0, trimmed - freesound.org/s/423285
+"Falling Bomb.wav" by Daleonfire - CC0 - freesound.org/s/506313
+"Mechanical switch (latch) 02" by xkeril - CC0 - freesound.org/s/815493
+"beep.wav" by jeckkech - CC0 - freesound.org/s/391650
+"Pouring Drink Sound Effect by Rea.mp3" by reasanka - CC0 - freesound.org/s/382911
+"Paper Rustle" by BenjaminNelan - CC0 - freesound.org/s/353125
+"Cartoon Pop (Clean)" by unfa - CC0 - freesound.org/s/245645
+"Velcro Pull Short" by Rudmer_Rotteveel - CC0 - freesound.org/s/536228
+"plastic donk 4.wav" by a deleted Freesound user - CC0 - freesound.org/s/455193
+"Boing 1" by magnuswaker - CC0 - freesound.org/s/540788
+"Shovel - Sand/Gravel/Snow" by Bricklover - CC0 - freesound.org/s/560957
+"radio noise 2.wav" by ERH - CC BY 4.0, trimmed - freesound.org/s/30335
+"Kick_Drum_Hard_#3.wav" by Renovatio871 - CC0 - freesound.org/s/190551
 CC BY 3.0: creativecommons.org/licenses/by/3.0
 
 # FONT
