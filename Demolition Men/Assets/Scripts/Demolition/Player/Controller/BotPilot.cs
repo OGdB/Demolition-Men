@@ -682,7 +682,7 @@ namespace Demolition
         // -1 to back up, or 0 where that would end over a drop or past the camera's edge (backing up
         // carries on a little after letting go).
         private float Back(Vector2 feet) =>
-            feet.x - 1f < CameraLeft() + Pressed || PitAt(feet + new Vector2(-0.7f, 0.2f)) || PitAt(feet + new Vector2(-1.6f, 0.2f))
+            feet.x - 1f < CameraLeft() + EdgeMargin || PitAt(feet + new Vector2(-0.7f, 0.2f)) || PitAt(feet + new Vector2(-1.6f, 0.2f))
                 ? 0f : -1f;
 
         // The run camera's left edge (out of bounds past it), or -infinity when nothing scrolls.
