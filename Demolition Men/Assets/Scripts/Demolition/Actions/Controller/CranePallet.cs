@@ -73,7 +73,7 @@ namespace Demolition.Actions
             var health = collision.collider.GetComponentInParent<PlayerHealth>();
             if (health != null)
             {
-                health.TakeDamage(20f); // ouch: the crane can't see you
+                health.TakeDamage(20f, source: "the crane's pallet"); // ouch: the crane can't see you
                 return;
             }
             if (collision.relativeVelocity.magnitude < 4f)

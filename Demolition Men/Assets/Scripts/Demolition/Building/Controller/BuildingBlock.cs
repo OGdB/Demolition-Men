@@ -551,7 +551,7 @@ namespace Demolition
             {
                 _lastImpactTime = Time.time;
                 float damage = Mathf.Clamp((fall - minImpactSpeed) * impactDamageScale, 0f, maxImpactDamage);
-                health.TakeDamage(damage);
+                health.TakeDamage(damage, source: $"falling {material} {name} at {fall:0.0} u/s");
                 Particles.Burst(collision.GetContact(0).point, new Color(0.95f, 0.8f, 0.2f), 8, 4f, 0.12f, 0.5f);
             }
 
