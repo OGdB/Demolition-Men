@@ -22,6 +22,9 @@ namespace Demolition.Online
     public sealed class OnlineSession : MonoBehaviour
     {
         private const int TickRate = 20;
+        // Online the players pass through each other and the other one shows about 0.2 s late: at a
+        // sprint that's 2 units, so a closer start runs the front one into the back one on one screen.
+        private const float SpawnGap = 3f;
         private const string StartMessage = "DM.Start";
 
         public static OnlineSession Current { get; private set; }
@@ -334,7 +337,7 @@ namespace Demolition.Online
             }
             for (int i = 0; i < 2; i++)
             {
-                GameObject player = Instantiate(prefabs[i], _spawn.Value + new Vector3(-1.5f * i, 0f, 0f), Quaternion.identity);
+                GameObject player = Instantiate(prefabs[i], _spawn.Value + new Vector3(-SpawnGap * i, 0f, 0f), Quaternion.identity);
                 var networkObject = player.GetComponent<NetworkObject>();
                 networkObject.DontDestroyWithOwner = true; // player 2 leaving mid-run: the host still needs it (OnClientDisconnected)
                 networkObject.SpawnWithOwnership(i == 0 ? NetworkManager.ServerClientId : Peer, destroyWithScene: true);
