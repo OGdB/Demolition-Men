@@ -30,6 +30,9 @@ namespace Demolition.Ads
 
         private static bool Enabled => (Platform.IsMobile || (Application.isEditor && SimulateInEditor)) && !Profile.Data.adsRemoved;
 
+        /// <summary>This build shows ads at all (a real network, or simulated): what REMOVE ADS would remove.</summary>
+        public static bool ShowsAds => Enabled && !(Service is NoAdService);
+
         private static IAdService DefaultService()
         {
             if (Platform.IsMobile ? Debug.isDebugBuild : Application.isEditor && SimulateInEditor)

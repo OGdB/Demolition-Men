@@ -11,7 +11,8 @@ namespace Demolition.Run
 {
     /// <summary>End-of-run screen, built in code when the run ends. It plays a short reveal:
     /// the title slams down, the demolition meter fills and lights a star at 40, 60 and 80%
-    /// (finished runs only), the total and the cash count up, then any record stamp lands.
+    /// (finished runs only), the total and the cash count up (job-sheet objectives done for the
+    /// first time pay on top), the job sheet shows, then any record stamp lands.
     /// Any press skips the reveal. Then Next / Retry / Shop / Menu, and the rewarded
     /// "2x cash" on phones.</summary>
     [RequireComponent(typeof(RunController))]
@@ -48,6 +49,7 @@ namespace Demolition.Run
         private TextMeshProUGUI _bank;
         private TextMeshProUGUI _badge;
         private TextMeshProUGUI _parStamp;
+        private TextMeshProUGUI _sheet;
         private bool _rainbow;
 
         private void Awake()
@@ -140,6 +142,16 @@ namespace Demolition.Run
             _bank = UiFactory.Text(_content, "Bank", centre, new Vector2(330f, -212f), 30f, TextAlignmentOptions.Center, new Vector2(560f, 40f));
 
             RunReward reward = _run.Reward;
+            if (_run.Sheet != null)
+            {
+                _sheet = UiFactory.Text(_content, "Sheet", centre, new Vector2(0f, -268f), 30f, TextAlignmentOptions.Center, new Vector2(1320f, 44f), outlined: true);
+                _sheet.enableAutoSizing = true;
+                _sheet.fontSizeMin = 18f;
+                _sheet.fontSizeMax = 30f;
+                int done = Profile.Data.Level(_run.LevelId)?.objectives ?? 0;
+                _sheet.text = JobSheetText.Line(_run.Sheet, done, reward.NewObjectives, finished ? 0 : Objectives.AllDone);
+                _sheet.gameObject.SetActive(false);
+            }
             _badge = UiFactory.Text(_content, "Badge", centre, new Vector2(500f, 270f), 44f, TextAlignmentOptions.Center, new Vector2(380f, 60f), outlined: true);
             _badge.text = reward.FirstClear ? "FIRST CLEAR!" : reward.NewBestGrade ? "MORE STARS!" : reward.NewRainbow ? "RAINBOW!" : reward.NewBestScore ? "NEW BEST!" : string.Empty;
             _badge.color = new Color(0.5f, 1f, 0.5f);
@@ -263,7 +275,7 @@ namespace Demolition.Run
             _parStamp.gameObject.SetActive(_rainbow);
 
             int total = _run.BankedScore;
-            int cash = _run.Reward.Cash;
+            int cash = Earned;
             float lastCoin = 0f;
             yield return Tween(cash > 0 ? 0.8f : 0.5f, t =>
             {
@@ -276,6 +288,12 @@ namespace Demolition.Run
                 }
             });
             ShowCash();
+            if (_sheet != null)
+            {
+                _sheet.gameObject.SetActive(true);
+                if (!_skip && _run.Reward.NewObjectives != 0)
+                    UiAudio.Coin();
+            }
 
             if (_badge.text.Length > 0)
             {
@@ -324,7 +342,10 @@ namespace Demolition.Run
             _bank.text = $"BANK ${Profile.Data.cash:N0}";
         }
 
-        private void ShowCash() => ShowCount(_run.BankedScore, _run.Reward.Cash);
+        // The run's cash (doubled by the rewarded ad) and what new objectives paid.
+        private int Earned => _run.Reward.Cash + _run.Reward.ObjectiveCash;
+
+        private void ShowCash() => ShowCount(_run.BankedScore, Earned);
 
         private void DoubleCash()
         {

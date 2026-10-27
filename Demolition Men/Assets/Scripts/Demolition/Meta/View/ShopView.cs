@@ -9,8 +9,10 @@ using UnityEngine.UI;
 namespace Demolition.Meta
 {
     /// <summary>The skill shop (roadmap D6): banked cash buys the next level of an upgrade.
-    /// One row per <see cref="UpgradeCatalog"/> entry, and ACTIONS opens the crew's loadout
-    /// (<see cref="Actions.ActionsView"/>). Built in code; Back (Esc / B) closes.
+    /// One row per <see cref="UpgradeCatalog"/> entry; ACTIONS opens the crew's loadout
+    /// (<see cref="Actions.ActionsView"/>, actions bought with cash), LOOKS the crew's looks
+    /// (<see cref="LooksView"/>), and REMOVE ADS buys that from the store where it sells it
+    /// (<see cref="Ads.Purchases"/>). Built in code; Back (Esc / B) closes.
     /// Opens from the level select and from the results screen between runs.</summary>
     public sealed class ShopView : MonoBehaviour
     {
@@ -35,6 +37,7 @@ namespace Demolition.Meta
         private void Awake()
         {
             IsOpen = true;
+            Ads.Purchases.Granted += Refresh;
             _previousSelection = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             Build();
         }
@@ -42,6 +45,7 @@ namespace Demolition.Meta
         private void OnDestroy()
         {
             IsOpen = false;
+            Ads.Purchases.Granted -= Refresh;
             _unblock?.Invoke();
             if (_previousSelection != null && EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(_previousSelection);
@@ -49,7 +53,7 @@ namespace Demolition.Meta
 
         private void Update()
         {
-            if (Actions.ActionsView.IsOpen)
+            if (Actions.ActionsView.IsOpen || LooksView.IsOpen)
                 return; // its Back closes it, not the shop under it
             bool back = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
             foreach (Gamepad pad in Gamepad.all)
@@ -85,12 +89,48 @@ namespace Demolition.Meta
                     first = buy;
                 y -= 125f;
             }
-            UiFactory.Button(root, "ACTIONS", centre, new Vector2(-200f, y - 30f), new Vector2(360f, 90f), () => Actions.ActionsView.Open(transform));
-            UiFactory.Button(root, "BACK", centre, new Vector2(200f, y - 30f), new Vector2(360f, 90f), Close);
+            var row = new List<Button>
+            {
+                UiFactory.Button(root, "ACTIONS", centre, Vector2.zero, new Vector2(360f, 90f), () => Actions.ActionsView.Open(transform, Refresh)),
+            };
+            // Looks arrive with the art pipeline; until then only development builds show the (empty) list.
+            if (LookCatalog.All.Count > 0 || Debug.isDebugBuild)
+                row.Add(UiFactory.Button(root, "LOOKS", centre, Vector2.zero, new Vector2(360f, 90f), () => LooksView.Open(transform, Refresh)));
+            if (Ads.Purchases.CanBuyRemoveAds)
+                row.Add(RemoveAds(root));
+            row.Add(UiFactory.Button(root, "BACK", centre, Vector2.zero, new Vector2(360f, 90f), Close));
+            for (int i = 0; i < row.Count; i++)
+                ((RectTransform)row[i].transform).anchoredPosition = new Vector2((i - (row.Count - 1) * 0.5f) * 400f, y - 30f);
 
             Refresh();
             if (EventSystem.current != null && first != null)
                 EventSystem.current.SetSelectedGameObject(first.gameObject);
+        }
+
+        // The store's REMOVE ADS with its price; gone once bought (here, or restored from Play).
+        private Button RemoveAds(RectTransform root)
+        {
+            Button button = null;
+            button = UiFactory.Button(root, "REMOVE ADS", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 90f), () =>
+            {
+                button.interactable = false;
+                Ads.Purchases.BuyRemoveAds(bought =>
+                {
+                    if (button != null)
+                        button.interactable = true;
+                    Refresh();
+                });
+            });
+            _refresh.Add(() =>
+            {
+                if (Profile.Data.adsRemoved)
+                {
+                    button.gameObject.SetActive(false);
+                    return;
+                }
+                UiFactory.Label(button, $"REMOVE ADS\n<size=60%>{Ads.Purchases.RemoveAdsPrice}</size>", 34f);
+            });
+            return button;
         }
 
         private Button Row(RectTransform root, UpgradeDefinition upgrade, float y)
@@ -128,6 +168,8 @@ namespace Demolition.Meta
 
         private void Refresh()
         {
+            if (_cash == null)
+                return; // an overlay closing as the scene goes
             _cash.text = $"BANK ${Profile.Data.cash:N0}";
             foreach (Action refresh in _refresh)
                 refresh();

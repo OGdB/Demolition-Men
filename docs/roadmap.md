@@ -410,7 +410,9 @@ passes the pre-launch report with no crashes, and closed testers finish the camp
 An update every 2–4 weeks keeps the listing fresh and gives the clips something new to
 show:
 - **v1.1:** fixes from launch; the **remove-ads purchase** (Unity IAP on Play Billing, needs a
-  payments profile); a share button that sends a join code with the store and itch links.
+  payments profile; *code in 2026-10-27: the shop's REMOVE ADS; left: the Play product and a
+  phone test, `monetization.md`*); a share button that sends a join code with the store and
+  itch links.
 - **v1.2:** **bonus objectives** and the **cosmetics shop** (below): goals that make the 12
   levels worth playing again, and a lasting use for cash, so the rewarded 2x cash still means
   something once the five upgrades are maxed.
@@ -419,7 +421,16 @@ show:
   the top countries.
 - Later: an Android TV listing, PC on itch.io or Steam, iOS, endless mode, a level editor.
 
-#### Bonus objectives (v1.2, S/M)
+#### Bonus objectives (v1.2, S/M) — ✅ built 2026-10-27, awaiting a playtest
+*As built:* `Run/Model/Objectives` with six kinds (WRECK 90%, 12+ BLOCKS IN ONE COLLAPSE, FISTS
+ONLY, NO DYNAMITE, NOT A SCRATCH, BEAT PAR), 250 cash each once; shown in the level select, the
+pause menu (struck through once out of reach this run) and the results. Changed from the plan:
+the collapse job counts a cascade (a collapse plus the crumbles within 3 s), because on the
+early levels no single collapse brings down 20 cells while every cascade reaches 16
+(`LevelGenerationTests` checks it on 10 seeds per level); with a fixed target every kind is
+possible on every level, so no level analysis picks them. The look for a full sheet waits for
+the looks. Left: playtest and tune the cash.
+
 Every level gets a job sheet of three bonus objectives on top of its stars, shown in the level
 select and ticked off on the results screen.
 - Kinds, all judged from what a run already counts (`RunScore`, `DestructionEvents`,
@@ -439,7 +450,14 @@ select and ticked off on the results screen.
   tick at least one objective. Keep it if replays per level rise by about half (an estimate,
   to be set from the baseline); take the sheet off the results screen if players ignore it.
 
-#### Cosmetics shop (v1.2, M)
+#### Cosmetics shop (v1.2, M) — started 2026-10-27
+*As built:* actions cost cash (the burp free; prices are first guesses), `Meta/Model/Looks`
+(how a look is had, owning, wearing per player, saved), the LOOKS screen (development builds
+only while it is empty), the supporter's look tied to REMOVE ADS. *Left:* the looks themselves,
+generated with ChatGPT's image generation and reviewed by the agent, like the action frames;
+the baked-or-palette decision below; drawing a worn look on the player and in its action
+frames; sending it with `NetPlayer`'s kit online.
+
 A LOOKS tab in the shop next to the upgrades and ACTIONS. Looks only, never stronger, so
 online co-op and the stars stay fair.
 - Crew skins: palette swaps of the vest, hard hat and trousers, for the animator's sprites

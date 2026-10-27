@@ -1,0 +1,28 @@
+{
+    "name": "Demolition.Ads.UnityIap",
+    "rootNamespace": "Demolition.Ads.UnityIap",
+    "references": [
+        "Demolition",
+        "Unity.Purchasing"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "DEMOLITION_IAP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.purchasing",
+            "expression": "5.0",
+            "define": "DEMOLITION_IAP"
+        }
+    ],
+    "noEngineReferences": false
+}

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Ads/Controller/UnityIap is its own asmdef (Demolition.Ads.UnityIap), compiled by Unity only
+       once com.unity.purchasing is installed. Here it builds against IapStubs.cs: a signature
+       check, not an IAP build. -->
+  <ItemGroup><Compile Include="$(ProjectAssets)/Scripts/Demolition/Ads/Controller/UnityIap/**/*.cs" />
+  <Compile Include="$(MSBuildThisFileDirectory)../IapStubs.cs" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition/Demolition.dll" Private="false" /></ItemGroup>
+</Project>
