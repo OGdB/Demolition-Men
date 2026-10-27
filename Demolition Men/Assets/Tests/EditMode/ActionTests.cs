@@ -147,7 +147,7 @@ namespace Demolition.Tests
         [Test]
         public void Loadout_DefaultsToTheBurp_AndKeepsEachPlayersPick()
         {
-            var save = new SaveData();
+            var save = new SaveData { ownedActions = new List<string> { "schep", "radio" } };
             Assert.AreEqual(ActionCatalog.Default, ActionCatalog.Equipped(save, 0));
             ActionCatalog.Equip(save, 1, ActionKind.ShovelLean);
             Assert.AreEqual(ActionCatalog.Default, ActionCatalog.Equipped(save, 0));

@@ -39,6 +39,8 @@ namespace Demolition.Levels
         public string[] archetypes = new string[0];
         /// <summary>Breakable street props: crate, car, barrel, container. Empty = crate, car, barrel.</summary>
         public string[] props = new string[0];
+        /// <summary>Job-sheet objectives pinned by id (<c>Objectives.Id</c>); the seed picks the rest.</summary>
+        public string[] objectives = new string[0];
 
         public static LevelSpec FromJson(string json) => JsonUtility.FromJson<LevelSpec>(json);
 
@@ -48,6 +50,7 @@ namespace Demolition.Levels
             LevelSpec copy = FromJson(JsonUtility.ToJson(this));
             copy.seed = newSeed;
             copy.id = newId;
+            copy.objectives = new string[0]; // pinned for the original's seed: a new seed picks its own sheet
             return copy;
         }
     }

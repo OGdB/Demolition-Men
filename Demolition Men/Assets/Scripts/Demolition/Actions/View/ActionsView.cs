@@ -11,8 +11,9 @@ using UnityEngine.UI;
 namespace Demolition.Actions
 {
     /// <summary>The loadout between levels: every action with what it does, and per player the
-    /// one they carry into the next level. Opens from the skill shop; Back (Esc / B) closes.
-    /// Player 2's column shows in local co-op; online each device picks for its own player.</summary>
+    /// one they carry into the next level; an action not bought yet shows its price instead.
+    /// Opens from the skill shop; Back (Esc / B) closes. Player 2's column shows in local co-op;
+    /// online each device picks for its own player.</summary>
     public sealed class ActionsView : MonoBehaviour
     {
         private const float RowHeight = 80f;
@@ -20,16 +21,20 @@ namespace Demolition.Actions
         private GameObject _previousSelection;
         private System.Action _unblock;
         private readonly List<Action> _refresh = new List<Action>();
+        private TextMeshProUGUI _cash;
+        private Action _closed;
+        private Button _firstPick;
 
         public static bool IsOpen { get; private set; }
 
-        public static void Open(Transform parent)
+        /// <param name="closed">Called after it closes (the shop shows the new balance).</param>
+        public static void Open(Transform parent, Action closed = null)
         {
             if (IsOpen)
                 return;
             var go = new GameObject("Actions");
             go.transform.SetParent(parent, false);
-            go.AddComponent<ActionsView>();
+            go.AddComponent<ActionsView>()._closed = closed;
         }
 
         private void Awake()
@@ -43,6 +48,7 @@ namespace Demolition.Actions
         {
             IsOpen = false;
             _unblock?.Invoke();
+            _closed?.Invoke();
             if (_previousSelection != null && EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(_previousSelection);
         }
@@ -79,7 +85,10 @@ namespace Demolition.Actions
                 y -= RowHeight;
             }
             UiFactory.Button(root, "BACK", centre, new Vector2(0f, y - 25f), new Vector2(360f, 80f), () => Destroy(gameObject));
+            _cash = UiFactory.Text(root, "Cash", centre, new Vector2(-560f, y - 25f), 40f, TextAlignmentOptions.Left, new Vector2(500f, 60f), outlined: true);
+            _cash.color = UiFactory.Gold;
 
+            _firstPick = first;
             Refresh();
             if (EventSystem.current != null && first != null)
                 EventSystem.current.SetSelectedGameObject(first.gameObject);
@@ -94,6 +103,26 @@ namespace Demolition.Actions
             description.text = info.Description;
             description.color = new Color(0.8f, 0.8f, 0.8f);
 
+            // Not bought yet: one BUY across the player columns instead of the picks.
+            Button buy = UiFactory.Button(root, "BUY", centre, new Vector2(470f + (players - 1) * 95f, y), new Vector2(170f + (players - 1) * 190f, 68f), () =>
+            {
+                if (ActionCatalog.TryBuy(Profile.Data, info.Kind))
+                {
+                    Profile.Save();
+                    Refresh();
+                }
+            });
+            var picks = new List<Button>();
+            _refresh.Add(() =>
+            {
+                bool owned = ActionCatalog.Owns(Profile.Data, info.Kind);
+                buy.gameObject.SetActive(!owned);
+                buy.interactable = Profile.Data.cash >= info.Price;
+                UiFactory.Label(buy, $"${info.Price:N0}", 30f);
+                foreach (Button pick in picks)
+                    pick.gameObject.SetActive(owned);
+            });
+
             Button first = null;
             for (int p = 0; p < players; p++)
             {
@@ -104,6 +133,7 @@ namespace Demolition.Actions
                     Profile.Save();
                     Refresh();
                 });
+                picks.Add(pick);
                 if (first == null)
                     first = pick;
                 _refresh.Add(() =>
@@ -117,8 +147,13 @@ namespace Demolition.Actions
 
         private void Refresh()
         {
+            _cash.text = $"BANK ${Profile.Data.cash:N0}";
             foreach (Action refresh in _refresh)
                 refresh();
+            // A BUY that just went away leaves nothing selected: a gamepad needs something to stand on.
+            if (EventSystem.current != null && (EventSystem.current.currentSelectedGameObject == null
+                || !EventSystem.current.currentSelectedGameObject.activeInHierarchy) && _firstPick != null)
+                EventSystem.current.SetSelectedGameObject(_firstPick.gameObject);
         }
     }
 }

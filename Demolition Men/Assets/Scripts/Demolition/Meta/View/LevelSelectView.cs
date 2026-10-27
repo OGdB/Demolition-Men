@@ -12,13 +12,23 @@ namespace Demolition.Meta
 {
     /// <summary>
     /// The job board between the menu and a run: one column per theme with its levels
-    /// (best stars and score, locked until the previous level is finished), plus the
-    /// training yard, the daily challenge, the skill shop and the settings. Built in code.
+    /// (best stars and score, job-sheet objectives done, locked until the previous level is
+    /// finished), plus the training yard, the daily challenge, the skill shop and the settings.
+    /// The job sheet of the level under the pointer or the selection shows below them. Built in code.
     /// </summary>
     public sealed class LevelSelectView : MonoBehaviour
     {
+        // Shows a level's job sheet while its button is selected or under the pointer.
+        private sealed class SheetOnFocus : MonoBehaviour, ISelectHandler, IPointerEnterHandler
+        {
+            public Action Show;
+            public void OnSelect(BaseEventData eventData) => Show();
+            public void OnPointerEnter(PointerEventData eventData) => Show();
+        }
+
         private Action _back;
         private TextMeshProUGUI _cash;
+        private TextMeshProUGUI _sheet;
         private readonly List<Action> _refresh = new List<Action>();
         private Button _first;
 
@@ -105,6 +115,11 @@ namespace Demolition.Meta
                 }
             }
 
+            _sheet = UiFactory.Text(root, "Sheet", centre, new Vector2(0f, -275f), 32f, TextAlignmentOptions.Center, new Vector2(1700f, 48f), outlined: true);
+            _sheet.enableAutoSizing = true;
+            _sheet.fontSizeMin = 20f;
+            _sheet.fontSizeMax = 32f;
+
             var size = new Vector2(320f, 100f);
             float row = -380f;
             Button training = UiFactory.Button(root, "TRAINING", centre, new Vector2(-700f, row), size,
@@ -115,6 +130,7 @@ namespace Demolition.Meta
                 });
             Button daily = UiFactory.Button(root, "DAILY", centre, new Vector2(-350f, row), size, () => LevelSelection.PlayDaily(DateTime.Today));
             _refresh.Add(() => UiFactory.Label(daily, $"DAILY\n<size=60%>{Best(Daily.Id(DateTime.Today))}</size>", 36f));
+            ShowSheetOn(daily, Objectives.Sheet(Daily.Seed(DateTime.Today)), Daily.Id(DateTime.Today));
             UiFactory.Button(root, "SHOP", centre, new Vector2(0f, row), size, () => ShopView.Open(transform, Refresh));
             UiFactory.Button(root, "SETTINGS", centre, new Vector2(350f, row), size, () => SettingsView.Open(transform));
             UiFactory.Button(root, "BACK", centre, new Vector2(700f, row), size, Close);
@@ -142,6 +158,7 @@ namespace Demolition.Meta
             var stars = new Image[RunScore.MaxStars];
             for (int i = 0; i < stars.Length; i++)
                 stars[i] = UiFactory.Star(button.transform, "Star " + i, new Vector2(1f, 0.5f), new Vector2(-96f + i * 38f, 0f), 36f, false);
+            ShowSheetOn(button, Objectives.Sheet(level.Spec.seed, level.Spec.objectives), level.Spec.id);
             _refresh.Add(() =>
             {
                 SaveData save = Profile.Data;
@@ -157,12 +174,17 @@ namespace Demolition.Meta
                     stars[i].color = i < earned ? UiFactory.StarLit : UiFactory.StarDark;
                     RainbowTint.Set(stars[i], i < rainbow, i * RainbowTint.StarPhase);
                 }
-                string line = !unlocked ? "LOCKED" : finished ? $"BEST {record.bestScore:N0}" : "NEW";
+                int jobs = Objectives.Count(record?.objectives ?? 0);
+                string line = !unlocked ? "LOCKED" : finished ? $"BEST {record.bestScore:N0}  JOBS {jobs}/{Objectives.PerSheet}" : "NEW";
                 UiFactory.Label(button, $"{level.Index + 1}. {level.Spec.name}\n<size=60%>{line}</size>");
                 if (unlocked && (record == null || !record.finished) && _first == null)
                     _first = button; // the next job to do
             });
         }
+
+        private void ShowSheetOn(Button button, ObjectiveKind[] sheet, string levelId) =>
+            button.gameObject.AddComponent<SheetOnFocus>().Show = () =>
+                _sheet.text = JobSheetText.Line(sheet, Profile.Data.Level(levelId)?.objectives ?? 0);
 
         private static string Best(string id)
         {

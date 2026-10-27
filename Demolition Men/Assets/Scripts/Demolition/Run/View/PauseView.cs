@@ -6,8 +6,9 @@ using UnityEngine.UI;
 
 namespace Demolition.Run
 {
-    /// <summary>Pause overlay built in code: Resume, Restart, Settings, Menu, and a card with
-    /// the controls of this device's players. Shown while <see cref="PauseController.MenuOpen"/>;
+    /// <summary>Pause overlay built in code: Resume, Restart, Settings, Menu, a card with
+    /// the controls of this device's players, and the level's job sheet under them (what this
+    /// run can still do). Shown while <see cref="PauseController.MenuOpen"/>;
     /// on a client the host's pause shows it too, saying so where RESUME would be.</summary>
     [RequireComponent(typeof(PauseController))]
     public sealed class PauseView : MonoBehaviour
@@ -22,6 +23,7 @@ namespace Demolition.Run
         private RectTransform _card;
         private Button _resume, _settings;
         private TextMeshProUGUI _hostPaused;
+        private TextMeshProUGUI _sheet;
 
         private void Awake()
         {
@@ -47,6 +49,9 @@ namespace Demolition.Run
             _resume.gameObject.SetActive(!host);
             _hostPaused.gameObject.SetActive(host);
             BuildCard(); // the devices in use can change between pauses
+            if (_sheet != null)
+                _sheet.text = JobSheetText.Line(_run.Sheet, Profile.Data.Level(_run.LevelId)?.objectives ?? 0, 0,
+                    Objectives.BlownMask(_run.Sheet, _run.Tally));
             if (EventSystem.current != null && !SettingsView.IsOpen)
                 EventSystem.current.SetSelectedGameObject((host ? _settings : _resume).gameObject);
         }
@@ -76,6 +81,14 @@ namespace Demolition.Run
             UiFactory.Button(_menu, "RESTART", centre, new Vector2(0f, 0f), size, _run.Retry).interactable = !NetRole.IsClient;
             _settings = UiFactory.Button(_menu, "SETTINGS", centre, new Vector2(0f, -120f), size, () => SettingsView.Open(transform));
             UiFactory.Button(_menu, NetRole.IsClient ? "LEAVE" : "MENU", centre, new Vector2(0f, -240f), size, _run.QuitToMenu);
+            if (_run.Sheet != null)
+            {
+                _sheet = UiFactory.Text(root, "Sheet", centre, new Vector2(0f, -PanelHeight * 0.5f - 60f), 34f, TextAlignmentOptions.Center,
+                    new Vector2(1700f, 50f), outlined: true);
+                _sheet.enableAutoSizing = true;
+                _sheet.fontSizeMin = 20f;
+                _sheet.fontSizeMax = 34f;
+            }
         }
 
         // A row per control, a column per kind of device this device's players use (a keyboard

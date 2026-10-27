@@ -83,6 +83,7 @@ namespace Demolition.Levels
             var run = Instantiate(config.runPrefab).GetComponent<RunController>();
             run.name = "Run";
             run.Configure(spec.id, layout.Par, layout.TotalCells, LevelSelection.NextAction());
+            run.Sheet = Objectives.Sheet(spec.seed, spec.objectives);
             if (runUp > 0f)
                 run.RunIn(runUp);
         }

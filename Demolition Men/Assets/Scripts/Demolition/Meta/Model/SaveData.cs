@@ -47,6 +47,8 @@ namespace Demolition.Meta
         public int bestParGrade = -1;
         public int bestScore;
         public float bestTime;
+        /// <summary>The job sheet's objectives done (<see cref="Objectives"/>): bit i for objective i.</summary>
+        public int objectives;
     }
 
     [Serializable]
@@ -65,6 +67,11 @@ namespace Demolition.Meta
         public bool NewBestGrade;
         /// <summary>More rainbow stars (a better grade within par) than before.</summary>
         public bool NewRainbow;
+        /// <summary>The job sheet's objectives this run met (bit i for objective i), and those
+        /// done for the first time, which paid <see cref="ObjectiveCash"/>.</summary>
+        public int ObjectivesMet;
+        public int NewObjectives;
+        public int ObjectiveCash;
     }
 
     /// <summary>
@@ -86,10 +93,16 @@ namespace Demolition.Meta
         public GameSettings settings = new GameSettings();
         /// <summary>Runs ended since the last interstitial ad.</summary>
         public int runsSinceAd;
-        /// <summary>Bought "remove ads" (or a platform without ads).</summary>
+        /// <summary>Bought REMOVE ADS (the store's <c>remove_ads</c>); it also brings the supporter's look.</summary>
         public bool adsRemoved;
         /// <summary>The action each player carries into a level, by id (<c>ActionCatalog</c>); P1 first.</summary>
         public List<string> actions = new List<string>();
+        /// <summary>Actions bought in the shop, by id; the free one isn't listed.</summary>
+        public List<string> ownedActions = new List<string>();
+        /// <summary>Looks bought in the shop, by id (<c>LookCatalog</c>).</summary>
+        public List<string> looks = new List<string>();
+        /// <summary>The look each player wears, by id, P1 first; empty for the crew's own.</summary>
+        public List<string> wearing = new List<string>();
 
         public LevelRecord Level(string id)
         {
@@ -100,6 +113,16 @@ namespace Demolition.Meta
         }
 
         public bool IsFinished(string id) => Level(id)?.finished ?? false;
+
+        /// <summary>Levels (and dailies) with every objective on their job sheet done.</summary>
+        public int FullSheets()
+        {
+            int count = 0;
+            foreach (LevelRecord record in levels)
+                if ((record.objectives & Objectives.AllDone) == Objectives.AllDone)
+                    count++;
+            return count;
+        }
 
         public int UpgradeLevel(string id)
         {
@@ -129,8 +152,11 @@ namespace Demolition.Meta
             lifetimeCash += amount;
         }
 
-        /// <summary>Bank a run: cash from its score, best results, run counters.</summary>
-        public RunReward RecordRun(string levelId, bool finished, Grade grade, int score, float time, bool withinPar = false)
+        /// <summary>Bank a run: cash from its score, best results, run counters, and the job
+        /// sheet's objectives it met (<paramref name="objectivesMet"/>, bit i for objective i;
+        /// each pays once).</summary>
+        public RunReward RecordRun(string levelId, bool finished, Grade grade, int score, float time, bool withinPar = false,
+            int objectivesMet = 0)
         {
             runsPlayed++;
             runsSinceAd++;
@@ -168,6 +194,11 @@ namespace Demolition.Meta
                 reward.NewRainbow = grade > Grade.C; // a C has no stars to colour
                 record.bestParGrade = (int)grade;
             }
+            reward.ObjectivesMet = objectivesMet & Objectives.AllDone;
+            reward.NewObjectives = reward.ObjectivesMet & ~record.objectives;
+            reward.ObjectiveCash = Objectives.Count(reward.NewObjectives) * Objectives.CashEach;
+            AddCash(reward.ObjectiveCash);
+            record.objectives |= reward.ObjectivesMet;
             return reward;
         }
     }

@@ -74,6 +74,7 @@ Two rules:
 | Dynamite flight | owner | `Thrown {pos, vel}` and `Exploded {pos}`; the other device flies a cosmetic copy |
 | Run phase, countdown, timers | host | `State` snapshot, 10 per second (as built: no tick-stamped phase) |
 | Score, multiplier, grade | host | points per player in the `State` snapshot; the client grades its own copy of the score and banks it |
+| Job sheet (bonus objectives) | host | the crew's tally (weapon held, dynamite thrown, damage taken, biggest collapse) in the `State` snapshot; the client judges the sheet from it and banks its own objectives |
 | Out of bounds, rejoin, resurrect | host | `RunState` on the host; its snapshot replays the same `PlayerOut` / `PlayerRejoined` events in the client's `RunController`, which kills and revives as offline (as built: no `Kill` / `Revive` commands) |
 | Cash, records, unlocks | each player's own profile | each device banks the host's final result into its own `profile.json` |
 
@@ -115,7 +116,7 @@ Two rules:
 | `Claim` / `Taken` | client → host / host → all | pickup index (+ player) | per pickup |
 | `Thrown` / `Exploded` | owner → others | position (+ velocity) | per stick of dynamite |
 | `Ready` | client → host | nothing | once per run, when the client's Level scene is up |
-| `State` | host → client | layout hash, phase, countdown, elapsed, last call, destroyed fraction, per player status bits + timers + points, unattributed points, host paused ≈ 40 B | 10 per second |
+| `State` | host → client | layout hash, phase, countdown, elapsed, last call, destroyed fraction, per player status bits + timers + points, unattributed points, host paused, the job sheet's tally ≈ 42 B | 10 per second |
 | Start | host → client | campaign level index or daily date | once per run, before NGO loads the scene |
 | `Check` (dev builds) | host → client | hash of the standing cells per loaded building | every 5 s |
 

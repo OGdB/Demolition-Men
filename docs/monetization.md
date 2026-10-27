@@ -2,7 +2,9 @@
 
 **Status:** AdMob wired in on Android (2026-10-22): the adapter, UMP consent and the Privacy
 options button are in; the consent message in AdMob waits for a privacy policy URL, and nothing
-has run on a phone yet (see *What's left*).
+has run on a phone yet (see *What's left*). The REMOVE ADS purchase is in code (2026-10-27):
+Google Play through Unity IAP, behind its own seam; the Play Console product and a test on a
+phone are left (see *REMOVE ADS on Google Play*).
 
 The game ships free. Phones and tablets show ads; PC and TV builds show none. The game
 code never talks to an ad SDK directly: everything goes through one interface, so the
@@ -19,6 +21,8 @@ network can be picked (or swapped) without touching gameplay.
 | `AdManager` | `Ads/Controller/` | The single door: `BetweenRuns(then)` shows an interstitial if due, `CanOfferReward` / `ShowRewarded` for the rewarded offer; `Consent` (`IAdConsent`) for the Privacy options button. |
 | `AdMobAds`, `AdMobAdService` | `Ads/Controller/AdMob/` (asmdef `Demolition.Ads.AdMob`) | Android only, compiled once `com.google.ads.mobile` is installed. At start: UMP consent (form where required), `MobileAds.Initialize` once `CanRequestAds`, then one interstitial and one rewarded kept loaded (retry 10 s doubling to 5 min, replaced before the 1 h expiry). Development builds load Google's test units. Not installed when ads are removed. |
 | PRIVACY button | `Meta/View/SettingsView` | Shown when UMP says privacy options are required (EEA/UK); reopens the consent form. |
+| `Purchases`, `IShopService` | `Ads/Controller/Purchases.cs` | The single door to in-app purchases. One product, REMOVE ADS (`remove_ads`): `CanBuyRemoveAds` (ads show here and the store has it), `RemoveAdsPrice`, `BuyRemoveAds(finished)`; every purchase the store confirms, now or from before, goes to `Grant`, which sets `SaveData.adsRemoved`. `NoShopService` everywhere without a store; `SimulatedShopService` in the editor with `AdManager.SimulateInEditor = true` (every purchase goes through). |
+| `UnityIapPurchases` | `Ads/Controller/UnityIap/` (asmdef `Demolition.Ads.UnityIap`) | Android only, compiled once `com.unity.purchasing` 5.x is installed (5.4.4 in `Packages/manifest.json`). At start: connects to Google Play, fetches `remove_ads` with its price, then the account's earlier purchases, so a reinstall gets REMOVE ADS back without a restore button. A purchase is granted, then confirmed with Play; if the confirmation fails, Play delivers it again. Unity Gaming Services aren't started (IAP only needs them for its analytics). No receipt validation: the profile is a local file anyway. |
 
 Placements:
 - **Interstitial**: when the player leaves the results screen (Next, Retry or Menu), if
@@ -26,8 +30,16 @@ Placements:
 - **Rewarded**: the results screen offers **WATCH AD: 2x CASH** when the run earned cash
   and a rewarded ad is loaded. Watching it banks the run's cash a second time. Always
   opt-in.
-- **Remove ads**: `SaveData.adsRemoved` turns all ads off. Wire it to a one-off in-app
-  purchase (Unity IAP) when there is one; nothing sets it today.
+- **Remove ads**: the shop's **REMOVE ADS** button, with Play's price on it, buys the one-time
+  product `remove_ads`; `SaveData.adsRemoved` then turns all ads off, the rewarded 2x cash
+  included. The button shows only where ads show and Play sells it: phones with the Play build.
+  Later the supporter's look (roadmap *Cosmetics shop*) comes with it too.
+
+**WebGL (browser) builds** have no ads (AdMob is Android only; a browser gets `NoAdService`)
+and no store (Unity IAP doesn't sell in a browser), so there is nothing to remove and REMOVE
+ADS never shows. Everything paid with cash in the game works the same there (job sheets,
+actions, looks), saved in the browser's own profile. The supporter's look can't be had in a
+browser; in online co-op a browser player still sees a phone player's look.
 
 ## AdMob setup
 
@@ -68,6 +80,28 @@ The AdMob console shows the app as "Limited ad serving" until it is linked to it
 Never tap live ads on your own phone: AdMob suspends accounts for invalid clicks. Register it
 as a test device (AdMob ▸ Settings ▸ Test devices) before installing a release build.
 
+## REMOVE ADS on Google Play
+
+What's left, in order:
+1. **Editor:** open the project so Unity installs `com.unity.purchasing` 5.4.4 with its
+   dependencies (Services Core, Deployment); commit the updated `Packages/packages-lock.json`.
+   IAP logs a warning on Android builds when the project isn't linked to a Unity Cloud project
+   or has no Google Play licence key: both are only for receipt validation, which the game
+   doesn't do.
+2. **Play Console, you:** a payments profile (needed to sell anything), then upload a build
+   with IAP in it (it adds the BILLING permission) to internal testing: Play lets you create
+   products once it has seen one.
+3. **Play Console, you:** create a one-time product with the id **`remove_ads`** (it can never
+   change or be reused), a name, a description and a price, and activate it.
+4. **Play Console, you:** add your Google account under license testing, so test purchases
+   cost nothing.
+5. **On a phone:** the shop shows REMOVE ADS with the price; buying it stops the ads and the
+   button goes; uninstall, reinstall: the ads stay off after the first start (restored from
+   Play).
+
+Open question: removing ads also takes away the opt-in 2x cash. Keep the rewarded ad for
+players who paid, or give them the 2x without one?
+
 ## Legal and store checklist (needed before release)
 
 - **Consent (EU/UK, GDPR):** show a consent form before requesting personalised ads —
@@ -93,5 +127,5 @@ as a test device (AdMob ▸ Settings ▸ Test devices) before installing a relea
 
 - Rewarded **continue** (rejoin once more in solo after going out).
 - Rewarded **daily bonus** (extra cash on the daily challenge).
-- Cosmetic skins (palette swaps of the demolition man) for cash, and a Supporter pack (remove
-  ads plus an exclusive skin): planned for v1.2, roadmap *Cosmetics shop*.
+- Cosmetic looks for cash and full job sheets, and the supporter's look with REMOVE ADS: the shop
+  side is built (roadmap *Cosmetics shop*); the looks themselves wait for the art pipeline.

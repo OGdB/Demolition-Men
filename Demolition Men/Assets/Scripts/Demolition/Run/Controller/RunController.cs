@@ -68,6 +68,10 @@ namespace Demolition.Run
 
         public RunState State { get; private set; }
         public RunScore Score { get; private set; }
+        /// <summary>What the crew did that the job sheet asks about.</summary>
+        public RunTally Tally { get; private set; }
+        /// <summary>The level's job sheet (<see cref="Objectives"/>); null for none (the Tutorial).</summary>
+        public ObjectiveKind[] Sheet { get; set; }
         public IReadOnlyList<Player> Players => _players;
         public float ParTime => parTime;
         public Camera Camera => _camera != null ? _camera.Camera : null;
@@ -170,6 +174,7 @@ namespace Demolition.Run
                 gameObject.AddComponent<ActionTestKeys>(); // 1-9: try any action with a full meter
             State = new RunState(_players.Count, rules);
             Score = new RunScore(_players.Count);
+            Tally = new RunTally(_players.Count);
             State.PhaseChanged += OnPhaseChanged;
             State.PlayerOut += OnPlayerOut;
             State.PlayerRejoined += OnPlayerRejoined;
@@ -247,6 +252,11 @@ namespace Demolition.Run
                 Vector3 pos = _players[i].Transform.position;
                 if (NetRole.IsClient)
                     continue; // online, the host's RunState decides
+                if (State.Phase == RunPhase.Playing)
+                {
+                    Player p = _players[i];
+                    Tally.Observe(i, p.Combat.Weapon != WeaponType.Fists, p.Combat.DynamiteCount, p.Health.Current);
+                }
                 State.SetInBounds(i, IgnoreBounds || IsInBounds(pos));
                 if (finish != null && pos.x >= finish.X)
                     State.ReportCrossedFinish(i);
@@ -359,8 +369,9 @@ namespace Demolition.Run
             bool finished = State.Phase == RunPhase.Finished;
             BankedFraction = DestroyedFraction;
             BankedScore = FinalScore;
+            bool withinPar = RunScore.WithinPar(State.Elapsed, parTime);
             Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(BankedFraction), BankedScore, State.Elapsed,
-                RunScore.WithinPar(State.Elapsed, parTime));
+                withinPar, Objectives.MetMask(Sheet, Tally, finished, BankedFraction, withinPar));
             Profile.Save();
             Ended?.Invoke();
         }
@@ -449,6 +460,7 @@ namespace Demolition.Run
             if (State.Phase != RunPhase.Playing || NetRole.IsClient)
                 return;
             int points = Score.AddCollapse(info.Instigator, info.Cells);
+            Tally.Collapsed(info.Cells.Count, Time.time);
             Scored?.Invoke(info.Instigator, points, info.Position);
         }
     }

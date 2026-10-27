@@ -42,6 +42,39 @@ namespace Demolition.Tests
             }
         }
 
+        // The job sheet's Chain objective must be doable on every level, the daily's seeds too:
+        // some building has a ground block whose loss brings that many cells down in one cascade
+        // (what detaches, then what crumbles within the window, as RunTally chains collapses).
+        [Test]
+        public void EveryLevel_HasACollapseBigEnoughForTheChainJob([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            List<BuildingArchetype> archetypes = ArchetypesFor(path);
+            for (int seed = 0; seed < 10; seed++)
+            {
+                LevelLayout layout = LevelGrammar.Generate(spec.WithSeed(spec.seed + seed * 7919, spec.id), archetypes);
+                int biggest = 0;
+                foreach (BuildingPlacement building in layout.Buildings)
+                {
+                    if (building.IsProp)
+                        continue;
+                    var baseline = BuildingValidator.Stress(building.Spec.ToStructure());
+                    foreach (SpecBlock block in building.Spec.Blocks)
+                    {
+                        if (block.Rect.yMin > 1)
+                            continue;
+                        float lost = BuildingValidator.Cascade(building.Spec, baseline, block) * building.Spec.CellCount;
+                        biggest = System.Math.Max(biggest, (int)lost - block.Cells().Count()); // the hit block itself isn't a collapse
+                        if (biggest >= Run.Objectives.ChainCells)
+                            break;
+                    }
+                    if (biggest >= Run.Objectives.ChainCells)
+                        break;
+                }
+                Assert.GreaterOrEqual(biggest, Run.Objectives.ChainCells, $"{spec.id} seed {spec.seed + seed * 7919}");
+            }
+        }
+
         [Test]
         public void SameSeed_SameLevel([ValueSource(nameof(Levels))] string path)
         {
