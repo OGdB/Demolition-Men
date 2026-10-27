@@ -148,8 +148,9 @@ namespace Demolition.Run
                 _sheet.enableAutoSizing = true;
                 _sheet.fontSizeMin = 18f;
                 _sheet.fontSizeMax = 30f;
-                int done = Profile.Data.Level(_run.LevelId)?.objectives ?? 0;
-                _sheet.text = JobSheetText.Line(_run.Sheet, done, reward.NewObjectives, finished ? 0 : Objectives.AllDone);
+                // This run's jobs only: one done on an earlier run but missed now shows as missed.
+                int met = reward.ObjectivesMet;
+                _sheet.text = JobSheetText.Line(_run.Sheet, met & ~reward.NewObjectives, reward.NewObjectives, ~met & Objectives.AllDone);
                 _sheet.gameObject.SetActive(false);
             }
             _badge = UiFactory.Text(_content, "Badge", centre, new Vector2(500f, 270f), 44f, TextAlignmentOptions.Center, new Vector2(380f, 60f), outlined: true);
