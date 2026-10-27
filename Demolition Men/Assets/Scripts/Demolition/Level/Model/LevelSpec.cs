@@ -27,7 +27,7 @@ namespace Demolition.Levels
         public string theme = "Town";
         public int seed;
         /// <summary>Seconds; finishing faster earns the speed bonus. 0 = the time the camera
-        /// takes to auto-scroll from spawn to finish (see <see cref="LevelLayout.Par"/>).</summary>
+        /// takes to auto-scroll from spawn to finish, times <see cref="LevelLayout.ParShare"/> (see <see cref="LevelLayout.Par"/>).</summary>
         public float parTime;
         /// <summary>Camera auto-scroll speed (units/s) once pushed.</summary>
         public float scrollSpeed = 1.5f;

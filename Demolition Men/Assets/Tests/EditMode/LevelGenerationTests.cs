@@ -124,12 +124,12 @@ namespace Demolition.Tests
         }
 
         [Test]
-        public void AutoPar_IsTheScrollTimeToTheFinish([ValueSource(nameof(Levels))] string path)
+        public void AutoPar_IsAShareOfTheScrollTimeToTheFinish([ValueSource(nameof(Levels))] string path)
         {
             LevelSpec spec = Load(path);
             spec.parTime = 0f;
             LevelLayout layout = LevelGrammar.Generate(spec, ArchetypesFor(path));
-            Assert.AreEqual((layout.FinishX - layout.SpawnX) / spec.scrollSpeed, layout.Par, 1e-3f);
+            Assert.AreEqual(LevelLayout.ParShare * (layout.FinishX - layout.SpawnX) / spec.scrollSpeed, layout.Par, 1e-3f);
             spec.parTime = 42f;
             Assert.AreEqual(42f, layout.Par);
         }
