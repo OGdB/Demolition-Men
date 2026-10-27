@@ -255,7 +255,7 @@ namespace Demolition.Run
                 if (State.Phase == RunPhase.Playing)
                 {
                     Player p = _players[i];
-                    Tally.Observe(i, p.Combat.Weapon != WeaponType.Fists, p.Combat.DynamiteCount, p.Health.Current);
+                    Tally.Observe(i, p.Combat.WeaponHits, p.Combat.DynamiteCount, p.Health.Current);
                 }
                 State.SetInBounds(i, IgnoreBounds || IsInBounds(pos));
                 if (finish != null && pos.x >= finish.X)

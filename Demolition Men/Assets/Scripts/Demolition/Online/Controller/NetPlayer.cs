@@ -66,7 +66,7 @@ namespace Demolition.Online
             int weapon = axe ? (int)WeaponType.Axe : wreck ? (int)WeaponType.WreckingBall : (int)WeaponType.Fists;
             _pose.Value = NetPacking.PackPose(_sprite == null || !_sprite.flipX, grounded, punch || axe || wreck, weapon);
             _health.Value = (byte)Mathf.RoundToInt(255f * Mathf.Clamp01(_playerHealth.Current / _playerHealth.Max));
-            _kit.Value = NetPacking.PackKit((int)_combat.Weapon, _combat.WeaponUses, _combat.DynamiteCount);
+            _kit.Value = NetPacking.PackKit((int)_combat.Weapon, _combat.WeaponUses, _combat.DynamiteCount, _combat.WeaponHits);
         }
 
         private void Follow()
@@ -85,8 +85,8 @@ namespace Demolition.Online
             }
             _lastPosition = transform.position;
             _playerHealth.SetProxyHealth(_health.Value / 255f * _playerHealth.Max);
-            NetPacking.UnpackKit(_kit.Value, out int kitWeapon, out int uses, out int dynamite);
-            _combat.ShowKit((WeaponType)kitWeapon, uses, dynamite);
+            NetPacking.UnpackKit(_kit.Value, out int kitWeapon, out int uses, out int dynamite, out int weaponHits);
+            _combat.ShowKit((WeaponType)kitWeapon, uses, dynamite, weaponHits);
         }
     }
 }

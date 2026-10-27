@@ -112,6 +112,8 @@ namespace Demolition
         private readonly int[] _uses = new int[3];
 
         public WeaponType Weapon => weapon;
+        /// <summary>Swings that landed with a picked-up weapon this level (the job sheet's FISTS ONLY).</summary>
+        public int WeaponHits { get; private set; }
         /// <summary>Landed hits left on the current weapon, -1 for fists.</summary>
         public int WeaponUses => weapon == WeaponType.Fists ? -1 : _uses[(int)weapon];
         public int DynamiteCount { get => dynamiteCount; set => dynamiteCount = Mathf.Max(0, value); }
@@ -212,6 +214,8 @@ namespace Demolition
             if (hitAnything && hitSound != null && _audio != null)
                 _audio.PlayOneShot(hitSound);
 
+            if (hitAnything && weapon != WeaponType.Fists)
+                WeaponHits++;
             if (hitAnything && weapon != WeaponType.Fists && --_uses[(int)weapon] <= 0)
                 weapon = WeaponType.Fists;
         }
@@ -248,8 +252,9 @@ namespace Demolition
         }
 
         /// <summary>Online, a proxy: show what its owner carries (the owner's device decides it).</summary>
-        public void ShowKit(WeaponType type, int uses, int dynamite)
+        public void ShowKit(WeaponType type, int uses, int dynamite, int weaponHits)
         {
+            WeaponHits = weaponHits;
             weapon = type;
             if (type != WeaponType.Fists)
                 _uses[(int)type] = uses;

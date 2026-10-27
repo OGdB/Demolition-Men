@@ -69,13 +69,14 @@ namespace Demolition.Tests
         [Test]
         public void Kit_RoundTrips_AndClamps()
         {
-            foreach ((int weapon, int uses, int dynamite) in new[] { (0, 0, 0), (1, 7, 3), (2, NetPacking.MaxKitUses, NetPacking.MaxKitDynamite), (3, 1, 9) })
+            foreach ((int weapon, int uses, int dynamite, int hits) in new[] { (0, 0, 0, 0), (1, 7, 3, 2), (2, NetPacking.MaxKitUses, NetPacking.MaxKitDynamite, NetPacking.MaxKitWeaponHits), (3, 1, 9, 1) })
             {
-                NetPacking.UnpackKit(NetPacking.PackKit(weapon, uses, dynamite), out int w, out int u, out int d);
-                Assert.AreEqual((weapon, uses, dynamite), (w, u, d));
+                NetPacking.UnpackKit(NetPacking.PackKit(weapon, uses, dynamite, hits), out int w, out int u, out int d, out int h);
+                Assert.AreEqual((weapon, uses, dynamite, hits), (w, u, d, h));
             }
-            NetPacking.UnpackKit(NetPacking.PackKit(0, -1, 5000), out _, out int fists, out int sticks);
-            Assert.AreEqual((0, NetPacking.MaxKitDynamite), (fists, sticks));
+            NetPacking.UnpackKit(NetPacking.PackKit(0, -1, 5000, 99), out _, out int fists, out int sticks, out int many);
+            Assert.AreEqual((0, NetPacking.MaxKitDynamite, NetPacking.MaxKitWeaponHits), (fists, sticks, many));
+            Assert.Greater(NetPacking.MaxKitWeaponHits, Run.Objectives.FreeWeaponHits, "the kit can tell past the free hits");
         }
 
         // Two columns, three slabs between them and a balcony on the middle one: cutting a

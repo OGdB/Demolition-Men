@@ -25,10 +25,14 @@ namespace Demolition.Run
                 _dynamite[i] = -1;
                 _health[i] = -1f;
             }
+            _weaponHits = new int[_dynamite.Length];
         }
 
-        /// <summary>Someone held a picked-up weapon.</summary>
-        public bool Armed { get; private set; }
+        private readonly int[] _weaponHits;
+
+        /// <summary>Hits the crew landed with picked-up weapons (a pickup is in hand at once, so
+        /// holding one counts for nothing).</summary>
+        public int WeaponHits { get; private set; }
         /// <summary>Someone threw dynamite.</summary>
         public bool Dynamite { get; private set; }
         /// <summary>Someone lost health.</summary>
@@ -43,13 +47,14 @@ namespace Demolition.Run
         private int _chain;
         private float _lastCollapse = float.NegativeInfinity;
 
-        /// <summary>A player in play this frame: the weapon in hand, sticks carried, health. Fewer
-        /// sticks than last time is a throw, less health a hit (a revive only ever adds).</summary>
-        public void Observe(int player, bool armed, int dynamite, float health)
+        /// <summary>A player in play this frame: weapon hits landed so far, sticks carried, health.
+        /// Fewer sticks than last time is a throw, less health a hit (a revive only ever adds).</summary>
+        public void Observe(int player, int weaponHits, int dynamite, float health)
         {
             if (player < 0 || player >= _dynamite.Length)
                 return;
-            Armed |= armed;
+            WeaponHits += Math.Max(0, weaponHits - _weaponHits[player]);
+            _weaponHits[player] = Math.Max(_weaponHits[player], weaponHits);
             Dynamite |= _dynamite[player] >= 0 && dynamite < _dynamite[player];
             Hurt |= _health[player] >= 0f && health < _health[player];
             _dynamite[player] = dynamite;
@@ -63,14 +68,14 @@ namespace Demolition.Run
             BiggestCollapse = Math.Max(BiggestCollapse, _chain);
         }
 
-        public byte Flags => (byte)((Armed ? 1 : 0) | (Dynamite ? 2 : 0) | (Hurt ? 4 : 0));
+        public byte Flags => (byte)((Dynamite ? 1 : 0) | (Hurt ? 2 : 0));
 
         /// <summary>Online client: the host's tally.</summary>
-        public void Restore(byte flags, int biggestCollapse)
+        public void Restore(byte flags, int weaponHits, int biggestCollapse)
         {
-            Armed = (flags & 1) != 0;
-            Dynamite = (flags & 2) != 0;
-            Hurt = (flags & 4) != 0;
+            Dynamite = (flags & 1) != 0;
+            Hurt = (flags & 2) != 0;
+            WeaponHits = weaponHits;
             BiggestCollapse = biggestCollapse;
         }
     }
@@ -89,6 +94,8 @@ namespace Demolition.Run
         /// down. LevelGenerationTests checks every campaign level has a building that can.</summary>
         public const int ChainCells = 12;
         public const int AllDone = (1 << PerSheet) - 1;
+        /// <summary>Weapon hits FISTS ONLY forgives (a pickup lands in hand unasked); dynamite it never does.</summary>
+        public const int FreeWeaponHits = 2;
 
         private static readonly ObjectiveKind[] Kinds = (ObjectiveKind[])Enum.GetValues(typeof(ObjectiveKind));
 
@@ -138,7 +145,7 @@ namespace Demolition.Run
             {
                 case ObjectiveKind.Wreck: return destroyed >= WreckShare;
                 case ObjectiveKind.Chain: return tally.BiggestCollapse >= ChainCells;
-                case ObjectiveKind.FistsOnly: return !tally.Armed;
+                case ObjectiveKind.FistsOnly: return !FistsBlown(tally);
                 case ObjectiveKind.NoDynamite: return !tally.Dynamite;
                 case ObjectiveKind.NoDamage: return !tally.Hurt;
                 default: return withinPar;
@@ -163,12 +170,14 @@ namespace Demolition.Run
             for (int i = 0; sheet != null && i < sheet.Count && i < PerSheet; i++)
             {
                 ObjectiveKind kind = sheet[i];
-                if ((kind == ObjectiveKind.FistsOnly && tally.Armed) || (kind == ObjectiveKind.NoDynamite && tally.Dynamite)
+                if ((kind == ObjectiveKind.FistsOnly && FistsBlown(tally)) || (kind == ObjectiveKind.NoDynamite && tally.Dynamite)
                     || (kind == ObjectiveKind.NoDamage && tally.Hurt))
                     mask |= 1 << i;
             }
             return mask;
         }
+
+        private static bool FistsBlown(RunTally tally) => tally.WeaponHits > FreeWeaponHits || tally.Dynamite;
 
         public static int Count(int mask)
         {

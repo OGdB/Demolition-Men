@@ -74,7 +74,7 @@ Two rules:
 | Dynamite flight | owner | `Thrown {pos, vel}` and `Exploded {pos}`; the other device flies a cosmetic copy |
 | Run phase, countdown, timers | host | `State` snapshot, 10 per second (as built: no tick-stamped phase) |
 | Score, multiplier, grade | host | points per player in the `State` snapshot; the client grades its own copy of the score and banks it |
-| Job sheet (bonus objectives) | host | the crew's tally (weapon held, dynamite thrown, damage taken, biggest collapse) in the `State` snapshot; the client judges the sheet from it and banks its own objectives |
+| Job sheet (bonus objectives) | host | the crew's tally (weapon hits, dynamite thrown, damage taken, biggest collapse; each player's weapon hits reach the host in its kit) in the `State` snapshot; the client judges the sheet from it and banks its own objectives |
 | Out of bounds, rejoin, resurrect | host | `RunState` on the host; its snapshot replays the same `PlayerOut` / `PlayerRejoined` events in the client's `RunController`, which kills and revives as offline (as built: no `Kill` / `Revive` commands) |
 | Cash, records, unlocks | each player's own profile | each device banks the host's final result into its own `profile.json` |
 
