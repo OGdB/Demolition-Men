@@ -88,7 +88,7 @@ namespace Demolition.Run
     public static class Objectives
     {
         public const int PerSheet = 3;
-        public const int CashEach = 250;
+        public const int CashEach = 150;
         public const float WreckShare = 0.9f;
         /// <summary>Cells one collapse (with its crumbles, <see cref="RunTally.ChainWindow"/>) must bring
         /// down. LevelGenerationTests checks every campaign level has a building that can.</summary>

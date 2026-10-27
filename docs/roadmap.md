@@ -272,7 +272,7 @@ Original plan (design in §7):
 
 ### M6 — Meta, juice, ship (M/L) — partly built 2026-10-17; the rest folded into R1–R2
 Built: JSON save in `persistentDataPath` (`Meta/`), unlocks in campaign order, the **skill
-shop** (power, hard hat, boots, TNT belt, tool grip; cash = score / 4, x1.25 for a
+shop** (power, hard hat, boots, TNT belt, tool grip; cash = score / 10 (was / 4 until 2026-10-27), x1.25 for a
 finish), settings (volume, music, screen shake, effects, quality tier, HUD size, touch controls mode/size/opacity),
 code-built pause menu, results with cash and best-result badges, screen shake by collapse
 size, hit-stop, dust, pooled particles. **Decision change:** the level select is a menu
@@ -424,7 +424,7 @@ show:
 #### Bonus objectives (v1.2, S/M) — ✅ built 2026-10-27, awaiting a playtest
 *As built:* `Run/Model/Objectives` with six kinds (WRECK 90%, 12+ BLOCKS IN ONE COLLAPSE, FISTS
 ONLY (two weapon hits free, since a pickup lands in hand unasked; no dynamite at all), NO
-DYNAMITE, NOT A SCRATCH, BEAT PAR), 250 cash each once; shown in the level select, the
+DYNAMITE, NOT A SCRATCH, BEAT PAR), 150 cash each once; shown in the level select, the
 pause menu (struck through once out of reach this run) and the results. Changed from the plan:
 the collapse job counts a cascade (a collapse plus the crumbles within 3 s), because on the
 early levels no single collapse brings down 20 cells while every cascade reaches 16
