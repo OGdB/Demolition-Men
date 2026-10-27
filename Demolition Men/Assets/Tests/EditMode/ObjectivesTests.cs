@@ -45,18 +45,20 @@ namespace Demolition.Tests
         public void Tally_CountsThrowsAndHits_NotPickupsOrRevives()
         {
             var tally = new RunTally(2);
-            tally.Observe(0, false, 0, 100f);
-            tally.Observe(0, false, 3, 100f); // picked up sticks
-            tally.Observe(1, false, 0, 100f);
-            Assert.IsFalse(tally.Dynamite || tally.Hurt || tally.Armed);
-            tally.Observe(0, false, 2, 100f);
+            tally.Observe(0, 0, 0, 100f);
+            tally.Observe(0, 0, 3, 100f); // picked up sticks
+            tally.Observe(1, 0, 0, 100f);
+            Assert.IsFalse(tally.Dynamite || tally.Hurt);
+            tally.Observe(0, 0, 2, 100f);
             Assert.IsTrue(tally.Dynamite);
-            tally.Observe(1, false, 0, 100f); // healed or revived: never less
+            tally.Observe(1, 0, 0, 100f); // healed or revived: never less
             Assert.IsFalse(tally.Hurt);
-            tally.Observe(1, false, 0, 80f);
+            tally.Observe(1, 0, 0, 80f);
             Assert.IsTrue(tally.Hurt);
-            tally.Observe(1, true, 0, 80f);
-            Assert.IsTrue(tally.Armed);
+            tally.Observe(1, 2, 0, 80f);
+            tally.Observe(1, 2, 0, 80f);
+            tally.Observe(0, 1, 2, 100f);
+            Assert.AreEqual(3, tally.WeaponHits, "the crew's hits, each counted once");
             tally.Collapsed(12, 0f);
             tally.Collapsed(5, 20f);
             Assert.AreEqual(12, tally.BiggestCollapse);
@@ -65,8 +67,9 @@ namespace Demolition.Tests
             Assert.AreEqual(14, tally.BiggestCollapse);
 
             var client = new RunTally(2);
-            client.Restore(tally.Flags, tally.BiggestCollapse);
-            Assert.IsTrue(client.Armed && client.Dynamite && client.Hurt);
+            client.Restore(tally.Flags, tally.WeaponHits, tally.BiggestCollapse);
+            Assert.IsTrue(client.Dynamite && client.Hurt);
+            Assert.AreEqual(3, client.WeaponHits);
             Assert.AreEqual(14, client.BiggestCollapse);
         }
 
@@ -81,8 +84,8 @@ namespace Demolition.Tests
                 Assert.IsTrue(Objectives.Met(kind, clean, true, 1f, true), kind.ToString());
             }
             var messy = new RunTally(1);
-            messy.Observe(0, true, 1, 100f);
-            messy.Observe(0, true, 0, 50f);
+            messy.Observe(0, Objectives.FreeWeaponHits + 1, 1, 100f);
+            messy.Observe(0, Objectives.FreeWeaponHits + 1, 0, 50f);
             messy.Collapsed(Objectives.ChainCells - 1, 0f);
             foreach (ObjectiveKind kind in new[] { ObjectiveKind.Chain, ObjectiveKind.FistsOnly, ObjectiveKind.NoDynamite, ObjectiveKind.NoDamage })
                 Assert.IsFalse(Objectives.Met(kind, messy, true, 1f, true), kind.ToString());
@@ -93,6 +96,23 @@ namespace Demolition.Tests
             Assert.AreEqual(0b010, Objectives.MetMask(sheet, messy, true, 1f, true));
             Assert.AreEqual(0b101, Objectives.BlownMask(sheet, messy));
             Assert.AreEqual(0, Objectives.BlownMask(sheet, clean));
+        }
+
+        [Test]
+        public void FistsOnly_ForgivesTwoWeaponHits_ButNeverDynamite()
+        {
+            var tally = new RunTally(2);
+            tally.Observe(0, 1, 0, 100f);
+            tally.Observe(1, Objectives.FreeWeaponHits - 1, 0, 100f);
+            Assert.IsTrue(Objectives.Met(ObjectiveKind.FistsOnly, tally, true, 1f, true), "two free hits across the crew");
+            tally.Observe(1, Objectives.FreeWeaponHits, 0, 100f);
+            Assert.IsFalse(Objectives.Met(ObjectiveKind.FistsOnly, tally, true, 1f, true));
+
+            var stick = new RunTally(1);
+            stick.Observe(0, 0, 1, 100f);
+            stick.Observe(0, 0, 0, 100f);
+            Assert.IsFalse(Objectives.Met(ObjectiveKind.FistsOnly, stick, true, 1f, true), "dynamite is never free");
+            Assert.AreEqual(1, Objectives.BlownMask(new[] { ObjectiveKind.FistsOnly }, stick));
         }
 
         [Test]

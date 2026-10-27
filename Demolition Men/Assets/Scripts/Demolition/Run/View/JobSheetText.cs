@@ -10,7 +10,7 @@ namespace Demolition.Run
         private static readonly string Done = ColorUtility.ToHtmlStringRGB(new Color(0.5f, 1f, 0.5f));
         private static readonly string Blown = ColorUtility.ToHtmlStringRGB(new Color(0.5f, 0.5f, 0.55f));
 
-        /// <param name="done">Done on an earlier run (or this one), bit i for objective i.</param>
+        /// <param name="done">Shown as done, bit i for objective i.</param>
         /// <param name="fresh">Done for the first time this run.</param>
         /// <param name="blown">Out of reach for this run.</param>
         public static string Line(IReadOnlyList<ObjectiveKind> sheet, int done, int fresh = 0, int blown = 0)

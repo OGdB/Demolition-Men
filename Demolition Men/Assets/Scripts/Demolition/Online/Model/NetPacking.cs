@@ -14,7 +14,7 @@ namespace Demolition.Online
     {
         public const int HealthSteps = 127;
         public const int MaxWeapon = 31;
-        public const int MaxKitUses = 1023, MaxKitDynamite = 255;
+        public const int MaxKitUses = 1023, MaxKitDynamite = 255, MaxKitWeaponHits = 15;
 
         /// <summary>Health fraction 0..1 as 0..127. A block that is still alive never packs
         /// to 0, which would destroy it on the other device.</summary>
@@ -58,15 +58,18 @@ namespace Demolition.Online
         }
 
         /// <summary>What a player carries, for the other device's HUD: weapon (0..3), its hits
-        /// left (0..1023; fists' -1 packs as 0) and sticks of dynamite (0..255).</summary>
-        public static int PackKit(int weapon, int uses, int dynamite) =>
-            (weapon & 3) | (Math.Max(0, Math.Min(MaxKitUses, uses)) << 2) | (Math.Max(0, Math.Min(MaxKitDynamite, dynamite)) << 12);
+        /// left (0..1023; fists' -1 packs as 0), sticks of dynamite (0..255), and the hits landed
+        /// with weapons this level for the job sheet (0..15, enough to tell past its free ones).</summary>
+        public static int PackKit(int weapon, int uses, int dynamite, int weaponHits = 0) =>
+            (weapon & 3) | (Math.Max(0, Math.Min(MaxKitUses, uses)) << 2) | (Math.Max(0, Math.Min(MaxKitDynamite, dynamite)) << 12)
+            | (Math.Max(0, Math.Min(MaxKitWeaponHits, weaponHits)) << 20);
 
-        public static void UnpackKit(int kit, out int weapon, out int uses, out int dynamite)
+        public static void UnpackKit(int kit, out int weapon, out int uses, out int dynamite, out int weaponHits)
         {
             weapon = kit & 3;
             uses = (kit >> 2) & MaxKitUses;
             dynamite = (kit >> 12) & MaxKitDynamite;
+            weaponHits = (kit >> 20) & MaxKitWeaponHits;
         }
 
         /// <summary>An action message: phase, player, kind and facing a byte each, where it struck,

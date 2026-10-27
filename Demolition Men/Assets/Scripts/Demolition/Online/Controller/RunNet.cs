@@ -518,6 +518,7 @@ namespace Demolition.Online
                 BytePacker.WriteValueBitPacked(writer, score.Unattributed);
                 writer.WriteValueSafe(PauseController.IsPaused);
                 writer.WriteValueSafe(run.Tally.Flags);
+                BytePacker.WriteValueBitPacked(writer, run.Tally.WeaponHits);
                 BytePacker.WriteValueBitPacked(writer, run.Tally.BiggestCollapse);
             });
         }
@@ -560,6 +561,7 @@ namespace Demolition.Online
             ByteUnpacker.ReadValueBitPacked(reader, out int unattributed);
             reader.ReadValueSafe(out bool hostPaused);
             reader.ReadValueSafe(out byte tallyFlags);
+            ByteUnpacker.ReadValueBitPacked(reader, out int weaponHits);
             ByteUnpacker.ReadValueBitPacked(reader, out int biggestCollapse);
 
             RunController run = RunController.Current;
@@ -568,7 +570,7 @@ namespace Demolition.Online
             // Score, demolition and the job sheet's tally first: a phase change to Finished banks them.
             run.NetFraction = destroyed;
             run.Score.Restore(points, unattributed);
-            run.Tally.Restore(tallyFlags, biggestCollapse);
+            run.Tally.Restore(tallyFlags, weaponHits, biggestCollapse);
             run.State.ApplySnapshot(s);
             PauseController.SetHostPaused(hostPaused);
         }

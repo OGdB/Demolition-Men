@@ -423,7 +423,8 @@ show:
 
 #### Bonus objectives (v1.2, S/M) — ✅ built 2026-10-27, awaiting a playtest
 *As built:* `Run/Model/Objectives` with six kinds (WRECK 90%, 12+ BLOCKS IN ONE COLLAPSE, FISTS
-ONLY, NO DYNAMITE, NOT A SCRATCH, BEAT PAR), 250 cash each once; shown in the level select, the
+ONLY (two weapon hits free, since a pickup lands in hand unasked; no dynamite at all), NO
+DYNAMITE, NOT A SCRATCH, BEAT PAR), 250 cash each once; shown in the level select, the
 pause menu (struck through once out of reach this run) and the results. Changed from the plan:
 the collapse job counts a cascade (a collapse plus the crumbles within 3 s), because on the
 early levels no single collapse brings down 20 cells while every cascade reaches 16
