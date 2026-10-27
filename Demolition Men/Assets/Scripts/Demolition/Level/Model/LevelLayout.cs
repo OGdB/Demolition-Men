@@ -86,11 +86,16 @@ namespace Demolition.Levels
 
         public int GroundAt(int x) => x >= 0 && x < Ground.Count ? Ground[x] : NoGround;
 
-        /// <summary>Par time: the spec's, or how long the camera's auto-scroll takes from spawn
-        /// to finish. Riding the scroll earns no speed bonus; pushing ahead does.</summary>
+        /// <summary>Par time: the spec's, or <see cref="ParShare"/> of how long the camera's auto-scroll
+        /// takes from spawn to finish. Riding the scroll is far over par; beating it takes running
+        /// well ahead of the camera.</summary>
         public float Par => Spec.parTime > 0f
             ? Spec.parTime
-            : (FinishX - SpawnX) / UnityEngine.Mathf.Max(0.1f, Spec.scrollSpeed);
+            : ParShare * (FinishX - SpawnX) / UnityEngine.Mathf.Max(0.1f, Spec.scrollSpeed);
+
+        /// <summary>A playtest finished at 52% of the full scroll time with 95% wrecked (2026-10-27):
+        /// at 55% such a run just makes par.</summary>
+        public const float ParShare = 0.55f;
 
         /// <summary>Lowest ground surface among columns [x0, x1]; pits don't count (they have
         /// no floor). <see cref="NoGround"/> when the range holds no ground.</summary>

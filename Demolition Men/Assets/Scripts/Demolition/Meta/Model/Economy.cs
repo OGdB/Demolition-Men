@@ -5,10 +5,12 @@ namespace Demolition.Meta
     /// <summary>Score → cash, and what upgrades cost and do.</summary>
     public static class Economy
     {
-        /// <summary>Score points per dollar. The campaign holds about 104k points of buildings; good play
-        /// scores about 2.5x that, which at 10 pays roughly a third of the shop (upgrades and
-        /// actions, 92k) per run through it, so the shop lasts into replays and dailies.</summary>
-        public const int PointsPerCash = 10;
+        /// <summary>Score points per dollar: about one upgrade per level. The campaign holds about 104k
+        /// points of buildings; chains and the speed bonus take the best play to about 4.5x that
+        /// (a 40k level paid 5k at 10 points per dollar, playtest 2026-10-27), which at 25 pays
+        /// about a quarter of the shop (upgrades and actions, 92k) per run through the campaign,
+        /// so the shop lasts into replays, job sheets and dailies.</summary>
+        public const int PointsPerCash = 25;
         /// <summary>Finishing pays this much more than failing with the same score.</summary>
         public const float FinishBonus = 1.25f;
 
