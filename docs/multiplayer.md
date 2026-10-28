@@ -201,7 +201,8 @@ the client skips the validators.
     ends the session itself on waking. Shorter hitches of its own are forgiven. The
     protocol and close codes are in `server/relay/README.md`.
   - `OnlineSession` — the NetworkManager (tick rate 20, connection approval carrying
-    `Application.version`, one client), host and join; added at runtime, so no scene holds
+    `Application.version`, then the joiner's ranked id and name for `NetRole.PartnerId` /
+    `PartnerName` (docs/ranked.md K-D12), one client), host and join; added at runtime, so no scene holds
     it. It fills the `NetRole` hooks, sends the start message before NGO loads the Run
     scene, spawns the network players with ownership and ends the session (back to the menu
     with the reason) when either side leaves.

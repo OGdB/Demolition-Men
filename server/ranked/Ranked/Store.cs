@@ -220,6 +220,26 @@ CREATE TABLE IF NOT EXISTS reports (run INTEGER NOT NULL, reporter TEXT NOT NULL
 
     public int Reports(long run) => Convert.ToInt32(Scalar("SELECT COUNT(*) FROM reports WHERE run = $r", ("$r", run)));
 
+    // ---------------- Keeping ----------------
+
+    /// <summary>Forget what's older than <paramref name="before"/> (ms): runs, attempts, reports, and
+    /// players who have no run left. Returns the runs forgotten.</summary>
+    public int Purge(long before)
+    {
+        lock (_lock)
+        {
+            using SqliteCommand cmd = Command(@"DELETE FROM reports WHERE created < $c OR run IN (SELECT id FROM runs WHERE created < $c);
+DELETE FROM attempts WHERE created < $c;
+DELETE FROM runs WHERE created < $c;
+SELECT changes();
+DELETE FROM players WHERE created < $c AND id NOT IN (SELECT player FROM runs) AND id NOT IN (SELECT partner FROM runs WHERE partner IS NOT NULL)
+  AND id NOT IN (SELECT player FROM attempts);", ("$c", before));
+            using SqliteDataReader r = cmd.ExecuteReader();
+            int runs = r.Read() ? r.GetInt32(0) : 0;
+            return runs;
+        }
+    }
+
     // ---------------- Backups ----------------
 
     /// <summary>A consistent copy of the whole database, made while it's in use.</summary>

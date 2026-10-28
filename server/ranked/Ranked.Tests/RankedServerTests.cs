@@ -308,6 +308,18 @@ public sealed class RankedServerTests : IDisposable
     }
 
     [Fact]
+    public async Task OldRuns_AreForgotten()
+    {
+        StartResponse start = await Start(8, "OLD TIMER");
+        await Submit(start, Walk(start));
+        _clock.Now += TimeSpan.FromDays(181);
+        Boot(hideRejected: false); // the purge runs at start, as every six hours
+        for (int i = 0; i < 50 && (await AdminGet("/admin/runs")).Content.ReadAsStringAsync().Result.Contains("OLD TIMER"); i++)
+            await Task.Delay(100);
+        Assert.DoesNotContain("OLD TIMER", await (await AdminGet("/admin/runs")).Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Backups_KeepTheNewestFew()
     {
         await Start(1);

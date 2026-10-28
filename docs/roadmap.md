@@ -417,7 +417,8 @@ show:
   levels worth playing again, and a lasting use for cash, so the rewarded 2x cash still means
   something once the five upgrades are maxed.
 - **v1.3:** **Theme 4** through the content pipeline (M5), first run end to end on one pitch.
-- **Ranked dailies** (`ranked.md`, designed 2026-10-28): one level a day for everyone, a solo
+- **Ranked dailies** (`ranked.md`, built 2026-10-28; left: the PlayMode check, the deploy, the
+  privacy policy online and Play's data safety form): one level a day for everyone, a solo
   and a co-op board, no upgrades in ranked; the device sends a log of the run and our server
   replays it with the game's own models and scores it, so only runs the rules allow get on.
   They come before the looks: a look is worth buying once people other than your partner

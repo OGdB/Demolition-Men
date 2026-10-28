@@ -70,7 +70,7 @@ admin.MapPost("/runs/{run:long}/approve", (long run) => service.Approve(run));
 admin.MapPost("/players/{player}/hide", (string player) => service.Hide(player, true));
 admin.MapPost("/players/{player}/show", (string player) => service.Hide(player, false));
 
-// A copy of the database a day, the newest few kept (BackupFolder, BackupsKept).
+// Old runs forgotten (RetentionDays), then a copy of the database a day, the newest few kept (BackupFolder, BackupsKept).
 _ = Task.Run(async () =>
 {
     using var timer = new PeriodicTimer(TimeSpan.FromHours(6));
@@ -78,6 +78,7 @@ _ = Task.Run(async () =>
     {
         try
         {
+            service.Purge();
             service.Backup();
         }
         catch (Exception e)

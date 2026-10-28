@@ -1,14 +1,26 @@
 # Ranked dailies and fair scores
 
-**Status (2026-10-28):** K1 built: `Ranked/Model/` holds the run log (`RunLog`), its seal (`Seal`),
-the numbers it's checked with (`RankedRules`) and the referee (`RunVerifier`), with EditMode tests
-(`RunLogTests`, `RunVerifierTests`, `RankedRulesTests`). K2 code in, not yet run in Unity: every
-damage to a standing block names its `HitCause` (`BuildingBlock.TakeDamage(amount, instigator,
-cause, from)`, online too: the client's damage request carries it), `RunRecorder` writes the log on
-the deciding device, ranked runs play with a fresh save's kit and every action
-(`LevelSelection.SelectRanked`, `ActionCatalog.Picked`), and the actions read their numbers from
-`RankedRules`. Development builds have RANKED TEST in the level select (today's daily as a ranked
-run) and print the verifier's verdict at the end of the run. K2 is done when `RankedBotTests` passes.
+**Status (2026-10-28):** K1–K5 built; the game side has not run in Unity yet, the server is not
+deployed yet.
+- **Models** (`Ranked/Model/`, EditMode tests): the run log (`RunLog`), its seal (`Seal`), the
+  numbers it's checked with (`RankedRules`), the referee (`RunVerifier`), the day's pick
+  (`RankedDay.Pick`), names (`PlayerName`), the server's messages (`RankedApi`).
+- **The game:** every damage to a standing block names its `HitCause` (`BuildingBlock.TakeDamage(
+  amount, instigator, cause, from)`, online too: the client's damage request carries it);
+  `RunRecorder` writes the log on the deciding device; ranked runs play with a fresh save's kit and
+  any action (`SaveData.rankedActions`); the actions read their numbers from `RankedRules`. NAME on
+  the first screen (`PlayerIdentity`). RANKED in the level select (`Meta/View/RankedView`: today's
+  level and board, the action per player, PLAY, report a row by pressing it twice; development
+  builds also TEST OFFLINE); `RankedSession` gets an attempt, plays it, seals and sends the log,
+  and fetches the ghost (`Ranked/View/GhostRunner`); the results show the place
+  (`Ranked/View/RankedResultView`, SEND AGAIN); a ranked RETRY is a new attempt. Development builds
+  print the verifier's verdict at the end of every ranked run.
+- **The server** (`server/ranked`, `dotnet test`, its README): attempts, sealed submits replayed by
+  `RunVerifier`, the boards, ghosts, reports, holds, admin review, daily backups, 180 days kept.
+- **Left:** run `RankedBotTests` (PlayMode); DNS and the first deploy; the privacy policy (updated
+  in `server/relay/Relay/wwwroot/privacy.html`, live once the relay is deployed again) and Play's
+  data safety form (§8); a few weeks with rejections only recorded, reading `/admin/runs`, then
+  `Ranked__HideRejected=true`; K6.
 
 Ranked dailies give the game a reason to show off to people who aren't your friends: one
 level a day for everyone, a board for solo and one for co-op, and later the crew's looks
@@ -37,18 +49,22 @@ can't do is make the server believe a run that the game's own rules don't allow.
 | K-D7 | The server is its own service next to the relay, not part of it. | The relay stays a forwarder with no game code; a verifier bug can't take co-op down. |
 | K-D8 | A player is a device: NAME is typed on the first screen, and a device has one name and one entry per board (its best run of the day counts). | Asked for (2026-10-28). The id is a hash of the device's identifier (`PlayerIdentity`); WebGL has none, so a browser keeps a random one. Two phones or a cleared browser make two players: their runs still have to pass §4, and new players per IP are limited. |
 | K-D9 | Names are held to `PlayerName` on both sides: A–Z, 0–9, spaces and dashes, 3 to 16, nothing on its list (English and Dutch, look-alikes undone). | Names are public. The list is a start; REPORT (K5) catches the rest, and Play wants a way to report what players write anyway. |
+| K-D10 | The server has its own name (`ranked.oeds.space`), not a path under the relay's. | Its Caddy block is added like the relay's and the relay's stays untouched; one DNS record. |
+| K-D11 | Runs, attempts, reports and players with no run left are forgotten after 180 days; backups are kept 7 days. | A retention the privacy policy can state; a board older than half a year is history. |
+| K-D12 | Online co-op entries carry both names: the joiner's id and name come with the join (NGO's connection data, after the version). | The host sends the run; the server needs to know whose it is too. |
 
 ## 2. Flow
 
-1. **Start.** The player picks RANKED (solo or co-op) and their action. The game asks the
-   server for an attempt: `POST /ranked/start {player, mode, build}`. The answer: the
-   attempt id, its key, the day, the template level id and the seed.
+1. **Start.** The player picks RANKED (solo or co-op by the crew that's in) and their action. The
+   game asks the server for an attempt: `POST /start {player, name, mode, partner, partnerName,
+   rules}`. The answer: the attempt id, its key, the day, the template level id and the seed.
 2. **Play.** The game builds the level from that template and seed, with the ranked kit,
    and plays it as any run. A `RunRecorder` writes the log (§3) as it goes.
 3. **Submit.** At the finish (or a failed run), the game seals the log with the attempt's
-   key and sends it: `POST /ranked/submit {attempt, log}`. The player sees "CHECKING", then
-   their place.
-4. **Board.** `GET /ranked/board?day&mode`: the top 50 and the player's own row.
+   key and sends it: `POST /submit {attempt, log}`. The results screen says SENDING, then the
+   place.
+4. **Board.** `GET /board?day&mode&player`: the top 50 and the player's own row. `GET /ghost`:
+   the best verified run's log, raced as a ghost.
 
 An attempt is good for one run, within its run time plus a few minutes. Attempts per player
 and per IP are limited per day.
@@ -161,29 +177,34 @@ ranked", so the game and the server go out together.
 
 ## 8. The server
 
-`server/ranked/`: an ASP.NET Core app (.NET 10) in its own container next to the relay on the
-VPS; Caddy sends `/ranked/` to it. It compiles the game's models from
+`server/ranked/` (its README has the API, the settings and the deploy): an ASP.NET Core app
+(.NET 10) in its own container next to the relay on the VPS, on its own name
+(`ranked.oeds.space`, K-D10). It compiles the game's models from
 `Assets/Scripts/Demolition/**/Model/` with `tools/unity-check/UnityShim.cs` and ships the level
 and archetype JSON from `Assets/Content`. SQLite on a volume: players (the device's id, K-D8, and
 its name, K-D9), attempts, runs (score, time, verdict and reason, the log for its ghost),
 reports. Limits: attempts per player and IP per day, new players per IP, upload size, CPU time
 per verify.
 
-On the VPS, next to the relay: the service's container and its volume (back it up: it holds
-the boards), Caddy sending `/ranked/` to it, and the deploy script doing both as it does the
-relay. Before it goes live, the privacy policy (`server/relay/Relay/wwwroot/privacy.html`, served
-by the relay) has to change: it says there are no accounts and nothing identifies a player,
-and ranked stores a name, the device's id, runs and scores, and keeps IPs for its limits. The
-Play Console's data safety form likewise (device IDs and the name, for app functionality and
-fraud prevention).
+On the VPS, next to the relay: the container and `/opt/demolition-ranked/data` (the database and
+its daily copies: back it up), a Caddy block for its name, all by `server/ranked/deploy/deploy.sh`
+as the relay's script does it. Everything is forgotten after 180 days (`RetentionDays`, K-D11).
+
+Before it goes live:
+- the privacy policy (`server/relay/Relay/wwwroot/privacy.html`, §4 *Ranked boards*) is updated in
+  the repository: deploy the relay again to put it online;
+- Play's data safety form: **Device or other IDs** (the player id) and **User IDs** (the
+  nickname), and **App activity: other actions** (the run logs), all collected, not shared, for
+  app functionality and fraud prevention, sent encrypted, deletable on request; Play's policy on
+  user-generated content wants a way to report it (REPORT) and to act on reports (`/admin`).
 
 ## 9. Milestones
 
 | | Milestone | Done when |
 |---|---|---|
 | K1 ✅ | The run log and `RunVerifier` as models | EditMode tests: logs round-trip; honest made-up runs pass and each cheat in §4 fails. |
-| K2 (code in) | The game records: the damage cause on every hit, `RunRecorder`, the ranked kit; a co-op partner's cause online | `RankedBotTests` (PlayMode): the bot plays every campaign level ranked, a different action each, and the verifier passes all of them. |
-| K3 | The server: start, submit, verify, store, record-only rejections | `dotnet test`; deployed. |
-| K4 | Ranked in the game: RANKED in the level select, sealing, submit, the boards, names | A ranked run from a phone and a browser lands on the board. |
-| K5 | Ghosts, REPORT, review of outliers; rejections hidden after the record-only weeks | |
+| K2 (code in, PlayMode test to run) | The game records: the damage cause on every hit, `RunRecorder`, the ranked kit; a co-op partner's cause online | `RankedBotTests` (PlayMode): the bot plays every campaign level ranked, a different action each, and the verifier passes all of them. |
+| K3 (built, to deploy) | The server: start, submit, verify, store, record-only rejections | `dotnet test`; deployed. |
+| K4 (built) | Ranked in the game: RANKED in the level select, sealing, submit, the boards, names | A ranked run from a phone and a browser lands on the board. |
+| K5 (built) | Ghosts, REPORT, review of outliers; rejections hidden after the record-only weeks | The switch (`HideRejected`) after a few weeks of `/admin/runs` without false rejections. |
 | K6 | Looks next to names and on ghosts | With the cosmetics shop. |

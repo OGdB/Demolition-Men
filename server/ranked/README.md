@@ -73,6 +73,7 @@ touch it), then `cd /opt/demolition-ranked && sudo docker compose up -d`.
 | `BoardSize` | 50 | |
 | `AdminToken` | empty (no /admin) | `install.sh` writes a random one into `ranked.env` on the first deploy. |
 | `Database` / `BackupFolder` / `BackupsKept` | `/data/ranked.db` / `/data/backups` / 7 | A copy of the database every day; `/data` is `/opt/demolition-ranked/data` on the host. |
+| `RetentionDays` | 180 | Runs, attempts, reports and players with no run left are forgotten after this; the privacy policy says 180 days, so change both. |
 | `TrustedProxyNetworks` | empty | The deploy sets it to the subnet of Caddy's Docker network, so per-IP limits see players, not the proxy. |
 
 ## Deploy to the VPS

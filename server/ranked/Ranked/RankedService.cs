@@ -15,6 +15,9 @@ public sealed class RankedOptions
     /// <summary>Where the daily copies of the database go, and how many are kept; empty: none.</summary>
     public string BackupFolder { get; set; } = "/data/backups";
     public int BackupsKept { get; set; } = 7;
+    /// <summary>Runs, attempts, reports and players with no run left are forgotten after this many
+    /// days (the privacy policy says so: change both together).</summary>
+    public int RetentionDays { get; set; } = 180;
     /// <summary>docs/ranked.md K-D5: a turned-down run (and its player) is seen only by that player.
     /// Off for the first weeks: every run shows, and the reasons are only recorded.</summary>
     public bool HideRejected { get; set; }
@@ -333,6 +336,16 @@ public sealed class RankedService
             return Results.NotFound();
         _store.HidePlayer(player, hidden);
         return Results.NoContent();
+    }
+
+    /// <summary>Forget what's past <see cref="RankedOptions.RetentionDays"/>.</summary>
+    public void Purge()
+    {
+        if (_options.RetentionDays <= 0)
+            return;
+        int runs = _store.Purge((Now - TimeSpan.FromDays(_options.RetentionDays)).ToUnixTimeMilliseconds());
+        if (runs > 0)
+            _log.LogInformation("Forgot {Runs} runs older than {Days} days", runs, _options.RetentionDays);
     }
 
     /// <summary>Today's copy of the database, and only the newest <see cref="RankedOptions.BackupsKept"/>.</summary>
