@@ -57,6 +57,16 @@ namespace Demolition.Tests
             StringAssert.Contains($"rejoinOffset: {{x: {RankedRules.RejoinOffsetX.ToString(CultureInfo.InvariantCulture)}, y: {RankedRules.RejoinOffsetY.ToString(CultureInfo.InvariantCulture)}}}", run);
         }
 
+        [Test]
+        public void RankedKit_IsAFreshSave_WithTheRulesNumbers()
+        {
+            var fresh = new Meta.SaveData();
+            Assert.AreEqual(RankedRules.RunSpeed, Meta.UpgradeCatalog.Value(fresh, Meta.UpgradeStat.Speed));
+            Assert.AreEqual(1f, Meta.UpgradeCatalog.Value(fresh, Meta.UpgradeStat.Power), "damage as the profiles say");
+            Assert.AreEqual(0f, Meta.UpgradeCatalog.Value(fresh, Meta.UpgradeStat.Dynamite), "a pickup's sticks as the layout says");
+            Assert.AreEqual(1f, Meta.UpgradeCatalog.Value(fresh, Meta.UpgradeStat.ToolGrip), "a weapon's hits as the layout says");
+        }
+
         // The swing clips' applyDamage events decide how often a hit lands.
         [TestCase("Punching", RankedRules.FistInterval)]
         [TestCase("Axing", RankedRules.ToolInterval)]

@@ -40,9 +40,9 @@ namespace Demolition
         /// <summary>This device's stick went off.</summary>
         public static Action<Dynamite> DynamiteExploded;
 
-        /// <summary>Client: its player hit a standing block for this much; send a DamageRequest
-        /// instead of applying it (the instigator is the sender's connection).</summary>
-        public static Action<BuildingBlock, float> RequestDamage;
+        /// <summary>Client: its player hit a standing block for this much, with this cause, from there;
+        /// send a DamageRequest instead of applying it (the instigator is the sender's connection).</summary>
+        public static Action<BuildingBlock, float, Ranked.HitCause, Vector2> RequestDamage;
 
         /// <summary>Host: a standing block's health changed (0 = destroyed); add it to this
         /// tick's CellHealth batch. Read the block during the call: a destroyed one is gone by

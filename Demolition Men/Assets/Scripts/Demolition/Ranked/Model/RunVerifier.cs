@@ -61,12 +61,16 @@ namespace Demolition.Ranked
             public bool Standing = true, Credited, Explosive;
             public int Instigator = -1;
             public float X0, Y0, X1, Y1;
+            /// <summary>Its collider (TileKinds.Collider): a plank's is the top half of its cell.</summary>
+            public Rect Solid;
             public float LastRattle = float.NegativeInfinity;
         }
 
         private sealed class Crew
         {
             public ActionInfo Action;
+            /// <summary>Online, the partner's messages reach the host this much late: its buffs end later there.</summary>
+            public float Lag;
             public float Charge, Idle;
             public bool Starting;
             public float StartedAt, BusyUntil = float.NegativeInfinity;
@@ -123,7 +127,7 @@ namespace Demolition.Ranked
             _layout = layout;
             _crew = new Crew[log.Players];
             for (int i = 0; i < _crew.Length; i++)
-                _crew[i] = new Crew { Action = ActionCatalog.Get(log.Actions[i]) };
+                _crew[i] = new Crew { Action = ActionCatalog.Get(log.Actions[i]), Lag = log.Online && i == 1 ? 1f : 0f };
             _score = new RunScore(log.Players);
             _taken = new bool[layout.Pickups.Count];
         }
@@ -196,6 +200,8 @@ namespace Demolition.Ranked
                     };
                     block.X1 = block.X0 + spec.Rect.width;
                     block.Y1 = block.Y0 + spec.Rect.height;
+                    Rect solid = TileKinds.Collider(spec.Kind);
+                    block.Solid = new Rect(block.X0 + solid.x, block.Y0 + solid.y, solid.width, solid.height);
                     foreach (Vector2Int cell in spec.Cells())
                         site.Cells[cell] = block;
                 }
@@ -312,7 +318,8 @@ namespace Demolition.Ranked
                 if (!site.Cells.TryGetValue(cell, out Block block) || TileKinds.WalkThrough(block.Spec.Kind)
                     || block.Spec.Material == BlockMaterial.Glass)
                     continue;
-                if (x > block.X0 + Inset && x < block.X1 - Inset && y > block.Y0 + Inset && y < block.Y1 - Inset)
+                Rect solid = block.Solid;
+                if (x > solid.xMin + Inset && x < solid.xMax - Inset && y > solid.yMin + Inset && y < solid.yMax - Inset)
                     return true;
             }
             return false;
@@ -369,7 +376,7 @@ namespace Demolition.Ranked
             crew = e.Player >= 0 && e.Player < _crew.Length ? _crew[e.Player] : null;
             if (crew == null)
                 return No("no player");
-            if (crew.Out)
+            if (crew.Out && e.Time - crew.OutAt > crew.Lag)
                 return No($"player {e.Player + 1} acted while out of play");
             return true;
         }
@@ -383,7 +390,7 @@ namespace Demolition.Ranked
             Site site = _sites[e.Building];
             if (!site.Cells.TryGetValue(new Vector2Int(e.CellX, e.CellY), out Block block) || !block.Standing)
                 return No("damage to a block that isn't standing");
-            if (e.Player >= 0 && (e.Player >= _crew.Length || _crew[e.Player].Out))
+            if (e.Player >= 0 && (e.Player >= _crew.Length || (_crew[e.Player].Out && e.Time - _crew[e.Player].OutAt > _crew[e.Player].Lag)))
                 return No("damage from a player out of play");
             if (!Allowed(e, block))
                 return false;
@@ -485,9 +492,10 @@ namespace Demolition.Ranked
         private bool Blasted(LogEvent e, Block block)
         {
             float window = e.Player >= 0 && OnlinePartner(e.Player) ? 1f : 0.002f;
+            float radius = RankedRules.BlastRadius * (e.Cause == HitCause.Dynamite ? 1f : RankedRules.GasReach);
             foreach (LogEvent blast in _blasts)
                 if (blast.Cause == e.Cause && (e.Cause != HitCause.Dynamite || blast.Player == e.Player)
-                    && Mathf.Abs(blast.Time - e.Time) <= window && Distance(blast.X, blast.Y, block) <= RankedRules.BlastRadius + 0.05f)
+                    && Mathf.Abs(blast.Time - e.Time) <= window && Distance(blast.X, blast.Y, block) <= radius + 0.05f)
                     return e.Amount <= RankedRules.BlastDamage * Epsilon || No("a blast too hard");
             return No($"{e.Cause} damage with no blast to match");
         }
@@ -605,7 +613,9 @@ namespace Demolition.Ranked
             if (!site.TickCrumbling.TryGetValue(block, out float over))
                 return No("crumble on a block that isn't overloaded");
             float excess = over - StructureDefaults.OverloadTolerance + RankedRules.CrumbleMargin;
-            return e.Amount <= excess * StructureDefaults.CrumbleDamageRate * site.TickElapsed * 1.05f + 0.01f
+            // The device's timer may have run a frame longer than the log's clock says.
+            float elapsed = site.TickElapsed + RankedRules.FrameSlack;
+            return e.Amount <= excess * StructureDefaults.CrumbleDamageRate * elapsed * 1.05f + 0.01f
                 || No("crumbling too fast");
         }
 
@@ -792,7 +802,10 @@ namespace Demolition.Ranked
                     return true;
                 case ActionKind.Implosion:
                     if (e.Picks == null)
-                        return true; // nothing standing in reach: the plunger goes down on nothing
+                        return No("an implosion with no charges");
+                    // Nothing standing in reach: one charge on the ground just ahead, for the bang.
+                    if (e.Picks.Length == 2 && StandingAt(e.Picks[0], e.Picks[1]) == null)
+                        return Mathf.Abs(e.Picks[0] - (e.X + 2f * e.Facing)) <= 1f || No("a lone charge out of reach");
                     Site on = null;
                     for (int i = 0; i < e.Picks.Length; i += 2)
                     {
@@ -859,11 +872,11 @@ namespace Demolition.Ranked
                 return No("a finish away from the finish line");
             // Running flat out all the way, with every coffee drunk, takes at least this long.
             float distance = _layout.FinishX - _layout.SpawnX;
-            float coffee = 0f;
+            float gain = _knocks.Count * RankedRules.KnockbackGain;
             foreach (Crew c in _crew)
-                coffee = Mathf.Max(coffee, c.CoffeeFrom.Count * ActionCatalog.Get(ActionKind.CoffeeBreak).Duration
-                    * RankedRules.RunSpeed * (RankedRules.CoffeeSpeed - 1f));
-            if (e.Time < (distance - coffee) / (RankedRules.RunSpeed * 1.1f))
+                gain = Mathf.Max(gain, _knocks.Count * RankedRules.KnockbackGain + c.CoffeeFrom.Count
+                    * ActionCatalog.Get(ActionKind.CoffeeBreak).Duration * RankedRules.RunSpeed * (RankedRules.CoffeeSpeed - 1f));
+            if (e.Time < (distance - gain) / (RankedRules.RunSpeed * 1.1f))
                 return No("a finish sooner than running there takes");
             _ended = true;
             _verdict.Finished = true;
@@ -958,11 +971,11 @@ namespace Demolition.Ranked
             RankedRules.PoseSlack + (OnlinePartner(player) ? RankedRules.RunSpeed * RankedRules.CoffeeSpeed * RankedRules.OnlineLag : 0f);
 
         private static float Buffs(Crew c, float time) =>
-            (time <= c.CoffeeUntil ? RankedRules.CoffeeDamage : 1f) * (time <= c.BoostUntil ? RankedRules.BoostDamage : 1f);
+            (time <= c.CoffeeUntil + c.Lag ? RankedRules.CoffeeDamage : 1f) * (time <= c.BoostUntil + c.Lag ? RankedRules.BoostDamage : 1f);
 
         private static bool CoffeeIn(Crew c, float from, float to)
         {
-            float duration = ActionCatalog.Get(ActionKind.CoffeeBreak).Duration + 0.1f;
+            float duration = ActionCatalog.Get(ActionKind.CoffeeBreak).Duration + 0.1f + c.Lag;
             foreach (float start in c.CoffeeFrom)
                 if (start <= to && start + duration >= from)
                     return true;

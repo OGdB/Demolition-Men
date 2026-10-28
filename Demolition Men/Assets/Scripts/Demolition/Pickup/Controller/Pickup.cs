@@ -133,7 +133,10 @@ namespace Demolition
             _collected = true;
             MarkTaken(NetIndex);
             if (collector != null)
+            {
+                Ranked.RunRecorder.PickedUp(NetIndex, collector.PlayerIndex);
                 Collected?.Invoke(collector, kind, AmountFor(collector));
+            }
             Particles.Burst(transform.position, new Color(1f, 0.9f, 0.4f), 14, 4f, 0.12f, 0.5f);
             Destroy(gameObject);
         }

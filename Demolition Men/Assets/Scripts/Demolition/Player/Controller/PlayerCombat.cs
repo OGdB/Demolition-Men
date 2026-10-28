@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Demolition.Ranked;
 using UnityEngine;
 
 namespace Demolition
@@ -180,6 +181,8 @@ namespace Demolition
             }
         }
 
+        private HitCause Cause => weapon == WeaponType.Axe ? HitCause.Axe : weapon == WeaponType.WreckingBall ? HitCause.WreckingBall : HitCause.Fist;
+
         // Named for the applyDamage animation events authored on the original
         // Punching/Axing/Wrecking clips — the animation decides when a swing lands.
         private void applyDamage()
@@ -200,7 +203,7 @@ namespace Demolition
                     continue;
 
                 hitAnything = true;
-                block.TakeDamage(CurrentDamage.For(block.Material) * damageMultiplier, _input.PlayerIndex);
+                block.TakeDamage(CurrentDamage.For(block.Material) * damageMultiplier, _input.PlayerIndex, Cause, origin);
 
                 // Only shoves loose debris; a supported (static) wall just takes damage.
                 if (block != null && block.IsFalling)
@@ -237,7 +240,8 @@ namespace Demolition
                 return; // a wall at the side, or the feet
             float strength = Mathf.Clamp01(_riseSpeed / headbuttFullSpeed);
             _riseSpeed = 0f;
-            block.TakeDamage(fistDamage.For(block.Material) * headbuttFactor * strength * damageMultiplier, _input.PlayerIndex);
+            block.TakeDamage(fistDamage.For(block.Material) * headbuttFactor * strength * damageMultiplier, _input.PlayerIndex,
+                HitCause.Headbutt, contact.point);
             if (hitSound != null && _audio != null)
                 _audio.PlayOneShot(hitSound);
         }
@@ -304,6 +308,7 @@ namespace Demolition
             var rb = go.GetComponent<Rigidbody2D>();
             if (rb != null)
                 rb.AddForce(force);
+            RunRecorder.Threw(PlayerIndex, pos);
             NetRole.DynamiteThrown?.Invoke(dynamite, force);
         }
 

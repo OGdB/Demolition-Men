@@ -1,3 +1,4 @@
+using Demolition.Ranked;
 using UnityEngine;
 
 namespace Demolition.Actions
@@ -11,7 +12,7 @@ namespace Demolition.Actions
     public sealed class Intern : MonoBehaviour
     {
         private const float Scale = 0.8f;
-        private const float RunSpeed = 6f;
+        private const float RunSpeed = RankedRules.InternRunSpeed;
         private const float JumpSpeed = 13f;
         private static readonly Color Green = new Color(0.78f, 1f, 0.72f); // a groentje: the new kid on site
 
@@ -124,12 +125,13 @@ namespace Demolition.Actions
         // Animation event on the Punching clips (the name is the player's contract).
         private void applyDamage()
         {
-            foreach (BuildingBlock block in ActionStrikes.BlocksInCircle(Reach, 0.9f * Scale + 0.2f))
+            foreach (BuildingBlock block in ActionStrikes.BlocksInCircle(Reach, RankedRules.InternReach))
             {
                 if (block == null || (!_authoritative && !ActionStrikes.IsLoose(block)))
                     continue;
-                float damage = block.Material == BlockMaterial.Metal || block.Material == BlockMaterial.Support ? 12f : 28f;
-                block.TakeDamage(damage * _damage, _who);
+                float damage = block.Material == BlockMaterial.Metal || block.Material == BlockMaterial.Support
+                    ? RankedRules.InternMetalDamage : RankedRules.InternDamage;
+                block.TakeDamage(damage * _damage, _who, HitCause.Intern, Reach);
             }
         }
     }

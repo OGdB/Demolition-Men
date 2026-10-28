@@ -40,6 +40,8 @@ namespace Demolition.Ranked
         public const float BlastDamage = 300f;
         /// <summary>Blocks take a blast within half its area of effect.</summary>
         public const float BlastRadius = 1.5f;
+        /// <summary>A gas tank's and a charge's blast (Dynamite.Detonate) reach this much further than a stick's.</summary>
+        public const float GasReach = 1.25f;
         public const float Fuse = 2f;
 
         // ---------------- Actions (ActionUser, ActionStrikes and each strike's controller) ----------------
@@ -73,6 +75,10 @@ namespace Demolition.Ranked
         public const float SpeedSlack = 1.3f, MoveMargin = 0.35f;
         /// <summary>After a blast, a slam or a pallet nearby, a player may fly this long.</summary>
         public const float KnockbackWindow = 1.5f, KnockbackRange = 5f;
+        /// <summary>How far one knockback can throw a player ahead of where running gets them.</summary>
+        public const float KnockbackGain = 6f;
+        /// <summary>A frame at a slow frame rate: the device's timers can run this much past the log's clock.</summary>
+        public const float FrameSlack = 0.1f;
         /// <summary>Overload a crumbling block may lack on the server (float maths differ by platform).</summary>
         public const float CrumbleMargin = 0.2f;
         /// <summary>Seconds an action's damage may come after its strike beyond its own timing.</summary>

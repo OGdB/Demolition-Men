@@ -1,3 +1,4 @@
+using Demolition.Ranked;
 using UnityEngine;
 
 namespace Demolition.Actions
@@ -9,9 +10,9 @@ namespace Demolition.Actions
     /// </summary>
     public sealed class SiteRadio : MonoBehaviour
     {
-        private const float Reach = 6f;
-        private const float Beat = 0.5f;
-        private const float Rattle = 10f; // damage per beat to a standing wall in reach
+        private const float Reach = RankedRules.RadioReach;
+        private const float Beat = RankedRules.RadioBeat;
+        private const float Rattle = RankedRules.RadioRattle; // damage per beat to a standing wall in reach
         private const int MaxJumps = 40; // rubble kicked per beat, so a big heap stays cheap
 
         private SpriteRenderer _sr;
@@ -68,7 +69,7 @@ namespace Demolition.Actions
 
         private void Pulse()
         {
-            Vector2 at = (Vector2)transform.position + Vector2.up * 0.4f;
+            Vector2 at = (Vector2)transform.position + Vector2.up * RankedRules.RadioRise;
             ActionAudio.Beat(_step);
             ActionStrikes.Ring(at, Reach * 2f, new Color(1f, 0.85f, 0.35f, 0.35f), 0.45f);
             FxRise.Spawn(ActionSprites.Prop("note"), at + new Vector2(Random.Range(-0.4f, 0.4f), 0.4f),
@@ -84,7 +85,7 @@ namespace Demolition.Actions
                 if (block.Material == BlockMaterial.Glass)
                 {
                     if (loose || _authoritative)
-                        block.Shatter(_who);
+                        block.Shatter(_who, HitCause.Radio);
                 }
                 else if (loose)
                 {
@@ -93,7 +94,7 @@ namespace Demolition.Actions
                 }
                 else if (_authoritative)
                 {
-                    block.TakeDamage(Rattle, _who);
+                    block.TakeDamage(Rattle, _who, HitCause.Radio, at);
                 }
             }
         }

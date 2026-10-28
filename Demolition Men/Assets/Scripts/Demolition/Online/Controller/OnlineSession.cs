@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Demolition.Levels;
+using Demolition.Ranked;
 using Demolition.Run;
 using Unity.Collections;
 using Unity.Netcode;
@@ -250,9 +251,18 @@ namespace Demolition.Online
 
         private void SendStart()
         {
-            using var writer = new FastBufferWriter(16, Allocator.Temp);
+            using var writer = new FastBufferWriter(128, Allocator.Temp);
             writer.WriteValueSafe(LevelSelection.CampaignIndex);
             writer.WriteValueSafe(LevelSelection.DailyDate.Ticks);
+            // A ranked day: the client plays it with the ranked kit too (docs/ranked.md K-D2).
+            RankedDay ranked = LevelSelection.Ranked;
+            writer.WriteValueSafe(ranked != null);
+            if (ranked != null)
+            {
+                writer.WriteValueSafe(ranked.Day);
+                writer.WriteValueSafe(ranked.Seed);
+                writer.WriteValueSafe(ranked.Template);
+            }
             // Same delivery as NGO's scene events, so it arrives before the load.
             _net.CustomMessagingManager.SendNamedMessage(StartMessage, Peer, writer, NetworkDelivery.ReliableFragmentedSequenced);
         }
@@ -261,6 +271,19 @@ namespace Demolition.Online
         {
             reader.ReadValueSafe(out int campaignIndex);
             reader.ReadValueSafe(out long dailyTicks);
+            reader.ReadValueSafe(out bool ranked);
+            if (ranked)
+            {
+                reader.ReadValueSafe(out int day);
+                reader.ReadValueSafe(out int seed);
+                reader.ReadValueSafe(out string template);
+                if (LevelSelection.SelectRanked(new RankedDay { Day = day, Seed = seed, Template = template, Mode = RankedMode.Coop }))
+                {
+                    LevelSelection.ReturnToLevelSelect = true;
+                    return;
+                }
+                Debug.LogWarning($"Online: the host's ranked level {template} isn't in this build.");
+            }
             if (campaignIndex >= 0)
                 LevelSelection.Select(campaignIndex);
             else

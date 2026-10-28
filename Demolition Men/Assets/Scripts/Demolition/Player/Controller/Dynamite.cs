@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Demolition.Ranked;
 using UnityEngine;
 
 namespace Demolition
@@ -29,9 +30,6 @@ namespace Demolition
         [Tooltip("Seconds before the spawned effect is removed (its particle system loops).")]
         [SerializeField] private float effectLifetime = 2f;
 
-        /// <summary>A gas tank's blast reaches this much further than a stick's: across the free
-        /// column between two props, so the next one's tanks go too.</summary>
-        private const float GasReach = 1.25f;
 
         private PlayerCombat _owner;
         private int _instigator = -1; // credited when no thrower owns the stick (a gas tank's blast)
@@ -54,24 +52,30 @@ namespace Demolition
         /// the thrower's stick does (<see cref="ExplodeAt"/>), not on its own fuse.</summary>
         public bool Cosmetic { get; set; }
 
+        /// <summary>What set it off: a thrown stick, a gas tank, an implosion's charge.</summary>
+        public HitCause Cause { get; private set; } = HitCause.Dynamite;
+
         public void ExplodeAt(Vector3 position)
         {
             transform.position = position;
             Explode();
         }
 
-        /// <summary>A gas tank going up, credited to <paramref name="instigator"/>, after
-        /// <paramref name="delay"/> seconds (a chain of tanks ripples instead of going off in one frame).
-        /// Online, a client's blast is only the show: the host's reaches it as cells.</summary>
-        public static void Detonate(GameObject prefab, Vector3 position, int instigator, float delay = 0f)
+        /// <summary>A gas tank going up (or another <paramref name="cause"/>), credited to <paramref name="instigator"/>,
+        /// after <paramref name="delay"/> seconds (a chain of tanks ripples instead of going off in one frame).
+        /// It reaches <see cref="RankedRules.GasReach"/> further than a stick: across the free column
+        /// between two props, so the next one's tanks go too. Online, a client's blast is only the show:
+        /// the host's reaches it as cells.</summary>
+        public static void Detonate(GameObject prefab, Vector3 position, int instigator, float delay = 0f, HitCause cause = HitCause.GasTank)
         {
             GameObject go = prefab != null ? Instantiate(prefab, position, Quaternion.identity) : CreatePrimitive(position);
             var dynamite = go.GetComponent<Dynamite>();
             if (dynamite == null)
                 dynamite = go.AddComponent<Dynamite>();
             dynamite._instigator = instigator;
+            dynamite.Cause = cause;
             dynamite.Cosmetic = NetRole.IsClient;
-            dynamite.areaOfEffect *= GasReach;
+            dynamite.areaOfEffect *= RankedRules.GasReach;
             if (delay <= 0f)
             {
                 dynamite.ExplodeAt(position);
@@ -147,8 +151,12 @@ namespace Demolition
             if (_audio != null)
                 _audio.Play();
             Exploded?.Invoke(transform.position);
+            int who = _owner != null ? _owner.PlayerIndex : _instigator;
             if (!Cosmetic)
+            {
+                RunRecorder.Blew(who, Cause, transform.position); // before the damage it deals
                 NetRole.DynamiteExploded?.Invoke(this);
+            }
 
             // Players in the area get hurt, more the closer they stand. Each device hurts only its own
             // player (a proxy ignores damage), so an online copy hurts the player next to it too.
@@ -179,7 +187,7 @@ namespace Demolition
                 {
                     var block = hit != null ? hit.GetComponentInParent<BuildingBlock>() : null;
                     if (block != null && damaged.Add(block))
-                        block.TakeDamage(damage, _owner != null ? _owner.PlayerIndex : _instigator);
+                        block.TakeDamage(damage, who, Cause, transform.position);
                 }
                 Blasting = false;
             }

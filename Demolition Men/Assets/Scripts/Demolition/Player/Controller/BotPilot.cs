@@ -65,6 +65,8 @@ namespace Demolition
         public float StopX { get; set; } = float.PositiveInfinity;
         /// <summary>Throws dynamite at the supports, metal and gas tanks it meets.</summary>
         public bool ThrowsDynamite { get; set; } = true;
+        /// <summary>Fires its action as soon as the meter is full and a block is ahead (the ranked tests).</summary>
+        public bool UsesActions { get; set; }
         public bool Arrived { get; private set; }
         /// <summary>What it decided this frame, for watching it from tools.</summary>
         public string Status { get; private set; } = "";
@@ -172,6 +174,8 @@ namespace Demolition
             _source.Next.Move = new Vector2(move, 0f);
             _source.Next.AttackHeld = attack;
             _source.Next.DynamitePressed = throwNow;
+            _source.Next.ActionPressed = UsesActions && block != null && TryGetComponent(out Actions.ActionUser action)
+                && action.Meter != null && action.Meter.Full;
             _source.Next.JumpPressed = jump && !_jumpHeld;
             _source.Next.JumpReleased = !jump && _jumpHeld;
             _source.Next.JumpHeld = jump;

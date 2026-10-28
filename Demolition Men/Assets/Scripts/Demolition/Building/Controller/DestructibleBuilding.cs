@@ -267,7 +267,7 @@ namespace Demolition
                     continue;
                 float excess = _crumbleScratch[i].Value - overloadTolerance;
                 if (excess > 0f)
-                    block.TakeDamage(excess * crumbleDamageRate * elapsed);
+                    block.TakeDamage(excess * crumbleDamageRate * elapsed, -1, Ranked.HitCause.Crumble);
             }
         }
 

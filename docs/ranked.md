@@ -2,7 +2,13 @@
 
 **Status (2026-10-28):** K1 built: `Ranked/Model/` holds the run log (`RunLog`), its seal (`Seal`),
 the numbers it's checked with (`RankedRules`) and the referee (`RunVerifier`), with EditMode tests
-(`RunLogTests`, `RunVerifierTests`, `RankedRulesTests`). Next: K2, the game writing the log.
+(`RunLogTests`, `RunVerifierTests`, `RankedRulesTests`). K2 code in, not yet run in Unity: every
+damage to a standing block names its `HitCause` (`BuildingBlock.TakeDamage(amount, instigator,
+cause, from)`, online too: the client's damage request carries it), `RunRecorder` writes the log on
+the deciding device, ranked runs play with a fresh save's kit and every action
+(`LevelSelection.SelectRanked`, `ActionCatalog.Picked`), and the actions read their numbers from
+`RankedRules`. Development builds have RANKED TEST in the level select (today's daily as a ranked
+run) and print the verifier's verdict at the end of the run. K2 is done when `RankedBotTests` passes.
 
 Ranked dailies give the game a reason to show off to people who aren't your friends: one
 level a day for everyone, a board for solo and one for co-op, and later the crew's looks
@@ -166,7 +172,7 @@ per verify. Names: open (free names need a filter; generated names don't).
 | | Milestone | Done when |
 |---|---|---|
 | K1 ✅ | The run log and `RunVerifier` as models | EditMode tests: logs round-trip; honest made-up runs pass and each cheat in §4 fails. |
-| K2 | The game records: the damage cause on every hit, `RunRecorder`, the ranked kit; a co-op partner's cause online | A PlayMode test records the bot on every campaign level and the verifier passes all of them. |
+| K2 (code in) | The game records: the damage cause on every hit, `RunRecorder`, the ranked kit; a co-op partner's cause online | `RankedBotTests` (PlayMode): the bot plays every campaign level ranked, a different action each, and the verifier passes all of them. |
 | K3 | The server: start, submit, verify, store, record-only rejections | `dotnet test`; deployed. |
 | K4 | Ranked in the game: RANKED in the level select, sealing, submit, the boards, names | A ranked run from a phone and a browser lands on the board. |
 | K5 | Ghosts, REPORT, review of outliers; rejections hidden after the record-only weeks | |

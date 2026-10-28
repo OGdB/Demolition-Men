@@ -84,6 +84,8 @@ namespace Demolition.Levels
             run.name = "Run";
             run.Configure(spec.id, layout.Par, layout.TotalCells, LevelSelection.NextAction());
             run.Sheet = Objectives.Sheet(spec.seed, spec.objectives);
+            if (LevelSelection.IsRanked && !NetRole.IsClient) // the deciding device keeps the log
+                run.gameObject.AddComponent<Ranked.RunRecorder>().Begin(run, layout, LevelSelection.Ranked);
             if (runUp > 0f)
                 run.RunIn(runUp);
         }
