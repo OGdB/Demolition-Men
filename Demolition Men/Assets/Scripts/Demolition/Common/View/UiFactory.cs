@@ -331,5 +331,50 @@ namespace Demolition
             background.gameObject.AddComponent<UiButtonFeel>();
             return button;
         }
+
+        /// <summary>A one-line text field on a dark plate: gold text, steel when selected. Mouse, touch
+        /// (the phone's keyboard) and keyboards type in it; a gamepad selects it like a button.</summary>
+        public static TMP_InputField InputField(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size,
+            float fontSize, int characterLimit)
+        {
+            Image background = Image(parent, name, anchor, position, size, Color.white);
+            background.sprite = PlateSprite;
+            background.type = UnityEngine.UI.Image.Type.Sliced;
+            background.raycastTarget = true;
+            GameObject go = background.gameObject;
+            go.SetActive(false); // the field wakes up once its parts are in place
+
+            RectTransform area = Stretch(go.transform, "Text Area");
+            area.offsetMin = new Vector2(20f, 6f);
+            area.offsetMax = new Vector2(-20f, -6f);
+            area.gameObject.AddComponent<RectMask2D>();
+            TextMeshProUGUI text = Text(area, "Text", Vector2.zero, Vector2.zero, fontSize, TextAlignmentOptions.MidlineLeft);
+            text.rectTransform.anchorMax = Vector2.one;
+            text.rectTransform.sizeDelta = Vector2.zero;
+            text.color = Gold;
+            TextMeshProUGUI placeholder = Text(area, "Placeholder", Vector2.zero, Vector2.zero, fontSize, TextAlignmentOptions.MidlineLeft);
+            placeholder.rectTransform.anchorMax = Vector2.one;
+            placeholder.rectTransform.sizeDelta = Vector2.zero;
+            placeholder.color = new Color(1f, 1f, 1f, 0.35f);
+
+            var field = go.AddComponent<TMP_InputField>();
+            field.textViewport = area;
+            field.textComponent = text;
+            field.placeholder = placeholder;
+            field.characterLimit = characterLimit;
+            field.lineType = TMP_InputField.LineType.SingleLine;
+            field.caretColor = Gold;
+            field.customCaretColor = true;
+            field.selectionColor = new Color(1f, 0.78f, 0.2f, 0.35f);
+            ColorBlock colors = field.colors;
+            colors.normalColor = Ink;
+            colors.highlightedColor = Steel;
+            colors.selectedColor = Steel;
+            colors.pressedColor = Steel;
+            colors.fadeDuration = 0.06f;
+            field.colors = colors;
+            go.SetActive(true);
+            return field;
+        }
     }
 }

@@ -35,6 +35,8 @@ can't do is make the server believe a run that the game's own rules don't allow.
 | K-D5 | A rejected run isn't told so: its player sees it on the board, nobody else does. | A cheater can't learn which fake gets through. Off for the first weeks (§5). |
 | K-D6 | The log is binary and sealed with a key per attempt (§5). | Not the lock (§1), but it makes the format hard to learn and old or captured logs useless. |
 | K-D7 | The server is its own service next to the relay, not part of it. | The relay stays a forwarder with no game code; a verifier bug can't take co-op down. |
+| K-D8 | A player is a device: NAME is typed on the first screen, and a device has one name and one entry per board (its best run of the day counts). | Asked for (2026-10-28). The id is a hash of the device's identifier (`PlayerIdentity`); WebGL has none, so a browser keeps a random one. Two phones or a cleared browser make two players: their runs still have to pass §4, and new players per IP are limited. |
+| K-D9 | Names are held to `PlayerName` on both sides: A–Z, 0–9, spaces and dashes, 3 to 16, nothing on its list (English and Dutch, look-alikes undone). | Names are public. The list is a start; REPORT (K5) catches the rest, and Play wants a way to report what players write anyway. |
 
 ## 2. Flow
 
@@ -162,10 +164,18 @@ ranked", so the game and the server go out together.
 `server/ranked/`: an ASP.NET Core app (.NET 10) in its own container next to the relay on the
 VPS; Caddy sends `/ranked/` to it. It compiles the game's models from
 `Assets/Scripts/Demolition/**/Model/` with `tools/unity-check/UnityShim.cs` and ships the level
-and archetype JSON from `Assets/Content`. SQLite on a volume: players (a random id and secret
-the game makes on first use, the name), attempts, runs (score, time, verdict and reason, the
-log for its ghost), reports. Limits: attempts per player and IP per day, upload size, CPU time
-per verify. Names: open (free names need a filter; generated names don't).
+and archetype JSON from `Assets/Content`. SQLite on a volume: players (the device's id, K-D8, and
+its name, K-D9), attempts, runs (score, time, verdict and reason, the log for its ghost),
+reports. Limits: attempts per player and IP per day, new players per IP, upload size, CPU time
+per verify.
+
+On the VPS, next to the relay: the service's container and its volume (back it up: it holds
+the boards), Caddy sending `/ranked/` to it, and the deploy script doing both as it does the
+relay. Before it goes live, the privacy policy (`server/relay/Relay/wwwroot/privacy.html`, served
+by the relay) has to change: it says there are no accounts and nothing identifies a player,
+and ranked stores a name, the device's id, runs and scores, and keeps IPs for its limits. The
+Play Console's data safety form likewise (device IDs and the name, for app functionality and
+fraud prevention).
 
 ## 9. Milestones
 

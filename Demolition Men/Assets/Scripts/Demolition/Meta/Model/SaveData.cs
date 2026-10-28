@@ -103,6 +103,8 @@ namespace Demolition.Meta
         public List<string> looks = new List<string>();
         /// <summary>The look each player wears, by id, P1 first; empty for the crew's own.</summary>
         public List<string> wearing = new List<string>();
+        /// <summary>The name on the ranked boards (Ranked.PlayerName), typed on the first screen; empty: the generated one.</summary>
+        public string playerName = string.Empty;
 
         public LevelRecord Level(string id)
         {

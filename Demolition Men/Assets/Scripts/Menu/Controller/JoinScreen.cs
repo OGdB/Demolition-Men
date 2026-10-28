@@ -48,9 +48,9 @@ public class JoinScreen : MonoBehaviour
     private void Update()
     {
         // Not on the frame it opened: the press that skipped the title or closed the level
-        // select must not also join or leave someone. Settings take the presses while open.
-        if (!_open || Time.frameCount == _openedFrame || QuitView.IsOpen || SettingsView.IsOpen)
-            return;
+        // select must not also join or leave someone. Settings take the presses while open, the name field while typing.
+        if (!_open || Time.frameCount == _openedFrame || QuitView.IsOpen || SettingsView.IsOpen || _view.Typing)
+            return; // typing a name: Space, Enter and Esc are the field's
 
         foreach (InputDevice device in InputSystem.devices)
         {
