@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using Demolition.Actions;
 using Demolition.Levels;
 using Demolition.Meta;
@@ -47,7 +46,7 @@ namespace Demolition.Tests
         {
             CampaignLevel level = GameConfig.Instance.Campaign[index];
             ActionKind action = ActionCatalog.All[index % ActionCatalog.All.Count].Kind;
-            Profile.Data.actions = new List<string> { ActionCatalog.Get(action).Id }; // not owned: ranked lends it
+            ActionCatalog.PickRanked(Profile.Data, 0, action); // not owned: ranked lends it
             LevelBootstrap.AutoPilot = true;
             Assert.IsTrue(LevelSelection.SelectRanked(new RankedDay { Day = 20261028, Template = level.Spec.id, Seed = level.Spec.seed, Mode = RankedMode.Solo }));
             SceneManager.LoadScene(GameConfig.Instance.levelScene);

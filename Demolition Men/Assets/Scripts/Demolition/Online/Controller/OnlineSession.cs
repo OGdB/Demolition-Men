@@ -81,7 +81,8 @@ namespace Demolition.Online
             config.NetworkTransport = session._transport;
             config.TickRate = TickRate;
             config.ConnectionApproval = true;
-            config.ConnectionData = Encoding.UTF8.GetBytes(Application.version);
+            // The version first (both sides must run the same build), then who this is on the ranked boards.
+            config.ConnectionData = Encoding.UTF8.GetBytes($"{Application.version}\n{PlayerIdentity.Id}\n{PlayerIdentity.Name}");
             config.EnableSceneManagement = true;
             config.PlayerPrefab = null;
             go.SetActive(true);
@@ -124,8 +125,14 @@ namespace Demolition.Online
         private void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
             bool self = request.ClientNetworkId == NetworkManager.ServerClientId;
-            bool sameVersion = request.Payload != null && Encoding.UTF8.GetString(request.Payload) == Application.version;
+            string[] payload = request.Payload != null ? Encoding.UTF8.GetString(request.Payload).Split('\n') : new string[0];
+            bool sameVersion = payload.Length > 0 && payload[0] == Application.version;
             response.Approved = self || (sameVersion && !IsConnected);
+            if (response.Approved && !self && payload.Length >= 3 && RankedApi.IsPlayerId(payload[1]))
+            {
+                NetRole.PartnerId = payload[1];
+                NetRole.PartnerName = PlayerName.Allowed(payload[2]) ? payload[2] : PlayerName.Default(payload[1]);
+            }
             response.CreatePlayerObject = false;
             response.Reason = !sameVersion ? "THE OTHER DEVICE RUNS ANOTHER VERSION OF THE GAME" : "THE ROOM IS FULL";
         }
@@ -194,6 +201,7 @@ namespace Demolition.Online
             if (RunController.Current != null && !playOn)
                 RunController.Current.enabled = false; // its network players are about to go
             NetRole.Mode = NetMode.Offline;
+            NetRole.PartnerId = NetRole.PartnerName = string.Empty;
             NetRole.LoadScene = null;
             NetRole.SpawnPlayers = null;
             NetRole.Leave = null;

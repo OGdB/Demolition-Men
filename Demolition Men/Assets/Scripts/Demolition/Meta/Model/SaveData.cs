@@ -105,6 +105,9 @@ namespace Demolition.Meta
         public List<string> wearing = new List<string>();
         /// <summary>The name on the ranked boards (Ranked.PlayerName), typed on the first screen; empty: the generated one.</summary>
         public string playerName = string.Empty;
+        /// <summary>The action each player carries into a ranked run, by id, P1 first: any action, owned or
+        /// not (docs/ranked.md K-D2), picked apart from <see cref="actions"/> so the campaign's stays its own.</summary>
+        public List<string> rankedActions = new List<string>();
 
         public LevelRecord Level(string id)
         {

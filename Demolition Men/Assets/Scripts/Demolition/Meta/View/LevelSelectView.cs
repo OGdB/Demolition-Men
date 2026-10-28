@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Demolition.Levels;
-using Demolition.Ranked;
 using Demolition.Run;
 using TMPro;
 using UnityEngine;
@@ -59,7 +58,7 @@ namespace Demolition.Meta
 
         private void Update()
         {
-            if (SettingsView.IsOpen || ShopView.IsOpen)
+            if (SettingsView.IsOpen || ShopView.IsOpen || RankedView.IsOpen)
                 return;
             bool back = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
             foreach (Gamepad pad in Gamepad.all)
@@ -138,18 +137,9 @@ namespace Demolition.Meta
 
             if (NetRole.IsOnline)
                 training.gameObject.SetActive(false); // training is local only
-            if (Debug.isDebugBuild)
-            {
-                // Until the server names the day (docs/ranked.md K4): today's daily played as a ranked
-                // run; the log is checked on this device and the verdict goes to the console.
-                UiFactory.Button(root, "RANKED TEST", centre, new Vector2(-350f, row - 112f), new Vector2(320f, 70f), () =>
-                {
-                    DateTime utc = DateTime.UtcNow;
-                    string template = config.Campaign[Daily.TemplateIndex(utc.Date, config.Campaign.Count)].Spec.id;
-                    bool coop = NetRole.IsOnline || Session.PlayerCount > 1;
-                    LevelSelection.PlayRanked(RankedDay.Local(utc, template, coop ? RankedMode.Coop : RankedMode.Solo));
-                });
-            }
+            // Today's level for everyone, on the boards (docs/ranked.md); online the host picks for both.
+            if (!NetRole.IsClient)
+                UiFactory.Button(root, "RANKED", centre, new Vector2(-350f, row - 112f), new Vector2(320f, 70f), () => RankedView.Open(transform, Refresh));
 
             Refresh();
             if (_first == null)

@@ -226,7 +226,7 @@ namespace Demolition.Run
                 // Online this device's loadout is its own player's (its P1 pick); the other's arrives with its announce.
                 int pick = NetRole.IsOnline ? (player.Index == NetRole.LocalPlayer ? 0 : -1) : player.Index;
                 player.Action.Configure(player.Index, pick < 0 ? ActionCatalog.Default
-                    : LevelSelection.IsRanked ? ActionCatalog.Picked(Profile.Data, pick) : ActionCatalog.Equipped(Profile.Data, pick));
+                    : LevelSelection.IsRanked ? ActionCatalog.RankedPick(Profile.Data, pick) : ActionCatalog.Equipped(Profile.Data, pick));
                 _players.Add(player);
             }
 
@@ -307,7 +307,12 @@ namespace Demolition.Run
         /// <summary>A player collected a Resurrect pickup. False if nobody needed it.</summary>
         public bool TryResurrect(int collector) => State.TryResurrect(collector);
 
-        public void Retry() => LoadScene(SceneManager.GetActiveScene().name);
+        /// <summary>Play the level again; a ranked run asks the server for a new attempt first (one run each).</summary>
+        public void Retry()
+        {
+            if (!Ranked.RankedSession.Again())
+                LoadScene(SceneManager.GetActiveScene().name);
+        }
 
         public void QuitToMenu()
         {
