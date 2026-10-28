@@ -1,6 +1,8 @@
 # Ranked dailies and fair scores
 
-**Status (2026-10-28):** designed; K1 (the run log and the verifier as models) in progress.
+**Status (2026-10-28):** K1 built: `Ranked/Model/` holds the run log (`RunLog`), its seal (`Seal`),
+the numbers it's checked with (`RankedRules`) and the referee (`RunVerifier`), with EditMode tests
+(`RunLogTests`, `RunVerifierTests`, `RankedRulesTests`). Next: K2, the game writing the log.
 
 Ranked dailies give the game a reason to show off to people who aren't your friends: one
 level a day for everyone, a board for solo and one for co-op, and later the crew's looks
@@ -103,6 +105,14 @@ and movement checks allow some slack, and crumble is checked against the server'
 with a margin, not to the bit. The slack is set from honest logs: the bot's runs of every
 level (a PlayMode test records and verifies them) and the closed test's (§5).
 
+*As built (K1):* where the device's timing can't be known exactly, the server's estimate leans
+the device's way: the action meter counts every block the player breaks (the game leaves out
+what its own action breaks) and never drains while an action plays; crumble may lack
+`CrumbleMargin` of overload. Swings are held to their clip two ways: never closer than half a
+clip apart (not for an online partner, whose hits arrive in bunches), and no more than the clip
+allows in any 2 s. The pose's legs and chest may never be inside a standing wall (glass and the
+walk-through supports aside). Every slack is a named constant in `RankedRules`.
+
 ## 5. Keeping the log hard to fake
 
 None of these is the lock (§1), they make the first step harder:
@@ -134,8 +144,10 @@ game, run on a server or not: a bot sends inputs like a person. Against it:
 ## 7. Versions
 
 The rules the server checks with are the game's numbers (damage profiles, clip timings, the
-jump, the actions' areas), mirrored in `RankedRules` with a version number; a test reads the
-player prefab and fails if they drift apart. A build that changes them bumps the version. The
+jump, the actions' areas), mirrored in `RankedRules` with a version number; `RankedRulesTests` reads the
+player, dynamite and run prefabs and the swing clips and fails if they drift apart. The actions'
+numbers are constants in their controllers (`BurpWave`, `CranePallet`, ...): K2 makes those read
+`RankedRules`, so they can't drift. A build that changes them bumps the version. The
 server checks with one version at a time and tells an older build "update the game to play
 ranked", so the game and the server go out together.
 
@@ -153,7 +165,7 @@ per verify. Names: open (free names need a filter; generated names don't).
 
 | | Milestone | Done when |
 |---|---|---|
-| K1 | The run log and `RunVerifier` as models | EditMode tests: logs round-trip; honest made-up runs pass and each cheat in §4 fails. |
+| K1 ✅ | The run log and `RunVerifier` as models | EditMode tests: logs round-trip; honest made-up runs pass and each cheat in §4 fails. |
 | K2 | The game records: the damage cause on every hit, `RunRecorder`, the ranked kit; a co-op partner's cause online | A PlayMode test records the bot on every campaign level and the verifier passes all of them. |
 | K3 | The server: start, submit, verify, store, record-only rejections | `dotnet test`; deployed. |
 | K4 | Ranked in the game: RANKED in the level select, sealing, submit, the boards, names | A ranked run from a phone and a browser lands on the board. |
