@@ -81,8 +81,8 @@ devices over the internet yet.
 - The audio, polish and performance work in R2.
 
 **Out of v1 (updates after launch, §4 After launch)**
-- The remove-ads purchase, bonus objectives, the cosmetics shop, a daily-challenge
-  leaderboard, Theme 4 and more from the content pipeline (M5), endless mode, a level editor.
+- The remove-ads purchase, bonus objectives, the cosmetics shop, ranked dailies with
+  verified scores (`ranked.md`), Theme 4 and more from the content pipeline (M5), endless mode, a level editor.
 - Other stores and platforms: iOS (needs a Mac and $99 a year), an Android TV listing, PC on
   itch.io or Steam. The code already runs there; the release work for them waits.
 
@@ -417,8 +417,11 @@ show:
   levels worth playing again, and a lasting use for cash, so the rewarded 2x cash still means
   something once the five upgrades are maxed.
 - **v1.3:** **Theme 4** through the content pipeline (M5), first run end to end on one pitch.
-- A daily-challenge leaderboard (Play Games Services is free), store listings translated for
-  the top countries.
+- **Ranked dailies** (`ranked.md`, designed 2026-10-28): one level a day for everyone, a solo
+  and a co-op board, no upgrades in ranked; the device sends a log of the run and our server
+  replays it with the game's own models and scores it, so only runs the rules allow get on.
+  They come before the looks: a look is worth buying once people other than your partner
+  see it (on the boards and the ghosts). Store listings translated for the top countries.
 - Later: an Android TV listing, PC on itch.io or Steam, iOS, endless mode, a level editor.
 
 #### Bonus objectives (v1.2, S/M) — ✅ built 2026-10-27, awaiting a playtest
