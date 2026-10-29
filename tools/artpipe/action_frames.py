@@ -236,6 +236,9 @@ def write_sprite(im, path, px, template):
     text = text.replace("  alignment: 0\n  spritePivot: {x: 0.5, y: 0.5}",
                         f"  alignment: 9\n  spritePivot: {{x: {px / im.width:.4f}, y: 0}}")
     assert "alignment: 9" in text, "sprite.meta.template changed: pivot line not found"
+    # Readable: a look recolours them while the game runs (Meta/View/LookSkin).
+    text = text.replace("  isReadable: 0\n", "  isReadable: 1\n")
+    assert "isReadable: 1" in text, "sprite.meta.template changed: isReadable line not found"
     with open(meta, "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
 

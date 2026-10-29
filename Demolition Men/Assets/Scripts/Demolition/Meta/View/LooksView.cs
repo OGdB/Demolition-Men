@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Demolition.Levels;
 using Demolition.Run;
 using TMPro;
 using UnityEngine;
@@ -9,12 +10,15 @@ using UnityEngine.UI;
 
 namespace Demolition.Meta
 {
-    /// <summary>The crew's looks (<see cref="LookCatalog"/>): each with how it's had (cash, full
-    /// job sheets, REMOVE ADS), BUY for one on sale, and per player WEAR once owned; CREW puts the
-    /// crew's own look back on. Opens from the skill shop; Back (Esc / B) closes.</summary>
+    /// <summary>The crew's looks (<see cref="LookCatalog"/>), in two columns: each with both
+    /// players wearing it, how it's had (cash, full job sheets, REMOVE ADS), BUY for one on sale,
+    /// and per player WEAR once owned; CREW puts the crew's own look back on. Opens from the skill
+    /// shop; Back (Esc / B) closes.</summary>
     public sealed class LooksView : MonoBehaviour
     {
-        private const float RowHeight = 90f;
+        // shortcut: two columns of five fit the panel; past ten looks this needs paging or a scroll list.
+        private const int RowsPerColumn = 5;
+        private const float RowHeight = 125f, ColumnX = 420f;
 
         private GameObject _previousSelection;
         private Action _unblock;
@@ -73,13 +77,12 @@ namespace Demolition.Meta
 
             int players = NetRole.IsOnline ? 1 : Mathf.Max(1, Session.PlayerCount);
             Button first = null;
-            float y = 300f;
-            foreach (LookInfo look in LookCatalog.All)
+            for (int i = 0; i < LookCatalog.All.Count; i++)
             {
-                Button button = Row(root, look, y, players);
+                var at = new Vector2((i / RowsPerColumn == 0 ? -1f : 1f) * ColumnX, 290f - i % RowsPerColumn * RowHeight);
+                Button button = Row(root, LookCatalog.All[i], at, players);
                 if (first == null && button != null)
                     first = button;
-                y -= RowHeight;
             }
             for (int p = 0; p < players; p++)
             {
@@ -97,18 +100,20 @@ namespace Demolition.Meta
                 EventSystem.current.SetSelectedGameObject(first.gameObject);
         }
 
-        private Button Row(RectTransform root, LookInfo look, float y, int players)
+        private Button Row(RectTransform root, LookInfo look, Vector2 at, int players)
         {
             var centre = new Vector2(0.5f, 0.5f);
-            TextMeshProUGUI name = UiFactory.Text(root, look.Id, centre, new Vector2(-300f, y + 16f), 34f, TextAlignmentOptions.Left, new Vector2(1000f, 44f));
+            for (int p = 0; p < 2; p++)
+                Preview(root, look, p, at + new Vector2(-355f + p * 80f, 0f));
+            TextMeshProUGUI name = UiFactory.Text(root, look.Id, centre, at + new Vector2(-52f, 18f), 32f, TextAlignmentOptions.Left, new Vector2(345f, 42f));
             name.text = look.Name;
-            TextMeshProUGUI how = UiFactory.Text(root, look.Id + " How", centre, new Vector2(-300f, y - 20f), 23f, TextAlignmentOptions.Left, new Vector2(1000f, 32f));
+            TextMeshProUGUI how = UiFactory.Text(root, look.Id + " How", centre, at + new Vector2(-52f, -20f), 22f, TextAlignmentOptions.Left, new Vector2(345f, 30f));
             how.color = new Color(0.8f, 0.8f, 0.8f);
             how.text = look.Source == LookSource.Shop ? $"${look.Price:N0}"
-                : look.Source == LookSource.JobSheets ? $"FINISH EVERY JOB ON {look.Sheets} JOB SHEETS"
+                : look.Source == LookSource.JobSheets ? $"FULL JOB SHEETS {Mathf.Min(Profile.Data.FullSheets(), look.Sheets)}/{look.Sheets}"
                 : "COMES WITH REMOVE ADS";
 
-            Button buy = UiFactory.Button(root, "BUY", centre, new Vector2(470f + (players - 1) * 95f, y), new Vector2(170f + (players - 1) * 190f, 68f), () =>
+            Button buy = UiFactory.Button(root, "BUY", centre, at + new Vector2(265f, 0f), new Vector2(270f, 64f), () =>
             {
                 if (LookCatalog.TryBuy(Profile.Data, look))
                 {
@@ -117,24 +122,43 @@ namespace Demolition.Meta
                 }
             });
             var wears = new List<Button>();
+            float width = players > 1 ? 130f : 270f;
             for (int p = 0; p < players; p++)
             {
                 int player = p;
-                Button wear = UiFactory.Button(root, "P" + (p + 1), centre, new Vector2(470f + p * 190f, y), new Vector2(170f, 68f), () => Wear(player, look));
+                Button wear = UiFactory.Button(root, "P" + (p + 1), centre, at + new Vector2(130f + width / 2f + p * 140f, 0f), new Vector2(width, 64f), () => Wear(player, look));
                 wears.Add(wear);
-                _refresh.Add(() => UiFactory.Label(wear, LookCatalog.Worn(Profile.Data, player) == look ? $"> P{player + 1} <" : $"P{player + 1}", 34f));
+                _refresh.Add(() => UiFactory.Label(wear, LookCatalog.Worn(Profile.Data, player) == look ? $"> P{player + 1} <" : $"P{player + 1}", 26f));
             }
             _refresh.Add(() =>
             {
                 bool owned = LookCatalog.Owns(Profile.Data, look);
                 buy.gameObject.SetActive(!owned && look.Source == LookSource.Shop);
                 buy.interactable = Profile.Data.cash >= look.Price;
-                UiFactory.Label(buy, $"${look.Price:N0}", 30f);
+                UiFactory.Label(buy, $"BUY ${look.Price:N0}", 28f);
                 foreach (Button wear in wears)
                     wear.gameObject.SetActive(owned);
             });
             bool owns = LookCatalog.Owns(Profile.Data, look);
             return owns ? wears[0] : look.Source == LookSource.Shop ? buy : null; // null: nothing to press yet
+        }
+
+        /// <summary>Player <paramref name="player"/> standing in the look: their idle frame, recoloured.</summary>
+        private static void Preview(RectTransform root, LookInfo look, int player, Vector2 at)
+        {
+            GameObject[] prefabs = GameConfig.Instance != null ? GameConfig.Instance.playerPrefabs : null;
+            SpriteRenderer source = prefabs != null && player < prefabs.Length && prefabs[player] != null
+                ? prefabs[player].GetComponentInChildren<SpriteRenderer>(true) : null;
+            if (source == null || source.sprite == null)
+                return;
+            Sprite idle = source.sprite;
+            RectTransform rt = UiFactory.Rect(root, look.Id + " P" + (player + 1), new Vector2(0.5f, 0.5f), at, new Vector2(80f, 80f));
+            var image = rt.gameObject.AddComponent<RawImage>();
+            image.raycastTarget = false;
+            image.texture = LookSkin.Recoloured(idle.texture, look, player == 1);
+            // The frame is two cells wide with the player in the left one (the pivot): show that cell.
+            Rect cell = idle.rect;
+            image.uvRect = new Rect(cell.x / image.texture.width, cell.y / image.texture.height, cell.height / image.texture.width, cell.height / image.texture.height);
         }
 
         private void Wear(int player, LookInfo look)

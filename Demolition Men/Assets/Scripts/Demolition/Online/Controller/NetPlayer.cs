@@ -1,3 +1,4 @@
+using Demolition.Meta;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -6,9 +7,9 @@ namespace Demolition.Online
     /// <summary>
     /// Online part of a player (on the NetPlayer_1/2 prefabs, next to <c>NetworkObject</c> and
     /// an owner-authority <c>NetworkTransform</c>). The owner's device plays it as usual and
-    /// publishes its pose and health as a byte each, and its weapon, hits and dynamite; on the
-    /// other device it is a proxy (<see cref="PlayerHealth.MakeProxy"/>) whose animator, health
-    /// bar and HUD line follow those.
+    /// publishes its pose and health as a byte each, its weapon, hits and dynamite, and its look; on
+    /// the other device it is a proxy (<see cref="PlayerHealth.MakeProxy"/>) whose animator, health
+    /// bar, HUD line and look follow those.
     /// Both devices name it Player_1 (the host's) or Player_2, which the run looks for.
     /// </summary>
     public sealed class NetPlayer : NetworkBehaviour
@@ -22,6 +23,8 @@ namespace Demolition.Online
         private readonly NetworkVariable<byte> _pose = new NetworkVariable<byte>(writePerm: NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<byte> _health = new NetworkVariable<byte>(255, writePerm: NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<int> _kit = new NetworkVariable<int>(writePerm: NetworkVariableWritePermission.Owner);
+        /// <summary>Its place in <see cref="LookCatalog.All"/> + 1; 0 the crew's own (both devices run the same version).</summary>
+        private readonly NetworkVariable<byte> _look = new NetworkVariable<byte>(writePerm: NetworkVariableWritePermission.Owner);
 
         private PlayerHealth _playerHealth;
         private PlayerCombat _combat;
@@ -67,6 +70,7 @@ namespace Demolition.Online
             _pose.Value = NetPacking.PackPose(_sprite == null || !_sprite.flipX, grounded, punch || axe || wreck, weapon);
             _health.Value = (byte)Mathf.RoundToInt(255f * Mathf.Clamp01(_playerHealth.Current / _playerHealth.Max));
             _kit.Value = NetPacking.PackKit((int)_combat.Weapon, _combat.WeaponUses, _combat.DynamiteCount, _combat.WeaponHits);
+            _look.Value = (byte)(TryGetComponent(out LookSkin skin) ? LookCatalog.IndexOf(skin.Look) + 1 : 0);
         }
 
         private void Follow()
@@ -87,6 +91,8 @@ namespace Demolition.Online
             _playerHealth.SetProxyHealth(_health.Value / 255f * _playerHealth.Max);
             NetPacking.UnpackKit(_kit.Value, out int kitWeapon, out int uses, out int dynamite, out int weaponHits);
             _combat.ShowKit((WeaponType)kitWeapon, uses, dynamite, weaponHits);
+            int look = _look.Value - 1;
+            LookSkin.Dress(gameObject, look >= 0 && look < LookCatalog.All.Count ? LookCatalog.All[look] : null);
         }
     }
 }

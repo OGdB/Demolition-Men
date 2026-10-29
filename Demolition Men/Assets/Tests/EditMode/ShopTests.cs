@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Demolition.Actions;
 using Demolition.Meta;
 using Demolition.Run;
@@ -66,6 +68,56 @@ namespace Demolition.Tests
 
             Assert.IsTrue(LookCatalog.Wear(save, 1, null));
             Assert.IsNull(LookCatalog.Worn(save, 1, catalog));
+        }
+
+        [Test]
+        public void LookCatalog_LoadsEveryLook_EachHadOneWay_AndRecolouringSomething()
+        {
+            LookCatalog.Load(File.ReadAllText("Assets/Resources/Looks.json"));
+            Assert.GreaterOrEqual(LookCatalog.All.Count, 1);
+            var ids = new HashSet<string>();
+            int supporters = 0;
+            foreach (LookInfo look in LookCatalog.All)
+            {
+                Assert.IsTrue(ids.Add(look.Id), "one id each: " + look.Id);
+                Assert.IsFalse(string.IsNullOrEmpty(look.Name), look.Id);
+                if (look.Source == LookSource.Shop)
+                    Assert.Greater(look.Price, 0, look.Id);
+                if (look.Source == LookSource.JobSheets)
+                    Assert.Greater(look.Sheets, 0, look.Id);
+                if (look.Source == LookSource.Supporter)
+                    supporters++;
+                Assert.Greater(LookPalette.Map(look, false).Count, 0, look.Id + " changes nothing on P1");
+                Assert.Greater(LookPalette.Map(look, true).Count, 0, look.Id + " changes nothing on P2");
+                Assert.AreEqual(look, LookCatalog.All[LookCatalog.IndexOf(look)]);
+            }
+            Assert.AreEqual(1, supporters, "REMOVE ADS comes with one look");
+            Assert.AreEqual(-1, LookCatalog.IndexOf(null), "the crew's own is sent as none");
+
+            Assert.Throws<FormatException>(() => LookCatalog.Load("{\"looks\":[{\"id\":\"x\",\"source\":\"Gift\"}]}"));
+        }
+
+        [Test]
+        public void LookPalette_RecoloursClothesAndSign_NeverSkinOrWeapons()
+        {
+            var look = new LookInfo { Id = "test", Trousers = 0x3A5C9E, Sign = 0x808080 };
+            Dictionary<int, int> p1 = LookPalette.Map(look, false);
+            Assert.AreEqual(0x3A5C9E, p1[0x222034], "P1's trousers");
+            Assert.AreEqual(0x808080, p1[0xFFE08B], "P1's sign");
+            Assert.AreEqual(0xACACAC, p1[0xFFECA4], "the sign's highlight a little lighter");
+            Assert.IsFalse(p1.ContainsKey(0x663931), "shoes kept");
+            Assert.AreEqual(0x3A5C9E, LookPalette.Map(look, true)[0xE1BB7A], "P2's trousers");
+            Assert.AreEqual(0, LookPalette.Map(null, false).Count, "the crew's own look");
+
+            int[] untouched =
+            {
+                0xEEC39A, 0xD9A066, 0xCDA681, 0xB36442, 0x7D450C, 0x985527, // skin, both players
+                0x696A6A, 0x869F9F, 0x505757, 0xAC3232, 0xDF7D7D, 0xC4721F, 0xDFDDDB, 0xF1F1F1, 0xE0F6F6, // weapons
+            };
+            var all = new LookInfo { Trousers = 1, Shoes = 1, Sign = 1, SignShade = 1 };
+            foreach (bool player2 in new[] { false, true })
+                foreach (int colour in untouched)
+                    Assert.IsFalse(LookPalette.Map(all, player2).ContainsKey(colour), colour.ToString("X6"));
         }
     }
 }

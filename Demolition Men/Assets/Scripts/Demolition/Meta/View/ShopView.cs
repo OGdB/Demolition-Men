@@ -92,10 +92,8 @@ namespace Demolition.Meta
             var row = new List<Button>
             {
                 UiFactory.Button(root, "ACTIONS", centre, Vector2.zero, new Vector2(360f, 90f), () => Actions.ActionsView.Open(transform, Refresh)),
+                UiFactory.Button(root, "LOOKS", centre, Vector2.zero, new Vector2(360f, 90f), () => LooksView.Open(transform, Refresh)),
             };
-            // Looks arrive with the art pipeline; until then only development builds show the (empty) list.
-            if (LookCatalog.All.Count > 0 || Debug.isDebugBuild)
-                row.Add(UiFactory.Button(root, "LOOKS", centre, Vector2.zero, new Vector2(360f, 90f), () => LooksView.Open(transform, Refresh)));
             if (Ads.Purchases.CanBuyRemoveAds)
                 row.Add(RemoveAds(root));
             row.Add(UiFactory.Button(root, "BACK", centre, Vector2.zero, new Vector2(360f, 90f), Close));

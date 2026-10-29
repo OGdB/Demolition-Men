@@ -31,6 +31,9 @@ namespace Demolition.Meta
                 Screen.orientation = ScreenOrientation.AutoRotation;
             }
 
+            TextAsset looks = Resources.Load<TextAsset>("Looks");
+            LookCatalog.Load(looks != null ? looks.text : null);
+
             Profile.SettingsChanged -= Apply;
             Profile.SettingsChanged += Apply;
             SceneManager.sceneLoaded -= OnSceneLoaded;
