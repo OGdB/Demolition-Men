@@ -16,9 +16,9 @@ namespace Demolition.Meta
     /// shop; Back (Esc / B) closes.</summary>
     public sealed class LooksView : MonoBehaviour
     {
-        // shortcut: two columns of five fit the panel; past ten looks this needs paging or a scroll list.
-        private const int RowsPerColumn = 5;
-        private const float RowHeight = 125f, ColumnX = 420f;
+        // shortcut: two columns of seven fit the panel; past fourteen looks this needs paging or a scroll list.
+        private const int RowsPerColumn = 7;
+        private const float RowHeight = 92f, ColumnX = 420f;
 
         private GameObject _previousSelection;
         private Action _unblock;
@@ -79,7 +79,7 @@ namespace Demolition.Meta
             Button first = null;
             for (int i = 0; i < LookCatalog.All.Count; i++)
             {
-                var at = new Vector2((i / RowsPerColumn == 0 ? -1f : 1f) * ColumnX, 290f - i % RowsPerColumn * RowHeight);
+                var at = new Vector2((i / RowsPerColumn == 0 ? -1f : 1f) * ColumnX, 300f - i % RowsPerColumn * RowHeight);
                 Button button = Row(root, LookCatalog.All[i], at, players);
                 if (first == null && button != null)
                     first = button;

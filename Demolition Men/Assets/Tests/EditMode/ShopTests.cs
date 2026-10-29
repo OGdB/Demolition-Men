@@ -119,5 +119,47 @@ namespace Demolition.Tests
                 foreach (int colour in untouched)
                     Assert.IsFalse(LookPalette.Map(all, player2).ContainsKey(colour), colour.ToString("X6"));
         }
+
+        [Test]
+        public void LookExtras_ColourOnlyThePartsWorn_MetalShaded()
+        {
+            var bling = new LookInfo { Chain = 0xF2C230, ArmTattoo = 0xC8283C };
+            Dictionary<int, int> extras = LookPalette.Extras(bling);
+            Assert.AreEqual(0xF2C230, extras[LookPalette.ChainKey]);
+            Assert.AreEqual(0xA98822, extras[LookPalette.ChainShadeKey], "the links' shade: 30% darker");
+            Assert.AreEqual(0xC8283C, extras[LookPalette.ArmTattooKey]);
+            Assert.IsFalse(extras.ContainsKey(LookPalette.BraceletKey), "no bracelets");
+            Assert.IsFalse(extras.ContainsKey(LookPalette.ChestTattooKey), "no chest piece");
+            Assert.IsFalse(extras.ContainsKey(LookPalette.KeepKey), "what's kept is never coloured");
+            Assert.AreEqual(0, LookPalette.Extras(new LookInfo()).Count);
+        }
+
+        // Width and height from a PNG's header.
+        private static (int, int) PngSize(string path)
+        {
+            byte[] b = File.ReadAllBytes(path);
+            return (b[16] << 24 | b[17] << 16 | b[18] << 8 | b[19], b[20] << 24 | b[21] << 16 | b[22] << 8 | b[23]);
+        }
+
+        [Test]
+        public void LookOverlays_EveryFrameHasOne_OfItsSize_Readable()
+        {
+            var frames = new List<(string frame, string overlay)>
+            {
+                ("Assets/Animations/Player_1/+Demolition_man.png", "Assets/Resources/LookOverlays/P1/+Demolition_man.png"),
+                ("Assets/Animations/Player_2/+Demolition_man_Stop_V2.png", "Assets/Resources/LookOverlays/P2/+Demolition_man_Stop_V2.png"),
+            };
+            foreach (string player in new[] { "P1", "P2" })
+                foreach (string path in Directory.GetFiles("Assets/Resources/Actions/" + player, "*.png"))
+                    frames.Add((path, $"Assets/Resources/LookOverlays/{player}/{Path.GetFileName(path)}"));
+            Assert.Greater(frames.Count, 40);
+            foreach ((string frame, string overlay) in frames)
+            {
+                Assert.IsTrue(File.Exists(overlay), "no overlay: run tools/artpipe/accessories.py for " + frame);
+                Assert.AreEqual(PngSize(frame), PngSize(overlay), overlay);
+                StringAssert.Contains("isReadable: 1", File.ReadAllText(overlay + ".meta"), overlay);
+                StringAssert.Contains("isReadable: 1", File.ReadAllText(frame + ".meta"), frame);
+            }
+        }
     }
 }

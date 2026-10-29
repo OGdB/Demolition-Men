@@ -5,9 +5,10 @@ namespace Demolition.Meta
 {
     /// <summary>
     /// A player's look (<see cref="LookCatalog"/>) on screen: once the animator or an action has
-    /// picked this frame's sprite, it swaps in the same frame recoloured by <see cref="LookPalette"/>.
-    /// Each sheet is recoloured once per look and kept, so the sheets must be readable (Read/Write
-    /// on the player sheets and <c>Resources/Actions</c>).
+    /// picked this frame's sprite, it swaps in the same frame recoloured by <see cref="LookPalette"/>,
+    /// with the chain, bracelets and tattoos the look wears from the sheet's overlay
+    /// (<c>Resources/LookOverlays/P1|P2/&lt;sheet&gt;</c>, tools/artpipe/accessories.py). Each sheet is
+    /// made once per look and kept, so the sheets and overlays must be readable (Read/Write).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LookSkin : MonoBehaviour
@@ -78,11 +79,23 @@ namespace Demolition.Meta
             if (source.isReadable)
             {
                 Dictionary<int, int> map = LookPalette.Map(look, player2);
+                Dictionary<int, int> extras = LookPalette.Extras(look);
+                Texture2D overlay = Resources.Load<Texture2D>($"LookOverlays/{(player2 ? "P2" : "P1")}/{source.name}");
+                Color32[] keys = overlay != null && overlay.isReadable && overlay.width == source.width && overlay.height == source.height
+                    ? overlay.GetPixels32() : null;
+                if (keys == null && extras.Count > 0)
+                    Debug.LogWarning($"[Looks] no readable overlay of {source.name}'s size for {look.Id}: run tools/artpipe/accessories.py");
+                if (overlay != null)
+                    Resources.UnloadAsset(overlay);
+
                 Color32[] pixels = source.GetPixels32();
                 for (int i = 0; i < pixels.Length; i++)
                 {
                     Color32 p = pixels[i];
-                    if (p.a != 0 && map.TryGetValue(p.r << 16 | p.g << 8 | p.b, out int to))
+                    int key = keys != null && keys[i].a != 0 ? keys[i].r << 16 | keys[i].g << 8 | keys[i].b : -1;
+                    if (p.a == 0 || key == LookPalette.KeepKey)
+                        continue;
+                    if (extras.TryGetValue(key, out int to) || map.TryGetValue(p.r << 16 | p.g << 8 | p.b, out to))
                         pixels[i] = new Color32((byte)(to >> 16), (byte)(to >> 8), (byte)to, p.a);
                 }
                 sheet = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false)

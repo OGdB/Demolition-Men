@@ -9,7 +9,8 @@ namespace Demolition.Meta
     public enum LookSource { Shop, JobSheets, Supporter }
 
     /// <summary>A look for the crew: looks only, never stronger (roadmap v1.2, Cosmetics shop). It
-    /// recolours the trousers, shoes and sign (<see cref="LookPalette"/>).</summary>
+    /// recolours the trousers, shoes and sign (<see cref="LookPalette"/>) and can add a chain,
+    /// bracelets and tattoos (<see cref="LookPalette.Extras"/>).</summary>
     public sealed class LookInfo
     {
         /// <summary>Save id.</summary>
@@ -22,6 +23,8 @@ namespace Demolition.Meta
         public int Sheets;
         /// <summary>The colours it puts on, 0xRRGGBB; <see cref="Keep"/> leaves that part as the crew wears it.</summary>
         public int Trousers = Keep, Shoes = Keep, Sign = Keep, SignShade = Keep;
+        /// <summary>What it adds, in these colours (0xRRGGBB); <see cref="Keep"/> for none.</summary>
+        public int Chain = Keep, Bracelets = Keep, ChestTattoo = Keep, ArmTattoo = Keep;
 
         public const int Keep = -1;
     }
@@ -48,6 +51,36 @@ namespace Demolition.Meta
             return map;
         }
 
+        // The overlays' key colours (tools/artpipe/accessories.py KEYS): what each pixel is part of.
+        public const int ChainKey = 0xFF0000, ChainShadeKey = 0x800000, BraceletKey = 0x00FF00, BraceletShadeKey = 0x008000;
+        public const int ChestTattooKey = 0x0000FF, ArmTattooKey = 0xFF00FF;
+        /// <summary>What no look recolours: Player 1's radio, drawn in its trousers' colour.</summary>
+        public const int KeepKey = 0x010101;
+
+        /// <summary>Overlay key colour to what the look puts there (Resources/LookOverlays, drawn by
+        /// tools/artpipe/accessories.py); a part it doesn't wear isn't in it. Metal gets a darker shade.</summary>
+        public static Dictionary<int, int> Extras(LookInfo look)
+        {
+            var map = new Dictionary<int, int>();
+            if (look == null)
+                return map;
+            if (look.Chain != LookInfo.Keep)
+            {
+                map[ChainKey] = look.Chain;
+                map[ChainShadeKey] = Darken(look.Chain, 0.3f);
+            }
+            if (look.Bracelets != LookInfo.Keep)
+            {
+                map[BraceletKey] = look.Bracelets;
+                map[BraceletShadeKey] = Darken(look.Bracelets, 0.3f);
+            }
+            if (look.ChestTattoo != LookInfo.Keep)
+                map[ChestTattooKey] = look.ChestTattoo;
+            if (look.ArmTattoo != LookInfo.Keep)
+                map[ArmTattooKey] = look.ArmTattoo;
+            return map;
+        }
+
         private static void Add(Dictionary<int, int> map, int[] from, int to, bool highlight)
         {
             if (to == LookInfo.Keep)
@@ -56,13 +89,17 @@ namespace Demolition.Meta
                 map[from[i]] = highlight && i > 0 ? Lighten(to, 0.35f) : to;
         }
 
-        private static int Lighten(int rgb, float t)
+        private static int Lighten(int rgb, float t) => Mix(rgb, 255, t);
+
+        private static int Darken(int rgb, float t) => Mix(rgb, 0, t);
+
+        private static int Mix(int rgb, int towards, float t)
         {
             int result = 0;
             for (int shift = 16; shift >= 0; shift -= 8)
             {
                 int c = (rgb >> shift) & 0xFF;
-                result |= (int)Math.Round(c + (255 - c) * t) << shift;
+                result |= (int)Math.Round(c + (towards - c) * t) << shift;
             }
             return result;
         }
@@ -83,11 +120,11 @@ namespace Demolition.Meta
         [Serializable]
         private sealed class LookEntry
         {
-            public string id, name, source, trousers, shoes, sign, signShade;
+            public string id, name, source, trousers, shoes, sign, signShade, chain, bracelets, chestTattoo, armTattoo;
             public int price, sheets;
         }
 
-        /// <summary>Read the catalog from its JSON (colours as "RRGGBB", empty to keep the crew's).</summary>
+        /// <summary>Read the catalog from its JSON (colours as "RRGGBB", empty to keep the crew's or wear none).</summary>
         public static void Load(string json)
         {
             var looks = new List<LookInfo>();
@@ -100,6 +137,7 @@ namespace Demolition.Meta
                 {
                     Id = e.id, Name = e.name, Source = source, Price = e.price, Sheets = e.sheets,
                     Trousers = Colour(e.trousers), Shoes = Colour(e.shoes), Sign = Colour(e.sign), SignShade = Colour(e.signShade),
+                    Chain = Colour(e.chain), Bracelets = Colour(e.bracelets), ChestTattoo = Colour(e.chestTattoo), ArmTattoo = Colour(e.armTattoo),
                 });
             }
             All = looks;

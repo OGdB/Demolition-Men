@@ -458,20 +458,23 @@ select and ticked off on the results screen.
 #### Cosmetics shop (v1.2, M) — started 2026-10-27
 *As built:* actions cost cash (the burp free; prices are first guesses), `Meta/Model/Looks`
 (how a look is had, owning, wearing per player, saved), the LOOKS screen, the supporter's look
-tied to REMOVE ADS. Ten looks (2026-10-29) in `Resources/Looks.json`: seven for cash
-($1,500–6,000), FOREMAN for 4 full job sheets, SITE LEGEND for all 12, SUPPORTER with REMOVE
-ADS. Each is a palette swap of the trousers, shoes and sign. It is applied while the game runs
-(`Meta/View/LookSkin`), which recolours each sheet once per look on the CPU. This was chosen
-over a URP shader, so it works in either pipeline, and over baked sets, so there are no extra
-sprites. It covers the animator's sheets and every action frame. Online it goes in
-`NetPlayer`'s `_look`. `tools/artpipe/looks.py` draws them all to review. *Left:* looks with new
-shapes (hats, vests, outfits), which need drawn or generated frames for every pose; prices
-after the closed test; looks on the boards and ghosts (ranked K6).
+tied to REMOVE ADS. Thirteen looks (2026-10-29) in `Resources/Looks.json`: ten for cash
+($1,500–8,000), FOREMAN for 4 full job sheets, SITE LEGEND for all 12, SUPPORTER with REMOVE ADS.
+Each recolours the trousers, shoes and sign, and ten add something: a gold or silver chain,
+bracelets, an eagle tattoo on the chest, hearts on the arms (BIKER and SITE LEGEND wear the most).
+The recolouring is a palette swap applied while the game runs (`Meta/View/LookSkin`, once per
+look on the CPU), so it works in either pipeline and needs no extra sprite sets. It covers the
+animator's sheets and every action frame. The accessories are overlays drawn by
+`tools/artpipe/accessories.py` at spots set by hand per frame (`content-work/looks/anchors.json`).
+Online the look goes in `NetPlayer`'s `_look`. `tools/artpipe/looks.py` draws them all to
+review. *Left:* new shapes (hats, vests, outfits), which need drawn or generated frames for every
+pose; mixing parts (a chain with any outfit) instead of whole looks; prices after the closed
+test; looks on the boards and ghosts (ranked K6).
 
 A LOOKS tab in the shop next to the upgrades and ACTIONS. Looks only, never stronger, so
 online co-op and the stars stay fair.
-- Crew skins: palette swaps of the trousers, shoes and sign, for the animator's sprites
-  and every action frame (built: `LookSkin`, the sheets recoloured at run time).
+- Crew skins: palette swaps of the trousers, shoes and sign, with chains, bracelets and
+  tattoos, for the animator's sprites and every action frame (built: `LookSkin` and the overlays).
 - Effects: dust and debris colours, explosion styles, the look of the TNT.
 - Prices in cash; a few looks only from completed job sheets, and one exclusive skin in a
   **Supporter pack**: the v1.1 remove-ads purchase bundled with it.
