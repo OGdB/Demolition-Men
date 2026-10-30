@@ -292,14 +292,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scrollSpeed: 1.5
-  pushLine: 0.7
   playerHeight: 2.5
   marginAbove: 1
   marginBelow: 0.5
   marginX: 3
-  minZoom: 8
-  maxZoom: 30
-  zoomInSpeed: 3
-  zoomOutSpeed: 4.8
+  maxZoom: 3.33
+  zoomInSpeed: 0.35
+  zoomOutSpeed: 0.55
   verticalFollowSpeed: 2.5
   groundLookAhead: 4

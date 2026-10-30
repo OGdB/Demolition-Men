@@ -47,8 +47,8 @@ namespace Demolition.Run
         [SerializeField] private int rejoinPenalty = 500;
         [Tooltip("Where a rejoining player appears, relative to their partner.")]
         [SerializeField] private Vector2 rejoinOffset = new Vector2(-1.5f, 1f);
-        [Tooltip("How far below the bottom of the screen (viewport units) still counts as in bounds.")]
-        [SerializeField] private float bottomMargin = 0.1f;
+        [Tooltip("How far below the street, over a pit, still counts as in bounds (world units).")]
+        [SerializeField] private float bottomMargin = 1.6f;
         [SerializeField] private string menuScene = "MainMenu";
         [Tooltip("Scene the results screen's Next button loads; empty hides the button.")]
         [SerializeField] private string nextScene;
@@ -75,6 +75,8 @@ namespace Demolition.Run
         public IReadOnlyList<Player> Players => _players;
         public float ParTime => parTime;
         public Camera Camera => _camera != null ? _camera.Camera : null;
+        /// <summary>The left edge of play; null with no scrolling camera.</summary>
+        public ScrollEdge Edge => _camera != null ? _camera.Edge : null;
 
         /// <summary>Share of every building's cells destroyed or collapsed, 0..1. A streamed
         /// level counts the buildings it hasn't spawned yet too.</summary>
@@ -270,7 +272,7 @@ namespace Demolition.Run
             }
 
             if (_camera != null && finish != null)
-                _camera.StopX = finish.X;
+                _camera.Edge.FinishX = finish.X;
 
             if (!NetRole.IsClient)
                 State.Tick(Time.deltaTime);
@@ -278,11 +280,9 @@ namespace Demolition.Run
 
         private bool IsInBounds(Vector3 position)
         {
-            Camera cam = Camera;
-            if (cam == null)
+            if (_camera == null)
                 return true;
-            Vector3 vp = cam.WorldToViewportPoint(position);
-            return vp.x >= 0f && vp.y >= -bottomMargin;
+            return position.x >= _camera.Edge.Left && !_camera.IsBelowPlay(position, bottomMargin);
         }
 
         // Either local player zooms the shared camera; the other device's player zooms theirs.

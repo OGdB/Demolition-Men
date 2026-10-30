@@ -68,7 +68,7 @@ namespace Demolition.Levels
             {
                 _camera = Camera.main;
                 ScrollCamera scroll = _camera != null ? _camera.GetComponent<ScrollCamera>() : null;
-                _maxHalfWidth = scroll != null ? scroll.MaxZoom * _camera.aspect : 0f;
+                _maxHalfWidth = scroll != null ? scroll.MaxHalfWidth : 0f;
             }
             float left = 0f, right = float.MaxValue, behind = KeepBehind;
             if (_camera != null)

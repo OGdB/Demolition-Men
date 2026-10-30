@@ -7,6 +7,9 @@ namespace Demolition.Actions
     /// will land (picked by the deciding device), then the pallet from above the top of the screen.</summary>
     public sealed class CraneCall : MonoBehaviour
     {
+        // The same on every screen, as it decides when the pallet lands; above the top of the view at the usual zooms.
+        private const float DropHeight = 28f;
+
         public void Run(Vector2 pointedAt, Vector2 target, int who, bool authoritative, float delay) =>
             StartCoroutine(Calling(pointedAt, target, who, authoritative, delay));
 
@@ -15,16 +18,13 @@ namespace Demolition.Actions
 
         private IEnumerator Calling(Vector2 pointedAt, Vector2 target, int who, bool authoritative, float delay)
         {
-            Camera cam = Camera.main; // only how high it falls from, which is each screen's own
-            float top = cam != null && cam.orthographic ? cam.transform.position.y + cam.orthographicSize + 2f : pointedAt.y + 16f;
-            top = Mathf.Max(top, target.y + 8f);
             float end = Time.time + delay;
             while (Time.time < end)
             {
                 ActionStrikes.Ring(target + new Vector2(0f, 0.3f), 2f, new Color(1f, 0.25f, 0.2f, 0.9f), 0.25f);
                 yield return new WaitForSeconds(0.2f);
             }
-            CranePallet.Drop(new Vector2(pointedAt.x, top), who, authoritative);
+            CranePallet.Drop(new Vector2(pointedAt.x, target.y + DropHeight), who, authoritative);
             Destroy(gameObject);
         }
     }

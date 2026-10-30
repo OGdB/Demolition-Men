@@ -119,7 +119,7 @@ blocks.
 | Finishing too soon | The finish no sooner than running full speed from spawn to finish takes, and the pose there. |
 | A better time | The log's time is the finish's: it's what the board sorts ties by and shows. |
 | A log made up on the spot | A run can't be longer than the time since its attempt began (the game's clock only runs behind the real one). |
-| Dodging a penalty | A pose behind the camera past the out-of-bounds grace, or down a pit, without an **out** event. The view's width is the device's and isn't in the log, so the check takes the camera's left edge for the widest view there is (`RankedRules.WidestView`): it scrolls on from the first push, and stops short of the finish by that view's worth. |
+| Dodging a penalty | A pose behind the camera past the out-of-bounds grace, or down a pit, without an **out** event. The edge is the game's own `ScrollEdge`, run from the log's poses: it doesn't depend on the device's screen or zoom, so every player is held to the same line, and a wider screen has no more room behind it (roadmap D27). |
 | Extra dynamite | Throws only after dynamite pickups (positions in the layout; they fall straight down from there) were taken within reach; one stick out at a time. |
 | Free actions | The server keeps each player's `ActionMeter` from its own replay; an action starts only on a full meter, once at a time, and strikes within reach. |
 | Edited upgrades or actions | K-D2: the kit is the same for everyone. |

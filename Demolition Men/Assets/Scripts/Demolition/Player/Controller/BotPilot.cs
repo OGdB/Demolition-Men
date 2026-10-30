@@ -736,9 +736,9 @@ namespace Demolition
         private static float CameraLeft()
         {
             RunController run = RunController.Current;
-            if (run == null || run.IgnoreBounds || run.Camera == null)
+            if (run == null || run.IgnoreBounds || run.Edge == null)
                 return float.NegativeInfinity;
-            return run.Camera.ViewportToWorldPoint(Vector3.zero).x;
+            return run.Edge.Left;
         }
 
         // Solid ground rising in front of the feet (not a standing building: those get hit;

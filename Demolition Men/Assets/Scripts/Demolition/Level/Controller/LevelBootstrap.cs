@@ -107,10 +107,7 @@ namespace Demolition.Levels
             GameObject go = Instantiate(config.cameraPrefab);
             go.name = "Main Camera 1";
             var cam = go.GetComponent<Camera>();
-            float size = cam.orthographicSize;
-            // Placed before the scroll camera reads its floor: the street sits at the bottom.
-            float x = Mathf.Max(spawn.x + size * 0.6f, size * cam.aspect - 0.5f); // no void left of the level
-            go.transform.position = new Vector3(x, ground - GroundShown + size, -10f);
+            go.transform.position = new Vector3(0f, 0f, -10f);
             cam.backgroundColor = theme.sky;
             // The sky sprites riding on the camera: tinted for the shared backdrop, hidden when
             // the theme brings its own layers (painted against its flat sky colour).
@@ -124,7 +121,7 @@ namespace Demolition.Levels
             if (scroll != null)
             {
                 scroll.ScrollSpeed = spec.scrollSpeed;
-                scroll.ResetFloor();
+                scroll.Place(ScrollEdge.StartLeft(spawn.x), ground - GroundShown); // the street sits at the bottom
             }
             return scroll;
         }

@@ -130,6 +130,10 @@ As built, the named messages are `DM.Ready`, `DM.Cells`, `DM.Score`, `DM.Damage`
 The host caps a client's `DM.Damage` at 1000 per hit and always credits it to player 2.
 `DM.Score` follows the cells it scored, so the client's popup shows as the block goes.
 
+`DM.State` also carries the host's scroll edge (`ScrollEdge.Left`, 4 bytes). The client runs its
+own edge, so its view moves with its own player at once, catches up when the host's is ahead and
+waits when it is more than a unit past it (`ScrollEdge.Follow`).
+
 Each device streams level segments by its own camera, so a building can reach the client a
 moment after the host started damaging it: the client keeps the latest health of each cell of
 a building it hasn't loaded and applies it once the building has started. Pickups taken on
@@ -215,7 +219,9 @@ the client skips the validators.
     health variables, turns a non-owned player into a proxy and names both `Player_1` /
     `Player_2`.
 - Menu: `OnlineView` in `Scripts/Menu/View/`, built through `UiFactory`.
-- NativeWebSocket: installed by UPM git URL, pinned to commit `c612a4f` (2.0.7).
+- NativeWebSocket: installed by UPM git URL, pinned to commit `c612a4f` (2.0.7). In a WebGL build
+  its callbacks need `Assets/Plugins/WebGL/NativeWebSocketDynCalls.jspre` (upstream's own shim
+  doesn't take effect on this Unity).
 - The relay URL is `GameConfig.relayUrl` (`wss://relay.oeds.space/ws`; `ws://localhost:5080/ws`
   for a relay started with `dotnet run`).
 
@@ -341,7 +347,7 @@ Check both. 1 TB a month is about 30,000 match-hours.
 | D12 | Internet path | **Decided (2026-10-17):** a self-hosted WebSocket relay on the VPS. No paid services: there is no budget. WebSockets because WebGL can't use UDP. |
 | D13 | Rubble shared between devices? | No. Each device has its own rubble, so the other player can look like it stands on air or clips into rubble. Accepted. |
 | D14 | Who decides damage to a player | The player's own device, from the debris it sees. |
-| D15 | Out of bounds | The host decides with its own camera. Each device frames its own camera from both players, so the two views differ by about the latency; the 3 s grace absorbs that. Sync the camera only if playtests show it matters. |
+| D15 | Out of bounds | **Changed (2026-10-30):** the host decides against `ScrollEdge`, in world units, not with its own camera: screens of different shapes used to mean different edges. Both devices show the same 32 units from that edge (roadmap D27) and the client follows the host's in the snapshot, so the two views differ by about the latency; the 3 s grace absorbs that. |
 | D16 | Ads online | None while connected: an ad pauses the app, and a paused host times out the client. A due interstitial shows after the session ends. |
 | D17 | Pause online | **Changed (2026-10-22):** the host's pause freezes the run on both devices; only the host resumes it. A client's own pause is an overlay only; the run keeps going. |
 | D18 | When | O1 any time (offline, low risk). O2–O4 before the Android launch (roadmap R2, D4 since 2026-10-20); O5 only if playtests ask for it. |

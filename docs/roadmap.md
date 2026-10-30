@@ -125,11 +125,11 @@ The described game, playable start to finish with today's content. Code lives in
 - ✅ **Finish line** (`FinishLine` in `levelPart_End`). The run finishes when all living
   players have crossed; a 5-second "last call" starts when the first one crosses.
 - ✅ **Camera v2** (`ScrollCamera`, replaces `CameraMovement` + `cameraSpeed`)
-  - Out-of-bounds from the viewport: left of the screen (or below the bottom) starts a
-    **3-second countdown**, shown as the warning sign pinned to the left edge at the
-    player's height. Getting back in cancels it.
-  - The front player pushes the camera at 70% of the screen; the first push starts the
-    auto-scroll. Fixes the speed-up stacking bug.
+  - Out-of-bounds from `ScrollEdge`, in world units: left of the edge, which is the left of the
+    screen (or down a pit) starts a **3-second countdown**, shown as the warning sign pinned to
+    the left edge at the player's height. Getting back in cancels it.
+  - The front player pushes the edge at 70% of the view's 32 units (D27); the first push starts
+    the auto-scroll. Fixes the speed-up stacking bug.
   - Framing keeps the authored ground at the bottom and zooms out for jumps; a player below
     the ground (sewer) lowers the bottom edge. Explicit per-segment camera rails move to M3,
     where level specs can carry them.
@@ -700,6 +700,7 @@ pitch ─▶ Theme director ─▶ [gate] ─▶ Architect ─┐
 | D24 | Public trader details | Before declaring trader status (R4): which address and phone number may be shown on the store page. |
 | D25 | Game name | Search the Play Store and the EU/US trademark registers for the name before the listing goes up; renaming after marketing has started loses the audience built so far. A subtitle in the title helps search (e.g. "Demolition Men: Wreck Co-op"). |
 | D26 | Render pipeline | **Decided (2026-10-21):** URP with the 2D Renderer, before R1 profiling: 2D lights in the dark themes and bloom/vignette, with an EFFECTS setting for slow phones. Code in `Demolition.Lighting`; editor steps in `rendering.md`. |
+| D27 | Different screens, same rules | **Decided (2026-10-30):** the width of the world shown and the out-of-bounds edge are the same on every device (32 units across, `ScrollEdge`), with the height following the screen, so a wider screen no longer sees further or gets more room behind, on the ranked boards and online alike. Keeps the full screen decided on 2026-10-24 (R2): bars only past 2.4:1. What's left: a narrower screen sees more sky (4:3 about 24 units high, 20:9 about 14). |
 
 ---
 

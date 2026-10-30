@@ -9,7 +9,7 @@ namespace Demolition.Ranked
     /// </summary>
     public static class RankedRules
     {
-        public const int Version = 1;
+        public const int Version = 2;
 
         // ---------------- Players (Player_1.prefab: PlayerMotor, PlayerCombat; Run.prefab) ----------------
 
@@ -64,9 +64,7 @@ namespace Demolition.Ranked
 
         // ---------------- The camera (Main Camera 1.prefab: ScrollCamera; LevelBootstrap; Run.prefab) ----------------
 
-        public const float PushLine = 0.7f;
-        /// <summary>LevelBootstrap shows nothing left of the level: the view's left edge starts here or further along.</summary>
-        public const float CameraStartLeft = -0.5f;
+        // The edge itself is Run/Model/ScrollEdge, which the server runs too.
         public const float OutOfBoundsGrace = 3f;
 
         // ---------------- Slack (docs/ranked.md §4: set from honest logs) ----------------
@@ -93,12 +91,9 @@ namespace Demolition.Ranked
         public const float PickupReach = 2.5f;
         /// <summary>Crumble ticks are at least <see cref="CrumbleTick"/> apart; the log's clock rounds.</summary>
         public const float CrumbleTickSlack = 0.02f;
-        /// <summary>Half the view of the widest screen zoomed out over the tallest building: the camera's edge
-        /// is at least this much (times the push line's) behind the front player.</summary>
-        public const float WidestView = 45f;
-        /// <summary>How far past the camera's edge a player can stand while it shakes.</summary>
+        /// <summary>How far behind the scroll edge a sampled pose may be: the log has every tenth of a second, the game every frame.</summary>
         public const float CameraMargin = 2f;
-        /// <summary>The front player can push the camera slower than it scrolls by walking on the push line.</summary>
+        /// <summary>A partner falling down a pit stops pushing the edge in the game, and until their Out in the log.</summary>
         public const float CameraCoopMargin = 4f;
         /// <summary>Columns a jump off a roof carries a player, and how far over a jump a pile of debris can lift one.</summary>
         public const int JumpAcross = 8;

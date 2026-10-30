@@ -1031,18 +1031,15 @@ namespace Demolition.Ranked
             return float.IsInfinity(top) ? 0f : top;
         }
 
-        // ScrollCamera's left edge only moves right, at the scroll speed once pushed: nobody can stay
-        // behind it past the out-of-bounds grace without an Out event. The view's width is the device's and
-        // isn't in the log, so this takes the widest there is: the edge is at least this far along.
+        // The game's own scroll edge, run from the log's poses: nobody can stay behind it past the
+        // out-of-bounds grace without an Out event.
         private bool KeptUp()
         {
-            float behindFront = RankedRules.WidestView * 2f * RankedRules.PushLine;
-            float stop = _layout.FinishX - behindFront, left = RankedRules.CameraStartLeft;
+            var scroll = new ScrollEdge(ScrollEdge.StartLeft(_layout.SpawnX + 0.5f), _layout.Spec.scrollSpeed, _layout.FinishX);
             float margin = RankedRules.CameraMargin + (_crew.Length > 1 ? RankedRules.CameraCoopMargin : 0f);
             float allowed = RankedRules.OutOfBoundsGrace + 0.5f;
             int samples = Mathf.FloorToInt(_verdict.TimeMs / 1000f / RunLog.PoseInterval);
             var behind = new float[_crew.Length];
-            bool pushed = false;
             for (int i = 1; i <= samples; i++)
             {
                 float t = i * RunLog.PoseInterval;
@@ -1050,11 +1047,8 @@ namespace Demolition.Ranked
                 for (int p = 0; p < _crew.Length; p++)
                     if (i < _log.Poses[p].Count && !OutBetween(_crew[p], t, t))
                         front = Mathf.Max(front, _log.Poses[p][i].X);
-                pushed |= front >= left + behindFront;
-                if (pushed)
-                    left += _layout.Spec.scrollSpeed * RunLog.PoseInterval;
-                left = Mathf.Max(left, front - behindFront);
-                float edge = Mathf.Min(left, stop) - margin;
+                scroll.Tick(RunLog.PoseInterval, front);
+                float edge = scroll.Left - margin;
                 for (int p = 0; p < _crew.Length; p++)
                 {
                     if (i >= _log.Poses[p].Count || OutBetween(_crew[p], t - 0.5f, t + 0.5f) || _log.Poses[p][i].X >= edge - Slack(p) + RankedRules.PoseSlack)

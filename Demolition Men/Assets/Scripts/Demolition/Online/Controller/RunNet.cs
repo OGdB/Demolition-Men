@@ -25,7 +25,7 @@ namespace Demolition.Online
     /// <item>Actions (<c>DM.Act</c>, <see cref="ActionCall"/>): the host keeps both meters, lets
     /// actions start and strike, picks what a strike hits and sends it; the client says what its
     /// player carries, asks to start and says where it struck, and runs the host's strike as the show.</item>
-    /// <item>Run: the host's run state, score, demolition, pause, job-sheet tally and level hash at 10 Hz (<c>DM.State</c>),
+    /// <item>Run: the host's run state, score, demolition, pause, job-sheet tally, scroll edge and level hash at 10 Hz (<c>DM.State</c>),
     /// once the client says its Level scene is up (<c>DM.Ready</c>); in development builds a
     /// standing-cells hash per building every 5 s (<c>DM.Check</c>).</item>
     /// </list>
@@ -533,6 +533,7 @@ namespace Demolition.Online
                 writer.WriteValueSafe(run.Tally.Flags);
                 BytePacker.WriteValueBitPacked(writer, run.Tally.WeaponHits);
                 BytePacker.WriteValueBitPacked(writer, run.Tally.BiggestCollapse);
+                writer.WriteValueSafe(run.Edge != null ? run.Edge.Left : float.NegativeInfinity);
             });
         }
 
@@ -576,10 +577,12 @@ namespace Demolition.Online
             reader.ReadValueSafe(out byte tallyFlags);
             ByteUnpacker.ReadValueBitPacked(reader, out int weaponHits);
             ByteUnpacker.ReadValueBitPacked(reader, out int biggestCollapse);
+            reader.ReadValueSafe(out float edgeLeft);
 
             RunController run = RunController.Current;
             if (run == null)
                 return; // still waiting for the players
+            run.Edge?.Follow(edgeLeft);
             // Score, demolition and the job sheet's tally first: a phase change to Finished banks them.
             run.NetFraction = destroyed;
             run.Score.Restore(points, unattributed);

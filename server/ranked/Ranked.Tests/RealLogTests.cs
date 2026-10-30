@@ -5,6 +5,7 @@ using System.Linq;
 using Demolition.Actions;
 using Demolition.Levels;
 using Demolition.Ranked;
+using Demolition.Run;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -162,10 +163,10 @@ public sealed class RealLogTests
     private static bool Dawdle(RunLog log, LevelLayout level, float seconds, float share)
     {
         int ms = (int)(seconds * 1000f);
-        float pushed = RankedRules.CameraStartLeft + RankedRules.WidestView * 2f * RankedRules.PushLine + 2f;
-        float stop = level.FinishX - RankedRules.WidestView * 2f * RankedRules.PushLine - RankedRules.CameraMargin - RankedRules.CameraCoopMargin - 2f;
+        float pushed = ScrollEdge.StartLeft(level.SpawnX + 0.5f) + ScrollEdge.PushDistance + 2f;
+        float stop = level.FinishX - ScrollEdge.PushDistance - RankedRules.CameraMargin - RankedRules.CameraCoopMargin - 2f;
         if (stop <= pushed)
-            return false; // the whole level is within one wide screen
+            return false; // the whole level is within one screen
         float x = pushed + (stop - pushed) * share;
         int sample = log.Poses[0].FindIndex(p => p.X >= x);
         if (sample < 0 || sample * 100 >= log.TimeMs || log.Poses[0][sample].X >= stop)

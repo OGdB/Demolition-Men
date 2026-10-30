@@ -59,7 +59,7 @@ MonoBehaviour:
   parTime: 150
   rejoinPenalty: 500
   rejoinOffset: {x: -1.5, y: 1}
-  bottomMargin: 0.1
+  bottomMargin: 1.6
   menuScene: MainMenu
   nextScene: 
 --- !u!114 &2317896951977597424

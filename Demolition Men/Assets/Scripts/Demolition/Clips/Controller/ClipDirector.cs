@@ -279,11 +279,7 @@ namespace Demolition.Clips
                 {
                     // Start the run camera at the shot's building instead of the spawn, already
                     // scrolling, as it would be by then in a run.
-                    float half = _camera.orthographicSize * _camera.aspect;
-                    Vector3 pos = _camera.transform.position;
-                    _camera.transform.position = new Vector3(start + half * 0.6f, pos.y, pos.z);
-                    _scroll.ResetFloor();
-                    _scroll.Pushed = true;
+                    _scroll.PlaceScrolling(start - ScrollEdge.ViewWidth * 0.2f);
                 }
             }
             else

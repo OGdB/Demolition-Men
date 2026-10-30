@@ -717,6 +717,23 @@ namespace Demolition.Tests
             AssertFails(coop, "behind the camera"); // the wait came first: too late for the Out
         }
 
+        // The edge is the game's own, with no allowance for the widest screen there is.
+        [Test]
+        public void TheEdge_IsExact_HoweverWideTheScreen()
+        {
+            float push = ScrollEdge.PushDistance + RankedRules.CameraMargin;
+            float reaches = push / 2f + RankedRules.OutOfBoundsGrace + 0.5f; // long street: 2 units/s
+
+            var waits = new Script(LongStreet()).Walk(100f, speed: 7.5f).Wait(reaches - 2f).Walk(301f, speed: 7.5f);
+            waits.Finish();
+            Verdict verdict = Verify(waits);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+
+            var tooLong = new Script(LongStreet()).Walk(100f, speed: 7.5f).Wait(reaches + 3f).Walk(301f, speed: 7.5f);
+            tooLong.Finish();
+            AssertFails(tooLong, "behind the camera");
+        }
+
         [Test]
         public void AnotherLevel_OrOtherRules_Fail()
         {
