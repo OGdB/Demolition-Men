@@ -12,7 +12,7 @@ namespace Demolition.Run
     /// top corner (P2 mirrored: their colour's crew tag and the score, a slot for the weapon in
     /// hand with its hits left and one for the TNT with its button; a free life under it),
     /// the 3-2-1 countdown, the last call, messages, the tutorial's signs (<see cref="TutorialSigns"/>),
-    /// out-of-bounds warnings pinned to the left edge, health bars, pickup toasts above the
+    /// out-of-bounds warnings pinned to the edge the player left by, health bars, pickup toasts above the
     /// players and floating score popups.
     /// Reads <see cref="RunController"/>; changes nothing.
     /// </summary>
@@ -80,12 +80,14 @@ namespace Demolition.Run
         private const float SlotSize = 56f;
         private const float TntSlotX = 140f; // from the panel's outer edge, like every x in it
         private const int LowHits = 3; // hits left at which the weapon's count turns red
+        private const float WarningSize = 110f;
+        private const float WarningInset = 20f; // from the screen's edge
         private static readonly Color PlateTint = new Color(0.15f, 0.16f, 0.19f, 0.88f);
         // Light steel: the icons' dark outlines and the wooden handles read against it.
         private static readonly Color SlotTint = new Color(0.56f, 0.6f, 0.65f, 1f);
         private static readonly Color LifeColor = new Color(0.55f, 0.95f, 0.45f);
 
-        [Tooltip("Shown at the left edge while a player is out of bounds.")]
+        [Tooltip("Shown at the screen's edge while a player is out of bounds.")]
         [SerializeField] private Sprite warningSign;
         [SerializeField] private Sprite axeIcon;
         [SerializeField] private Sprite wreckingBallIcon;
@@ -269,8 +271,8 @@ namespace Demolition.Run
                 left ? TextAlignmentOptions.Left : TextAlignmentOptions.Right, new Vector2(200f, 36f), outlined: true);
             panel.Life.color = LifeColor;
 
-            panel.Warning = UiFactory.Rect(_root, id + " Warning", new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(110f, 110f));
-            Image sign = UiFactory.Image(panel.Warning, "Sign", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 110f),
+            panel.Warning = UiFactory.Rect(_root, id + " Warning", new Vector2(0f, 0.5f), new Vector2(WarningInset, 0f), new Vector2(WarningSize, WarningSize));
+            Image sign = UiFactory.Image(panel.Warning, "Sign", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(WarningSize, WarningSize),
                 warningSign != null ? Color.white : new Color(1f, 0.8f, 0.1f));
             sign.sprite = warningSign;
             sign.preserveAspect = true;
@@ -430,10 +432,14 @@ namespace Demolition.Run
             {
                 panel.WarningCount.text = Mathf.CeilToInt(oob).ToString();
                 Vector2 local = ToCanvas(player.Transform.position + Vector3.up);
+                // On the edge the player left by: the left one at their height, the bottom one
+                // under them (down a pit), the corner for both.
+                float width = _root.rect.width;
+                float x = Mathf.Clamp(local.x + width * 0.5f - WarningSize * 0.5f, WarningInset, Mathf.Max(WarningInset, width - WarningSize - WarningInset));
                 float half = _root.rect.height * 0.5f;
                 float below = Mathf.Max(0f, half - 110f); // sign and count stay on screen
                 float above = half - (PanelMargin + PanelSize.y + 90f); // and under P1's panel
-                panel.Warning.anchoredPosition = new Vector2(20f, Mathf.Clamp(local.y, -below, Mathf.Max(-below, above)));
+                panel.Warning.anchoredPosition = new Vector2(x, Mathf.Clamp(local.y, -below, Mathf.Max(-below, above)));
             }
         }
 
