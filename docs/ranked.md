@@ -1,7 +1,7 @@
 # Ranked dailies and fair scores
 
-**Status (2026-10-28):** K1–K5 built; the game side has not run in Unity yet, the server is not
-deployed yet.
+**Status (2026-10-30):** K1–K5 built; `RankedBotTests` passes in Unity (the bot's logs on every
+level); the server runs at `ranked.oeds.space`.
 - **Models** (`Ranked/Model/`, EditMode tests): the run log (`RunLog`), its seal (`Seal`), the
   numbers it's checked with (`RankedRules`), the referee (`RunVerifier`), the day's pick
   (`RankedDay.Pick`), names (`PlayerName`), the server's messages (`RankedApi`).
@@ -17,7 +17,7 @@ deployed yet.
   print the verifier's verdict at the end of every ranked run.
 - **The server** (`server/ranked`, `dotnet test`, its README): attempts, sealed submits replayed by
   `RunVerifier`, the boards, ghosts, reports, holds, admin review, daily backups, 180 days kept.
-- **Left:** run `RankedBotTests` (PlayMode); DNS and the first deploy; the privacy policy (updated
+- **Left:** a ranked run from a phone and a browser; the privacy policy (updated
   in `server/relay/Relay/wwwroot/privacy.html`, live once the relay is deployed again) and Play's
   data safety form (§8); a few weeks with rejections only recorded, reading `/admin/runs`, then
   `Ranked__HideRejected=true`; K6.
@@ -116,7 +116,7 @@ blocks.
 | Teleporting, flying, a speed hack | The pose track against the run speed (with the coffee), the jump (`JumpProfile`, as `TraversalValidator` uses it: no rising longer than a jump lasts), knockback only after a blast nearby; never inside a standing block. |
 | Finishing too soon | The finish no sooner than running full speed from spawn to finish takes, and the pose there. |
 | Dodging a penalty | A pose behind the camera's slowest scroll, or down a pit, without an **out** event. |
-| Extra dynamite | Throws only after dynamite pickups (positions in the layout) were taken within reach; one stick out at a time. |
+| Extra dynamite | Throws only after dynamite pickups (positions in the layout; they fall straight down from there) were taken within reach; one stick out at a time. |
 | Free actions | The server keeps each player's `ActionMeter` from its own replay; an action starts only on a full meter, once at a time, and strikes within reach. |
 | Edited upgrades or actions | K-D2: the kit is the same for everyone. |
 | Replaying or editing a captured log | §5: sealed with this attempt's key. |
