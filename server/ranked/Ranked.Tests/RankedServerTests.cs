@@ -121,7 +121,14 @@ public sealed class RankedServerTests : IDisposable
         return log;
     }
 
-    private async Task<HttpResponseMessage> Submit(StartResponse start, RunLog log) =>
+    // The run takes its time: the server knows when the attempt began.
+    private async Task<HttpResponseMessage> Submit(StartResponse start, RunLog log)
+    {
+        _clock.Now = _clock.Now.AddMilliseconds(log.TimeMs);
+        return await SubmitNow(start, log);
+    }
+
+    private async Task<HttpResponseMessage> SubmitNow(StartResponse start, RunLog log) =>
         await Post("/submit", new SubmitRequest { attempt = start.attempt, log = Convert.ToBase64String(Seal.Close(log.Encode(), Convert.FromBase64String(start.key))) });
 
     private async Task<Board> Board(int viewer = 0, string mode = RankedApi.Solo) =>
@@ -305,6 +312,63 @@ public sealed class RankedServerTests : IDisposable
         Assert.Equal("HOST", board.entries[0].name);
         Assert.Equal("GUEST", board.entries[0].partner);
         Assert.Empty((await Board()).entries);
+    }
+
+    [Fact]
+    public async Task ARunLongerThanItsAttempt_IsTurnedDown()
+    {
+        StartResponse start = await Start(1);
+        await SubmitNow(start, Walk(start)); // a log made up on the spot: no time passed for the run it tells of
+        Assert.Contains("a run longer than the time", await (await AdminGet("/admin/runs")).Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task AnotherPlayersLog_SentAgain_IsTurnedDown()
+    {
+        StartResponse first = await Start(1);
+        RunLog log = Walk(first);
+        await Submit(first, log);
+        StartResponse thief = await Start(2, "THIEF");
+        await Submit(thief, log);
+        string review = await (await AdminGet("/admin/runs")).Content.ReadAsStringAsync();
+        Assert.Contains("a copy of a run", review);
+    }
+
+    [Fact]
+    public async Task AHiddenPlayer_IsHidden_AlsoWhileRejectionsAreOnlyRecorded()
+    {
+        StartResponse start = await Start(1, "SOMEONE");
+        await Submit(start, Walk(start));
+        Assert.Single((await Board()).entries);
+        Assert.Equal(HttpStatusCode.NoContent, (await AdminPost($"/admin/players/{Player(1)}/hide")).StatusCode);
+        Assert.Empty((await Board()).entries);
+        Assert.Single((await Board(viewer: 1)).entries);
+    }
+
+    [Fact]
+    public async Task Limits_StopEndlessTries_AndNewPlayers()
+    {
+        var request = new StartRequest { player = Player(1), name = "BUSY", mode = RankedApi.Solo, rules = RankedRules.Version };
+        HttpStatusCode last = HttpStatusCode.OK;
+        for (int i = 0; i < 31; i++)
+            last = (await Post("/start", request)).StatusCode;
+        Assert.Equal(HttpStatusCode.TooManyRequests, last); // 30 a minute per IP
+
+        _clock.Now = _clock.Now.AddMinutes(2);
+        for (int i = 31; i < 202; i++)
+        {
+            _clock.Now = _clock.Now.AddSeconds(3);
+            last = (await Post("/start", request)).StatusCode;
+        }
+        Assert.Equal(HttpStatusCode.TooManyRequests, last); // 200 a day per player
+
+        _clock.Now = _clock.Now.AddMinutes(2);
+        for (int i = 2; i < 60 && last != HttpStatusCode.TooManyRequests; i++)
+        {
+            _clock.Now = _clock.Now.AddSeconds(3);
+            last = (await Post("/start", new StartRequest { player = Player(i), name = "NEW", mode = RankedApi.Solo, rules = RankedRules.Version })).StatusCode;
+        }
+        Assert.Equal(HttpStatusCode.TooManyRequests, last); // the tests' 50 new players a day per IP
     }
 
     [Fact]

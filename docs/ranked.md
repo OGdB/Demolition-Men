@@ -1,7 +1,8 @@
 # Ranked dailies and fair scores
 
-**Status (2026-10-30):** K1–K5 built; `RankedBotTests` passes in Unity (the bot's logs on every
-level); the server runs at `ranked.oeds.space`.
+**Status (2026-10-30):** K1–K5 built; `RankedBotTests` passes in Unity (solo and co-op, every
+level), `RealLogTests` replays those logs on the server's runtime and every cheat on them is turned
+down; the server runs at `ranked.oeds.space`. Never tested: online co-op's logs, a phone, a browser.
 - **Models** (`Ranked/Model/`, EditMode tests): the run log (`RunLog`), its seal (`Seal`), the
   numbers it's checked with (`RankedRules`), the referee (`RunVerifier`), the day's pick
   (`RankedDay.Pick`), names (`PlayerName`), the server's messages (`RankedApi`).
@@ -110,16 +111,19 @@ blocks.
 |---|---|
 | A made-up score (a script, an edited memory value) | Ignored: the server's own `RunScore` over the replay. |
 | Collapses that can't happen | `BuildingStructure` decides what detaches; the device's word isn't asked. |
-| More damage per hit | Each damage against its cause's maximum: the weapon's profile for that material, the headbutt's at full speed, the blast's, the action's; times the buffs active then (coffee, the partner's lean). |
-| Hitting faster | Swings per player against the weapon's clip (fists every 0.2 s, the axe and the ball every 0.44 s; the coffee's 1.5×). |
+| More damage per hit | Each damage against its cause's maximum: the weapon's profile for that material, the headbutt's at full speed, the blast's, the action's; times the buffs active then (coffee, the partner's lean). One hit per block per swing, blast, slam ring, intern's punch and crumble tick. |
+| Hitting faster | Swings per player against the weapon's clip (fists every 0.2 s, the axe and the ball every 0.44 s; the coffee's 1.5×); the intern on the punching clip's beat; crumble ticks 0.25 s apart. |
 | Hitting from afar or through walls | The swing's centre within reach of the player's pose at that time; the block within the swing's radius of it. |
-| Teleporting, flying, a speed hack | The pose track against the run speed (with the coffee), the jump (`JumpProfile`, as `TraversalValidator` uses it: no rising longer than a jump lasts), knockback only after a blast nearby; never inside a standing block. |
+| Teleporting, flying, a speed hack | The pose track against the run speed (with the coffee), the jump (`JumpProfile`, as `TraversalValidator` uses it: no rising longer than a jump lasts, no higher than a jump above the tallest thing around), knockback only after a blast nearby; never inside a standing block. |
 | Finishing too soon | The finish no sooner than running full speed from spawn to finish takes, and the pose there. |
-| Dodging a penalty | A pose behind the camera's slowest scroll, or down a pit, without an **out** event. |
+| A better time | The log's time is the finish's: it's what the board sorts ties by and shows. |
+| A log made up on the spot | A run can't be longer than the time since its attempt began (the game's clock only runs behind the real one). |
+| Dodging a penalty | A pose behind the camera past the out-of-bounds grace, or down a pit, without an **out** event. The view's width is the device's and isn't in the log, so the check takes the camera's left edge for the widest view there is (`RankedRules.WidestView`): it scrolls on from the first push, and stops short of the finish by that view's worth. |
 | Extra dynamite | Throws only after dynamite pickups (positions in the layout; they fall straight down from there) were taken within reach; one stick out at a time. |
 | Free actions | The server keeps each player's `ActionMeter` from its own replay; an action starts only on a full meter, once at a time, and strikes within reach. |
 | Edited upgrades or actions | K-D2: the kit is the same for everyone. |
 | Replaying or editing a captured log | §5: sealed with this attempt's key. |
+| Sending someone's ghost as your own | The same log, to the byte, already on the board is turned down. An edited copy is in §6. |
 | Endless tries, many accounts | Attempts per player and per IP, per day. |
 
 Tolerances: a pose is sampled 10 times a second while hits land between samples, an online
@@ -157,10 +161,26 @@ A bug of ours would hide honest players. So for the first weeks the server only 
 every rejection with its reason, and every run is shown; we read the reasons, fix the bugs and
 the slack, and only then switch the hiding on.
 
+Float maths differ by runtime (the editor's Mono keeps more precision than IL2CPP and the server's
+.NET), so nothing the replay compares may depend on the last bit: the level's hash rounds, and a
+score a point off passes (the board shows the replay's). `RealLogTests` (`server/ranked`) replays
+the logs `RankedBotTests` wrote on the server's runtime, then changes each one the way a careful
+cheater would, tidying up everything that follows from the change, and expects every cheat turned
+down.
+
 ## 6. What it doesn't catch
 
 A bot that plays perfectly within the rules writes a log that is true. That holds for every
-game, run on a server or not: a bot sends inputs like a person. Against it:
+game, run on a server or not: a bot sends inputs like a person. The same goes for what physics
+decides, which the server doesn't replay:
+- **Not dying.** Falling debris and traps hurt players on the device only, so a game changed to
+  take no damage writes a log that passes; pits and the camera's edge are checked, the rest isn't.
+- **Hovering low.** Standing on rubble can't be told from standing on air, so the track is only
+  held to the height of the level as it started.
+- **An edited copy of the day's ghost** (one pose moved) is a true log of a run someone played.
+- **Slow motion.** The attempt may last 40 minutes, so a run can be played slower than it says.
+
+Against all of these:
 - **Ghosts.** The log is also a ghost: anyone can watch a top run play out next to their own.
 - **REPORT** on a board row.
 - **Review.** A score far above the rest waits for a look before it's shown.

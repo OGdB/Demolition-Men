@@ -49,8 +49,11 @@ namespace Demolition.Ranked
             /// <summary>Standing blocks overloaded enough to crumble, by their worst cell's overload past baseline.</summary>
             public readonly Dictionary<Block, float> Crumbling = new Dictionary<Block, float>();
             public Dictionary<Block, float> TickCrumbling = new Dictionary<Block, float>();
+            public readonly HashSet<Block> TickHit = new HashSet<Block>();
             public int LastInstigator = -1;
             public float CrumbleSince = -1f, TickAt = -1f, TickElapsed;
+            /// <summary>When the last crumble ended, and since when it had been going.</summary>
+            public float EmptiedAt = float.NegativeInfinity, EmptiedSince = -1f;
         }
 
         private sealed class Block
@@ -76,12 +79,16 @@ namespace Demolition.Ranked
             public float StartedAt, BusyUntil = float.NegativeInfinity;
             public readonly List<LogEvent> Strikes = new List<LogEvent>();
             public readonly Dictionary<LogEvent, HashSet<int>> CraneImpacts = new Dictionary<LogEvent, HashSet<int>>();
+            public readonly Dictionary<LogEvent, HashSet<Block>> SlamRing = new Dictionary<LogEvent, HashSet<Block>>();
             public int Dynamite;
             public LogEvent Thrown;
             public int ToolUses, BallUses, ToolSwings, BallSwings;
             public int LastSwingMs = int.MinValue;
             public HitCause LastSwingCause;
-            public readonly List<float> FistSwings = new List<float>(), ToolSwingTimes = new List<float>();
+            public readonly HashSet<Block> SwingBlocks = new HashSet<Block>();
+            public readonly List<float> FistSwings = new List<float>(), ToolSwingTimes = new List<float>(), InternPunches = new List<float>();
+            public int LastInternMs = int.MinValue;
+            public readonly HashSet<Block> InternBlocks = new HashSet<Block>();
             public float LastHeadbutt = float.NegativeInfinity;
             public float CoffeeUntil = float.NegativeInfinity, BoostUntil = float.NegativeInfinity;
             public readonly List<float> CoffeeFrom = new List<float>();
@@ -115,6 +122,7 @@ namespace Demolition.Ranked
         private readonly RunScore _score;
         private readonly bool[] _taken;
         private readonly List<LogEvent> _blasts = new List<LogEvent>();
+        private readonly Dictionary<LogEvent, HashSet<Block>> _blasted = new Dictionary<LogEvent, HashSet<Block>>();
         private readonly List<Knock> _knocks = new List<Knock>();
         private readonly List<Barrel> _barrels = new List<Barrel>();
         private int _totalCells, _removedCells, _sampled;
@@ -154,13 +162,16 @@ namespace Demolition.Ranked
             _verdict.Event = -1;
             if (!_ended)
                 return Fail("no finish or fail");
-            if (!Movement())
+            if (_log.TimeMs != _verdict.TimeMs)
+                return Fail("a time on the board that isn't the finish's");
+            if (!Movement() || !KeptUp())
                 return _verdict;
             _verdict.Destroyed = _totalCells > 0 ? _removedCells / (float)_totalCells : 0f;
             if (_verdict.Finished)
             {
                 _verdict.Score = _score.FinalTotal(_verdict.TimeMs / 1000f, _layout.Par);
-                if (_verdict.Score != _log.Score)
+                // A point either way is rounding (float maths differ by runtime), and the board shows the replay's.
+                if (Mathf.Abs(_verdict.Score - _log.Score) > 1)
                     return Fail($"score: the device counted {_log.Score}, the replay {_verdict.Score}");
             }
             _verdict.Ok = true;
@@ -282,9 +293,20 @@ namespace Demolition.Ranked
                     site.Crumbling[kv.Value] = over;
             }
             if (site.Crumbling.Count == 0)
+            {
+                if (was)
+                {
+                    site.EmptiedAt = time;
+                    site.EmptiedSince = site.CrumbleSince;
+                }
                 site.CrumbleSince = -1f;
+            }
             else if (!was)
-                site.CrumbleSince = time;
+            {
+                // The device's timer only stops when its Update finds nothing crumbling: breaks in one
+                // frame can empty the list and fill it again without it ever seeing that.
+                site.CrumbleSince = time - site.EmptiedAt <= RankedRules.FrameSlack ? site.EmptiedSince : time;
+            }
         }
 
         // ---------------- The timeline ----------------
@@ -442,7 +464,15 @@ namespace Demolition.Ranked
             if (e.Amount > profile[(int)block.Spec.Material] * Buffs(c, e.Time) * Epsilon)
                 return No($"a {e.Cause} hit too hard");
             if (e.TimeMs == c.LastSwingMs && e.Cause == c.LastSwingCause)
-                return true; // the same swing, another block
+            {
+                if (c.SwingBlocks.Add(block))
+                    return true; // the same swing, another block
+                if (!OnlinePartner(e.Player))
+                    return No("a swing that hit a block twice");
+                // An online partner's next swing, arrived in the same frame.
+            }
+            c.SwingBlocks.Clear();
+            c.SwingBlocks.Add(block);
             c.LastSwingMs = e.TimeMs;
             c.LastSwingCause = e.Cause;
             if (e.Cause == HitCause.Axe && ++c.ToolSwings > c.ToolUses)
@@ -451,14 +481,20 @@ namespace Demolition.Ranked
                 return No("a wrecking ball the player didn't have");
             bool fist = e.Cause == HitCause.Fist;
             List<float> swings = fist ? c.FistSwings : c.ToolSwingTimes;
-            float interval = (fist ? RankedRules.FistInterval : RankedRules.ToolInterval) / (CoffeeIn(c, e.Time - RateWindow, e.Time) ? RankedRules.CoffeeSwing : 1f);
-            // An online partner's hits arrive in bunches, and a weapon picked up mid-punch lands the rest of
-            // the punching clip while the animator fades to its own: only the window counts for those.
-            if (fist && swings.Count > 0 && e.Time - swings[swings.Count - 1] < interval * RankedRules.SwingSlack && !OnlinePartner(e.Player))
-                return No($"swings too fast ({e.Time - swings[swings.Count - 1]:0.000}s apart)");
-            swings.Add(e.Time);
+            float pace = CoffeeIn(c, e.Time - RateWindow, e.Time) ? RankedRules.CoffeeSwing : 1f;
+            // An online partner's hits arrive in bunches: only the window counts for them. A weapon picked up
+            // mid-punch lands the rest of the punching clip while the animator fades to its own: never
+            // closer than punches, then.
+            return Paced(swings, e.Time, (fist ? RankedRules.FistInterval : RankedRules.ToolInterval) / pace, RankedRules.FistInterval / pace, OnlinePartner(e.Player));
+        }
+
+        private bool Paced(List<float> swings, float time, float interval, float closest, bool bunched)
+        {
+            if (swings.Count > 0 && time - swings[swings.Count - 1] < closest * RankedRules.SwingSlack && !bunched)
+                return No($"swings too fast ({time - swings[swings.Count - 1]:0.000}s apart)");
+            swings.Add(time);
             int inWindow = 0;
-            for (int i = swings.Count - 1; i >= 0 && swings[i] > e.Time - RateWindow; i--)
+            for (int i = swings.Count - 1; i >= 0 && swings[i] > time - RateWindow; i--)
                 inWindow++;
             if (inWindow > Mathf.FloorToInt(RateWindow / interval) + 2)
                 return No($"swings too fast ({inWindow} in {RateWindow}s)");
@@ -495,11 +531,16 @@ namespace Demolition.Ranked
         {
             float window = e.Player >= 0 && OnlinePartner(e.Player) ? 1f : 0.002f;
             float radius = RankedRules.BlastRadius * (e.Cause == HitCause.Dynamite ? 1f : RankedRules.GasReach);
+            bool matched = false;
             foreach (LogEvent blast in _blasts)
                 if (blast.Cause == e.Cause && (e.Cause != HitCause.Dynamite || blast.Player == e.Player)
                     && Mathf.Abs(blast.Time - e.Time) <= window && Distance(blast.X, blast.Y, block) <= radius + 0.05f)
-                    return e.Amount <= RankedRules.BlastDamage * Epsilon || No("a blast too hard");
-            return No($"{e.Cause} damage with no blast to match");
+                {
+                    matched = true;
+                    if (Once(_blasted, blast).Add(block))
+                        return e.Amount <= RankedRules.BlastDamage * Epsilon || No("a blast too hard");
+                }
+            return No(matched ? "a blast that hit a block twice" : $"{e.Cause} damage with no blast to match");
         }
 
         private bool Charged(LogEvent e, Block block)
@@ -516,6 +557,13 @@ namespace Demolition.Ranked
                         return e.Amount <= RankedRules.Wreck * Epsilon || No("a charge too hard");
             }
             return Blasted(e, block);
+        }
+
+        private static HashSet<Block> Once(Dictionary<LogEvent, HashSet<Block>> hits, LogEvent by)
+        {
+            if (!hits.TryGetValue(by, out HashSet<Block> blocks))
+                hits[by] = blocks = new HashSet<Block>();
+            return blocks;
         }
 
         private static float ChargesEnd(LogEvent strike) =>
@@ -555,15 +603,20 @@ namespace Demolition.Ranked
                                 s.X + RankedRules.SlamHalfWidth, s.Y - RankedRules.SlamDrop))
                             return e.Amount <= RankedRules.Wreck * Epsilon || No("a slam too hard");
                         if (Distance(s.X, s.Y + RankedRules.SlamRingRise, block) <= RankedRules.SlamRingRadius + 0.05f)
+                        {
+                            if (!Once(c.SlamRing, s).Add(block))
+                                return No("a slam's ring that hit a block twice");
                             return e.Amount <= RankedRules.SlamRingDamage * Epsilon || No("a slam's ring too hard");
+                        }
                         continue;
                     case ActionKind.CraneDrop:
                     {
-                        // The pallet falls and bounces: anywhere near below the spot, at most three impacts.
+                        // The pallet falls from the sky down the spot's column and bounces: the first thing it
+                        // meets can be above the spot, which only looks 20 up. At most three impacts.
                         if (s.Picks == null || since < RankedRules.CraneDelay - 0.2f || since > RankedRules.CraneDelay + 8f)
                             continue;
-                        float gap = Mathf.Max(0f, Mathf.Max(block.X0 - s.Picks[0], s.Picks[0] - block.X1));
-                        if (gap > RankedRules.CraneRadius + 3f || block.Y0 > s.Picks[1] + 3f)
+                        if (Mathf.Abs(e.X - s.Picks[0]) > RankedRules.CraneRadius + 3f
+                            || Distance(e.X, e.Y, block) > RankedRules.CraneRadius + 0.05f)
                             continue;
                         if (!c.CraneImpacts.TryGetValue(s, out HashSet<int> impacts))
                             c.CraneImpacts[s] = impacts = new HashSet<int>();
@@ -579,6 +632,8 @@ namespace Demolition.Ranked
                         if (Mathf.Abs(e.X - s.X) > RankedRules.InternRunSpeed * since + 3f
                             || Distance(e.X, e.Y, block) > RankedRules.InternReach + 0.05f)
                             continue;
+                        if (!InternPunch(c, e, block, duration + slack))
+                            return false;
                         BlockMaterial m = block.Spec.Material;
                         float hit = m == BlockMaterial.Metal || m == BlockMaterial.Support ? RankedRules.InternMetalDamage : RankedRules.InternDamage;
                         return e.Amount <= hit * Buffs(c, s.Time) * Epsilon || No("an intern too strong");
@@ -599,6 +654,22 @@ namespace Demolition.Ranked
             return No($"{e.Cause} damage with no strike to match");
         }
 
+        // On the punching clip's beat, like a player's fists; one per intern out at the time.
+        private bool InternPunch(Crew c, LogEvent e, Block block, float shift)
+        {
+            if (e.TimeMs == c.LastInternMs)
+                return c.InternBlocks.Add(block) || No("an intern's punch that hit a block twice");
+            c.InternBlocks.Clear();
+            c.InternBlocks.Add(block);
+            c.LastInternMs = e.TimeMs;
+            int working = 0;
+            foreach (LogEvent s in c.Strikes)
+                if (s.Action == ActionKind.Intern && e.Time >= s.Time && e.Time <= s.Time + shift)
+                    working++;
+            float interval = RankedRules.FistInterval / Mathf.Max(1, working);
+            return Paced(c.InternPunches, e.Time, interval, interval, OnlinePartner(e.Player));
+        }
+
         private bool Crumbled(LogEvent e, Block block)
         {
             if (e.Player >= 0)
@@ -606,19 +677,24 @@ namespace Demolition.Ranked
             Site site = block.Site;
             if (e.Time > site.TickAt)
             {
+                if (site.TickAt >= 0f && e.Time - site.TickAt < RankedRules.CrumbleTick - RankedRules.CrumbleTickSlack)
+                    return No("crumble ticks too close");
+                site.TickHit.Clear();
                 // A new crumble tick: the device damages off the overload as it was when the tick began.
                 float since = Mathf.Max(site.TickAt, site.CrumbleSince);
                 site.TickElapsed = site.CrumbleSince < 0f ? 0f : e.Time - since;
                 site.TickAt = e.Time;
                 site.TickCrumbling = new Dictionary<Block, float>(site.Crumbling);
             }
+            if (!site.TickHit.Add(block))
+                return No("a crumble tick that hit a block twice");
             if (!site.TickCrumbling.TryGetValue(block, out float over))
                 return No("crumble on a block that isn't overloaded");
             float excess = over - StructureDefaults.OverloadTolerance + RankedRules.CrumbleMargin;
             // The device's timer may have run a frame longer than the log's clock says.
             float elapsed = site.TickElapsed + RankedRules.FrameSlack;
-            return e.Amount <= excess * StructureDefaults.CrumbleDamageRate * elapsed * 1.05f + 0.01f
-                || No("crumbling too fast");
+            float allowed = excess * StructureDefaults.CrumbleDamageRate * elapsed * 1.05f + 0.01f;
+            return e.Amount <= allowed || No($"crumbling too fast ({e.Amount:0.0} of {allowed:0.0})");
         }
 
         // ---------------- Pickups, dynamite, actions, players ----------------
@@ -909,6 +985,7 @@ namespace Demolition.Ranked
                 int rising = 0;
                 float riseLimit = RankedRules.JumpSpeed / RankedRules.Gravity + 0.35f;
                 float lowest = _layout.LowestGround - LevelLayout.GroundDepth - 2f;
+                float highest = RankedRules.JumpSpeed * RankedRules.JumpSpeed / (2f * RankedRules.Gravity) + RankedRules.JumpMargin;
                 for (int i = 1; i < poses.Count && i <= samples; i++)
                 {
                     float t = i * RunLog.PoseInterval;
@@ -933,6 +1010,61 @@ namespace Demolition.Ranked
                     rising = b.Y - a.Y > 0.05f && !knocked ? rising + 1 : 0;
                     if (rising * RunLog.PoseInterval > riseLimit && !OnlinePartner(p))
                         return No($"player {p + 1} kept rising at {t:0.0}s");
+                    if (!knocked && b.Y > Tallest(b.X) + highest + (OnlinePartner(p) ? 1f : 0f))
+                        return No($"player {p + 1} flew at {t:0.0}s");
+                }
+            }
+            return true;
+        }
+
+        // The highest ground or building around x, as the level started: rubble only ever lies lower.
+        private float Tallest(float x)
+        {
+            int from = Mathf.FloorToInt(x) - RankedRules.JumpAcross, to = Mathf.FloorToInt(x) + RankedRules.JumpAcross;
+            float top = float.NegativeInfinity;
+            for (int i = Mathf.Max(0, from); i <= to && i < _layout.Ground.Count; i++)
+                if (_layout.Ground[i] != LevelLayout.NoGround)
+                    top = Mathf.Max(top, _layout.Ground[i]);
+            foreach (BuildingPlacement b in _layout.Buildings)
+                if (b.X <= to && b.X + b.Spec.Width > from)
+                    top = Mathf.Max(top, b.GroundY + b.Spec.Height);
+            return float.IsInfinity(top) ? 0f : top;
+        }
+
+        // ScrollCamera's left edge only moves right, at the scroll speed once pushed: nobody can stay
+        // behind it past the out-of-bounds grace without an Out event. The view's width is the device's and
+        // isn't in the log, so this takes the widest there is: the edge is at least this far along.
+        private bool KeptUp()
+        {
+            float behindFront = RankedRules.WidestView * 2f * RankedRules.PushLine;
+            float stop = _layout.FinishX - behindFront, left = RankedRules.CameraStartLeft;
+            float margin = RankedRules.CameraMargin + (_crew.Length > 1 ? RankedRules.CameraCoopMargin : 0f);
+            float allowed = RankedRules.OutOfBoundsGrace + 0.5f;
+            int samples = Mathf.FloorToInt(_verdict.TimeMs / 1000f / RunLog.PoseInterval);
+            var behind = new float[_crew.Length];
+            bool pushed = false;
+            for (int i = 1; i <= samples; i++)
+            {
+                float t = i * RunLog.PoseInterval;
+                float front = float.NegativeInfinity;
+                for (int p = 0; p < _crew.Length; p++)
+                    if (i < _log.Poses[p].Count && !OutBetween(_crew[p], t, t))
+                        front = Mathf.Max(front, _log.Poses[p][i].X);
+                pushed |= front >= left + behindFront;
+                if (pushed)
+                    left += _layout.Spec.scrollSpeed * RunLog.PoseInterval;
+                left = Mathf.Max(left, front - behindFront);
+                float edge = Mathf.Min(left, stop) - margin;
+                for (int p = 0; p < _crew.Length; p++)
+                {
+                    if (i >= _log.Poses[p].Count || OutBetween(_crew[p], t - 0.5f, t + 0.5f) || _log.Poses[p][i].X >= edge - Slack(p) + RankedRules.PoseSlack)
+                    {
+                        behind[p] = 0f;
+                        continue;
+                    }
+                    behind[p] += RunLog.PoseInterval;
+                    if (behind[p] > allowed)
+                        return No($"player {p + 1} stayed behind the camera at {t:0.0}s");
                 }
             }
             return true;

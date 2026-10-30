@@ -46,6 +46,18 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Collapse_CountsInWholeNumbers_RoundingHalvesUp()
+        {
+            var score = new RunScore(1);
+            var cells = new BlockMaterial[3];
+            for (int i = 0; i < cells.Length; i++)
+                cells[i] = BlockMaterial.Brick;
+            score.AddCollapse(0, cells);
+            int worth = 3 * BlockMaterialInfo.Points(BlockMaterial.Brick);
+            Assert.AreEqual((worth * 23 + 10) / 20, score.Total); // x 1.15, halves up
+        }
+
+        [Test]
         public void ChainMultiplier_IsCappedAtThree()
         {
             Assert.AreEqual(1.05f, RunScore.ChainMultiplier(1), 1e-5f);

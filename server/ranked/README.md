@@ -7,7 +7,8 @@ the game's own model code, and keeps a solo and a co-op board a day. Design and 
 ```
 Ranked/            ASP.NET Core app: Program.cs (endpoints), RankedService.cs (the rules of the
                    boards), Store.cs (SQLite), Levels.cs (the campaign), Limits.cs (per-IP limits)
-Ranked.Tests/      xUnit tests against the app in memory, on a one-street test level
+Ranked.Tests/      xUnit tests against the app in memory, on a one-street test level; RealLogTests
+                   replays the logs RankedBotTests left in the game's Temp/RankedLogs, and cheats on them
 Dockerfile         built on the VPS, runs on the chiseled ASP.NET image as non-root
 compose.yaml       the container behind the VPS's existing Caddy container
 deploy/            deploy.sh, rollback.sh, install.sh (runs on the VPS)

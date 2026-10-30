@@ -13,8 +13,9 @@ namespace Demolition.Run
     /// </summary>
     public sealed class RunScore
     {
-        public const float ChainStepPerCell = 1f / 20f;
-        public const float MaxChainMultiplier = 3f;
+        private const int ChainCells = 20, ChainCellsAtMax = 40;
+        public const float ChainStepPerCell = 1f / ChainCells;
+        public const float MaxChainMultiplier = 1f + (float)ChainCellsAtMax / ChainCells;
         public const float MaxSpeedMultiplier = 1.5f;
         /// <summary>Fraction of par at (or below) which the full speed bonus applies.</summary>
         public const float FullSpeedBonusAt = 0.6f;
@@ -58,7 +59,9 @@ namespace Demolition.Run
             int basePoints = 0;
             for (int i = 0; i < cells.Count; i++)
                 basePoints += BlockMaterialInfo.Points(cells[i]);
-            int points = Mathf.RoundToInt(basePoints * ChainMultiplier(cells.Count));
+            // ChainMultiplier in whole numbers: 1.35 x 30 lands on .5 by the float's last bit, which runtimes
+            // round differently, and the ranked server has to count the same as the device.
+            int points = (basePoints * (ChainCells + Mathf.Min(cells.Count, ChainCellsAtMax)) + ChainCells / 2) / ChainCells;
             Credit(player, points);
             return points;
         }

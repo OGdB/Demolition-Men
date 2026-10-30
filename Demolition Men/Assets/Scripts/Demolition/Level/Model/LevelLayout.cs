@@ -142,7 +142,8 @@ namespace Demolition.Levels
                 void Mix(int v) { h = (h ^ (uint)v) * 16777619; }
                 foreach (int g in Ground) Mix(g);
                 foreach (BuildingPlacement b in Buildings) { Mix(b.X); Mix(b.GroundY); Mix(b.Spec.Hash()); }
-                foreach (PickupPlacement p in Pickups) { Mix((int)(p.X * 10f)); Mix((int)(p.Y * 10f)); Mix((int)p.Kind); Mix(p.Amount); }
+                // Rounded, not cut off: float maths differ by runtime, and -0.4 x 10 can land just above -4.
+                foreach (PickupPlacement p in Pickups) { Mix(UnityEngine.Mathf.RoundToInt(p.X * 10f)); Mix(UnityEngine.Mathf.RoundToInt(p.Y * 10f)); Mix((int)p.Kind); Mix(p.Amount); }
                 Mix(SpawnX);
                 Mix(FinishX);
                 return (int)h;

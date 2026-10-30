@@ -54,6 +54,8 @@ namespace Demolition.Tests
 
             string run = File.ReadAllText("Assets/Prefabs/Run/Run.prefab");
             Assert.AreEqual(RankedRules.RejoinPenalty, Field(run, "rejoinPenalty"));
+            Assert.AreEqual(RankedRules.OutOfBoundsGrace, Field(run, "outOfBoundsGrace"));
+            Assert.AreEqual(RankedRules.PushLine, Field(File.ReadAllText("Assets/Prefabs/Main Camera 1.prefab"), "pushLine"));
             StringAssert.Contains($"rejoinOffset: {{x: {RankedRules.RejoinOffsetX.ToString(CultureInfo.InvariantCulture)}, y: {RankedRules.RejoinOffsetY.ToString(CultureInfo.InvariantCulture)}}}", run);
         }
 

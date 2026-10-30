@@ -59,6 +59,9 @@ public sealed class RankedService
         _log = log;
     }
 
+    /// <summary>The game's clock only ever runs behind the real one (pauses, hit-stop); this is the two machines' timing.</summary>
+    private const long WallClockSlackMs = 2000;
+
     private DateTimeOffset Now => _time.GetUtcNow();
 
     public RankedDay Today(RankedMode mode) => RankedDay.Pick(Now.UtcDateTime, _levels.Templates, mode);
@@ -155,6 +158,10 @@ public sealed class RankedService
         Verdict verdict;
         if (log.Day != day.Day || log.Template != day.Template || log.Seed != day.Seed || log.Mode != mode)
             verdict = new Verdict { Reason = "another day, level or mode than the attempt's" };
+        else if (log.TimeMs > now - attempt.Created + WallClockSlackMs)
+            verdict = new Verdict { Reason = "a run longer than the time since its attempt began" };
+        else if (_store.HasLog(day.Day, attempt.Mode, plain))
+            verdict = new Verdict { Reason = "a copy of a run already sent" };
         else
         {
             LevelLayout layout = _levels.Layout(day);
@@ -205,11 +212,9 @@ public sealed class RankedService
     {
         if (run.Player == viewer)
             return true;
-        if (run.Held && !run.Approved)
+        if ((run.Held && !run.Approved) || (players.TryGetValue(run.Player, out PlayerRow p) && p.Hidden))
             return false;
-        if (!_options.HideRejected)
-            return true;
-        return run.Ok && !(players.TryGetValue(run.Player, out PlayerRow p) && p.Hidden);
+        return run.Ok || !_options.HideRejected;
     }
 
     /// <summary>Each player's best shown run of the day on one board, best first.</summary>

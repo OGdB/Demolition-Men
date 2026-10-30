@@ -62,6 +62,13 @@ namespace Demolition.Ranked
 
         public const float CrumbleTick = 0.25f;
 
+        // ---------------- The camera (Main Camera 1.prefab: ScrollCamera; LevelBootstrap; Run.prefab) ----------------
+
+        public const float PushLine = 0.7f;
+        /// <summary>LevelBootstrap shows nothing left of the level: the view's left edge starts here or further along.</summary>
+        public const float CameraStartLeft = -0.5f;
+        public const float OutOfBoundsGrace = 3f;
+
         // ---------------- Slack (docs/ranked.md §4: set from honest logs) ----------------
 
         /// <summary>A pose between two samples: how far off an interpolated one can be.</summary>
@@ -84,5 +91,17 @@ namespace Demolition.Ranked
         /// <summary>Seconds an action's damage may come after its strike beyond its own timing.</summary>
         public const float ActionSlack = 0.6f;
         public const float PickupReach = 2.5f;
+        /// <summary>Crumble ticks are at least <see cref="CrumbleTick"/> apart; the log's clock rounds.</summary>
+        public const float CrumbleTickSlack = 0.02f;
+        /// <summary>Half the view of the widest screen zoomed out over the tallest building: the camera's edge
+        /// is at least this much (times the push line's) behind the front player.</summary>
+        public const float WidestView = 45f;
+        /// <summary>How far past the camera's edge a player can stand while it shakes.</summary>
+        public const float CameraMargin = 2f;
+        /// <summary>The front player can push the camera slower than it scrolls by walking on the push line.</summary>
+        public const float CameraCoopMargin = 4f;
+        /// <summary>Columns a jump off a roof carries a player, and how far over a jump a pile of debris can lift one.</summary>
+        public const int JumpAcross = 8;
+        public const float JumpMargin = 3f;
     }
 }

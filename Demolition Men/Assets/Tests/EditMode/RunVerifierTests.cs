@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Demolition.Actions;
 using Demolition.Core;
@@ -465,6 +466,255 @@ namespace Demolition.Tests
             solo.Add(new LogEvent { Kind = LogKind.Out, Player = 0, Rejoins = true });
             solo.Finish();
             AssertFails(solo, "rejoin in solo");
+        }
+
+        [Test]
+        public void TheBoardsTime_IsTheFinishs()
+        {
+            var script = new Script().PunchOutColumn();
+            script.Finish();
+            script.Log.TimeMs -= 5000;
+            AssertFails(script, "a time on the board");
+        }
+
+        [Test]
+        public void AScoreAPointOff_IsRounding_AndTheReplaysCounts()
+        {
+            var script = new Script().PunchOutColumn();
+            script.Finish();
+            int replayed = script.Log.Score;
+            script.Log.Score = replayed + 1;
+            Verdict verdict = Verify(script);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+            Assert.AreEqual(replayed, verdict.Score);
+        }
+
+        [Test]
+        public void ASwing_HitsABlockOnce()
+        {
+            // Another block in the same swing is what a swing does: the slab's cell over the column's foot.
+            var script = new Script(Bridge()).Walk(18.3f).Wait(0.2f);
+            script.Hit(0, 0, 0, 12f, HitCause.Fist, 19.55f, 1.3f);
+            script.Hit(0, 0, 1, 12f, HitCause.Fist, 19.55f, 1.3f);
+            script.Finish();
+            Verdict verdict = Verify(script);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+
+            script = new Script(Bridge()).Walk(18.3f).Wait(0.2f);
+            script.Hit(0, 0, 0, 12f, HitCause.Fist, 19.55f, 1.3f);
+            script.Hit(0, 0, 0, 12f, HitCause.Fist, 19.55f, 1.3f);
+            script.Finish();
+            AssertFails(script, "hit a block twice");
+        }
+
+        [Test]
+        public void Tools_NeverSwingFasterThanFists()
+        {
+            var script = new Script().Walk(12.5f);
+            script.Add(new LogEvent { Kind = LogKind.Pickup, Player = 0, Index = 1 });
+            script.Walk(18.3f).Wait(0.2f);
+            script.Hit(0, 0, 0, 40f, HitCause.Axe, 19.55f, 1.3f);
+            script.Wait(0.05f);
+            script.Hit(0, 0, 0, 40f, HitCause.Axe, 19.55f, 1.3f);
+            script.Finish();
+            AssertFails(script, "swings too fast");
+        }
+
+        [Test]
+        public void ABlast_HitsABlockOnce()
+        {
+            var script = new Script().Walk(10.5f);
+            script.Add(new LogEvent { Kind = LogKind.Pickup, Player = 0, Index = 0 });
+            script.Walk(17f);
+            script.Add(new LogEvent { Kind = LogKind.Throw, Player = 0, X = 18f, Y = 1.3f });
+            script.Wait(0.4f);
+            script.Add(new LogEvent { Kind = LogKind.Blast, Player = 0, Cause = HitCause.Dynamite, X = 19.8f, Y = 0.6f });
+            script.Hit(0, 0, 1, 1f, HitCause.Dynamite, 19.8f, 0.6f);
+            script.Hit(0, 0, 1, 1f, HitCause.Dynamite, 19.8f, 0.6f);
+            script.Finish();
+            AssertFails(script, "a blast that hit a block twice");
+        }
+
+        [Test]
+        public void ASecondStick_WaitsForTheFirst()
+        {
+            var script = new Script().Walk(10.5f);
+            script.Add(new LogEvent { Kind = LogKind.Pickup, Player = 0, Index = 0 });
+            script.Walk(17f);
+            script.Add(new LogEvent { Kind = LogKind.Throw, Player = 0, X = 18f, Y = 1.3f });
+            script.Wait(0.1f);
+            script.Add(new LogEvent { Kind = LogKind.Throw, Player = 0, X = 18f, Y = 1.3f });
+            script.Finish();
+            AssertFails(script, "a second stick");
+        }
+
+        [Test]
+        public void ACrumbleTick_HitsABlockOnce_AndTicksKeepTheirPace()
+        {
+            // The first tick of a real crumble, then the same block again in that tick / right after it.
+            foreach ((float gap, string reason) in new[] { (0f, "a crumble tick that hit a block twice"), (0.05f, "crumble ticks too close") })
+            {
+                var script = new Script(Bridge());
+                float over = HangingOverload(script.Layout);
+                float tick = (over - StructureDefaults.OverloadTolerance) * StructureDefaults.CrumbleDamageRate * 0.25f;
+                script.Walk(18.3f);
+                for (int i = 0; i < 10; i++)
+                {
+                    script.Wait(0.2f);
+                    script.Hit(0, 0, 0, 12f, HitCause.Fist, 19.55f, 1.3f);
+                }
+                script.Wait(0.25f);
+                script.Hit(0, 0, 1, tick * 0.5f, HitCause.Crumble, 0f, 0f, player: -1);
+                if (gap > 0f)
+                    script.Wait(gap);
+                script.Hit(0, 0, 1, tick * 0.1f, HitCause.Crumble, 0f, 0f, player: -1);
+                script.Finish();
+                AssertFails(script, reason);
+            }
+        }
+
+        private static Script Interning(Action<Script> punches)
+        {
+            var script = new Script().PunchOutColumn().Walk(36f);
+            script.Log.Actions[0] = ActionKind.Intern;
+            script.Add(new LogEvent { Kind = LogKind.ActionStart, Player = 0, Action = ActionKind.Intern });
+            script.Wait(0.5f);
+            script.Add(new LogEvent { Kind = LogKind.ActionStrike, Player = 0, Action = ActionKind.Intern, X = 36f, Y = 0f });
+            script.Wait(0.5f);
+            punches(script);
+            script.Finish();
+            return script;
+        }
+
+        [Test]
+        public void TheIntern_PunchesOnTheClipsBeat()
+        {
+            Script script = Interning(s =>
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    s.Wait(0.2f);
+                    s.Hit(1, 0, 0, RankedRules.InternDamage, HitCause.Intern, 40.2f, 1f);
+                }
+            });
+            script.Log.Score = Verify(script).Score;
+            Verdict verdict = Verify(script);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+
+            AssertFails(Interning(s =>
+            {
+                s.Wait(0.2f);
+                s.Hit(1, 0, 0, RankedRules.InternDamage, HitCause.Intern, 40.2f, 1f);
+                s.Hit(1, 0, 0, RankedRules.InternDamage, HitCause.Intern, 40.2f, 1f);
+            }), "an intern's punch that hit a block twice");
+
+            AssertFails(Interning(s =>
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    s.Wait(0.04f);
+                    s.Hit(1, 0, 0, RankedRules.InternDamage, HitCause.Intern, 40.2f, 1f);
+                }
+            }), "swings too fast");
+        }
+
+        [Test]
+        public void ThePallet_CanLandHigherThanItsSpot()
+        {
+            // The spot only looks 20 up; a tower reaches past that, and the pallet comes from the sky.
+            LevelLayout layout = Street();
+            var tower = new BuildingSpec("test.tower", 3);
+            for (int y = 0; y < 25; y++)
+                tower.TryPlace(TileKind.Brick, 0, y);
+            layout.Buildings.Add(new BuildingPlacement { X = 70, GroundY = 0, Spec = tower });
+
+            var script = new Script(layout);
+            script.Walk(18.3f);
+            for (int i = 0; i < 10; i++)
+            {
+                script.Wait(0.2f);
+                script.Hit(0, 0, 0, 12f, HitCause.Fist, 19.55f, 1.3f);
+            }
+            script.Log.Actions[0] = ActionKind.CraneDrop;
+            script.Walk(38.5f).Jump(42.5f).Walk(60f);
+            script.Add(new LogEvent { Kind = LogKind.ActionStart, Player = 0, Action = ActionKind.CraneDrop });
+            script.Wait(0.5f);
+            script.Add(new LogEvent { Kind = LogKind.ActionStrike, Player = 0, Action = ActionKind.CraneDrop, X = 65f, Y = 0f, Picks = new[] { 65f, 0f } });
+            script.Wait(RankedRules.CraneDelay + 1f);
+            script.Hit(2, 0, 22, RankedRules.Wreck, HitCause.Crane, 69.5f, 22f);
+            script.Finish();
+            script.Log.Score = Verify(script).Score;
+            Verdict verdict = Verify(script);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+        }
+
+        private static void Lift(Script script, int from, int samples, Func<int, float> height)
+        {
+            List<LogPose> poses = script.Log.Poses[0];
+            for (int k = 0; k < samples; k++)
+                poses[from + k] = new LogPose(poses[from + k].X, poses[from + k].Y + height(k), false);
+        }
+
+        [Test]
+        public void Flying_Fails_WithOrWithoutARestInTheClimb()
+        {
+            var script = new Script(LongStreet()).Walk(15f).Wait(4f);
+            script.Finish();
+            Lift(script, 30, 30, k => k * 0.2f);
+            AssertFails(script, "kept rising");
+
+            script = new Script(LongStreet()).Walk(15f).Wait(4f);
+            script.Finish();
+            Lift(script, 30, 30, k => (k - k / 8) * 1.2f);
+            AssertFails(script, "flew");
+        }
+
+        [Test]
+        public void DownAPit_AndStillInPlay_Fails()
+        {
+            var script = new Script(LongStreet()).Walk(15f).Wait(5f);
+            script.Finish();
+            Lift(script, 30, 40, k => -40f);
+            AssertFails(script, "fell out of the level");
+        }
+
+        [Test]
+        public void FinishingSoonerThanRunningThereTakes_Fails()
+        {
+            var script = new Script(LongStreet()).Walk(301f, speed: 9.5f);
+            script.Finish();
+            AssertFails(script, "sooner than running");
+        }
+
+        // A long street with nothing on it: the camera has the time to leave someone behind.
+        private static LevelLayout LongStreet()
+        {
+            var layout = new LevelLayout(new LevelSpec { id = "long", scrollSpeed = 2f });
+            for (int x = 0; x < 320; x++)
+                layout.Ground.Add(0);
+            layout.SpawnX = 2;
+            layout.FinishX = 300;
+            return layout;
+        }
+
+        [Test]
+        public void StayingBehindTheCamera_Fails_AndKeepingUpOrGoingOutDoesnt()
+        {
+            var ahead = new Script(LongStreet()).Walk(301f, speed: 7.5f);
+            ahead.Finish();
+            Verdict verdict = Verify(ahead);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+
+            // Off the edge of the camera for a minute and a half, and in play.
+            var behind = new Script(LongStreet()).Walk(100f, speed: 7.5f).Wait(90f).Walk(301f, speed: 7.5f);
+            behind.Finish();
+            AssertFails(behind, "behind the camera");
+
+            // The same wait, but the player's partner has the camera and the player goes out in time.
+            var coop = new Script(LongStreet(), players: 2).Walk(100f, speed: 7.5f).Wait(90f);
+            coop.Add(new LogEvent { Kind = LogKind.Out, Player = 0 });
+            coop.Finish();
+            AssertFails(coop, "behind the camera"); // the wait came first: too late for the Out
         }
 
         [Test]

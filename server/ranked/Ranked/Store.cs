@@ -209,6 +209,10 @@ CREATE TABLE IF NOT EXISTS reports (run INTEGER NOT NULL, reporter TEXT NOT NULL
         return runs;
     }
 
+    /// <summary>The same log, to the byte, was already sent for this board.</summary>
+    public bool HasLog(int day, int mode, byte[] log) =>
+        Scalar("SELECT 1 FROM runs WHERE day = $d AND mode = $m AND log = $l LIMIT 1", ("$d", day), ("$m", mode), ("$l", log)) != null;
+
     public byte[] Log(long run) => Scalar("SELECT log FROM runs WHERE id = $id", ("$id", run)) as byte[];
 
     public bool Approve(long run) => Run("UPDATE runs SET held = 0, approved = 1 WHERE id = $id", ("$id", run)) == 1;

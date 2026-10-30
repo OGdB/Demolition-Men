@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -7,8 +8,9 @@ using Demolition.Ranked;
 
 /// <summary>
 /// The campaign as the game ships it: Content/&lt;Theme&gt;/Levels/*.json, each built with its theme's
-/// Archetypes/*.json (RankedContentTests keeps these equal to the game's theme assets). A day's level
-/// is generated once and kept.
+/// Archetypes/*.json (RankedContentTests keeps these equal to the game's theme assets), in name order:
+/// a folder's own order differs per disk, and <see cref="Templates"/> decides the day's level. A day's
+/// level is generated once and kept.
 /// </summary>
 public sealed class Levels
 {
@@ -18,15 +20,15 @@ public sealed class Levels
 
     public Levels(string content)
     {
-        foreach (string theme in Directory.GetDirectories(content))
+        foreach (string theme in Sorted(Directory.GetDirectories(content)))
         {
             string levels = Path.Combine(theme, "Levels"), archetypes = Path.Combine(theme, "Archetypes");
             if (!Directory.Exists(levels) || !Directory.Exists(archetypes))
                 continue;
             var list = new List<BuildingArchetype>();
-            foreach (string json in Directory.GetFiles(archetypes, "*.json"))
+            foreach (string json in Sorted(Directory.GetFiles(archetypes, "*.json")))
                 list.Add(BuildingArchetype.FromJson(File.ReadAllText(json)));
-            foreach (string json in Directory.GetFiles(levels, "*.json"))
+            foreach (string json in Sorted(Directory.GetFiles(levels, "*.json")))
             {
                 LevelSpec spec = LevelSpec.FromJson(File.ReadAllText(json));
                 _specs[spec.id] = spec;
@@ -34,6 +36,12 @@ public sealed class Levels
             }
         }
         Templates = new List<string>(_specs.Keys);
+    }
+
+    private static string[] Sorted(string[] paths)
+    {
+        Array.Sort(paths, StringComparer.Ordinal);
+        return paths;
     }
 
     /// <summary>Every campaign level's id.</summary>
