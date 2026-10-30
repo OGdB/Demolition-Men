@@ -346,6 +346,30 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void APaneHangingByOneCell_LeavesWhole()
+        {
+            // pillar - pane - pane - pillar: without the left pillar, the pane's left cell has
+            // nothing to hang from while its right cell still has.
+            BuildingStructure Frame()
+            {
+                var s = new BuildingStructure();
+                s.AddCell(new Vector2Int(0, 0), isAnchor: true);
+                s.AddCell(new Vector2Int(1, 0), isAnchor: false, isFragile: true);
+                s.AddCell(new Vector2Int(2, 0), isAnchor: false, isFragile: true);
+                s.AddCell(new Vector2Int(3, 0), isAnchor: true);
+                return s;
+            }
+            var pillar = new List<Vector2Int> { new Vector2Int(0, 0) };
+            var pane = new[] { new Vector2Int(1, 0), new Vector2Int(2, 0) };
+
+            CollectionAssert.AreEquivalent(new[] { new Vector2Int(1, 0) }, Frame().RemoveCells(pillar), "Cell by cell, half of it goes.");
+
+            BuildingStructure whole = Frame();
+            CollectionAssert.AreEquivalent(pane, whole.RemoveCells(pillar, cell => cell.x == 1 || cell.x == 2 ? pane : null));
+            CollectionAssert.AreEquivalent(new[] { new Vector2Int(3, 0) }, whole.Cells, "Only the other pillar stands.");
+        }
+
+        [Test]
         public void BreakingGlass_DoesNotDropALintelHeldElsewhere()
         {
             // Window in a two-column wall: the lintel above the pane is tied to the

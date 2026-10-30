@@ -567,7 +567,8 @@ namespace Demolition
                 if (_blocks.Remove(block.Coords[i]))
                     removed++;
 
-            List<Vector2Int> detached = _structure.RemoveCells(block.Coords);
+            List<Vector2Int> detached = _structure.RemoveCells(block.Coords,
+                cell => _blocks.TryGetValue(cell, out BuildingBlock on) ? on.Coords : null);
             if (CellsRemoved != null)
             {
                 var gone = new List<Vector2Int>(block.Coords);

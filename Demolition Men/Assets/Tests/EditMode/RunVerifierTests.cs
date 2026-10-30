@@ -35,6 +35,7 @@ namespace Demolition.Tests
             layout.Buildings.Add(new BuildingPlacement { X = 40, GroundY = 0, Spec = wall });
             layout.Pickups.Add(new PickupPlacement { X = 10.5f, Y = 0.8f, Kind = PickupKind.Dynamite, Amount = 2 });
             layout.Pickups.Add(new PickupPlacement { X = 12.5f, Y = 0.8f, Kind = PickupKind.Axe, Amount = 3 });
+            layout.Pickups.Add(new PickupPlacement { X = 14.5f, Y = 9f, Kind = PickupKind.Dynamite, Amount = 1 }); // high up: it falls
             return layout;
         }
 
@@ -325,6 +326,42 @@ namespace Demolition.Tests
             script.Hit(1, 0, 0, 40f, HitCause.Axe, 39.45f, 1.3f); // a fourth hit: the axe had three
             script.Finish();
             AssertFails(script, "axe the player didn't have");
+        }
+
+        [Test]
+        public void AWeaponPickedUpMidPunch_LandsAtThePunchesPace()
+        {
+            var script = new Script().Walk(12.5f);
+            script.Add(new LogEvent { Kind = LogKind.Pickup, Player = 0, Index = 1 });
+            script.Walk(18.3f);
+            for (int i = 0; i < 3; i++)
+            {
+                script.Wait(0.2f);
+                script.Hit(0, 0, 0, 40f, HitCause.Axe, 19.55f, 1.3f);
+            }
+            script.Score.AddDestroyed(0, BlockMaterial.Brick, 1);
+            var fallen = new List<BlockMaterial>();
+            for (int i = 0; i < 90; i++)
+                fallen.Add(BlockMaterial.Brick);
+            script.Score.AddCollapse(0, fallen);
+            script.Finish();
+            Verdict verdict = Verify(script);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+        }
+
+        [Test]
+        public void APickupFallsFromItsSpot_ButStaysInItsColumn()
+        {
+            var script = new Script().Walk(14.5f);
+            script.Add(new LogEvent { Kind = LogKind.Pickup, Player = 0, Index = 2 });
+            script.PunchOutColumn().Finish();
+            Verdict verdict = Verify(script);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+
+            script = new Script().Walk(10f);
+            script.Add(new LogEvent { Kind = LogKind.Pickup, Player = 0, Index = 2 });
+            script.Finish();
+            AssertFails(script, "out of reach");
         }
 
         [Test]

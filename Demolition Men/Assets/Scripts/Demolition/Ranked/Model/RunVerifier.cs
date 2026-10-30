@@ -121,6 +121,7 @@ namespace Demolition.Ranked
         private float _now;
         private bool _ended;
 
+
         private RunVerifier(RunLog log, LevelLayout layout)
         {
             _log = log;
@@ -243,7 +244,7 @@ namespace Demolition.Ranked
                 if (site.Cells.Remove(cell))
                     removed++;
             var collapsed = new List<BlockMaterial>();
-            foreach (Vector2Int cell in site.Structure.RemoveCells(coords))
+            foreach (Vector2Int cell in site.Structure.RemoveCells(coords, c => site.Cells.TryGetValue(c, out Block on) ? on.Spec.Cells() : null))
             {
                 if (!site.Cells.TryGetValue(cell, out Block fallen))
                     continue;
@@ -451,8 +452,9 @@ namespace Demolition.Ranked
             bool fist = e.Cause == HitCause.Fist;
             List<float> swings = fist ? c.FistSwings : c.ToolSwingTimes;
             float interval = (fist ? RankedRules.FistInterval : RankedRules.ToolInterval) / (CoffeeIn(c, e.Time - RateWindow, e.Time) ? RankedRules.CoffeeSwing : 1f);
-            // An online partner's hits arrive in bunches: only the window counts for them.
-            if (swings.Count > 0 && e.Time - swings[swings.Count - 1] < interval * RankedRules.SwingSlack && !OnlinePartner(e.Player))
+            // An online partner's hits arrive in bunches, and a weapon picked up mid-punch lands the rest of
+            // the punching clip while the animator fades to its own: only the window counts for those.
+            if (fist && swings.Count > 0 && e.Time - swings[swings.Count - 1] < interval * RankedRules.SwingSlack && !OnlinePartner(e.Player))
                 return No($"swings too fast ({e.Time - swings[swings.Count - 1]:0.000}s apart)");
             swings.Add(e.Time);
             int inWindow = 0;
@@ -631,7 +633,9 @@ namespace Demolition.Ranked
             if (pickup.Kind == PickupKind.Resurrect && _log.Mode != RankedMode.Coop)
                 return No("a resurrect in solo");
             LogPose pose = PoseAt(e.Player, e.Time);
-            if (Vector2.Distance(new Vector2(pose.X, pose.Y + 1f), new Vector2(pickup.X, pickup.Y)) > RankedRules.PickupReach + Slack(e.Player))
+            // It falls straight down from its spot (Pickup.FixedUpdate), so it may be anywhere below it.
+            float above = Mathf.Max(0f, pose.Y + 1f - pickup.Y);
+            if (new Vector2(pose.X - pickup.X, above).magnitude > RankedRules.PickupReach + Slack(e.Player))
                 return No("a pickup out of reach");
             _taken[e.Index] = true;
             switch (pickup.Kind)

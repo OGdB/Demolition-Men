@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -130,6 +131,31 @@ namespace Demolition.Core
                 _fragile.Remove(detached[i]);
             }
 
+            return detached;
+        }
+
+        /// <summary>
+        /// <see cref="RemoveCells(IReadOnlyList{Vector2Int})"/>, and a block that lost a cell leaves
+        /// whole: a pane holds on by each of its own cells, so one can detach while the other still
+        /// hangs from its frame, but the block falls as one. <paramref name="blockOf"/> gives the
+        /// cells of the block on a cell, or null. The game and the ranked replay both go through
+        /// here, so they agree on what a collapse took.
+        /// </summary>
+        public List<Vector2Int> RemoveCells(IReadOnlyList<Vector2Int> coords, Func<Vector2Int, IEnumerable<Vector2Int>> blockOf)
+        {
+            List<Vector2Int> detached = RemoveCells(coords);
+            for (int i = 0; i < detached.Count; i++)
+            {
+                IEnumerable<Vector2Int> block = blockOf(detached[i]);
+                if (block == null)
+                    continue;
+                foreach (Vector2Int cell in block)
+                    if (_cells.Contains(cell))
+                    {
+                        detached.Add(cell);
+                        detached.AddRange(RemoveCells(new[] { cell }));
+                    }
+            }
             return detached;
         }
 
