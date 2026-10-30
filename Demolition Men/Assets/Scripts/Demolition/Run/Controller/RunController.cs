@@ -383,7 +383,8 @@ namespace Demolition.Run
             BankedScore = FinalScore;
             bool withinPar = RunScore.WithinPar(State.Elapsed, parTime);
             Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(BankedFraction), BankedScore, State.Elapsed,
-                withinPar, Objectives.MetMask(Sheet, Tally, finished, BankedFraction, withinPar));
+                withinPar, Objectives.MetMask(Sheet, Tally, finished, BankedFraction, withinPar),
+                GameConfig.Instance != null && LevelId == GameConfig.Instance.tutorialScene);
             Profile.Save();
             Ended?.Invoke();
         }

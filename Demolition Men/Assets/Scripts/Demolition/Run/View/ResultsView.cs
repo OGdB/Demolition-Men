@@ -14,7 +14,8 @@ namespace Demolition.Run
     /// (finished runs only), the total and the cash count up (job-sheet objectives done for the
     /// first time pay on top), the job sheet shows, then any record stamp lands.
     /// Any press skips the reveal. Then Next / Retry / Shop / Menu, and the rewarded
-    /// "2x cash" on phones.</summary>
+    /// "2x cash" on phones. The Tutorial's first finish tells of the starting cash and the shop
+    /// (<see cref="StartingCashView"/>) before those wake.</summary>
     [RequireComponent(typeof(RunController))]
     public sealed class ResultsView : MonoBehaviour
     {
@@ -40,6 +41,7 @@ namespace Demolition.Run
         private RectTransform _content;
         private Button _first;
         private Button _double;
+        private Button _shop;
         private TextMeshProUGUI _title;
         private TextMeshProUGUI _meterText;
         private RectTransform _meterFill;
@@ -71,9 +73,18 @@ namespace Demolition.Run
                 _woken = true;
                 _group.interactable = true;
                 _group.blocksRaycasts = true;
-                if (EventSystem.current != null)
-                    EventSystem.current.SetSelectedGameObject(_first.gameObject);
+                Select(_first);
+                if (_run.Reward.StartingCash > 0)
+                    StartingCashView.Open(transform, _run.Reward.StartingCash,
+                        () => ShopView.Open(transform, () => { ShowCash(); Select(_first); }),
+                        () => Select(_shop)); // decided later: the shop's a press away
             }
+        }
+
+        private static void Select(Button button)
+        {
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(button.gameObject);
         }
 
         // Each exit fires once, after any ad between runs.
@@ -218,7 +229,7 @@ namespace Demolition.Run
                 x += 310f;
             }
             Button retry = UiFactory.Button(_content, "RETRY", centre, new Vector2(x, -350f), size, () => Leave(_run.Retry));
-            UiFactory.Button(_content, "SHOP", centre, new Vector2(x + 310f, -350f), size, () => ShopView.Open(transform, ShowCash));
+            _shop = UiFactory.Button(_content, "SHOP", centre, new Vector2(x + 310f, -350f), size, () => ShopView.Open(transform, ShowCash));
             UiFactory.Button(_content, "MENU", centre, new Vector2(x + 620f, -350f), size, () => Leave(_run.QuitToMenu));
 
             if (reward.Cash > 0 && AdManager.CanOfferReward)

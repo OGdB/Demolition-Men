@@ -13,6 +13,9 @@ namespace Demolition.Meta
         public const int PointsPerCash = 25;
         /// <summary>Finishing pays this much more than failing with the same score.</summary>
         public const float FinishBonus = 1.25f;
+        /// <summary>Paid once, on finishing the Tutorial for the first time: about four first upgrade
+        /// levels, for the player to pick, so the shop means something before the first job.</summary>
+        public const int StartingCash = 2500;
 
         public static int CashFor(int score, bool finished) =>
             Mathf.Max(0, Mathf.RoundToInt(score / (float)PointsPerCash * (finished ? FinishBonus : 1f)));

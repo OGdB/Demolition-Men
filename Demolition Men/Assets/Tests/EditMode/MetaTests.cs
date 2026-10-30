@@ -21,6 +21,25 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void TheTutorial_PaysStartingCash_OnItsFirstFinishOnly()
+        {
+            var save = new SaveData();
+            RunReward failed = save.RecordRun("Tutorial", false, Grade.C, 0, 30f, tutorial: true);
+            Assert.AreEqual(0, failed.StartingCash, "a failed run pays none");
+            Assert.AreEqual(0, save.cash);
+
+            RunReward first = save.RecordRun("Tutorial", true, Grade.C, 0, 60f, tutorial: true);
+            Assert.AreEqual(Economy.StartingCash, first.StartingCash);
+            Assert.AreEqual(Economy.StartingCash, save.cash);
+            Assert.AreEqual(Economy.StartingCash, save.lifetimeCash);
+
+            RunReward again = save.RecordRun("Tutorial", true, Grade.C, 0, 50f, tutorial: true);
+            Assert.AreEqual(0, again.StartingCash, "once");
+            Assert.AreEqual(Economy.StartingCash, save.cash);
+            Assert.AreEqual(0, save.RecordRun("town-01", true, Grade.C, 0, 50f).StartingCash, "other levels pay none");
+        }
+
+        [Test]
         public void LaterRuns_KeepTheBest_AndFlagImprovements()
         {
             var save = new SaveData();

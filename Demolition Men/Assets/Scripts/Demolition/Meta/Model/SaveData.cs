@@ -72,6 +72,8 @@ namespace Demolition.Meta
         public int ObjectivesMet;
         public int NewObjectives;
         public int ObjectiveCash;
+        /// <summary>The Tutorial's first finish paid the crew's <see cref="Economy.StartingCash"/>.</summary>
+        public int StartingCash;
     }
 
     /// <summary>
@@ -166,9 +168,9 @@ namespace Demolition.Meta
 
         /// <summary>Bank a run: cash from its score, best results, run counters, and the job
         /// sheet's objectives it met (<paramref name="objectivesMet"/>, bit i for objective i;
-        /// each pays once).</summary>
+        /// each pays once). The <paramref name="tutorial"/>'s first finish pays the starting cash.</summary>
         public RunReward RecordRun(string levelId, bool finished, Grade grade, int score, float time, bool withinPar = false,
-            int objectivesMet = 0)
+            int objectivesMet = 0, bool tutorial = false)
         {
             runsPlayed++;
             runsSinceAd++;
@@ -211,6 +213,11 @@ namespace Demolition.Meta
             reward.ObjectiveCash = Objectives.Count(reward.NewObjectives) * Objectives.CashEach;
             AddCash(reward.ObjectiveCash);
             record.objectives |= reward.ObjectivesMet;
+            if (tutorial && reward.FirstClear)
+            {
+                reward.StartingCash = Economy.StartingCash;
+                AddCash(reward.StartingCash);
+            }
             return reward;
         }
     }
