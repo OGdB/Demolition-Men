@@ -100,7 +100,7 @@ namespace Demolition.Ranked
                 {
                     RunController.Player player = _run.Players[p];
                     Vector2 pos = Vector2.Lerp(_last[p], player.Transform.position, f);
-                    Log.Poses[p].Add(new Pose(pos.x, pos.y, player.Motor != null && player.Motor.Facing < 0));
+                    Log.Poses[p].Add(new LogPose(pos.x, pos.y, player.Motor != null && player.Motor.Facing < 0));
                 }
             }
             for (int p = 0; p < _last.Length; p++)

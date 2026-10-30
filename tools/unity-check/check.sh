@@ -42,6 +42,7 @@ if [ "$mode" = all ] || [ "$mode" = build ]; then
   [ $rc -eq 0 ] && { build Assembly-CSharp-Editor || rc=1; }
   [ $rc -eq 0 ] && { build Demolition.Clips.Editor || rc=1; }
   [ $rc -eq 0 ] && { build PlayModeTests || rc=1; }
+  [ $rc -eq 0 ] && { build EditModeTests || rc=1; }
 fi
 if [ "$mode" = all ] || [ "$mode" = test ]; then
   build ModelTests || exit 1

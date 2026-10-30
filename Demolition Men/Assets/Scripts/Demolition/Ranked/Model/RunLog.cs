@@ -18,12 +18,12 @@ namespace Demolition.Ranked
     public enum LogKind : byte { Damage, Pickup, Throw, Blast, ActionStart, ActionStrike, Out, Rejoin, Finish, Fail }
 
     /// <summary>Where a player's feet are, relative to the level's origin.</summary>
-    public struct Pose
+    public struct LogPose
     {
         public float X, Y;
         public bool Left;
 
-        public Pose(float x, float y, bool left)
+        public LogPose(float x, float y, bool left)
         {
             X = x;
             Y = y;
@@ -94,7 +94,7 @@ namespace Demolition.Ranked
         /// <summary>The action each player carries; its length is the number of players.</summary>
         public ActionKind[] Actions = { ActionCatalog.Default };
         /// <summary>Per player, one pose every <see cref="PoseInterval"/> from GO.</summary>
-        public List<Pose>[] Poses = { new List<Pose>() };
+        public List<LogPose>[] Poses = { new List<LogPose>() };
         public readonly List<LogEvent> Events = new List<LogEvent>();
         /// <summary>The device's own result, only to tell where a replay went another way.</summary>
         public int Score;
@@ -105,11 +105,11 @@ namespace Demolition.Ranked
         public static RunLog For(int players)
         {
             players = Math.Max(1, Math.Min(MaxPlayers, players));
-            var log = new RunLog { Actions = new ActionKind[players], Poses = new List<Pose>[players] };
+            var log = new RunLog { Actions = new ActionKind[players], Poses = new List<LogPose>[players] };
             for (int i = 0; i < players; i++)
             {
                 log.Actions[i] = ActionCatalog.Default;
-                log.Poses[i] = new List<Pose>();
+                log.Poses[i] = new List<LogPose>();
             }
             return log;
         }
@@ -135,10 +135,10 @@ namespace Demolition.Ranked
                 w.Byte((byte)Actions[p]);
             for (int p = 0; p < Players; p++)
             {
-                List<Pose> poses = Poses[p];
+                List<LogPose> poses = Poses[p];
                 w.Uint(poses.Count);
                 int lastX = 0, lastY = 0;
-                foreach (Pose pose in poses)
+                foreach (LogPose pose in poses)
                 {
                     int x = Q(pose.X), y = Q(pose.Y);
                     w.Int(((x - lastX) << 1) | (pose.Left ? 1 : 0));
@@ -241,7 +241,7 @@ namespace Demolition.Ranked
                     x += dx >> 1;
                     y += r.Int();
                     r.Expect(Math.Abs(x) <= MaxCoord && Math.Abs(y) <= MaxCoord, "pose");
-                    log.Poses[p].Add(new Pose(x / (float)Quant, y / (float)Quant, (dx & 1) != 0));
+                    log.Poses[p].Add(new LogPose(x / (float)Quant, y / (float)Quant, (dx & 1) != 0));
                 }
             }
             int events = r.Uint(MaxEvents);

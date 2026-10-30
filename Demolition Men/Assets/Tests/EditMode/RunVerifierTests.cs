@@ -164,7 +164,7 @@ namespace Demolition.Tests
                     Vector3 a = _path[i - 1], b = _path[i];
                     float f = b.x > a.x ? Mathf.Clamp01((t - a.x) / (b.x - a.x)) : 1f;
                     for (int p = 0; p < Log.Players; p++)
-                        Log.Poses[p].Add(new Pose(Mathf.Lerp(a.y, b.y, f) - 1.5f * p, Mathf.Lerp(a.z, b.z, f), false));
+                        Log.Poses[p].Add(new LogPose(Mathf.Lerp(a.y, b.y, f) - 1.5f * p, Mathf.Lerp(a.z, b.z, f), false));
                 }
                 return Log;
             }

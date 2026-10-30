@@ -112,7 +112,7 @@ public sealed class RankedServerTests : IDisposable
         for (int k = 0; k * RunLog.PoseInterval <= end; k++)
         {
             float x = Math.Min(x1, x0 + speed * k * RunLog.PoseInterval);
-            log.Poses[0].Add(new Pose(x, layout.GroundAt((int)Math.Floor(x)), false));
+            log.Poses[0].Add(new LogPose(x, layout.GroundAt((int)Math.Floor(x)), false));
         }
         int ms = (int)(end * 1000f);
         log.Events.Add(new LogEvent { TimeMs = ms, Kind = LogKind.Finish });
@@ -296,8 +296,8 @@ public sealed class RankedServerTests : IDisposable
         coop.Seed = log.Seed;
         coop.LayoutHash = log.LayoutHash;
         coop.Poses[0].AddRange(log.Poses[0]);
-        foreach (Pose p in log.Poses[0])
-            coop.Poses[1].Add(new Pose(p.X - 1.5f, p.Y, false));
+        foreach (LogPose p in log.Poses[0])
+            coop.Poses[1].Add(new LogPose(p.X - 1.5f, p.Y, false));
         coop.Events.AddRange(log.Events);
         coop.TimeMs = log.TimeMs;
         await Submit(start, coop);

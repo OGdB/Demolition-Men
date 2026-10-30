@@ -22,8 +22,8 @@ namespace Demolition.Tests
             log.Actions[1] = ActionKind.SiteRadio;
             for (int i = 0; i < 30; i++)
             {
-                log.Poses[0].Add(new Pose(12.5f + i * 0.8f, 3f + (i % 4) * 0.25f, i % 7 == 0));
-                log.Poses[1].Add(new Pose(10f - i * 0.1f, -2.5f, true));
+                log.Poses[0].Add(new LogPose(12.5f + i * 0.8f, 3f + (i % 4) * 0.25f, i % 7 == 0));
+                log.Poses[1].Add(new LogPose(10f - i * 0.1f, -2.5f, true));
             }
             log.Events.Add(new LogEvent { TimeMs = 120, Kind = LogKind.Pickup, Player = 0, Index = 4 });
             log.Events.Add(new LogEvent
@@ -101,7 +101,7 @@ namespace Demolition.Tests
             // About a minute and a half of solo play: 900 poses and 1500 hits.
             RunLog log = RunLog.For(1);
             for (int i = 0; i < 900; i++)
-                log.Poses[0].Add(new Pose(i * 0.75f, 2f + (i % 10) * 0.1f, false));
+                log.Poses[0].Add(new LogPose(i * 0.75f, 2f + (i % 10) * 0.1f, false));
             for (int i = 0; i < 1500; i++)
                 log.Events.Add(new LogEvent { TimeMs = i * 60, Kind = LogKind.Damage, Player = 0, Building = i / 40, CellX = i % 8, CellY = i % 5, Amount = 12f, Cause = HitCause.Fist, X = i * 0.05f, Y = 1.3f });
             Assert.Less(log.Encode().Length, 24 * 1024);

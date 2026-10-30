@@ -298,7 +298,7 @@ namespace Demolition.Ranked
                 {
                     if (_crew[p].Out || _sampled >= _log.Poses[p].Count)
                         continue;
-                    Pose pose = _log.Poses[p][_sampled];
+                    LogPose pose = _log.Poses[p][_sampled];
                     if (InsideWall(pose.X, pose.Y + 0.5f) || InsideWall(pose.X, pose.Y + 1.5f)) // the legs, the chest
                         return No($"player {p + 1} inside a wall at {_sampled * RunLog.PoseInterval:0.0}s");
                 }
@@ -431,7 +431,7 @@ namespace Demolition.Ranked
         {
             if (!Who(e, out Crew c))
                 return false;
-            Pose pose = PoseAt(e.Player, e.Time);
+            LogPose pose = PoseAt(e.Player, e.Time);
             float slack = Slack(e.Player);
             if (Mathf.Abs(e.X - pose.X) > RankedRules.AttackOffsetX + slack || Mathf.Abs(e.Y - pose.Y - RankedRules.AttackOffsetY) > slack)
                 return No("a swing out of the player's reach");
@@ -467,7 +467,7 @@ namespace Demolition.Ranked
         {
             if (!Who(e, out Crew c))
                 return false;
-            Pose pose = PoseAt(e.Player, e.Time);
+            LogPose pose = PoseAt(e.Player, e.Time);
             if (block.Spec.Material == BlockMaterial.Glass
                 || Distance(pose.X, pose.Y + RankedRules.HeadHeight + 0.6f, block) > 1f + Slack(e.Player))
                 return No("a headbutt out of reach");
@@ -483,7 +483,7 @@ namespace Demolition.Ranked
         {
             if (!Who(e, out _))
                 return false;
-            Pose pose = PoseAt(e.Player, e.Time);
+            LogPose pose = PoseAt(e.Player, e.Time);
             if (block.Spec.Material != BlockMaterial.Glass || Distance(pose.X, pose.Y + 1.2f, block) > 1.6f + Slack(e.Player))
                 return No("glass broken by a touch out of reach");
             return e.Amount <= Mathf.Max(block.Health, 1f) * Epsilon || No("glass touched too hard");
@@ -630,7 +630,7 @@ namespace Demolition.Ranked
             PickupPlacement pickup = _layout.Pickups[e.Index];
             if (pickup.Kind == PickupKind.Resurrect && _log.Mode != RankedMode.Coop)
                 return No("a resurrect in solo");
-            Pose pose = PoseAt(e.Player, e.Time);
+            LogPose pose = PoseAt(e.Player, e.Time);
             if (Vector2.Distance(new Vector2(pose.X, pose.Y + 1f), new Vector2(pickup.X, pickup.Y)) > RankedRules.PickupReach + Slack(e.Player))
                 return No("a pickup out of reach");
             _taken[e.Index] = true;
@@ -651,7 +651,7 @@ namespace Demolition.Ranked
                 return No("dynamite the player didn't have");
             if (c.Thrown != null)
                 return No("a second stick while one is out");
-            Pose pose = PoseAt(e.Player, e.Time);
+            LogPose pose = PoseAt(e.Player, e.Time);
             float slack = Slack(e.Player);
             if (Mathf.Abs(e.X - pose.X) > RankedRules.ThrowOffsetX + slack || Mathf.Abs(e.Y - pose.Y - RankedRules.ThrowOffsetY) > slack)
                 return No("a throw out of the player's hand");
@@ -752,7 +752,7 @@ namespace Demolition.Ranked
             untilLanded |= info.Frames[info.StrikeFrame] < 0f;
             if (e.Time - c.StartedAt > lead + (untilLanded ? 6f : 0f) + RankedRules.ActionSlack + (OnlinePartner(e.Player) ? 1f : 0f))
                 return No("a strike long after its action started");
-            Pose pose = PoseAt(e.Player, e.Time);
+            LogPose pose = PoseAt(e.Player, e.Time);
             Vector2 offset = info.Kind == ActionKind.Burp ? new Vector2(0.7f, 1.5f)
                 : info.Kind == ActionKind.CraneDrop ? new Vector2(5f, 0f)
                 : info.Kind == ActionKind.SiteRadio ? new Vector2(0.85f, 0f) : Vector2.zero;
@@ -852,8 +852,8 @@ namespace Demolition.Ranked
             Crew c = e.Player >= 0 && e.Player < _crew.Length ? _crew[e.Player] : null;
             if (c == null || !c.Out || _log.Mode != RankedMode.Coop)
                 return No("a rejoin by a player in play");
-            Pose partner = PoseAt(1 - e.Player, e.Time);
-            Pose own = PoseAt(e.Player, e.Time);
+            LogPose partner = PoseAt(1 - e.Player, e.Time);
+            LogPose own = PoseAt(e.Player, e.Time);
             float slack = Slack(0) + Slack(1) + 1f;
             bool byPartner = Mathf.Abs(e.X - partner.X - RankedRules.RejoinOffsetX) <= slack && Mathf.Abs(e.Y - partner.Y - RankedRules.RejoinOffsetY) <= slack;
             if (!byPartner && Vector2.Distance(new Vector2(e.X, e.Y), new Vector2(own.X, own.Y)) > slack)
@@ -895,7 +895,7 @@ namespace Demolition.Ranked
                 Crew c = _crew[p];
                 if (c.Out)
                     c.OutSpans.Add(new Vector2(c.OutAt, float.PositiveInfinity));
-                List<Pose> poses = _log.Poses[p];
+                List<LogPose> poses = _log.Poses[p];
                 if (poses.Count < samples - 1)
                     return No($"player {p + 1}'s pose track ends early");
                 if (poses.Count == 0)
@@ -908,7 +908,7 @@ namespace Demolition.Ranked
                 for (int i = 1; i < poses.Count && i <= samples; i++)
                 {
                     float t = i * RunLog.PoseInterval;
-                    Pose a = poses[i - 1], b = poses[i];
+                    LogPose a = poses[i - 1], b = poses[i];
                     if (OutBetween(c, t - RunLog.PoseInterval - 0.05f, t + 0.05f))
                     {
                         rising = 0;
@@ -942,7 +942,7 @@ namespace Demolition.Ranked
             return c.Out && c.OutAt <= to;
         }
 
-        private bool Knocked(Pose pose, float time)
+        private bool Knocked(LogPose pose, float time)
         {
             foreach (Knock k in _knocks)
                 if (time >= k.From && time <= k.To + RankedRules.KnockbackWindow
@@ -953,16 +953,16 @@ namespace Demolition.Ranked
 
         // ---------------- Helpers ----------------
 
-        private Pose PoseAt(int player, float time)
+        private LogPose PoseAt(int player, float time)
         {
-            List<Pose> poses = _log.Poses[player];
+            List<LogPose> poses = _log.Poses[player];
             if (poses.Count == 0)
-                return new Pose(float.NaN, float.NaN, false);
+                return new LogPose(float.NaN, float.NaN, false);
             float at = time / RunLog.PoseInterval;
             int i = Mathf.Clamp(Mathf.FloorToInt(at), 0, poses.Count - 1);
             int j = Mathf.Min(i + 1, poses.Count - 1);
             float f = Mathf.Clamp01(at - i);
-            return new Pose(Mathf.Lerp(poses[i].X, poses[j].X, f), Mathf.Lerp(poses[i].Y, poses[j].Y, f), poses[i].Left);
+            return new LogPose(Mathf.Lerp(poses[i].X, poses[j].X, f), Mathf.Lerp(poses[i].Y, poses[j].Y, f), poses[i].Left);
         }
 
         private bool OnlinePartner(int player) => _log.Online && player == 1;
