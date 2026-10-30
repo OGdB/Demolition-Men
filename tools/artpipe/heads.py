@@ -23,9 +23,10 @@ from PIL import Image, ImageDraw
 sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from accessories import ASSETS, KEYS, OUT as OVERLAYS, SHEETS, frames, full_sign, keep_mask, paint  # noqa: E402
+from accessories import ASSETS, KEYS, OUT as OVERLAYS, P1_BASE, P1_SHADE, P1_SKIN, P2_BASE, P2_SHADE, P2_SKIN, SHEETS, frames, full_sign, keep_mask, match, paint  # noqa: E402
 from action_frames import grow, lean, p2_head, rotsprite, sign_mask, write_sprite  # noqa: E402
 from build_theme import FOLDER_META, write_meta  # noqa: E402
+from shoulders import slope  # noqa: E402
 
 ROOT = os.path.join(HERE, "..", "..")
 OUT = os.path.join(ASSETS, "Resources", "LookHeads")
@@ -181,6 +182,11 @@ HEADS = {"warning": warning, "stop": p2_head, "noentry": no_entry, "giveway": gi
          "railway": railway}
 
 
+# Signs whose shoulders run up to them (shoulders.py). Not the warning sign, whose wide base sits on
+# them already, nor give way, around whose point down a slope looks like a collar.
+SLOPED = {"stop", "noentry", "priority", "speed30", "parking", "noparking", "railway"}
+
+
 def blank(im):
     """The back of a sign: all white, as the warning sign's."""
     a = np.array(im)
@@ -188,8 +194,9 @@ def blank(im):
     return Image.fromarray(a)
 
 
-def placements(head):
-    """Every frame's turn of the sign and where it goes: (player, texture, image, x, y), top left."""
+def placements(head, sloped=False):
+    """Every frame's turn of the sign and where it goes: (player, texture, image, x, y), top left.
+    When sloped, the piece has the shoulders' slope around the sign."""
     out = []
     for name, p1, p2, texture, (x0, y0) in frames():
         yellow, mark = sign_mask(p1)
@@ -207,6 +214,18 @@ def placements(head):
             left, top = max(0, -x), max(0, -y)
             right, bottom = min(turned.width, a.shape[1] - x), min(turned.height, a.shape[0] - y)
             piece = turned.crop((left, top, right, bottom))
+            if sloped:
+                # Around the sign, on the body without the player's own sign: as LookSkin clears it.
+                placed = Image.new("RGBA", (a.shape[1], a.shape[0]))
+                placed.paste(turned, (x, y))
+                body = np.array(placed)
+                light, shade = slope(match(a, P1_SKIN if player == "P1" else P2_SKIN), body[..., 3] > 0)
+                body[light] = (P1_BASE if player == "P1" else P2_BASE) + (255,)
+                body[shade] = (P1_SHADE if player == "P1" else P2_SHADE) + (255,)
+                placed = Image.fromarray(body)
+                bx0, by0, bx1, by1 = placed.getbbox()
+                piece = placed.crop((bx0, by0, bx1, by1))
+                x, y, left, top = bx0, by0, 0, 0
             tex = os.path.basename(SHEETS[player])[:-4] if texture == "sheet" else texture
             out.append((player, tex, piece, x0 + x + left, y0 + y + top, name))
     return out
@@ -254,7 +273,7 @@ def main():
     index, review = {"heads": []}, {}
     for hid, draw in HEADS.items():
         head = draw()
-        places = placements(head.crop(head.getbbox()))
+        places = placements(head.crop(head.getbbox()), hid in SLOPED)
         atlas, spots = pack([p[2] for p in places])
         write_sprite(atlas, os.path.join(OUT, hid + ".png"), atlas.width / 2, template)
         index["heads"].append({"id": hid, "places": [

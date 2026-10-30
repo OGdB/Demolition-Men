@@ -19,8 +19,8 @@ that lines the two players' skin up.
 Everything is drawn in key colours (KEYS, LookPalette.Extras in Looks.cs), and only on skin: a look
 says which parts it wears in which colour, and LookSkin lays them over the recoloured frame. One more
 key marks what no look recolours though it's in a colour looks change (keep_mask): the radio, the
-light spots on the skin in the sign's yellow; another the player's own sign, which a look with another
-sign clears before heads.py's sign goes on.
+light spots on the skin in the sign's yellow; another the player's own sign (with the shoulders.py
+slope that goes with it), which a look with another sign clears before heads.py's sign goes on.
 Writes Demolition Men/Assets/Resources/LookOverlays/P1|P2/<texture>.png with their .metas, and
 content-work/looks/anchors.png, every frame wearing everything, to review.
 """
@@ -58,6 +58,9 @@ KEYS = {"chain": (255, 0, 0), "chainShade": (128, 0, 0),
 
 P1_SKIN = {(238, 195, 154), (217, 160, 102), (205, 166, 129)}
 P2_SKIN = {P2_COLOURS[c] for c in P1_SKIN}
+P1_BASE, P1_SHADE = (238, 195, 154), (217, 160, 102)
+P2_BASE, P2_SHADE = P2_COLOURS[P1_BASE], P2_COLOURS[P1_SHADE]
+RISE = [(P2_BASE[0], P2_BASE[1], P2_BASE[2] + 1), (P2_SHADE[0], P2_SHADE[1], P2_SHADE[2] + 1)]  # shoulders.py on Player 2's own frames
 P2_SIGN = {(246, 73, 73), (191, 0, 0)}
 
 # Ink, one pixel per "x": a heart on the arm, an eagle across the chest.
@@ -249,7 +252,7 @@ def paint(a, player, anchor, offset=(0, 0), keep=None, action=None):
         if 0 <= x < w and 0 <= y < h and skin[y, x] and not taken[y, x]:
             out[y, x] = KEYS[key] + (255,)
             taken[y, x] = True
-    sign = full_sign(a, player, action)
+    sign = full_sign(a, player, action) | match(a, RISE)
     if keep is not None:
         out[keep & ~sign] = KEYS["keep"] + (255,)
         out[keep & sign] = KEYS["signKeep"] + (255,)
