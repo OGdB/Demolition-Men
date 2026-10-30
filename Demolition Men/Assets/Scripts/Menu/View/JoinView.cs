@@ -74,37 +74,37 @@ public class JoinView : MonoBehaviour
 
         RectTransform lobby = UiFactory.Stretch(root, "Lobby");
         _lobby = lobby.gameObject;
-        UiFactory.TitledPanel(lobby, new Vector2(0f, -90f), new Vector2(1200f, 640f), "WHO'S DEMOLISHING?", 64f, 1100f);
+        UiFactory.TitledPanel(lobby, new Vector2(0f, -120f), new Vector2(1200f, 700f), "WHO'S DEMOLISHING?", 64f, 1100f);
 
-        _names[0] = NameRow(lobby, 150f);
+        _names[0] = NameRow(lobby, 85f);
         for (int i = 0; i < _slots.Length; i++)
-            _slots[i] = UiFactory.Text(lobby, $"P{i + 1}", centre, new Vector2(0f, 50f - i * 90f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);
+            _slots[i] = UiFactory.Text(lobby, $"P{i + 1}", centre, new Vector2(0f, -10f - i * 90f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);
 
-        TextMeshProUGUI hint = UiFactory.Text(lobby, "Hint", centre, new Vector2(0f, -170f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 80f));
+        TextMeshProUGUI hint = UiFactory.Text(lobby, "Hint", centre, new Vector2(0f, -225f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 80f));
         hint.text = "JOIN: A / SPACE     LEAVE: B / ESC\nPLAY: START / ENTER     SETTINGS: SELECT / TAB";
         hint.color = new Color(0.8f, 0.8f, 0.82f);
 
-        _start = UiFactory.Button(lobby, "START", centre, new Vector2(-380f, -310f), new Vector2(340f, 100f), () => _continue?.Invoke());
-        _online = UiFactory.Button(lobby, "ONLINE", centre, new Vector2(0f, -310f), new Vector2(340f, 100f), () => _goOnline?.Invoke());
+        _start = UiFactory.Button(lobby, "START", centre, new Vector2(-380f, -370f), new Vector2(340f, 100f), () => _continue?.Invoke());
+        _online = UiFactory.Button(lobby, "ONLINE", centre, new Vector2(0f, -370f), new Vector2(340f, 100f), () => _goOnline?.Invoke());
         // Settings at the scene root: under the menu's canvas (this object) it would take that canvas's scaling.
-        UiFactory.Button(lobby, "SETTINGS", centre, new Vector2(380f, -310f), new Vector2(340f, 100f), () => SettingsView.Open(null));
+        UiFactory.Button(lobby, "SETTINGS", centre, new Vector2(380f, -370f), new Vector2(340f, 100f), () => SettingsView.Open(null));
 
         RectTransform touch = UiFactory.Stretch(root, "Touch");
         _touch = touch.gameObject;
-        UiFactory.TitledPanel(touch, new Vector2(0f, -90f), new Vector2(1200f, 560f), "READY TO DEMOLISH?", 64f, 1100f);
+        UiFactory.TitledPanel(touch, new Vector2(0f, -110f), new Vector2(1200f, 600f), "READY TO DEMOLISH?", 64f, 1100f);
 
-        _names[1] = NameRow(touch, 105f);
-        _pads = UiFactory.Text(touch, "Players", centre, new Vector2(0f, 30f), 40f, TextAlignmentOptions.Center, new Vector2(1100f, 60f), outlined: true);
+        _names[1] = NameRow(touch, 45f);
+        _pads = UiFactory.Text(touch, "Players", centre, new Vector2(0f, -30f), 40f, TextAlignmentOptions.Center, new Vector2(1100f, 60f), outlined: true);
 
-        Button play = UiFactory.Button(touch, "PLAY", centre, new Vector2(-270f, -90f), new Vector2(480f, 150f), () => _continue?.Invoke());
+        Button play = UiFactory.Button(touch, "PLAY", centre, new Vector2(-270f, -150f), new Vector2(480f, 150f), () => _continue?.Invoke());
         UiFactory.Label(play, "PLAY", 60f);
-        _playOnline = UiFactory.Button(touch, "PLAY ONLINE", centre, new Vector2(270f, -90f), new Vector2(480f, 150f), () => _goOnline?.Invoke());
+        _playOnline = UiFactory.Button(touch, "PLAY ONLINE", centre, new Vector2(270f, -150f), new Vector2(480f, 150f), () => _goOnline?.Invoke());
         UiFactory.Label(_playOnline, "PLAY ONLINE", 56f);
 
-        _onlineNote = UiFactory.Text(touch, "OnlineNote", centre, new Vector2(270f, -225f), 28f, TextAlignmentOptions.Center, new Vector2(600f, 80f));
+        _onlineNote = UiFactory.Text(touch, "OnlineNote", centre, new Vector2(270f, -285f), 28f, TextAlignmentOptions.Center, new Vector2(600f, 80f));
         _onlineNote.text = "CO-OP WITH A FRIEND ON\nANOTHER PHONE, PC OR BROWSER";
 
-        UiFactory.Button(touch, "SETTINGS", centre, new Vector2(-270f, -235f), new Vector2(360f, 90f), () => SettingsView.Open(null));
+        UiFactory.Button(touch, "SETTINGS", centre, new Vector2(-270f, -295f), new Vector2(360f, 90f), () => SettingsView.Open(null));
     }
 
     // NAME and its field: what this device is called on the ranked boards. A name that isn't
@@ -115,7 +115,7 @@ public class JoinView : MonoBehaviour
         TextMeshProUGUI label = UiFactory.Text(panel, "NameLabel", centre, new Vector2(-330f, y), 40f, TextAlignmentOptions.Right,
             new Vector2(220f, 70f), outlined: true);
         label.text = "NAME";
-        TMP_InputField field = UiFactory.InputField(panel, "Name", centre, new Vector2(110f, y), new Vector2(620f, 72f), 40f, PlayerName.MaxLength);
+        TMP_InputField field = UiFactory.InputField(panel, "Name", centre, new Vector2(130f, y), new Vector2(660f, 72f), 40f, PlayerName.MaxLength);
         ((TextMeshProUGUI)field.placeholder).text = "TYPE YOUR NAME";
         field.onValidateInput = (text, index, c) => PlayerName.Accept(c);
         field.onEndEdit.AddListener(typed =>

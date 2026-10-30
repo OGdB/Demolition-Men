@@ -88,7 +88,7 @@ namespace Demolition.Meta
             for (int i = 0; i < LookCatalog.SlotCount; i++)
             {
                 var slot = (LookSlot)i;
-                _tabs.Add(UiFactory.Button(_root, SlotNames[i], centre, new Vector2((i - 2) * 310f, 375f), new Vector2(290f, 66f), () => Show(slot, false)));
+                _tabs.Add(UiFactory.Button(_root, SlotNames[i], centre, new Vector2((i - 2) * 310f, 368f), new Vector2(290f, 58f), () => Show(slot, false)));
             }
             _players = NetRole.IsOnline ? 1 : Mathf.Max(1, Session.PlayerCount);
             UiFactory.Button(_root, "BACK", centre, new Vector2(560f, -400f), new Vector2(300f, 80f), () => Destroy(gameObject));
@@ -113,7 +113,7 @@ namespace Demolition.Meta
             _refresh.Clear();
             List<LookInfo> items = LookCatalog.InSlot(slot);
             for (int i = 0; i < items.Count; i++)
-                Row(items[i], new Vector2((i / RowsPerColumn == 0 ? -1f : 1f) * ColumnX, 290f - i % RowsPerColumn * RowHeight));
+                Row(items[i], new Vector2((i / RowsPerColumn == 0 ? -1f : 1f) * ColumnX, 284f - i % RowsPerColumn * RowHeight));
             for (int i = 0; i < _tabs.Count; i++)
                 UiFactory.Label(_tabs[i], i == (int)slot ? $"> {SlotNames[i]} <" : SlotNames[i], 30f);
             if (select && EventSystem.current != null)

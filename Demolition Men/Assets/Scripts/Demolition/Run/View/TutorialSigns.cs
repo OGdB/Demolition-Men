@@ -40,6 +40,7 @@ namespace Demolition.Run
         private const float HeadHeight = 1.9f;  // world units from the feet to the top of the head
         private const float HealthBarClear = 44f; // canvas units on top of that: the health bar and a gap
         private const float TopReserve = 150f;  // the timer, meter and score panels
+        private const float ScreenMargin = 16f;
         private const float PassedAlpha = 0.8f;
         private const float MinFit = 0.6f;      // a sign shrinks this far to stay inside a narrow stretch (zoomed out)
         private const float PopSeconds = 0.3f;
@@ -157,6 +158,11 @@ namespace Demolition.Run
                 Vector2 at = toCanvas(new Vector3(x, sign.FootY + HeadHeight, 0f)) + new Vector2(0f, HealthBarClear);
                 float height = (TailHeight + sign.Plate.sizeDelta.y) * fit;
                 at.y = Mathf.Min(at.y, topLimit - height); // under the timer and the score, not off the top
+                if (current)
+                {
+                    float half = sign.Plate.sizeDelta.x * fit * 0.5f + ScreenMargin; // the one being read stays on screen
+                    at.x = Mathf.Clamp(at.x, half, Mathf.Max(half, _root.rect.width - half));
+                }
                 sign.Root.anchoredPosition = at;
 
                 sign.Tail.gameObject.SetActive(current);

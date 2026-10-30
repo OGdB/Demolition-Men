@@ -88,7 +88,7 @@ namespace Demolition.Meta
             UiFactory.Backdrop(root, new Color(0f, 0f, 0f, 0.75f));
             var centre = new Vector2(0.5f, 0.5f);
 
-            UiFactory.TitledPanel(root, new Vector2(0f, 10f), new Vector2(1500f, 990f), "RANKED", 80f);
+            UiFactory.TitledPanel(root, new Vector2(0f, 10f), new Vector2(1700f, 990f), "RANKED", 80f);
             _day = UiFactory.Text(root, "Day", centre, new Vector2(0f, 385f), 40f, TextAlignmentOptions.Center, new Vector2(1300f, 52f), outlined: true);
             _day.color = UiFactory.Gold;
             _status = UiFactory.Text(root, "Status", centre, new Vector2(0f, 335f), 30f, TextAlignmentOptions.Center, new Vector2(1300f, 44f));
@@ -96,7 +96,7 @@ namespace Demolition.Meta
             for (int i = 0; i < Rows; i++)
             {
                 int row = i;
-                Button button = UiFactory.Button(root, "Row " + i, centre, new Vector2(0f, 270f - i * 54f), new Vector2(1200f, 50f), () => Report(row));
+                Button button = UiFactory.Button(root, "Row " + i, centre, new Vector2(0f, 270f - i * 54f), new Vector2(1500f, 50f), () => Report(row));
                 TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
                 label.alignment = TextAlignmentOptions.Left;
                 label.fontSize = 30f;
@@ -108,19 +108,24 @@ namespace Demolition.Meta
             }
             _you = UiFactory.Text(root, "You", centre, new Vector2(0f, -285f), 36f, TextAlignmentOptions.Center, new Vector2(1300f, 50f), outlined: true);
 
-            var size = new Vector2(340f, 84f);
             int players = _mode == RankedMode.Coop && !NetRole.IsOnline ? 2 : 1;
+            bool test = Debug.isDebugBuild && !NetRole.IsOnline;
+            float spacing = Mathf.Min(370f, 1620f / (players + (test ? 3 : 2)));
+            var size = new Vector2(spacing - 20f, 84f);
             var buttons = new List<Button>();
             for (int p = 0; p < players; p++)
                 buttons.Add(ActionPicker(root, p, size));
             _play = UiFactory.Button(root, "PLAY", centre, Vector2.zero, size, Play);
             _play.interactable = !NetRole.IsClient;
             buttons.Insert(0, _play);
-            if (Debug.isDebugBuild && !NetRole.IsOnline)
+            if (test)
+            {
                 buttons.Add(UiFactory.Button(root, "TEST OFFLINE", centre, Vector2.zero, size, PlayOffline));
+                UiFactory.Label(buttons[buttons.Count - 1], "TEST OFFLINE", 32f);
+            }
             buttons.Add(UiFactory.Button(root, "BACK", centre, Vector2.zero, size, Close));
             for (int i = 0; i < buttons.Count; i++)
-                ((RectTransform)buttons[i].transform).anchoredPosition = new Vector2((i - (buttons.Count - 1) * 0.5f) * 370f, -400f);
+                ((RectTransform)buttons[i].transform).anchoredPosition = new Vector2((i - (buttons.Count - 1) * 0.5f) * spacing, -400f);
 
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(_play.gameObject);
@@ -141,6 +146,11 @@ namespace Demolition.Meta
                 Profile.Save();
                 ShowAction(button, player);
             });
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
+            label.textWrappingMode = TextWrappingModes.Normal; // CONTROLLED DEMOLITION is wider than the button
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 16f;
+            label.fontSizeMax = 32f;
             ShowAction(button, player);
             return button;
         }
@@ -196,8 +206,10 @@ namespace Demolition.Meta
         private static string Line(BoardEntry e, bool mine)
         {
             string crew = string.IsNullOrEmpty(e.partner) ? e.name : $"{e.name} + {e.partner}";
+            if (crew.Length > 24)
+                crew = $"<size=80%>{crew}</size>"; // two long names stay clear of the score
             string gold = ColorUtility.ToHtmlStringRGB(UiFactory.Gold);
-            string text = $"{e.rank,3}.  {crew}<pos=62%>{Score(e.score)}<pos=78%>{Clock(e.timeMs)}";
+            string text = $"{e.rank,3}.  {crew}<pos=70%>{Score(e.score)}<pos=85%>{Clock(e.timeMs)}";
             return mine ? $"<color=#{gold}>{text}</color>" : text;
         }
 

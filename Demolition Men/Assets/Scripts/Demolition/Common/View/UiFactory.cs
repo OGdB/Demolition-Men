@@ -16,7 +16,7 @@ namespace Demolition
         public static readonly Color Gold = new Color(1f, 0.85f, 0.3f);
         public static readonly Color Ink = new Color(0.06f, 0.06f, 0.09f);
         public static readonly Color Steel = new Color(0.36f, 0.4f, 0.45f);
-        public static readonly Color PanelColor = new Color(0.2f, 0.22f, 0.26f, 0.97f);
+        public static readonly Color PanelColor = new Color(0.2f, 0.22f, 0.26f, 1f);
         private static readonly Color NameplateColor = new Color(0.1f, 0.11f, 0.13f, 1f);
         public static readonly Color StarLit = new Color(1f, 0.82f, 0.25f);
         public static readonly Color StarDark = new Color(0.22f, 0.23f, 0.27f, 0.9f);
@@ -55,7 +55,7 @@ namespace Demolition
 
         /// <summary>A thinner edge for small text over the level (around 20-24 pt), which the
         /// full outline eats into.</summary>
-        public static Material ThinOutline => _thinOutline != null ? _thinOutline : _thinOutline = Styled(false, 0.12f);
+        public static Material ThinOutline => _thinOutline != null ? _thinOutline : _thinOutline = Styled(false, 0.2f);
 
         public static Sprite PlateSprite => _plate != null ? _plate : _plate = Resources.Load<Sprite>("UI/Plate");
         public static Sprite HazardSprite => _hazard != null ? _hazard : _hazard = Resources.Load<Sprite>("UI/Hazard");
