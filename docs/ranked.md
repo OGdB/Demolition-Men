@@ -2,7 +2,8 @@
 
 **Status (2026-10-30):** K1–K5 built; `RankedBotTests` passes in Unity (solo and co-op, every
 level), `RealLogTests` replays those logs on the server's runtime and every cheat on them is turned
-down; the server runs at `ranked.oeds.space`. Never tested: online co-op's logs, a phone, a browser.
+down; the server runs at `ranked.oeds.space`, where a run from the editor over HTTPS and every cheat
+sent to it were judged the same. Never tested: online co-op's logs, a phone, a browser.
 - **Models** (`Ranked/Model/`, EditMode tests): the run log (`RunLog`), its seal (`Seal`), the
   numbers it's checked with (`RankedRules`), the referee (`RunVerifier`), the day's pick
   (`RankedDay.Pick`), names (`PlayerName`), the server's messages (`RankedApi`).
