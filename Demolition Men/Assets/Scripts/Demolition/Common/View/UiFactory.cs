@@ -351,6 +351,7 @@ namespace Demolition
             TextMeshProUGUI text = Text(area, "Text", Vector2.zero, Vector2.zero, fontSize, TextAlignmentOptions.MidlineLeft);
             text.rectTransform.anchorMax = Vector2.one;
             text.rectTransform.sizeDelta = Vector2.zero;
+            text.rectTransform.pivot = new Vector2(0.5f, 0.5f); // the caret of Midline text centres on the pivot
             text.color = Gold;
             TextMeshProUGUI placeholder = Text(area, "Placeholder", Vector2.zero, Vector2.zero, fontSize, TextAlignmentOptions.MidlineLeft);
             placeholder.rectTransform.anchorMax = Vector2.one;
