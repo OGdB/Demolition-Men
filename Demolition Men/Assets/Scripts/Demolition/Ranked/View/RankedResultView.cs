@@ -6,8 +6,9 @@ using UnityEngine.UI;
 namespace Demolition.Ranked
 {
     /// <summary>
-    /// A ranked run's line on the results screen, between the title and the meter: SENDING, then the
-    /// place on the day's board (and whether it's a new best), or what went wrong with a SEND AGAIN.
+    /// A ranked run's line on the results screen, left of the stars (the first-clear badge is on their
+    /// right): SENDING, then the place on the day's board (and whether it's a new best), or what went
+    /// wrong with a SEND AGAIN.
     /// An online partner's says the host sends the run. Added by LevelBootstrap in ranked runs.
     /// </summary>
     public sealed class RankedResultView : MonoBehaviour
@@ -39,12 +40,13 @@ namespace Demolition.Ranked
             _root = canvas.gameObject;
             var root = (RectTransform)canvas.transform;
             var centre = new Vector2(0.5f, 0.5f);
-            _line = UiFactory.Text(root, "Ranked", centre, new Vector2(0f, 205f), 40f, TextAlignmentOptions.Center, new Vector2(1000f, 56f), outlined: true);
+            _line = UiFactory.Text(root, "Ranked", centre, new Vector2(-505f, 205f), 34f, TextAlignmentOptions.Center, new Vector2(370f, 84f), outlined: true);
             _line.color = UiFactory.Gold;
+            _line.textWrappingMode = TextWrappingModes.Normal;
             _line.enableAutoSizing = true;
-            _line.fontSizeMin = 24f;
-            _line.fontSizeMax = 40f;
-            _again = UiFactory.Button(root, "SEND AGAIN", centre, new Vector2(0f, 150f), new Vector2(320f, 64f), RankedSession.Send);
+            _line.fontSizeMin = 20f;
+            _line.fontSizeMax = 34f;
+            _again = UiFactory.Button(root, "SEND AGAIN", centre, new Vector2(-505f, 128f), new Vector2(300f, 56f), RankedSession.Send);
             _again.gameObject.SetActive(false);
         }
 
@@ -66,7 +68,7 @@ namespace Demolition.Ranked
                 case RankedSession.Phase.Sent:
                     SubmitResponse result = RankedSession.Result;
                     _line.text = result.rank <= 0 ? "RANKED: NOT FINISHED, NOT ON THE BOARD"
-                        : $"RANKED  #{result.rank} OF {result.of}" + (result.best ? "  ·  YOUR BEST TODAY!" : "  ·  YOUR BEST TODAY STAYS");
+                        : $"RANKED  #{result.rank} OF {result.of}\n" + (result.best ? "YOUR BEST TODAY!" : "YOUR BEST TODAY STAYS");
                     break;
                 case RankedSession.Phase.Failed:
                     _line.text = "RANKED: " + RankedSession.Error;
