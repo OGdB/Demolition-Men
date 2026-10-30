@@ -354,6 +354,7 @@ namespace Demolition.Run
                 if (input.Source != r.Script)
                 {
                     r.Own = input.Source; // taken here, not in RunIn: a bot sets its own source in Start
+                    r.Script.Style = r.Own.Style;
                     input.Source = r.Script;
                     r.Player.Motor.enabled = true;
                 }

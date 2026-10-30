@@ -103,7 +103,7 @@ namespace Demolition.Tests
         [Test]
         public void Combined_FollowsTheSourceUsedLast()
         {
-            var bot = new ScriptedInputSource();
+            var bot = new ScriptedInputSource { Style = InputStyle.Gamepad };
             var touch = new TouchInputSource();
             var both = new CombinedInputSource(bot, touch);
             touch.SetAttack(true);

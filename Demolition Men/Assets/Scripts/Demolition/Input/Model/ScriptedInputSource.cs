@@ -6,7 +6,8 @@ namespace Demolition
     {
         public PlayerInputFrame Next;
 
-        public InputStyle Style => InputStyle.Gamepad;
+        /// <summary>Whose buttons the prompts show: set to the controls this stands in for.</summary>
+        public InputStyle Style { get; set; }
 
         public PlayerInputFrame Read()
         {

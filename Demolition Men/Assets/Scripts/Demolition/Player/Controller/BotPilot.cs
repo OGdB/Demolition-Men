@@ -135,7 +135,9 @@ namespace Demolition
         // In Start: the run assigns devices to players when it wakes, after this was added.
         private void Start()
         {
-            GetComponent<PlayerInputReader>().Source = _source;
+            var reader = GetComponent<PlayerInputReader>();
+            _source.Style = reader.Source.Style;
+            reader.Source = _source;
             _level = FindAnyObjectByType<LevelBuilder>();
         }
 
