@@ -138,7 +138,11 @@ namespace Demolition.Levels
             {
                 var root = new GameObject("Backdrop").transform;
                 for (int i = 0; i < theme.backdrop.Length; i++)
-                    SpawnBackdropLayer(theme.backdrop[i], root, x, ground, i - theme.backdrop.Length - 1);
+                {
+                    SpriteRenderer layer = SpawnBackdropLayer(theme.backdrop[i], root, x, ground, i - theme.backdrop.Length - 1);
+                    if (i == 0 && layer != null)
+                        SpawnSkyCap(layer, theme.sky);
+                }
                 return;
             }
             if (config.backdropPrefab == null)
@@ -151,10 +155,10 @@ namespace Demolition.Levels
         // A tiled strip four wrap periods wide: the view (up to aspect 4 at max zoom) stays
         // covered however far it has drifted before the next wrap. A single layer (the sun)
         // is one sprite that never wraps.
-        private static void SpawnBackdropLayer(BackdropLayer layer, Transform root, float x, float ground, int order)
+        private static SpriteRenderer SpawnBackdropLayer(BackdropLayer layer, Transform root, float x, float ground, int order)
         {
             if (layer.sprite == null)
-                return;
+                return null;
             var go = new GameObject(layer.sprite.name, typeof(SpriteRenderer));
             go.transform.SetParent(root, false);
             var sr = go.GetComponent<SpriteRenderer>();
@@ -176,6 +180,22 @@ namespace Demolition.Levels
             }
             go.transform.position = new Vector3(x, ground + layer.bottom + tile.y * 0.5f, 0f);
             go.AddComponent<ParallaxLayer>().Configure(layer.parallax, period);
+            return sr;
+        }
+
+        // Above the sky's gradient, in the colour it ends in: the camera's clear colour alone would show
+        // an edge once zoomed out, since the scene's light darkens sprites and not the clear colour.
+        private static void SpawnSkyCap(SpriteRenderer sky, Color colour)
+        {
+            const float Height = 200f; // far past the widest zoom
+            var cap = new GameObject("Sky cap", typeof(SpriteRenderer));
+            cap.transform.SetParent(sky.transform, false);
+            cap.transform.localPosition = new Vector3(0f, sky.sprite.bounds.extents.y + Height * 0.5f, 0f);
+            cap.transform.localScale = new Vector3(sky.size.x, Height, 1f);
+            var sr = cap.GetComponent<SpriteRenderer>();
+            sr.sprite = PrimitiveSprite.Unit();
+            sr.color = colour;
+            sr.sortingOrder = sky.sortingOrder;
         }
 
         private static int SpawnPlayers(GameConfig config, Vector3 spawn)
