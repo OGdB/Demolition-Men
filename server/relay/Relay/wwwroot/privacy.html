@@ -33,7 +33,7 @@
 <body>
 <main>
 <h1>Demolition Men – Privacy Policy</h1>
-<p class="meta">Last updated: 22 October 2026</p>
+<p class="meta">Last updated: 28 October 2026</p>
 
 <p>Demolition Men is a game made by OG Studio (“we”, “us”). This policy explains what
 data the game and the services it relies on process, why, and what choices you have.
@@ -42,22 +42,26 @@ Questions about it: <a href="mailto:OGpriv@proton.me">OGpriv@proton.me</a>.</p>
 <div class="summary">
 <p><strong>In short</strong></p>
 <ul>
-  <li>There are no accounts. We never ask for your name, e-mail address or other personal details.</li>
+  <li>There are no accounts, and we never ask for your real name, e-mail address or other contact
+    details.</li>
   <li>Your progress is saved on your device only.</li>
+  <li>Only if you play <strong>ranked</strong>, our ranked server stores the nickname you chose, an ID
+    made from your device's identifier (not the identifier itself), and your ranked runs and scores.
+    Everyone can see your nickname and scores on the boards. After 180 days they are deleted.</li>
   <li>The Android version shows ads from Google AdMob. In the EEA, the UK and Switzerland you
     decide in Google’s consent form whether ads may be personalised, and you can change that at
     any time under <strong>Settings ▸ PRIVACY</strong>.</li>
   <li>Online co-op runs through our relay server. It sees your IP address while you play but
     does not store it.</li>
-  <li>We don’t sell data, and we don’t receive any data that identifies you.</li>
+  <li>We don’t sell data. Ranked play is the only part of the game that sends us data about you.</li>
 </ul>
 </div>
 
 <h2>1. Who is responsible</h2>
-<p>For the game and the relay server, the data controller under the EU General Data Protection
-Regulation (GDPR) is OG Studio, reachable at
+<p>For the game, the relay server and the ranked server, the data controller under the EU General
+Data Protection Regulation (GDPR) is OG Studio, reachable at
 <a href="mailto:OGpriv@proton.me">OGpriv@proton.me</a>. For advertising, Google is responsible for
-its own processing (section 4).</p>
+its own processing (section 5).</p>
 
 <h2>2. Data stored on your device</h2>
 <p>The game keeps a save file on your device with your progress, best scores, in-game cash and
@@ -78,6 +82,9 @@ address.</p>
     connections or wrong join codes from one address). It is never written to logs or to
     disk.</li>
   <li><strong>The join code</strong>, which exists only while the game room is open.</li>
+  <li><strong>Your nickname and player ID</strong> (section 4), which the joining device sends to the
+    host with the join, so a ranked co-op run carries both players' names. The relay passes them on
+    without reading or storing them.</li>
 </ul>
 <p>The relay records only totals (rooms open, players connected, traffic, why connections ended),
 without addresses or codes. It runs in a data centre of Hetzner Online GmbH in Germany, which
@@ -85,7 +92,36 @@ hosts it for us.</p>
 <p>Legal basis: providing the online play you ask for (Art. 6(1)(b) GDPR) and our legitimate
 interest in protecting the service against abuse (Art. 6(1)(f) GDPR).</p>
 
-<h2>4. Advertising (Android version)</h2>
+<h2>4. Ranked boards</h2>
+<p>Ranked play is optional. RANKED in the game has one level a day for everyone, with a board for
+solo and one for co-op. When you play it, your device talks to our ranked server over an encrypted
+connection (TLS), and the server processes:</p>
+<ul>
+  <li><strong>Your nickname</strong>: the name you type on the game's first screen, or the one the game
+    makes up (like WRECKER 4821) until you do. It is shown on the boards next to your scores, to
+    everyone who opens them. Please don't use your real name.</li>
+  <li><strong>A player ID</strong>: a one-way code (a SHA-256 hash) of your device's own identifier,
+    or, in a browser, of a random number the game keeps in your browser's storage. It gives one
+    device one nickname and one place on each board. The identifier itself never leaves your
+    device, and we can't work it back from the code.</li>
+  <li><strong>Your ranked runs</strong>: a record of each run (where your crew was every tenth of a
+    second, what was hit with what, pickups, actions, the time and the score) and our server's check
+    of it. The server replays it with the game's rules to keep the boards free of cheats. The best
+    run of each day is also shown to other players as a "ghost" they can race.</li>
+  <li><strong>In online co-op</strong>, the host's device sends the run with the nickname and player
+    ID of both players.</li>
+  <li><strong>Reports</strong>: when you report a run as a cheat, which run you reported.</li>
+  <li><strong>Your IP address</strong>, to send the answers to your device and to limit how often one
+    address may start runs, make new players or report. It is kept in memory only, at most a day,
+    and never written to logs or to disk.</li>
+</ul>
+<p>We look at runs the server turns down and runs that are reported. A player whose runs don't
+hold up may be hidden from the boards; they still see their own runs. The server's logs note when
+a run is turned down or reported, with the player ID; they are rotated and kept at most 30 MB.</p>
+<p>Legal basis: providing the ranked play you ask for (Art. 6(1)(b) GDPR) and our legitimate
+interest in fair boards without cheats (Art. 6(1)(f) GDPR).</p>
+
+<h2>5. Advertising (Android version)</h2>
 <p>The Android version shows a full-screen ad between some runs and, only if you choose to watch
 one, a rewarded ad that doubles a run’s cash. The ads come from Google AdMob, provided by Google
 Ireland Limited for users in the EEA and Switzerland, and by Google LLC elsewhere (including the
@@ -113,13 +149,13 @@ Google’s privacy policy: <a href="https://policies.google.com/privacy">policie
 your device where the law requires it (Art. 6(1)(a) GDPR); otherwise our legitimate interest in
 funding a free game through ads (Art. 6(1)(f) GDPR).</p>
 
-<h2>5. Google Play</h2>
+<h2>6. Google Play</h2>
 <p>If you install the game from Google Play, Google processes data about the download and your
 device under its own privacy policy. Google Play gives us aggregated statistics (installs,
 ratings) and crash and performance reports (such as the device model, the Android version and
 the error) that don’t identify you.</p>
 
-<h2>6. Other services</h2>
+<h2>7. Other services</h2>
 <ul>
   <li>The analytics, crash-reporting and performance-reporting services of the game engine
     (Unity) are switched off.</li>
@@ -128,44 +164,51 @@ the error) that don’t identify you.</p>
   <li>This page is served without access logs.</li>
 </ul>
 
-<h2>7. Children</h2>
+<h2>8. Children</h2>
 <p>The game is not directed at children under 13, and we don’t knowingly collect personal data
-from them.</p>
+from them. Ranked nicknames are public: the game turns down offensive ones, and others can be
+reported.</p>
 
-<h2>8. How long data is kept</h2>
+<h2>9. How long data is kept</h2>
 <ul>
   <li>Save file: on your device until you delete it.</li>
   <li>Relay: IP addresses in memory while you are connected and up to one minute afterwards;
     game data is not stored.</li>
+  <li>Ranked server: nicknames, player IDs, runs and reports for 180 days, then deleted
+    automatically; its daily backups are kept for 7 days more. IP addresses only in memory, at most
+    a day.</li>
   <li>Advertising data: as described in Google’s policies.</li>
 </ul>
 
-<h2>9. Transfers outside the EU</h2>
-<p>The relay runs in the EU. Google may process data in other countries, including the United
+<h2>10. Transfers outside the EU</h2>
+<p>The relay and the ranked server run in the EU. Google may process data in other countries, including the United
 States, under the EU–U.S. Data Privacy Framework and the European Commission’s standard
 contractual clauses.</p>
 
-<h2>10. Your rights</h2>
+<h2>11. Your rights</h2>
 <p>Under the GDPR and the UK GDPR you have the right to access, correct or delete your personal
 data, to restrict or object to its processing, to data portability, and to withdraw your consent
-at any time (Settings ▸ PRIVACY) without affecting processing before that. We make no automated
-decisions about you.</p>
-<p>Because we don’t store data that identifies you, we usually have nothing to hand over or
-delete; your save file is under your own control on your device. For data Google holds, use
+at any time (Settings ▸ PRIVACY) without affecting processing before that. Our ranked server
+checks runs automatically; that only decides what shows on a board, nothing with legal or
+similar effects, and if you ask, a person looks at it again.</p>
+<p>If you never played ranked, we don’t store data about you; your save file is under your own
+control on your device. If you did, write to us with your nickname (and roughly when you played)
+to see, correct or delete your ranked data. For data Google holds, use
 Google’s controls described above. You can also complain to the data protection authority of
 the country where you live or work.</p>
 <p>If you live in a US state with a privacy law, you can limit ad personalisation with the
 advertising ID controls in your Android settings.</p>
 
-<h2>11. Security</h2>
-<p>Connections to the relay and to Google’s ad services are encrypted (TLS). The relay doesn’t
-store game data or addresses, and the game has no accounts or passwords that could leak.</p>
+<h2>12. Security</h2>
+<p>Connections to the relay, the ranked server and Google’s ad services are encrypted (TLS). The
+relay doesn’t store game data or addresses. The ranked server keeps only what section 4 lists, on
+our server in the EU; the game has no accounts or passwords that could leak.</p>
 
-<h2>12. Changes</h2>
+<h2>13. Changes</h2>
 <p>If this policy changes, the date at the top changes with it. Significant changes are also
 mentioned in the game’s update notes.</p>
 
-<h2>13. Contact</h2>
+<h2>14. Contact</h2>
 <p>OG Studio · <a href="mailto:OGpriv@proton.me">OGpriv@proton.me</a></p>
 </main>
 </body>

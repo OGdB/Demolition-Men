@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Demolition.Actions;
 using Demolition.Levels;
+using Demolition.Ranked;
 using Demolition.Run;
 using Unity.Collections;
 using Unity.Netcode;
@@ -221,7 +222,7 @@ namespace Demolition.Online
 
         // ---------------- Damage and cells ----------------
 
-        private void SendDamage(BuildingBlock block, float amount)
+        private void SendDamage(BuildingBlock block, float amount, HitCause cause, Vector2 from)
         {
             if (!Address(block, out int building, out int cell))
                 return;
@@ -230,6 +231,9 @@ namespace Demolition.Online
                 BytePacker.WriteValueBitPacked(writer, building);
                 BytePacker.WriteValueBitPacked(writer, cell);
                 writer.WriteValueSafe(amount);
+                writer.WriteValueSafe((byte)cause); // for the host's ranked log (docs/ranked.md §3)
+                writer.WriteValueSafe(from.x);
+                writer.WriteValueSafe(from.y);
             });
         }
 
@@ -238,9 +242,14 @@ namespace Demolition.Online
             ByteUnpacker.ReadValueBitPacked(reader, out int building);
             ByteUnpacker.ReadValueBitPacked(reader, out int cell);
             reader.ReadValueSafe(out float amount);
-            // The instigator is the sender (player 2), never something the message says.
+            reader.ReadValueSafe(out byte cause);
+            reader.ReadValueSafe(out float x);
+            reader.ReadValueSafe(out float y);
+            // The instigator is the sender (player 2), never something the message says. A cause
+            // this build doesn't know is Unknown: the ranked log's verifier turns the run down.
             if (TryGetBlock(building, cell, out BuildingBlock block) && amount > 0f)
-                block.TakeDamage(Mathf.Min(amount, MaxDamage), 1);
+                block.TakeDamage(Mathf.Min(amount, MaxDamage), 1, cause <= (byte)HitCause.Crumble ? (HitCause)cause : HitCause.Unknown,
+                    new Vector2(x, y));
         }
 
         private void OnBlockChanged(BuildingBlock block)
@@ -441,6 +450,8 @@ namespace Demolition.Online
             PlayerCombat thrower = Combat(_host ? 1 : 0);
             if (thrower != null)
                 _copies[id] = thrower.ThrowCosmeticDynamite(new Vector3(x, y, 0f), new Vector2(fx, fy));
+            if (_host)
+                RunRecorder.Threw(1, new Vector2(x, y)); // the client's stick, its damage arrives as requests
         }
 
         private void OnBlast(ulong sender, FastBufferReader reader)
@@ -448,6 +459,8 @@ namespace Demolition.Online
             ByteUnpacker.ReadValueBitPacked(reader, out int id);
             reader.ReadValueSafe(out float x);
             reader.ReadValueSafe(out float y);
+            if (_host)
+                RunRecorder.Blew(1, HitCause.Dynamite, new Vector2(x, y));
             if (_copies.TryGetValue(id, out Dynamite copy))
             {
                 _copies.Remove(id);

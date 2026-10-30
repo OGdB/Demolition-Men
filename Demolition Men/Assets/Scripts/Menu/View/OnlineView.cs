@@ -97,10 +97,10 @@ public class OnlineView : MonoBehaviour
         switch (step)
         {
             case Step.Choose:
-                Line("Pick", 30f, "ONE PLAYER PER DEVICE. PC, PHONE AND BROWSER CAN PLAY TOGETHER.", 30f);
-                first = UiFactory.Button(_page, "HOST", centre, new Vector2(-360f, -100f), size, StartHosting);
-                UiFactory.Button(_page, "JOIN", centre, new Vector2(0f, -100f), size, () => Show(Step.Joining));
-                UiFactory.Button(_page, "BACK", centre, new Vector2(360f, -100f), size, Back);
+                Line("Pick", -60f, "ONE PLAYER PER DEVICE. PC, PHONE AND BROWSER CAN PLAY TOGETHER.", 30f);
+                first = UiFactory.Button(_page, "HOST", centre, new Vector2(-360f, -200f), size, StartHosting);
+                UiFactory.Button(_page, "JOIN", centre, new Vector2(0f, -200f), size, () => Show(Step.Joining));
+                UiFactory.Button(_page, "BACK", centre, new Vector2(360f, -200f), size, Back);
                 break;
             case Step.Hosting:
                 Line("Tell", 40f, "ROOM CODE FOR PLAYER 2:", 36f);

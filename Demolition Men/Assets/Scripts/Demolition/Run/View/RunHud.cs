@@ -265,8 +265,8 @@ namespace Demolition.Run
             panel.Status.fontSizeMin = 16f;
             panel.Status.fontSizeMax = 24f;
 
-            panel.Life = Thin(UiFactory.Text(_root, id + " Life", anchor, new Vector2((PanelMargin + 10f) * side, -(PanelMargin + PanelSize.y + 4f)), 22f,
-                left ? TextAlignmentOptions.Left : TextAlignmentOptions.Right, new Vector2(200f, 30f), outlined: true));
+            panel.Life = UiFactory.Text(_root, id + " Life", anchor, new Vector2((PanelMargin + 10f) * side, -(PanelMargin + PanelSize.y + 4f)), 28f,
+                left ? TextAlignmentOptions.Left : TextAlignmentOptions.Right, new Vector2(200f, 36f), outlined: true);
             panel.Life.color = LifeColor;
 
             panel.Warning = UiFactory.Rect(_root, id + " Warning", new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(110f, 110f));

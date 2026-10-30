@@ -81,8 +81,8 @@ devices over the internet yet.
 - The audio, polish and performance work in R2.
 
 **Out of v1 (updates after launch, §4 After launch)**
-- The remove-ads purchase, bonus objectives, the cosmetics shop, a daily-challenge
-  leaderboard, Theme 4 and more from the content pipeline (M5), endless mode, a level editor.
+- The remove-ads purchase, bonus objectives, the cosmetics shop, ranked dailies with
+  verified scores (`ranked.md`), Theme 4 and more from the content pipeline (M5), endless mode, a level editor.
 - Other stores and platforms: iOS (needs a Mac and $99 a year), an Android TV listing, PC on
   itch.io or Steam. The code already runs there; the release work for them waits.
 
@@ -417,8 +417,12 @@ show:
   levels worth playing again, and a lasting use for cash, so the rewarded 2x cash still means
   something once the five upgrades are maxed.
 - **v1.3:** **Theme 4** through the content pipeline (M5), first run end to end on one pitch.
-- A daily-challenge leaderboard (Play Games Services is free), store listings translated for
-  the top countries.
+- **Ranked dailies** (`ranked.md`, built 2026-10-28; left: the PlayMode check, the deploy, the
+  privacy policy online and Play's data safety form): one level a day for everyone, a solo
+  and a co-op board, no upgrades in ranked; the device sends a log of the run and our server
+  replays it with the game's own models and scores it, so only runs the rules allow get on.
+  They come before the looks: a look is worth buying once people other than your partner
+  see it (on the boards and the ghosts). Store listings translated for the top countries.
 - Later: an Android TV listing, PC on itch.io or Steam, iOS, endless mode, a level editor.
 
 #### Bonus objectives (v1.2, S/M) — ✅ built 2026-10-27, awaiting a playtest
@@ -453,18 +457,33 @@ select and ticked off on the results screen.
 
 #### Cosmetics shop (v1.2, M) — started 2026-10-27
 *As built:* actions cost cash (the burp free; prices are first guesses), `Meta/Model/Looks`
-(how a look is had, owning, wearing per player, saved), the LOOKS screen (development builds
-only while it is empty), the supporter's look tied to REMOVE ADS. *Left:* the looks themselves,
-generated with ChatGPT's image generation and reviewed by the agent, like the action frames;
-the baked-or-palette decision below; drawing a worn look on the player and in its action
-frames; sending it with `NetPlayer`'s kit online.
+(how a look is had, owning, wearing per player, saved), the LOOKS screen, the supporter's look
+tied to REMOVE ADS. Since 2026-10-30 looks are separate items in five slots, worn in any mix,
+one per slot per player: 37 items in `Resources/Looks.json`.
+- OUTFIT (11): trousers and shoes.
+- SIGN (16): five recolours of the player's own sign, nine other traffic signs as heads (no
+  entry, give way, priority road, 30 zone, parking, no parking, railway, and each player's sign
+  for the other), and two more recolours, one for 12 full job sheets and one with REMOVE ADS.
+- CHAIN, BRACELETS (3 each): silver, gold, ice / leather.
+- TATTOO (4): hearts on the arms, an eagle on the chest, both.
+Most are for cash ($1,500–6,000). FOREMAN, SITE LEGEND, the ICE CHAIN and the VIOLET SIGN come
+with full job sheets; SUPPORTER and the GOLD SIGN come with REMOVE ADS.
+How it works:
+- Colours are a palette swap applied while the game runs (`Meta/View/LookSkin`, once per set of
+  items on the CPU), so they work in either pipeline and need no extra sprite sets.
+- The accessories are overlays drawn by `tools/artpipe/accessories.py` at spots set by hand per
+  frame (`content-work/looks/anchors.json`).
+- The signs are pixel art from `tools/artpipe/heads.py`. Each is turned and placed per frame where
+  the old sign was, behind whatever was in front of it.
+- Online a player's items go as one packed int in `NetPlayer`.
+- `tools/artpipe/looks.py` draws them all to review.
+*Left:* new shapes on the body (hats, vests), which need drawn or generated frames for every pose;
+prices after the closed test; looks on the boards and ghosts (ranked K6).
 
 A LOOKS tab in the shop next to the upgrades and ACTIONS. Looks only, never stronger, so
 online co-op and the stars stay fair.
-- Crew skins: palette swaps of the vest, hard hat and trousers, for the animator's sprites
-  and every action frame (`tools/artpipe/action_frames.py` already recolours P1 into P2).
-  Decide between a baked sprite set per skin (simple, a bigger atlas) and a palette-swap
-  shader in URP 2D (one sprite set, a palette per skin).
+- Crew skins: separate items per slot (outfit, sign, chain, bracelets, tattoo), worn in any mix,
+  for the animator's sprites and every action frame (built: `LookSkin`, the overlays, the signs).
 - Effects: dust and debris colours, explosion styles, the look of the TNT.
 - Prices in cash; a few looks only from completed job sheets, and one exclusive skin in a
   **Supporter pack**: the v1.1 remove-ads purchase bundled with it.

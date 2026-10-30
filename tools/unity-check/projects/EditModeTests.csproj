@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The EditMode tests against Unity's own assemblies, compile only: ModelTests runs them on the
+       shim, which lacks most of UnityEngine, so a name both define (Pose) only clashes here. -->
+  <PropertyGroup><ExtraDefines>UNITY_EDITOR</ExtraDefines></PropertyGroup>
+  <ItemGroup><Compile Include="$(ProjectAssets)/Tests/EditMode/**/*.cs" />
+  <PackageReference Include="NUnit" Version="3.14.0" />
+  <Reference Include="$(UnityCheckHome)/out/Demolition.EditorDefines/Demolition.dll" Private="false" /></ItemGroup>
+</Project>

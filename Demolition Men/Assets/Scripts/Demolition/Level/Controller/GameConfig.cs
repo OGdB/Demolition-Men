@@ -50,6 +50,8 @@ namespace Demolition.Levels
         [Header("Online")]
         [Tooltip("The co-op relay (server/relay). ws://localhost:5080/ws for one run with dotnet run.")]
         public string relayUrl = "wss://relay.oeds.space/ws";
+        [Tooltip("The ranked boards' server (server/ranked, docs/ranked.md). http://localhost:5090 for one run with dotnet run.")]
+        public string rankedUrl = "https://ranked.oeds.space";
         [Tooltip("Player_1 and Player_2 with NetworkObject, NetworkTransform and NetPlayer: Tools ▸ Demolition ▸ Online ▸ Build Network Prefabs.")]
         public GameObject[] netPlayerPrefabs = new GameObject[0];
 

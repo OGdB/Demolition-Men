@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Demolition;
+using Demolition.Meta;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,8 +35,11 @@ public class TitleView : MonoBehaviour
 
     private void Update()
     {
-        if (_title != null && UiFactory.SkipPressed())
+        if (_title == null)
+            return;
+        if (UiFactory.SkipPressed())
             _skip = true;
+        _title.gameObject.SetActive(!LevelSelectView.IsOpen); // it would show through the backdrop
     }
 
     private void Build()

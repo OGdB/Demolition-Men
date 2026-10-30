@@ -1,4 +1,5 @@
 using System;
+using Demolition.Ranked;
 using Demolition.Run;
 
 namespace Demolition.Levels
@@ -17,7 +18,12 @@ namespace Demolition.Levels
         /// <summary>The menu should reopen the level select (coming back from a run).</summary>
         public static bool ReturnToLevelSelect { get; set; }
 
-        public static bool IsDaily => Spec != null && CampaignIndex < 0;
+        public static bool IsDaily => Spec != null && CampaignIndex < 0 && Ranked == null;
+
+        /// <summary>The ranked day being played (docs/ranked.md), or null: no upgrades, every action, a log.</summary>
+        public static RankedDay Ranked { get; private set; }
+
+        public static bool IsRanked => Ranked != null;
 
         public static void PlayCampaign(int index)
         {
@@ -30,6 +36,7 @@ namespace Demolition.Levels
         {
             CampaignLevel level = GameConfig.Instance.Campaign[index];
             CampaignIndex = index;
+            Ranked = null;
             Spec = level.Spec;
             Theme = level.Theme;
         }
@@ -46,10 +53,34 @@ namespace Demolition.Levels
             GameConfig config = GameConfig.Instance;
             CampaignLevel template = DailyTemplate(config, date);
             CampaignIndex = -1;
+            Ranked = null;
             DailyDate = date.Date;
             Spec = template.Spec.WithSeed(Daily.Seed(date), Daily.Id(date));
             Spec.name = "DAILY " + date.ToString("yyyy-MM-dd");
             Theme = template.Theme;
+        }
+
+        public static void PlayRanked(RankedDay day)
+        {
+            SelectRanked(day);
+            Load(GameConfig.Instance);
+        }
+
+        /// <summary>The ranked day's level, without loading it. False when this build has no such template.</summary>
+        public static bool SelectRanked(RankedDay day)
+        {
+            foreach (CampaignLevel level in GameConfig.Instance.Campaign)
+            {
+                if (level.Spec.id != day.Template)
+                    continue;
+                CampaignIndex = -1;
+                Ranked = day;
+                Spec = level.Spec.WithSeed(day.Seed, day.LevelId);
+                Spec.name = "RANKED " + day.Date;
+                Theme = level.Theme;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>The date of the selected daily.</summary>
@@ -80,6 +111,7 @@ namespace Demolition.Levels
             Spec = null;
             Theme = null;
             CampaignIndex = -1;
+            Ranked = null;
         }
 
         /// <summary>Nothing selected (started in the editor, or Next from the training yard):
@@ -97,6 +129,7 @@ namespace Demolition.Levels
             while (index < campaign.Count - 1 && Meta.Profile.Data.IsFinished(campaign[index].Spec.id))
                 index++;
             CampaignIndex = index;
+            Ranked = null;
             Spec = campaign[index].Spec;
             Theme = campaign[index].Theme;
         }
@@ -122,6 +155,7 @@ namespace Demolition.Levels
                 if (level.Spec.id != parts[0])
                     continue;
                 CampaignIndex = level.Index;
+                Ranked = null;
                 Theme = level.Theme;
                 Spec = parts.Length > 1 && int.TryParse(parts[1], out int seed) && seed != level.Spec.seed
                     ? level.Spec.WithSeed(seed, level.Spec.id)

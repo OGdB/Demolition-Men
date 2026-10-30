@@ -110,7 +110,7 @@ namespace Demolition.Run
             for (int i = 0; i < _stars.Length; i++)
             {
                 bool middle = i == 1;
-                _stars[i] = UiFactory.Star(_content, "Star " + i, centre, new Vector2((i - 1) * 230f, middle ? 258f : 240f), middle ? 190f : 160f, false);
+                _stars[i] = UiFactory.Star(_content, "Star " + i, centre, new Vector2((i - 1) * 230f, middle ? 240f : 228f), middle ? 180f : 155f, false);
             }
             // Says why the stars came out rainbow; mirrors the record badge on the other side.
             _parStamp = UiFactory.Text(_content, "ParStamp", centre, new Vector2(-500f, 270f), 44f, TextAlignmentOptions.Center, new Vector2(380f, 60f), outlined: true);

@@ -58,7 +58,7 @@ namespace Demolition.Meta
 
         private void Update()
         {
-            if (SettingsView.IsOpen || ShopView.IsOpen)
+            if (SettingsView.IsOpen || ShopView.IsOpen || RankedView.IsOpen)
                 return;
             bool back = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
             foreach (Gamepad pad in Gamepad.all)
@@ -120,23 +120,29 @@ namespace Demolition.Meta
             _sheet.fontSizeMin = 20f;
             _sheet.fontSizeMax = 32f;
 
-            var size = new Vector2(320f, 100f);
-            float row = -380f;
-            Button training = UiFactory.Button(root, "TRAINING", centre, new Vector2(-700f, row), size,
+            var size = new Vector2(280f, 100f);
+            Button training = UiFactory.Button(root, "TRAINING", centre, Vector2.zero, size,
                 () =>
                 {
                     LevelSelection.Clear();
                     RunController.LoadScene(config.tutorialScene);
                 });
-            Button daily = UiFactory.Button(root, "DAILY", centre, new Vector2(-350f, row), size, () => LevelSelection.PlayDaily(DateTime.Today));
+            Button daily = UiFactory.Button(root, "DAILY", centre, Vector2.zero, size, () => LevelSelection.PlayDaily(DateTime.Today));
             _refresh.Add(() => UiFactory.Label(daily, $"DAILY\n<size=60%>{Best(Daily.Id(DateTime.Today))}</size>", 36f));
             ShowSheetOn(daily, Objectives.Sheet(Daily.Seed(DateTime.Today)), Daily.Id(DateTime.Today));
-            UiFactory.Button(root, "SHOP", centre, new Vector2(0f, row), size, () => ShopView.Open(transform, Refresh));
-            UiFactory.Button(root, "SETTINGS", centre, new Vector2(350f, row), size, () => SettingsView.Open(transform));
-            UiFactory.Button(root, "BACK", centre, new Vector2(700f, row), size, Close);
-
-            if (NetRole.IsOnline)
-                training.gameObject.SetActive(false); // training is local only
+            var row = new List<Button> { daily };
+            if (!NetRole.IsOnline)
+                row.Insert(0, training); // training is local only
+            else
+                training.gameObject.SetActive(false);
+            // Today's level for everyone, on the boards (docs/ranked.md); online the host picks for both.
+            if (!NetRole.IsClient)
+                row.Add(UiFactory.Button(root, "RANKED", centre, Vector2.zero, size, () => RankedView.Open(transform, Refresh)));
+            row.Add(UiFactory.Button(root, "SHOP", centre, Vector2.zero, size, () => ShopView.Open(transform, Refresh)));
+            row.Add(UiFactory.Button(root, "SETTINGS", centre, Vector2.zero, size, () => SettingsView.Open(transform)));
+            row.Add(UiFactory.Button(root, "BACK", centre, Vector2.zero, size, Close));
+            for (int i = 0; i < row.Count; i++)
+                ((RectTransform)row[i].transform).anchoredPosition = new Vector2((i - (row.Count - 1) * 0.5f) * 300f, -380f);
 
             Refresh();
             if (_first == null)
@@ -154,7 +160,7 @@ namespace Demolition.Meta
             label.margin = new Vector4(16f, 0f, 140f, 0f); // the stars sit on the right
             label.enableAutoSizing = true;
             label.fontSizeMin = 22f;
-            label.fontSizeMax = 38f;
+            label.fontSizeMax = 32f; // every name fits at this size, so they all match
             var stars = new Image[RunScore.MaxStars];
             for (int i = 0; i < stars.Length; i++)
                 stars[i] = UiFactory.Star(button.transform, "Star " + i, new Vector2(1f, 0.5f), new Vector2(-96f + i * 38f, 0f), 36f, false);

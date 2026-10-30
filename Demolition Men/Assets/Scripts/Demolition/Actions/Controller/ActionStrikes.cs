@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Demolition.Ranked;
 using Demolition.Run;
 using UnityEngine;
 
@@ -13,7 +14,7 @@ namespace Demolition.Actions
     public static class ActionStrikes
     {
         /// <summary>More than any block's health: the burp and the slam don't care what it's made of.</summary>
-        public const float Wreck = 1000f;
+        public const float Wreck = RankedRules.Wreck;
 
         private static readonly HashSet<BuildingBlock> Seen = new HashSet<BuildingBlock>();
         private static readonly List<BuildingBlock> Found = new List<BuildingBlock>();
@@ -83,8 +84,10 @@ namespace Demolition.Actions
         // the loose rubble around thrown off, the partner knocked aside.
         private static void Slam(ActionUser actor, Vector2 at, int who, bool authoritative)
         {
-            Hit(BlocksInBox(at + new Vector2(0f, -6.05f), new Vector2(1.4f, 12f)), Wreck, who, authoritative);
-            Hit(BlocksInCircle(at + new Vector2(0f, 0.4f), 2.2f), 150f, who, authoritative);
+            Hit(BlocksInBox(at + new Vector2(0f, -RankedRules.SlamDrop - RankedRules.SlamDepth * 0.5f),
+                new Vector2(RankedRules.SlamHalfWidth * 2f, RankedRules.SlamDepth)), Wreck, who, authoritative, HitCause.ButtSlam, at);
+            Hit(BlocksInCircle(at + new Vector2(0f, RankedRules.SlamRingRise), RankedRules.SlamRingRadius), RankedRules.SlamRingDamage,
+                who, authoritative, HitCause.ButtSlam, at);
             Shove(at, 3.5f, 10f, new Vector2(0f, 4f));
             KnockPlayers(at, 2.8f, 9f, actor.transform);
             Particles.Burst(at, new Color(0.75f, 0.7f, 0.6f, 0.9f), 40, 6f, 0.3f, 0.9f);
@@ -120,11 +123,11 @@ namespace Demolition.Actions
 
         /// <summary>Damage the blocks: debris always (it's this device's), standing blocks only
         /// when <paramref name="authoritative"/> (a client's would reach the host twice).</summary>
-        public static void Hit(List<BuildingBlock> blocks, float damage, int who, bool authoritative)
+        public static void Hit(List<BuildingBlock> blocks, float damage, int who, bool authoritative, HitCause cause, Vector2 from)
         {
             foreach (BuildingBlock block in blocks)
                 if (block != null && (authoritative || IsLoose(block)))
-                    block.TakeDamage(damage, who);
+                    block.TakeDamage(damage, who, cause, from);
         }
 
         /// <summary>Throw the debris in a circle away from its centre, harder nearer it, plus a lift.</summary>

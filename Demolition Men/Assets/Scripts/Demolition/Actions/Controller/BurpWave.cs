@@ -1,3 +1,4 @@
+using Demolition.Ranked;
 using UnityEngine;
 
 namespace Demolition.Actions
@@ -9,12 +10,13 @@ namespace Demolition.Actions
     /// </summary>
     public sealed class BurpWave : MonoBehaviour
     {
-        private const float Range = 7f;
-        private const float Speed = 16f;
-        private const float HalfHeight = 1f, Spread = 0.12f; // band half-height at the mouth, growth per unit
+        // The server checks ranked runs with the same numbers (RankedRules).
+        private const float Range = RankedRules.BurpRange;
+        private const float Speed = RankedRules.BurpSpeed;
+        private const float HalfHeight = RankedRules.BurpHalfHeight, Spread = RankedRules.BurpSpread; // band half-height at the mouth, growth per unit
         // The band's middle sits this far under the mouth: its bottom clears the feet for the
         // first unit or so, so the roof the player stands on stays, and dips lower further out.
-        private const float BandDrop = 0.35f;
+        private const float BandDrop = RankedRules.BurpDrop;
         private static readonly Color Gas = new Color(0.78f, 0.92f, 0.42f, 0.6f);
 
         private Vector2 _origin;
@@ -40,7 +42,7 @@ namespace Demolition.Actions
             float half = HalfHeight + Spread * _front;
             var centre = new Vector2(_origin.x + _facing * (from + _front) * 0.5f, _origin.y - BandDrop);
             var size = new Vector2(Mathf.Max(0.1f, _front - from), half * 2f);
-            ActionStrikes.Hit(ActionStrikes.BlocksInBox(centre, size), ActionStrikes.Wreck, _who, _authoritative);
+            ActionStrikes.Hit(ActionStrikes.BlocksInBox(centre, size), ActionStrikes.Wreck, _who, _authoritative, HitCause.Burp, centre);
             foreach (BuildingBlock block in ActionStrikes.BlocksInBox(centre + new Vector2(_facing * 0.5f, 0.5f), size + new Vector2(1f, 2f)))
                 if (block != null && ActionStrikes.IsLoose(block))
                     block.Shove(new Vector2(_facing * 9f, 3f));

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Demolition.Ranked;
 using UnityEngine;
 
 namespace Demolition
@@ -188,7 +189,9 @@ namespace Demolition
         }
 
         /// <param name="instigator">Player index dealing the damage, -1 for none.</param>
-        public void TakeDamage(float amount, int instigator = -1)
+        /// <param name="cause">What did it; a ranked run's log holds damage to standing blocks to its cause's rules.</param>
+        /// <param name="from">Where it came from: the swing's centre, the blast, the strike.</param>
+        public void TakeDamage(float amount, int instigator = -1, HitCause cause = HitCause.Unknown, Vector2 from = default)
         {
             if (_destroyed || amount <= 0f)
                 return;
@@ -198,7 +201,7 @@ namespace Demolition
             if (NetRole.IsClient && IsStanding)
             {
                 // The host applies it and answers with the new health (ApplyNetHealth).
-                NetRole.RequestDamage?.Invoke(this, amount);
+                NetRole.RequestDamage?.Invoke(this, amount, cause, from);
                 return;
             }
 
@@ -206,6 +209,8 @@ namespace Demolition
                 LastInstigator = instigator;
             _health -= amount;
             RefreshColor();
+            if (IsStanding)
+                RunRecorder.Damaged(this, amount, instigator, cause, from, _health <= 0f); // before what it sets off
             if (NetRole.IsHost && IsStanding)
                 NetRole.BlockHealthChanged?.Invoke(this);
 
@@ -227,7 +232,8 @@ namespace Demolition
         }
 
         /// <summary>Destroy the block outright — glass panes on impact.</summary>
-        public void Shatter(int instigator = -1) => TakeDamage(Mathf.Max(_health, 1f), instigator);
+        public void Shatter(int instigator = -1, HitCause cause = HitCause.Glass) =>
+            TakeDamage(Mathf.Max(_health, 1f), instigator, cause, transform.position);
 
         /// <summary>The building scored this block's collapse; its later destruction pays nothing.</summary>
         internal void MarkCredited() => _credited = true;
@@ -334,7 +340,7 @@ namespace Demolition
                 _building.OnBlockDestroyed(this);
             if (Explosive) // set off by another blast: a beat later, so a chain of tanks ripples
                 Dynamite.Detonate(Levels.GameConfig.Instance != null ? Levels.GameConfig.Instance.dynamitePrefab : null,
-                    transform.position, LastInstigator, Dynamite.Blasting ? Random.Range(0.12f, 0.22f) : 0f);
+                    transform.position, LastInstigator, Dynamite.Blasting ? Random.Range(0.12f, 0.22f) : 0f, HitCause.GasTank);
             Vanish();
         }
 
@@ -353,6 +359,9 @@ namespace Demolition
         /// falling cap, gates crumbling to dust), first waking any rubble it held up.</summary>
         public void Vanish()
         {
+            // Gone now, not at the end of the frame: a blast still going through its hits must not
+            // damage it as if it stood (nor log it so in a ranked run).
+            _destroyed = true;
             WakeRubbleAround();
             Destroy(gameObject);
         }

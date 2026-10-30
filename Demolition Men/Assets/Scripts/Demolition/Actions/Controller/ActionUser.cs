@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Demolition.Ranked;
 using Demolition.Run;
 using UnityEngine;
 
@@ -174,6 +175,8 @@ namespace Demolition.Actions
             {
                 return;
             }
+            if (!NetRole.IsClient)
+                RunRecorder.ActionStarted(PlayerIndex, Info.Kind); // started here, by the deciding device
             Send(ActionPhase.Start); // a client asks; the host tells the client its player started
             _playing = StartCoroutine(Play(local: true));
         }
@@ -199,6 +202,8 @@ namespace Demolition.Actions
                         Send(ActionPhase.Deny);
                         break;
                     }
+                    if (NetRole.IsHost)
+                        RunRecorder.ActionStarted(PlayerIndex, call.Kind);
                     if (_playing == null)
                         _playing = StartCoroutine(Play(local: false));
                     break;
@@ -230,6 +235,7 @@ namespace Demolition.Actions
         {
             Vector2[] spots = ActionStrikes.Pick(kind, at, facing);
             _quietUntil = Time.time + Quiet(ActionCatalog.Get(kind));
+            RunRecorder.ActionStruck(PlayerIndex, kind, at, facing, spots);
             Send(ActionPhase.Struck, at, facing, spots);
             ActionStrikes.Run(this, kind, at, facing, authoritative: true, spots);
         }
@@ -440,7 +446,7 @@ namespace Demolition.Actions
 
         private IEnumerator CoffeeRoutine()
         {
-            const float speed = 1.35f, damage = 1.5f, swing = 1.5f;
+            const float speed = RankedRules.CoffeeSpeed, damage = RankedRules.CoffeeDamage, swing = RankedRules.CoffeeSwing;
             bool local = !IsProxy;
             if (local)
             {
@@ -521,7 +527,7 @@ namespace Demolition.Actions
 
         private IEnumerator BoostRoutine()
         {
-            const float damage = 2f;
+            const float damage = RankedRules.BoostDamage;
             _combat.DamageMultiplier *= damage;
             while (Time.time < _boostUntil && !_health.IsDead)
                 yield return null;

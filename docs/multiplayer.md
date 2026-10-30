@@ -201,7 +201,8 @@ the client skips the validators.
     ends the session itself on waking. Shorter hitches of its own are forgiven. The
     protocol and close codes are in `server/relay/README.md`.
   - `OnlineSession` — the NetworkManager (tick rate 20, connection approval carrying
-    `Application.version`, one client), host and join; added at runtime, so no scene holds
+    `Application.version`, then the joiner's ranked id and name for `NetRole.PartnerId` /
+    `PartnerName` (docs/ranked.md K-D12), one client), host and join; added at runtime, so no scene holds
     it. It fills the `NetRole` hooks, sends the start message before NGO loads the Run
     scene, spawns the network players with ownership and ends the session (back to the menu
     with the reason) when either side leaves.
@@ -357,6 +358,6 @@ Check both. 1 TB a month is about 30,000 match-hours.
 | Abuse of the relay's public endpoint | The §8 hardening list. |
 | A phone host goes to the background, or a browser host's tab is hidden | O4: the client gets a clear message; the run is short, so the loss is small. |
 | The client sees its collapses one round trip late | Instant local chips and sound (§4 step 1). |
-| A player's own device decides the damage it takes, which co-op allows | Fine without leaderboards. Daily-seed leaderboards need the host to check damage requests against reach (cell distance from the player) first. |
+| A player's own device decides the damage it takes, which co-op allows | Fine without leaderboards. Ranked co-op runs are checked on our server like any other (`ranked.md` §4): the host logs the client's hits with their cause and the server checks their reach. |
 | The transport is ours, and NativeWebSocket is a small community library | Pin NGO and NativeWebSocket; the relay checks a protocol version; upgrade on purpose. |
 | WebGL as a platform touches more than netcode (saves, audio unlock, memory, input) | Out of this doc; roadmap D9 lists WebGL now, and the rest needs its own check before a web release. |

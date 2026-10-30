@@ -1,3 +1,4 @@
+using Demolition.Ranked;
 using UnityEngine;
 
 namespace Demolition.Actions
@@ -10,9 +11,9 @@ namespace Demolition.Actions
     /// </summary>
     public sealed class CranePallet : MonoBehaviour
     {
-        private const float Delay = 0.9f; // the crane swinging over
-        private const int MaxImpacts = 3;
-        private static readonly float[] Radius = { 2.3f, 1.8f, 1.4f };
+        private const float Delay = RankedRules.CraneDelay; // the crane swinging over
+        private const int MaxImpacts = RankedRules.CraneImpacts;
+        private static readonly float[] Radius = { RankedRules.CraneRadius, 1.8f, 1.4f };
         private static readonly float[] Damage = { ActionStrikes.Wreck, 400f, 250f };
 
         private int _who;
@@ -88,7 +89,7 @@ namespace Demolition.Actions
         private void Impact(Vector2 at)
         {
             int n = _impacts++;
-            ActionStrikes.Hit(ActionStrikes.BlocksInCircle(at, Radius[n]), Damage[n], _who, _authoritative);
+            ActionStrikes.Hit(ActionStrikes.BlocksInCircle(at, Radius[n]), Damage[n], _who, _authoritative, HitCause.Crane, at);
             ActionStrikes.Shove(at, Radius[n] + 1.5f, 11f, new Vector2(0f, 4f));
             ActionStrikes.KnockPlayers(at, Radius[n] + 0.5f, 10f, null);
             Particles.Burst(at, new Color(0.75f, 0.7f, 0.6f, 0.9f), 30, 6f, 0.28f, 0.9f);

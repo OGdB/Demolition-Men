@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- The game's model code has no nullable annotations and no implicit usings. -->
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <GameAssets>$(MSBuildThisFileDirectory)../../../Demolition Men/Assets</GameAssets>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The game's own rules (docs/ranked.md §4): every model, on plain .NET with the unity-check shim. -->
+    <Compile Include="$(GameAssets)/Scripts/Demolition/**/Model/**/*.cs" Exclude="$(GameAssets)/Scripts/Demolition/Run/Model/Session.cs" LinkBase="Game" />
+    <Compile Include="$(MSBuildThisFileDirectory)../../../tools/unity-check/UnityShim.cs" Link="Game/UnityShim.cs" />
+    <!-- The campaign's levels and archetypes, as the game's themes list them (RankedContentTests). -->
+    <Content Include="$(GameAssets)/Content/**/Levels/*.json;$(GameAssets)/Content/**/Archetypes/*.json" LinkBase="Content" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+  </ItemGroup>
+
+</Project>

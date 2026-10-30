@@ -115,8 +115,25 @@ namespace Demolition.Actions
         /// <summary>What player <paramref name="player"/> (0 = P1) carries into a level: the pick, if the profile owns it.</summary>
         public static ActionKind Equipped(SaveData save, int player)
         {
-            ActionKind kind = save.actions != null && player >= 0 && player < save.actions.Count ? FromId(save.actions[player]) : Default;
+            ActionKind kind = Picked(save, player);
             return Owns(save, kind) ? kind : Default;
+        }
+
+        private static ActionKind Picked(SaveData save, int player) =>
+            save.actions != null && player >= 0 && player < save.actions.Count ? FromId(save.actions[player]) : Default;
+
+        /// <summary>What player <paramref name="player"/> carries into a ranked run: any action, owned or
+        /// not (docs/ranked.md K-D2).</summary>
+        public static ActionKind RankedPick(SaveData save, int player) =>
+            save.rankedActions != null && player >= 0 && player < save.rankedActions.Count ? FromId(save.rankedActions[player]) : Default;
+
+        /// <summary>Pick <paramref name="kind"/> for player <paramref name="player"/>'s ranked runs.</summary>
+        public static void PickRanked(SaveData save, int player, ActionKind kind)
+        {
+            save.rankedActions ??= new List<string>(); // a profile saved before ranked
+            while (save.rankedActions.Count <= player)
+                save.rankedActions.Add(Get(Default).Id);
+            save.rankedActions[player] = Get(kind).Id;
         }
 
         public static bool Owns(SaveData save, ActionKind kind)

@@ -170,7 +170,7 @@ namespace Demolition.Run
         {
             Current = this;
             FindPlayers();
-            if (Debug.isDebugBuild)
+            if (Debug.isDebugBuild && !LevelSelection.IsRanked) // a full meter for free would void the ranked log
                 gameObject.AddComponent<ActionTestKeys>(); // 1-9: try any action with a full meter
             State = new RunState(_players.Count, rules);
             Score = new RunScore(_players.Count);
@@ -186,6 +186,9 @@ namespace Demolition.Run
             RefreshCameraTargets();
             SetControls(false);
         }
+
+        /// <summary>Ranked runs play with no upgrades and lend every action (docs/ranked.md K-D2): a fresh save.</summary>
+        private static readonly SaveData RankedKit = new SaveData();
 
         private void FindPlayers()
         {
@@ -217,12 +220,16 @@ namespace Demolition.Run
                     : player.Index == NetRole.LocalPlayer ? Session.DeviceFor(0) : null);
                 player.Health.ManagedByRun = true;
                 player.Health.Depleted += OnDepleted;
-                PlayerUpgrades.Apply(player, Profile.Data);
+                PlayerUpgrades.Apply(player, LevelSelection.IsRanked ? RankedKit : Profile.Data);
                 if (!go.TryGetComponent(out player.Action))
                     player.Action = go.AddComponent<ActionUser>();
                 // Online this device's loadout is its own player's (its P1 pick); the other's arrives with its announce.
                 int pick = NetRole.IsOnline ? (player.Index == NetRole.LocalPlayer ? 0 : -1) : player.Index;
-                player.Action.Configure(player.Index, pick >= 0 ? ActionCatalog.Equipped(Profile.Data, pick) : ActionCatalog.Default);
+                player.Action.Configure(player.Index, pick < 0 ? ActionCatalog.Default
+                    : LevelSelection.IsRanked ? ActionCatalog.RankedPick(Profile.Data, pick) : ActionCatalog.Equipped(Profile.Data, pick));
+                // Looks likewise: online the other's comes through its NetPlayer.
+                if (pick >= 0)
+                    LookSkin.Dress(go, LookCatalog.Wearing(Profile.Data, pick));
                 _players.Add(player);
             }
 
@@ -303,7 +310,12 @@ namespace Demolition.Run
         /// <summary>A player collected a Resurrect pickup. False if nobody needed it.</summary>
         public bool TryResurrect(int collector) => State.TryResurrect(collector);
 
-        public void Retry() => LoadScene(SceneManager.GetActiveScene().name);
+        /// <summary>Play the level again; a ranked run asks the server for a new attempt first (one run each).</summary>
+        public void Retry()
+        {
+            if (!Ranked.RankedSession.Again())
+                LoadScene(SceneManager.GetActiveScene().name);
+        }
 
         public void QuitToMenu()
         {

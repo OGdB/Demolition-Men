@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Demolition.Levels;
+using Demolition.Ranked;
 using Demolition.Run;
 using Unity.Collections;
 using Unity.Netcode;
@@ -80,7 +81,8 @@ namespace Demolition.Online
             config.NetworkTransport = session._transport;
             config.TickRate = TickRate;
             config.ConnectionApproval = true;
-            config.ConnectionData = Encoding.UTF8.GetBytes(Application.version);
+            // The version first (both sides must run the same build), then who this is on the ranked boards.
+            config.ConnectionData = Encoding.UTF8.GetBytes($"{Application.version}\n{PlayerIdentity.Id}\n{PlayerIdentity.Name}");
             config.EnableSceneManagement = true;
             config.PlayerPrefab = null;
             go.SetActive(true);
@@ -123,8 +125,14 @@ namespace Demolition.Online
         private void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
             bool self = request.ClientNetworkId == NetworkManager.ServerClientId;
-            bool sameVersion = request.Payload != null && Encoding.UTF8.GetString(request.Payload) == Application.version;
+            string[] payload = request.Payload != null ? Encoding.UTF8.GetString(request.Payload).Split('\n') : new string[0];
+            bool sameVersion = payload.Length > 0 && payload[0] == Application.version;
             response.Approved = self || (sameVersion && !IsConnected);
+            if (response.Approved && !self && payload.Length >= 3 && RankedApi.IsPlayerId(payload[1]))
+            {
+                NetRole.PartnerId = payload[1];
+                NetRole.PartnerName = PlayerName.Allowed(payload[2]) ? payload[2] : PlayerName.Default(payload[1]);
+            }
             response.CreatePlayerObject = false;
             response.Reason = !sameVersion ? "THE OTHER DEVICE RUNS ANOTHER VERSION OF THE GAME" : "THE ROOM IS FULL";
         }
@@ -193,6 +201,7 @@ namespace Demolition.Online
             if (RunController.Current != null && !playOn)
                 RunController.Current.enabled = false; // its network players are about to go
             NetRole.Mode = NetMode.Offline;
+            NetRole.PartnerId = NetRole.PartnerName = string.Empty;
             NetRole.LoadScene = null;
             NetRole.SpawnPlayers = null;
             NetRole.Leave = null;
@@ -250,9 +259,18 @@ namespace Demolition.Online
 
         private void SendStart()
         {
-            using var writer = new FastBufferWriter(16, Allocator.Temp);
+            using var writer = new FastBufferWriter(128, Allocator.Temp);
             writer.WriteValueSafe(LevelSelection.CampaignIndex);
             writer.WriteValueSafe(LevelSelection.DailyDate.Ticks);
+            // A ranked day: the client plays it with the ranked kit too (docs/ranked.md K-D2).
+            RankedDay ranked = LevelSelection.Ranked;
+            writer.WriteValueSafe(ranked != null);
+            if (ranked != null)
+            {
+                writer.WriteValueSafe(ranked.Day);
+                writer.WriteValueSafe(ranked.Seed);
+                writer.WriteValueSafe(ranked.Template);
+            }
             // Same delivery as NGO's scene events, so it arrives before the load.
             _net.CustomMessagingManager.SendNamedMessage(StartMessage, Peer, writer, NetworkDelivery.ReliableFragmentedSequenced);
         }
@@ -261,6 +279,19 @@ namespace Demolition.Online
         {
             reader.ReadValueSafe(out int campaignIndex);
             reader.ReadValueSafe(out long dailyTicks);
+            reader.ReadValueSafe(out bool ranked);
+            if (ranked)
+            {
+                reader.ReadValueSafe(out int day);
+                reader.ReadValueSafe(out int seed);
+                reader.ReadValueSafe(out string template);
+                if (LevelSelection.SelectRanked(new RankedDay { Day = day, Seed = seed, Template = template, Mode = RankedMode.Coop }))
+                {
+                    LevelSelection.ReturnToLevelSelect = true;
+                    return;
+                }
+                Debug.LogWarning($"Online: the host's ranked level {template} isn't in this build.");
+            }
             if (campaignIndex >= 0)
                 LevelSelection.Select(campaignIndex);
             else

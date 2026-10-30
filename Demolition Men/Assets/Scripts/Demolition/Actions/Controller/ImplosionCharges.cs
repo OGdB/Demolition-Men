@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Demolition.Ranked;
 using Demolition.Run;
 using UnityEngine;
 
@@ -15,8 +16,8 @@ namespace Demolition.Actions
     public sealed class ImplosionCharges : MonoBehaviour
     {
         private const float Reach = 14f; // how far ahead a building counts
-        private const float Count = 0.5f; // seconds per beep of the 3-2-1: ActionCatalog's frames hold the plunger up as long
-        private const float Ripple = 0.12f;
+        private const float Count = RankedRules.ChargeCountdown / 3f; // seconds per beep of the 3-2-1: ActionCatalog's frames hold the plunger up as long
+        private const float Ripple = RankedRules.ChargeRipple;
 
         private Vector2[] _spots;
         private readonly List<SpriteRenderer> _lights = new List<SpriteRenderer>();
@@ -120,9 +121,9 @@ namespace Demolition.Actions
                 {
                     BuildingBlock charged = hit != null ? hit.GetComponentInParent<BuildingBlock>() : null;
                     if (charged != null && (_authoritative || ActionStrikes.IsLoose(charged)))
-                        charged.TakeDamage(ActionStrikes.Wreck, _who);
+                        charged.TakeDamage(ActionStrikes.Wreck, _who, HitCause.Charge, _spots[i]);
                 }
-                Dynamite.Detonate(prefab, _spots[i], _who); // a client's goes off as the show (Dynamite.Cosmetic)
+                Dynamite.Detonate(prefab, _spots[i], _who, 0f, HitCause.Charge); // a client's goes off as the show (Dynamite.Cosmetic)
                 CameraShake.Add(0.3f);
                 yield return new WaitForSeconds(Ripple);
             }

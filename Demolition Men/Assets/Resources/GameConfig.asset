@@ -29,6 +29,7 @@ MonoBehaviour:
   dynamitePrefab: {fileID: 1000000, guid: 3b58d0f2a7c14e93b6d8f0a2c4e71055, type: 3}
   caravan: {fileID: -3841519392376858156, guid: 5d46734245705f5438a65ad6968dc36d, type: 3}
   relayUrl: wss://relay.oeds.space/ws
+  rankedUrl: https://ranked.oeds.space
   netPlayerPrefabs:
   - {fileID: 3340135010435384464, guid: eacffbae758f43547a20dcba438652c1, type: 3}
   - {fileID: 2432208475913318491, guid: c12019bd2d123734a9772052c22b4fa2, type: 3}

@@ -1,0 +1,32 @@
+# The ranked boards behind the host's existing Caddy container, next to the relay: it joins
+# Caddy's Docker network and publishes no ports. deploy/install.sh writes the .env next to this
+# file and keeps data/ (the database and its daily copies) and ranked.env across deploys.
+name: demolition-ranked
+services:
+  ranked:
+    build:
+      context: .
+      dockerfile: server/ranked/Dockerfile
+    image: demolition-ranked:latest
+    container_name: demolition-ranked
+    restart: unless-stopped
+    expose: ["5090"]
+    env_file: ranked.env # your settings (Ranked__HideRejected=true, ...) and the admin token
+    environment:
+      Ranked__TrustedProxyNetworks__0: ${RANKED_TRUSTED_PROXY_NETWORK:?the subnet of the proxy network}
+    volumes:
+      - ./data:/data
+    networks: [proxy]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 384m
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+networks:
+  proxy:
+    name: ${RANKED_NETWORK:-web}
+    external: true

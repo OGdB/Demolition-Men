@@ -78,6 +78,13 @@ namespace Demolition.Meta
     /// Everything the game remembers between sessions: progress per level, banked cash,
     /// upgrades and settings. Plain fields so <c>JsonUtility</c> can write it.
     /// </summary>
+    /// <summary>One player's look items, by id.</summary>
+    [Serializable]
+    public sealed class PlayerLooks
+    {
+        public List<string> items = new List<string>();
+    }
+
     [Serializable]
     public sealed class SaveData
     {
@@ -99,10 +106,15 @@ namespace Demolition.Meta
         public List<string> actions = new List<string>();
         /// <summary>Actions bought in the shop, by id; the free one isn't listed.</summary>
         public List<string> ownedActions = new List<string>();
-        /// <summary>Looks bought in the shop, by id (<c>LookCatalog</c>).</summary>
+        /// <summary>Look items bought in the shop, by id (<c>LookCatalog</c>).</summary>
         public List<string> looks = new List<string>();
-        /// <summary>The look each player wears, by id, P1 first; empty for the crew's own.</summary>
-        public List<string> wearing = new List<string>();
+        /// <summary>The look items each player wears, P1 first: one per slot at most.</summary>
+        public List<PlayerLooks> dressed = new List<PlayerLooks>();
+        /// <summary>The name on the ranked boards (Ranked.PlayerName), typed on the first screen; empty: the generated one.</summary>
+        public string playerName = string.Empty;
+        /// <summary>The action each player carries into a ranked run, by id, P1 first: any action, owned or
+        /// not (docs/ranked.md K-D2), picked apart from <see cref="actions"/> so the campaign's stays its own.</summary>
+        public List<string> rankedActions = new List<string>();
 
         public LevelRecord Level(string id)
         {
