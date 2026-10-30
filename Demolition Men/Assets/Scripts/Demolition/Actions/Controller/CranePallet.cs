@@ -88,6 +88,8 @@ namespace Demolition.Actions
 
         private void Impact(Vector2 at)
         {
+            if (_impacts >= MaxImpacts)
+                return; // more collisions in the step that broke it: it's only gone at the end of the frame
             int n = _impacts++;
             ActionStrikes.Hit(ActionStrikes.BlocksInCircle(at, Radius[n]), Damage[n], _who, _authoritative, HitCause.Crane, at);
             ActionStrikes.Shove(at, Radius[n] + 1.5f, 11f, new Vector2(0f, 4f));

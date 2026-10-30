@@ -68,7 +68,7 @@ namespace Demolition.Ranked
         public const float PoseSlack = 0.6f;
         /// <summary>Online, the host sees its partner this much late.</summary>
         public const float OnlineLag = 0.5f;
-        /// <summary>Two hits are never closer than this share of their clip's interval (a hit lands
+        /// <summary>Two punches are never closer than this share of their clip's interval (a hit lands
         /// up to a frame late, never early).</summary>
         public const float SwingSlack = 0.5f;
         /// <summary>Movement over a sample: this much over the run speed, plus the margin.</summary>

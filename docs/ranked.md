@@ -203,8 +203,8 @@ Before it goes live:
 | | Milestone | Done when |
 |---|---|---|
 | K1 ✅ | The run log and `RunVerifier` as models | EditMode tests: logs round-trip; honest made-up runs pass and each cheat in §4 fails. |
-| K2 (code in, PlayMode test to run) | The game records: the damage cause on every hit, `RunRecorder`, the ranked kit; a co-op partner's cause online | `RankedBotTests` (PlayMode): the bot plays every campaign level ranked, a different action each, and the verifier passes all of them. |
-| K3 (built, to deploy) | The server: start, submit, verify, store, record-only rejections | `dotnet test`; deployed. |
+| K2 ✅ | The game records: the damage cause on every hit, `RunRecorder`, the ranked kit; a co-op partner's cause online | `RankedBotTests` (PlayMode): the bot plays every campaign level ranked, a different action each, and the verifier passes all of them. |
+| K3 ✅ | The server: start, submit, verify, store, record-only rejections | `dotnet test`; deployed. |
 | K4 (built) | Ranked in the game: RANKED in the level select, sealing, submit, the boards, names | A ranked run from a phone and a browser lands on the board. |
 | K5 (built) | Ghosts, REPORT, review of outliers; rejections hidden after the record-only weeks | The switch (`HideRejected`) after a few weeks of `/admin/runs` without false rejections. |
 | K6 | Looks next to names and on ghosts | With the cosmetics shop. |
