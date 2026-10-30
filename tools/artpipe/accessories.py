@@ -19,7 +19,8 @@ that lines the two players' skin up.
 Everything is drawn in key colours (KEYS, LookPalette.Extras in Looks.cs), and only on skin: a look
 says which parts it wears in which colour, and LookSkin lays them over the recoloured frame. One more
 key marks what no look recolours though it's in a colour looks change (keep_mask): the radio, the
-light spots on the skin in the sign's yellow.
+light spots on the skin in the sign's yellow; another the player's own sign, which a look with another
+sign clears before heads.py's sign goes on.
 Writes Demolition Men/Assets/Resources/LookOverlays/P1|P2/<texture>.png with their .metas, and
 content-work/looks/anchors.png, every frame wearing everything, to review.
 """
@@ -33,7 +34,7 @@ from PIL import Image, ImageDraw
 sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from action_frames import P2_COLOURS, PROP_BELOW, SIGN_YELLOW, TROUSERS, grow, largest, prop_columns, sign_mask, write_sprite  # noqa: E402
+from action_frames import KEEP_ABOVE, P2_COLOURS, PROP_BELOW, SIGN_YELLOW, TROUSERS, grow, largest, prop_columns, sign_mask, write_sprite  # noqa: E402
 from build_theme import FOLDER_META, write_meta  # noqa: E402
 
 ROOT = os.path.join(HERE, "..", "..")
@@ -51,7 +52,9 @@ PROPS = {"pallet", "radio", "note"}
 KEYS = {"chain": (255, 0, 0), "chainShade": (128, 0, 0),
         "bracelets": (0, 255, 0), "braceletsShade": (0, 128, 0),
         "chestTattoo": (0, 0, 255), "armTattoo": (255, 0, 255),
-        "keep": (1, 1, 1)}  # no look recolours this pixel (keep_mask)
+        "keep": (1, 1, 1),  # no look recolours this pixel (keep_mask)
+        "sign": (2, 2, 2),  # the player's own sign: a look with another sign (heads.py) clears it
+        "signKeep": (3, 3, 3)}  # both: its mark in a colour looks change (the trousers' navy)
 
 P1_SKIN = {(238, 195, 154), (217, 160, 102), (205, 166, 129)}
 P2_SKIN = {P2_COLOURS[c] for c in P1_SKIN}
@@ -92,7 +95,7 @@ def p2_sign(a):
     return red | (white & box) | (white & grow(grow(red)))
 
 
-RIM = [(255, 255, 255), (241, 241, 241), (223, 221, 219)]
+RIM = [(255, 255, 255), (241, 241, 241), (223, 221, 219), (146, 146, 146)]  # the last: Player 2's back, dithered
 
 
 def sign_of(a, player):
@@ -166,6 +169,30 @@ def stamp(rows, cx, top, key, centred=True):
     return [(x0 + i, y0 + j, key) for j, row in enumerate(rows) for i, ch in enumerate(row) if ch == "x"]
 
 
+# The marks the action frames draw on the sign in browns and the trousers' navy instead of black.
+MARK = [(164, 111, 58), (102, 57, 49), (64, 36, 8), (34, 32, 52), (109, 67, 25), (196, 114, 31),
+        (255, 204, 86), (210, 126, 48), (122, 46, 16), (70, 30, 22), P2_COLOURS[TROUSERS]]
+HAT = [(196, 114, 31), (224, 138, 74), (246, 142, 40)]  # the hard hat's, on the vest's frames
+
+
+def full_sign(a, player, action=None):
+    """All of the player's sign: its colours, mark and rim, a piece cut off by the mark included,
+    and the mark colours inside its outline (not the hard hat over it)."""
+    colours = list(SIGN_YELLOW) if player == "P1" else list(P2_SIGN)
+    sign, through = sign_of(a, player), match(a, colours + [(0, 0, 0)] + RIM)
+    while True:
+        more = sign | (grow(sign) & through)
+        if (more == sign).all():
+            break
+        sign = more
+    outline = np.zeros_like(sign)
+    for y in np.nonzero(sign.any(1))[0]:
+        xs = np.nonzero(sign[y])[0]
+        outline[y, xs.min():xs.max() + 1] = True
+    marks = [c for c in MARK if not (action in KEEP_ABOVE and c in HAT)]
+    return sign | (outline & match(a, marks))
+
+
 def keep_mask(a, player, action, rects=(), offset=(0, 0)):
     """What no look recolours though it's drawn in a colour looks change: the sign's colours away
     from the sign (the radio, light spots on the skin), the trousers' colour in the sign's mark, in
@@ -173,12 +200,7 @@ def keep_mask(a, player, action, rects=(), offset=(0, 0)):
     shovel's handle), Player 1's radio in its trousers' colour, and the trousers' colour in the
     frame's keep rectangles (the detonator's outline and plunger)."""
     colours = list(SIGN_YELLOW) if player == "P1" else list(P2_SIGN)
-    sign, through = sign_of(a, player), match(a, colours + [(0, 0, 0)] + RIM)
-    while True:  # all of the sign, a piece cut off by its mark included
-        more = sign | (grow(sign) & through)
-        if (more == sign).all():
-            break
-        sign = more
+    sign = full_sign(a, player, action)
     keep = match(a, colours) & ~sign
     trousers = TROUSERS if player == "P1" else P2_COLOURS[TROUSERS]
     keep |= match(a, [trousers]) & grow(grow(sign))
@@ -199,7 +221,7 @@ def keep_mask(a, player, action, rects=(), offset=(0, 0)):
     return keep
 
 
-def paint(a, player, anchor, offset=(0, 0), keep=None):
+def paint(a, player, anchor, offset=(0, 0), keep=None, action=None):
     """The overlay for one frame: every part, keyed, on this player's skin only."""
     skin = match(a, P1_SKIN if player == "P1" else P2_SKIN)
     h, w = skin.shape
@@ -227,8 +249,11 @@ def paint(a, player, anchor, offset=(0, 0), keep=None):
         if 0 <= x < w and 0 <= y < h and skin[y, x] and not taken[y, x]:
             out[y, x] = KEYS[key] + (255,)
             taken[y, x] = True
+    sign = full_sign(a, player, action)
     if keep is not None:
-        out[keep] = KEYS["keep"] + (255,)
+        out[keep & ~sign] = KEYS["keep"] + (255,)
+        out[keep & sign] = KEYS["signKeep"] + (255,)
+    out[sign & (out[..., 3] == 0)] = KEYS["sign"] + (255,)
     return out
 
 
@@ -345,8 +370,8 @@ def main():
         action = None if texture == "sheet" else name.split("_")[0]  # the sheet draws only shoes in the shoes' colour
         moved = offset(p1, p2)
         rects = anchor.get("keep", [])
-        o1 = paint(p1, "P1", anchor, keep=keep_mask(p1, "P1", action, rects))
-        o2 = paint(p2, "P2", anchor, moved, keep=keep_mask(p2, "P2", action, rects, moved))
+        o1 = paint(p1, "P1", anchor, keep=keep_mask(p1, "P1", action, rects), action=action)
+        o2 = paint(p2, "P2", anchor, moved, keep=keep_mask(p2, "P2", action, rects, moved), action=action)
         review.append((name, p1, o1, p2, o2))
         if texture == "sheet":
             for p, o in (("P1", o1), ("P2", o2)):

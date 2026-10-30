@@ -458,23 +458,32 @@ select and ticked off on the results screen.
 #### Cosmetics shop (v1.2, M) — started 2026-10-27
 *As built:* actions cost cash (the burp free; prices are first guesses), `Meta/Model/Looks`
 (how a look is had, owning, wearing per player, saved), the LOOKS screen, the supporter's look
-tied to REMOVE ADS. Thirteen looks (2026-10-29) in `Resources/Looks.json`: ten for cash
-($1,500–8,000), FOREMAN for 4 full job sheets, SITE LEGEND for all 12, SUPPORTER with REMOVE ADS.
-Each recolours the trousers, shoes and sign, and ten add something: a gold or silver chain,
-bracelets, an eagle tattoo on the chest, hearts on the arms (BIKER and SITE LEGEND wear the most).
-The recolouring is a palette swap applied while the game runs (`Meta/View/LookSkin`, once per
-look on the CPU), so it works in either pipeline and needs no extra sprite sets. It covers the
-animator's sheets and every action frame. The accessories are overlays drawn by
-`tools/artpipe/accessories.py` at spots set by hand per frame (`content-work/looks/anchors.json`).
-Online the look goes in `NetPlayer`'s `_look`. `tools/artpipe/looks.py` draws them all to
-review. *Left:* new shapes (hats, vests, outfits), which need drawn or generated frames for every
-pose; mixing parts (a chain with any outfit) instead of whole looks; prices after the closed
-test; looks on the boards and ghosts (ranked K6).
+tied to REMOVE ADS. Since 2026-10-30 looks are separate items in five slots, worn in any mix,
+one per slot per player: 37 items in `Resources/Looks.json`.
+- OUTFIT (11): trousers and shoes.
+- SIGN (16): five recolours of the player's own sign, nine other traffic signs as heads (no
+  entry, give way, priority road, 30 zone, parking, no parking, railway, and each player's sign
+  for the other), and two more recolours, one for 12 full job sheets and one with REMOVE ADS.
+- CHAIN, BRACELETS (3 each): silver, gold, ice / leather.
+- TATTOO (4): hearts on the arms, an eagle on the chest, both.
+Most are for cash ($1,500–6,000). FOREMAN, SITE LEGEND, the ICE CHAIN and the VIOLET SIGN come
+with full job sheets; SUPPORTER and the GOLD SIGN come with REMOVE ADS.
+How it works:
+- Colours are a palette swap applied while the game runs (`Meta/View/LookSkin`, once per set of
+  items on the CPU), so they work in either pipeline and need no extra sprite sets.
+- The accessories are overlays drawn by `tools/artpipe/accessories.py` at spots set by hand per
+  frame (`content-work/looks/anchors.json`).
+- The signs are pixel art from `tools/artpipe/heads.py`. Each is turned and placed per frame where
+  the old sign was, behind whatever was in front of it.
+- Online a player's items go as one packed int in `NetPlayer`.
+- `tools/artpipe/looks.py` draws them all to review.
+*Left:* new shapes on the body (hats, vests), which need drawn or generated frames for every pose;
+prices after the closed test; looks on the boards and ghosts (ranked K6).
 
 A LOOKS tab in the shop next to the upgrades and ACTIONS. Looks only, never stronger, so
 online co-op and the stars stay fair.
-- Crew skins: palette swaps of the trousers, shoes and sign, with chains, bracelets and
-  tattoos, for the animator's sprites and every action frame (built: `LookSkin` and the overlays).
+- Crew skins: separate items per slot (outfit, sign, chain, bracelets, tattoo), worn in any mix,
+  for the animator's sprites and every action frame (built: `LookSkin`, the overlays, the signs).
 - Effects: dust and debris colours, explosion styles, the look of the TNT.
 - Prices in cash; a few looks only from completed job sheets, and one exclusive skin in a
   **Supporter pack**: the v1.1 remove-ads purchase bundled with it.

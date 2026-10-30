@@ -229,7 +229,7 @@ namespace Demolition.Run
                     : LevelSelection.IsRanked ? ActionCatalog.RankedPick(Profile.Data, pick) : ActionCatalog.Equipped(Profile.Data, pick));
                 // Looks likewise: online the other's comes through its NetPlayer.
                 if (pick >= 0)
-                    LookSkin.Dress(go, LookCatalog.Worn(Profile.Data, pick));
+                    LookSkin.Dress(go, LookCatalog.Wearing(Profile.Data, pick));
                 _players.Add(player);
             }
 

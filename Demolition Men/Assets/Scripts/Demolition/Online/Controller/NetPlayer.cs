@@ -23,8 +23,8 @@ namespace Demolition.Online
         private readonly NetworkVariable<byte> _pose = new NetworkVariable<byte>(writePerm: NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<byte> _health = new NetworkVariable<byte>(255, writePerm: NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<int> _kit = new NetworkVariable<int>(writePerm: NetworkVariableWritePermission.Owner);
-        /// <summary>Its place in <see cref="LookCatalog.All"/> + 1; 0 the crew's own (both devices run the same version).</summary>
-        private readonly NetworkVariable<byte> _look = new NetworkVariable<byte>(writePerm: NetworkVariableWritePermission.Owner);
+        /// <summary>Its look items, <see cref="LookCatalog.Pack"/>ed (both devices run the same version, so the same catalog).</summary>
+        private readonly NetworkVariable<int> _look = new NetworkVariable<int>(writePerm: NetworkVariableWritePermission.Owner);
 
         private PlayerHealth _playerHealth;
         private PlayerCombat _combat;
@@ -32,6 +32,8 @@ namespace Demolition.Online
         private SpriteRenderer _sprite;
         private Animator _animator;
         private Vector3 _lastPosition;
+        private LookInfo[] _packedItems;
+        private int _dressed = -1;
 
         private void Awake()
         {
@@ -70,7 +72,12 @@ namespace Demolition.Online
             _pose.Value = NetPacking.PackPose(_sprite == null || !_sprite.flipX, grounded, punch || axe || wreck, weapon);
             _health.Value = (byte)Mathf.RoundToInt(255f * Mathf.Clamp01(_playerHealth.Current / _playerHealth.Max));
             _kit.Value = NetPacking.PackKit((int)_combat.Weapon, _combat.WeaponUses, _combat.DynamiteCount, _combat.WeaponHits);
-            _look.Value = (byte)(TryGetComponent(out LookSkin skin) ? LookCatalog.IndexOf(skin.Look) + 1 : 0);
+            LookInfo[] items = TryGetComponent(out LookSkin skin) ? skin.Items : null;
+            if (items != _packedItems)
+            {
+                _packedItems = items;
+                _look.Value = items != null ? LookCatalog.Pack(items) : 0;
+            }
         }
 
         private void Follow()
@@ -91,8 +98,11 @@ namespace Demolition.Online
             _playerHealth.SetProxyHealth(_health.Value / 255f * _playerHealth.Max);
             NetPacking.UnpackKit(_kit.Value, out int kitWeapon, out int uses, out int dynamite, out int weaponHits);
             _combat.ShowKit((WeaponType)kitWeapon, uses, dynamite, weaponHits);
-            int look = _look.Value - 1;
-            LookSkin.Dress(gameObject, look >= 0 && look < LookCatalog.All.Count ? LookCatalog.All[look] : null);
+            if (_look.Value != _dressed)
+            {
+                _dressed = _look.Value;
+                LookSkin.Dress(gameObject, LookCatalog.Unpack(_dressed));
+            }
         }
     }
 }
