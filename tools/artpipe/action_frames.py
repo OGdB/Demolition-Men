@@ -50,6 +50,8 @@ P2_COLOURS = {
     TROUSERS: (225, 187, 122),
 }
 P2_HEAD = {(246, 73, 73), (191, 0, 0), (255, 255, 255)}
+P2_SIGN = {(246, 73, 73), (191, 0, 0)}
+SPECK = 5  # pixels in a clump on the sign that are stray ones (specks)
 # What sits on top of the sign (the hard hat, the slam's sparks) moves up with the taller head.
 KEEP_ABOVE = {"hesje", "kontplof"}
 # A prop on the ground drawn in the trousers' colour (the radio) keeps it.
@@ -108,6 +110,91 @@ def sign_mask(a):
     core = yellow | black
     white = np.array([[v == (255, 255, 255) for v in row] for row in c], bool) & grow(grow(core))
     return core | white, black
+
+
+def match(a, colours):
+    rgb = a[..., :3]
+    m = np.zeros(a.shape[:2], bool)
+    for c in colours:
+        m |= np.all(rgb == c, axis=-1)
+    return m & (a[..., 3] > 0)
+
+
+def p2_sign(a):
+    red = largest(match(a, P2_SIGN))
+    if not red.any():
+        return red
+    ys, xs = np.nonzero(red)
+    box = np.zeros_like(red)
+    box[ys.min():ys.max() + 1, xs.min():xs.max() + 1] = True
+    white = match(a, [(255, 255, 255)])
+    return red | (white & box) | (white & grow(grow(red)))
+
+
+RIM = [(255, 255, 255), (241, 241, 241), (223, 221, 219), (146, 146, 146)]  # the last: Player 2's back, dithered
+
+
+def sign_of(a, player):
+    sign = sign_mask(a)[0] if player == "P1" else p2_sign(a)
+    rim = match(a, RIM)
+    if not sign.any():
+        return largest(rim)  # seen from behind: all white
+    for _ in range(4):  # the action frames' off-white rim, a few pixels deep
+        sign |= grow(sign) & rim
+    return sign
+
+
+# The marks the action frames draw on the sign in browns and the trousers' navy instead of black.
+MARK = [(164, 111, 58), (102, 57, 49), (64, 36, 8), (34, 32, 52), (109, 67, 25), (196, 114, 31),
+        (255, 204, 86), (210, 126, 48), (122, 46, 16), (70, 30, 22), P2_COLOURS[TROUSERS]]
+HAT = [(196, 114, 31), (224, 138, 74), (246, 142, 40)]  # the hard hat's, on the vest's frames
+
+
+def full_sign(a, player, action=None):
+    """All of the player's sign: its colours, mark and rim, a piece cut off by the mark included,
+    and the mark colours inside its outline (not the hard hat over it)."""
+    colours = list(SIGN_YELLOW) if player == "P1" else list(P2_SIGN)
+    sign, through = sign_of(a, player), match(a, colours + [(0, 0, 0)] + RIM)
+    while True:
+        more = sign | (grow(sign) & through)
+        if (more == sign).all():
+            break
+        sign = more
+    outline = np.zeros_like(sign)
+    for y in np.nonzero(sign.any(1))[0]:
+        xs = np.nonzero(sign[y])[0]
+        outline[y, xs.min():xs.max() + 1] = True
+    for x in np.nonzero(sign.any(0))[0]:
+        ys = np.nonzero(sign[:, x])[0]
+        outline[ys.min():ys.max() + 1, x] = True
+    marks = [c for c in MARK if not (action in KEEP_ABOVE and c in HAT)]
+    return sign | (outline & (match(a, marks) | match(a, colours) | specks(a, sign)))
+
+
+def specks(a, sign, most=None):
+    """Opaque pixels other than the sign in clumps of at most SPECK (or most): stray pixels drawn
+    on it, not something in front of it. The caller says where they count (not the slam's sparks)."""
+    most = SPECK if most is None else most
+    rest = (a[..., 3] > 0) & ~sign
+    out, seen = np.zeros_like(sign), np.zeros_like(sign)
+    h, w = rest.shape
+    for y0, x0 in zip(*np.nonzero(rest)):
+        if seen[y0, x0]:
+            continue
+        clump, stack = [(y0, x0)], [(y0, x0)]
+        seen[y0, x0] = True
+        while stack:
+            y, x = stack.pop()
+            for ny in range(max(0, y - 1), min(h, y + 2)):
+                for nx in range(max(0, x - 1), min(w, x + 2)):
+                    if rest[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        clump.append((ny, nx))
+                        stack.append((ny, nx))
+        if len(clump) <= most:
+            for y, x in clump:
+                out[y, x] = True
+    return out
 
 
 def lean(mark):
@@ -184,7 +271,7 @@ def to_p2(a, head, action):
         above = np.zeros_like(out)
         above[:ys.min(), xs.min():xs.max() + 1] = out[:ys.min(), xs.min():xs.max() + 1]
         out[:ys.min(), xs.min():xs.max() + 1] = 0
-    out[sign] = 0
+    out[full_sign(a, "P1", action)] = 0  # with its rim and stray pixels; the head still goes where the core was
     turned = rotsprite(head, -lean(mark))
     pad = max(0, turned.height - bottom - 1)
     canvas = Image.new("RGBA", (out.shape[1], out.shape[0] + pad))

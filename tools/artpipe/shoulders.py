@@ -22,7 +22,9 @@ from accessories import ACTIONS, P2_SKIN, RISE, SHEETS, frames, full_sign, match
 
 REACH = 16  # columns from the sign's middle a shoulder is looked for
 DROP = 12  # rows under the slope's top the body may start
-STEP = 3  # a bigger jump in the body's top ends the shoulder (an arm's edge)
+STEP = 3  # a bigger jump in the body's top ends the shoulder (an arm's edge)...
+GAP = 3  # ...unless it's back within this many columns: a dip between the neck and the shoulder
+POCKET = 3, 6  # columns and rows to a body on every side that make a clear pixel a hole in it
 
 
 def slope(skin, sign):
@@ -50,11 +52,18 @@ def slope(skin, sign):
         tops, last = {}, None
         for x in range(middle, middle + side * (REACH + 1), side):
             t = top(x)
-            if t is None or (last is not None and abs(t - last) > STEP):
-                if (x - x1) * side > 0:
+            if (x - x1) * side <= 0:  # under the sign: a dip is only a gap to fill
+                if t is not None:
+                    tops[x] = t
+            elif last is None or (t is not None and abs(t - last) <= STEP):
+                if t is None:
                     break
-                continue
-            tops[x], last = t, t
+                tops[x], last = t, t
+            elif any(top(x + side * k) is not None and abs(top(x + side * k) - last) <= STEP for k in range(1, GAP + 1)):
+                if t is not None:  # a narrow dip: the shoulder goes on past it
+                    tops[x] = t
+            else:
+                break
         outer = [x for x in tops if (x - x1) * side > 0]
         if not outer:
             continue
@@ -67,7 +76,21 @@ def slope(skin, sign):
             x, y = x1 - side * k, bottom + k
             if 0 <= y < skin.shape[0] and 0 <= x < skin.shape[1]:
                 shade[y, x] = light[y, x] or skin[y, x]
+    light |= pockets(skin | light | sign, y1, bottom + POCKET[1] + 2, middle)
     return light & ~sign, shade & ~sign & light
+
+
+def pockets(body, y0, y1, middle):
+    """Clear pixels around the sign with the body close on all four sides: what's left of a gap."""
+    out = np.zeros_like(body)
+    across, down = POCKET
+    h, w = body.shape
+    for y in range(max(0, y0), min(h, y1 + 1)):
+        for x in range(max(0, middle - REACH), min(w, middle + REACH + 1)):
+            if not body[y, x] and (body[y, max(0, x - across):x].any() and body[y, x + 1:x + across + 1].any()
+                                   and body[max(0, y - down):y, x].any() and body[y + 1:y + down + 1, x].any()):
+                out[y, x] = True
+    return out
 
 
 def main():

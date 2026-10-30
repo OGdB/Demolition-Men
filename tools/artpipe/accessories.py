@@ -12,6 +12,7 @@ sheet's 128x64 cells, the action frames by name), in the frame's pixels from its
                                    between those columns (an arm in front of the rest)
   chestTattoo: false               no chest piece (the chest is out of sight)
   keep:   [[x0, y0, x1, y1], ...]  no look recolours the trousers' colour in here (a prop drawn in it)
+  clearSign: [[x0, y0, x1, y1], ...]  what's in here goes with the sign (its edge in the skin's colour, a mug)
 The chain hangs under the lower edge of the player's own sign wherever skin is below it. Player 2
 has the same body under a taller head, so its frames take Player 1's anchors moved by the offset
 that lines the two players' skin up.
@@ -34,7 +35,7 @@ from PIL import Image, ImageDraw
 sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from action_frames import KEEP_ABOVE, P2_COLOURS, PROP_BELOW, SIGN_YELLOW, TROUSERS, grow, largest, prop_columns, sign_mask, write_sprite  # noqa: E402
+from action_frames import HAT, KEEP_ABOVE, MARK, P2_COLOURS, P2_SIGN, PROP_BELOW, RIM, SIGN_YELLOW, TROUSERS, full_sign, grow, largest, match, prop_columns, sign_mask, sign_of, specks, write_sprite  # noqa: E402
 from build_theme import FOLDER_META, write_meta  # noqa: E402
 
 ROOT = os.path.join(HERE, "..", "..")
@@ -61,7 +62,9 @@ P2_SKIN = {P2_COLOURS[c] for c in P1_SKIN}
 P1_BASE, P1_SHADE = (238, 195, 154), (217, 160, 102)
 P2_BASE, P2_SHADE = P2_COLOURS[P1_BASE], P2_COLOURS[P1_SHADE]
 RISE = [(P2_BASE[0], P2_BASE[1], P2_BASE[2] + 1), (P2_SHADE[0], P2_SHADE[1], P2_SHADE[2] + 1)]  # shoulders.py on Player 2's own frames
-P2_SIGN = {(246, 73, 73), (191, 0, 0)}
+HEAD_RADIUS = 10  # around where another sign goes (heads.py draws them 17 wide, turned a little wider)
+UNDER_SIGN = 12  # pixels in a clump there that are what's left of the old sign
+SPARK = [(255, 204, 86), (250, 188, 84)]  # the yellows the poses draw beside the sign's
 
 # Ink, one pixel per "x": a heart on the arm, an eagle across the chest.
 HEART = [".x.x.",
@@ -77,38 +80,6 @@ WINGS = ["x.........x",
 CHAIN_DROP = 3  # px the chain hangs below the sign's edge at its middle
 SHOES = (102, 57, 49)  # both players'
 FEET = 6  # rows above the lowest shoe pixel an action frame's feet reach
-
-
-def match(a, colours):
-    rgb = a[..., :3]
-    m = np.zeros(a.shape[:2], bool)
-    for c in colours:
-        m |= np.all(rgb == c, axis=-1)
-    return m & (a[..., 3] > 0)
-
-
-def p2_sign(a):
-    red = largest(match(a, P2_SIGN))
-    if not red.any():
-        return red
-    ys, xs = np.nonzero(red)
-    box = np.zeros_like(red)
-    box[ys.min():ys.max() + 1, xs.min():xs.max() + 1] = True
-    white = match(a, [(255, 255, 255)])
-    return red | (white & box) | (white & grow(grow(red)))
-
-
-RIM = [(255, 255, 255), (241, 241, 241), (223, 221, 219), (146, 146, 146)]  # the last: Player 2's back, dithered
-
-
-def sign_of(a, player):
-    sign = sign_mask(a)[0] if player == "P1" else p2_sign(a)
-    rim = match(a, RIM)
-    if not sign.any():
-        return largest(rim)  # seen from behind: all white
-    for _ in range(4):  # the action frames' off-white rim, a few pixels deep
-        sign |= grow(sign) & rim
-    return sign
 
 
 def chain(sign, skin, pendant=True, span=None):
@@ -172,30 +143,6 @@ def stamp(rows, cx, top, key, centred=True):
     return [(x0 + i, y0 + j, key) for j, row in enumerate(rows) for i, ch in enumerate(row) if ch == "x"]
 
 
-# The marks the action frames draw on the sign in browns and the trousers' navy instead of black.
-MARK = [(164, 111, 58), (102, 57, 49), (64, 36, 8), (34, 32, 52), (109, 67, 25), (196, 114, 31),
-        (255, 204, 86), (210, 126, 48), (122, 46, 16), (70, 30, 22), P2_COLOURS[TROUSERS]]
-HAT = [(196, 114, 31), (224, 138, 74), (246, 142, 40)]  # the hard hat's, on the vest's frames
-
-
-def full_sign(a, player, action=None):
-    """All of the player's sign: its colours, mark and rim, a piece cut off by the mark included,
-    and the mark colours inside its outline (not the hard hat over it)."""
-    colours = list(SIGN_YELLOW) if player == "P1" else list(P2_SIGN)
-    sign, through = sign_of(a, player), match(a, colours + [(0, 0, 0)] + RIM)
-    while True:
-        more = sign | (grow(sign) & through)
-        if (more == sign).all():
-            break
-        sign = more
-    outline = np.zeros_like(sign)
-    for y in np.nonzero(sign.any(1))[0]:
-        xs = np.nonzero(sign[y])[0]
-        outline[y, xs.min():xs.max() + 1] = True
-    marks = [c for c in MARK if not (action in KEEP_ABOVE and c in HAT)]
-    return sign | (outline & match(a, marks))
-
-
 def keep_mask(a, player, action, rects=(), offset=(0, 0)):
     """What no look recolours though it's drawn in a colour looks change: the sign's colours away
     from the sign (the radio, light spots on the skin), the trousers' colour in the sign's mark, in
@@ -222,6 +169,21 @@ def keep_mask(a, player, action, rects=(), offset=(0, 0)):
             if 0 <= x < a.shape[1]:
                 keep[int(a.shape[0] * 0.6) + 1:, x] |= trousers[int(a.shape[0] * 0.6) + 1:, x]
     return keep
+
+
+def under_sign(a, sign, action):
+    """Action frames only: what's left of Player 1's warning sign where another sign goes, wider
+    than it. The drawn poses scatter it: a tip cut off by the mark, stray pixels, all in clumps
+    too small to be something in front of the sign (a mug, an arm)."""
+    ys, xs = np.nonzero(sign)
+    if not len(ys):
+        return np.zeros_like(sign)
+    yy, xx = np.mgrid[:a.shape[0], :a.shape[1]]
+    near = np.hypot(xx - (xs.min() + xs.max()) / 2, yy - (ys.max() - HEAD_RADIUS)) <= HEAD_RADIUS
+    if action == "hesje":
+        near[:ys.min()] = False  # the hard hat
+    colours = list(SIGN_YELLOW) + [(0, 0, 0)] + RIM + [c for c in MARK + SPARK if not (action in KEEP_ABOVE and c in HAT)]
+    return near & ((match(a, colours) & ~match(a, P1_SKIN)) | specks(a, sign, UNDER_SIGN))
 
 
 def paint(a, player, anchor, offset=(0, 0), keep=None, action=None):
@@ -253,6 +215,10 @@ def paint(a, player, anchor, offset=(0, 0), keep=None, action=None):
             out[y, x] = KEYS[key] + (255,)
             taken[y, x] = True
     sign = full_sign(a, player, action) | match(a, RISE)
+    if player == "P1" and action is not None:
+        sign |= under_sign(a, sign, action)
+        for x0, y0, x1, y1 in anchor.get("clearSign", []):
+            sign[y0:y1 + 1, x0:x1 + 1] |= a[y0:y1 + 1, x0:x1 + 1, 3] > 0
     if keep is not None:
         out[keep & ~sign] = KEYS["keep"] + (255,)
         out[keep & sign] = KEYS["signKeep"] + (255,)
