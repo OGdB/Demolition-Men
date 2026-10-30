@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -42,6 +43,9 @@ public static class AndroidBuild
             PlayerSettings.Android.keyaliasPass = Environment.GetEnvironmentVariable("DEMOLITION_KEYALIAS_PASS");
         }
 
+        if (!development)
+            HardenForRelease();
+
         int code = ++PlayerSettings.Android.bundleVersionCode;
         EditorUserBuildSettings.buildAppBundle = true;
         string dir = Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds", "Android");
@@ -68,5 +72,26 @@ public static class AndroidBuild
         else
             Debug.LogError($"Android AAB failed: {report.summary.result}, {report.summary.totalErrors} errors");
         return ok;
+    }
+
+    /// <summary>
+    /// Pins the settings that make a shipped release hard to reverse-engineer, so a release
+    /// upload can never silently regress. IL2CPP compiles the C# to C++ and then to native
+    /// ARM64 machine code: the AAB carries no managed IL for a .NET decompiler (dnSpy, ILSpy,
+    /// dotPeek) to read back into source. Managed stripping then drops unused code, shrinking
+    /// what little metadata survives. This raises the cost of decompiling the app; it does not
+    /// make it impossible, so nothing secret (server keys, scoring authority) belongs in the
+    /// client — ranked scores are verified server-side by replaying the run log.
+    ///
+    /// Stripping stays at Medium: High can drop types reached only through reflection or
+    /// JsonUtility (the level, archetype and look JSON), which would need a link.xml and a
+    /// full on-device retest before it's safe to raise.
+    /// </summary>
+    private static void HardenForRelease()
+    {
+        PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
+        PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+        PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.Android, ManagedStrippingLevel.Medium);
+        PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.Android, Il2CppCompilerConfiguration.Release);
     }
 }
