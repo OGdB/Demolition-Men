@@ -17,11 +17,12 @@ a phone. So the change is in distribution, not in the game:
 2. **An invite link that joins**: a friend taps a link and is in the room, with no install.
 3. **Clip volume.** The Clip Lab can make forty clips in one session. Use that.
 4. **Steam after Play**, aimed at the June 2027 Next Fest.
-5. **A feature freeze** until the launch. Since 27 Oct the v1.2 work (job sheets, looks,
-   ranked) was built, while the repo shows no accounts, no posts and an open name check.
+5. **Only features that bring players in or get them to the first collapse** (§5.1) until
+   the launch. Since 27 Oct the v1.2 work (job sheets, looks, ranked) was built, while the
+   repo shows no accounts, no posts and an open name check.
 
 Nobody can plan a hit. This plan buys more chances: four channels where the platform supplies
-the audience, each with a number that says carry on or stop (§6).
+the audience, each with a number that says carry on or stop (§7).
 
 "Hit" here means 100,000 players across web, Play and Steam within six months of launch, or a
 platform feature. "It works" means 10,000 Play installs in 60 days at day-1 retention of 30%
@@ -82,9 +83,8 @@ Brotli, which CrazyGames recommends
 finish the O3 tests in `multiplayer.md`. Before a store link goes into the portal build, read
 their quality guidelines: the requirements page does not say whether outside links are allowed.
 
-Later, and only if the dashboard shows desktop players leaving at the join screen: two players
-on one keyboard (WASD and the arrow keys). Portals have a big "2 player" shelf, but its size
-is not verified.
+Two players on one keyboard goes in with this build (§5.1, F3): it is what puts the game on
+the portals' two-player shelves.
 
 ### 4.2 The invite link, and a result to share (move from v1.1 into v1.0)
 
@@ -95,18 +95,18 @@ This is the one feature worth adding before launch. Everything else waits.
 - **The browser build reads the link** (`Application.absoluteURL`), skips the lobby and joins
   the room. The friend plays within seconds, with no store and no account.
 - **After the run**, a browser guest on Android sees the Play badge (your own copy only).
-- **SHARE on the results screen**: one line of text, for example
-  `DEMOLITION MEN · Daily 12 Nov · 82% ★★★ · 1:42 · beat me: <link>`. The link opens the daily
-  in the browser.
+- **SHARE on the results screen**: the rubble card (§5.1, F2), a few lines of text with a
+  link that opens the same street in the browser.
 - **Mind the version check.** A phone on an older build must still find a browser build that
   matches it. Put the protocol version in the link's path and keep the last two builds on the
   VPS. Redeploying the web build joins the release checklist.
 
 Measure: invites sent per player, guests who finish a run per invite, guests who install.
+The relay and the counters (§5.1, F0) give all three.
 
 ### 4.3 Clips: one batch, one a day
 
-Everything is blocked by the name check, because the handles depend on it. Do that first (§5).
+Everything is blocked by the name check, because the handles depend on it. Do that first (§6).
 
 - **One Clip Lab session, forty clips.** The agent writes the shot files and cut lists across
   the 12 levels, the weapons and the nine actions. You record and schedule them.
@@ -151,18 +151,99 @@ secondary analyses).
   registration deadline (*estimate*). Otherwise wait for the autumn one.
 - Yours to decide by then: free or a small price. PC has no other income.
 
-### 4.5 Freeze
+### 4.5 Freeze, with a short list
 
-Until 11 Jan, new work is only: what the closed test finds, the invite link (4.2), the web
-build (4.1). Theme 4, more looks, hats, ranked K6, TV and iOS wait.
+Until 11 Jan, new work is only: what the closed test finds, the web build (4.1), the invite
+link (4.2) and the short list in §5.1. Theme 4, more looks, hats, ranked K6, TV and iOS wait.
 
-## 5. Calendar
+## 5. Features
+
+More features will not make the hit. A few of them *are* the distribution or the first minute,
+and those go in before launch. The rest wait for a number. Sizes as in the roadmap (S: a few
+sessions, M: 1–3 weeks part-time). The agent's hours are cheap and yours are not, so each row
+says what it needs from you.
+
+### 5.1 Before launch
+
+| | Feature | Why | Built from | Size, and your part |
+|---|---|---|---|---|
+| F0 | **Counters, not an SDK.** The game posts anonymous counts to your own server: first start, tutorial done, level finished (which one, stars, players), share tapped, and once a day the session's "days since install" (0, 1, 7, 30), which the device works out itself. No id is sent. | Every "build it when" in 5.2 and every row of §7 needs them. Day-1 and day-7 retention fall out of the day counts without knowing who anyone is. The relay can count rooms, joins and the joiner's platform by itself. | The relay's ASP.NET app and SQLite; the privacy policy already says the server sees IP addresses | S. You redeploy the relay and check the Data safety answers (app interactions are declared for AdMob already). |
+| F1 | **Painted weak point.** The first buildings a new player meets (the Tutorial's COLLAPSE stretch, Town 1 and 2) carry a spray-painted X on the block that brings down the most. Never in dailies or ranked. | The pitch is "find the weak point", and today nothing shows a new player that one hit can drop a building. Measure the share of first runs with a 12-block collapse, and tutorial completion. | `ShotPlanning.WeakPoint` for generated buildings, by hand in the Tutorial; the Building Lab's red tint is the same idea | S. You judge the look. |
+| F2 | **Rubble card.** SHARE on the results screen copies a few lines of text: the score, and one mark per building on the street (below). Everyone gets the same daily, so strips compare, as Wordle's grids do. | It is the shareable result the scorecard in §3 misses. Measure share taps per finished run and visits from shared links. | `DestructibleBuilding.DestroyedFraction`, `Platform.Copy`, the share sheet from 4.2 | S |
+| F3 | **Two players on one keyboard**, for browsers and PC: for example P1 on WASD with F, G and R, P2 on the arrows with K, L and O. | Poki calls its two-player shelf "local multiplayer games built for two people on one screen"; CrazyGames says its shelf holds over 200 games, played online or locally. The first screen of both is versus and sports games with a few co-op ones, and no demolition game ([Poki](https://poki.com/en/two-player), [CrazyGames](https://www.crazygames.com/t/2-player), 12 Nov 2026). Online co-op needs a second device and a friend who is awake; a school laptop has one keyboard. | `DeviceInputSource` (today WASD and the arrows both move the same player), `JoinScreen`, `InputGlyphs` | S/M. You try it with a second person. |
+| F4 | **Cold open.** A brand-new profile skips the title and the lobby: the crew runs in, one hit on a painted X drops a building, the title slams over the dust, and the Tutorial carries on. | Seconds from start to first collapse (roadmap R2 wants under a minute), and the portal's "gameplay conversion". CrazyGames' Full Launch asks that a game lands in gameplay. It is also the trailer's opening shot. | `TitleView`, `RunIn`, the new-profile branch in `JoinScreen.Continue` | S/M. It changes the first screen, so test it on every device. |
+| F5 | **Rumble and haptics.** A tick per hit and a buzz that grows with the collapse, on gamepads and phones, with a setting. Neither exists today. | Feel. No number will show it; it is cheap enough to do unmeasured. | `RunJuice` already scales shake by collapse size | S. You feel it on the phone. |
+| F6 | **Controller flag and Play Games on PC.** Set Android's gamepad support in Player Settings (it is at the default) so the store's controller filter finds the game, and enable the PC form factor in the Play Console. | Free shelves, and this game fits them better than most phone games: it already plays with keyboard, mouse and gamepad. Google asks only that a game is playable with mouse and keyboard to ship on PC ([Play Games on PC](https://developer.android.com/games/playgames/start)), and tells developers to add the controller flag "so that users can find your game when searching for controller-supported games" ([Level Up guidelines](https://developer.android.com/games/guidelines)). | Settings only | S, yours. Check the built manifest for `android.hardware.gamepad`, and whether ads serve on PC. |
+
+The rubble card for a daily, with 💥 flattened, 🏚️ half down and 🏢 left standing:
+
+```
+DEMOLITION MEN · Daily 12 Nov
+82% ★★★ · 1:42 · streak 5
+💥💥🏚️💥🏢💥💥🏚️
+play it: <link>
+```
+
+Together these are two to three weeks of your testing time. If the closed test turns up real
+problems, F4 and F5 go first.
+
+### 5.2 First updates (v1.1, v1.2)
+
+| Feature | Build it when | What it is | Built from | Size |
+|---|---|---|---|---|
+| **Daily streak** | v1.1, always | Finishing the daily on days in a row pays rising cash up to day 7. The count goes on the rubble card. | `Daily`, `SaveData` | S |
+| **Site awards** | v1.1, always | The results hand each player one award from the run: TOP WRECKER, HEADBUTT KING, MOST TNT WASTED, FLATTENED BY YOUR OWN BUILDING. Rivalry inside co-op, and a results screen worth a screenshot. | `RunTally` with a few more counts per player, `ResultsView` | S |
+| **REMOVE ADS pays double** | v1.1, with the purchase | Buyers keep the 2x CASH button and it needs no ad. It answers the open question in `monetization.md`, and "double cash for good" sells better than "no ads" (*estimate*). | `Purchases`, `ResultsView` | S |
+| **OVERTIME** (the endless mode) | Sessions average under 5 minutes, or the counters show players finishing level 12 | Streets back to back from fresh seeds, each a little faster. Health carries over, one life, and the score is streets cleared: one number to brag with. A rewarded ad buys one more life, the first new rewarded placement. | `LevelSpec.WithSeed` (its comment already says "endless reroll"), `scrollSpeed`, `RunState.TryResurrect` | S/M |
+| **Night shift** | Level-12 finishes pass a tenth of tutorial finishes (*estimate*) | Every campaign level again after dark: a new seed, a faster scroll, tougher buildings, the theme's ambient turned down with lamps and headlamps lit. Twelve levels become twenty-four with no new art. Keep it out of clips: dark footage reads badly (`store-media.md` §4.1). | `LevelTheme.ambient`, the sky palettes, `SceneLighting`, `BotRunTests` | S/M |
+| **TEAMWORK** | Two-player runs are a fifth of finished runs (*estimate*) | Two supports of one building knocked out by different players within two seconds: the collapse scores 1.5x and stamps TEAMWORK. Plus an archetype with two weak points far apart. Co-op then needs a plan ("three, two, one, hit"), and the co-op clip gets a story. | `RunScore` (whole-number maths, so the ranked server agrees), the instigator on every hit, archetype `weakPoints` | S/M |
+| **Name your street** | One finished run in twenty ends in a share (*estimate*) | Type a word and play its street; the word or a link shares it. Viewers can throw words at a streamer. | `LevelSpec.WithSeed`, the NAME field, one more variant of the online level message beside campaign, daily and ranked | S |
+| **Crew rank, achievements, cloud save** | v1.2, sooner if reviews mention lost progress | Blocks demolished over a lifetime give a rank (APPRENTICE to DEMOLITION KING) on the results and the boards. On Android the same events feed Play Games achievements (Google asks for ten, four of them within the first hour to qualify for its Quests), and Saved Games keeps the profile across phones. Today the profile is one local file. | `SaveData` (it counts cash and runs only), Play Games Services v2 | M: one more SDK and a Data safety change |
+| **Demolition cam** | Any update | A collapse of 40 blocks or more gets half a second of slow motion and a push-in. Solo and one-screen co-op only at first: online and ranked share a clock. | `RunJuice`: its hit-stop is 0.07 s today, and its `BaseTimeScale` already serves the Clip Lab's slow motion | S |
+| **Foreman on the radio** | With the trailer's re-cut | A crackling voice calls chains and collapses: "TIMBER!", "THAT'S COMING OUT OF YOUR PAY". The crew have signs for heads and can't talk; the radio can, and its filter hides a cheap microphone. | `ActionAudio`, the site radio's sound path | S/M. You record a dozen lines, or license them. |
+
+### 5.3 Later, on a good number
+
+- **Chaos street:** one street a week with two rule-benders (moon gravity, a glass town, endless
+  TNT, double speed). Each is a parameter; none goes in ranked. A weekly reason to post.
+- **Seasonal signs:** a sign for the crew's heads per event (King's Day on 27 April, Halloween),
+  drawn by `heads.py`, with a themed chaos street.
+- **Landmarks:** each theme's last level ends on one huge curated building (clock tower, silo
+  yard, casino sign). Mostly JSON and seed-picking in the Building Lab.
+- **Callouts online:** a POINT button chalks an X on the block you face for both players, with
+  three shouts (WAIT, TNT, NICE). One small message.
+- **Beat my ghost:** a shared link opens the daily with the sender's ghost. The ranked boards
+  already animate ghosts from logs; it needs the ranked server live.
+- **Build a street:** pick the pacing tokens as cards (cluster, tower, gate) and share the
+  result. The traversal validator already guarantees it can be played.
+
+### 5.4 Big bets, only on "scale" in §7
+
+- **Four players**, on one screen and online. Players are found by the names `Player_1` and
+  `Player_2` today, and the HUD, the camera and the netcode all assume two: L.
+- **Overtime as a roguelite:** pick one of three perks between streets.
+- **Machines:** a bulldozer or a crane to drive for one segment.
+
+### 5.5 Not building
+
+- Enemies and fighting. The game is the crew against buildings; that is the pitch and the clip.
+- Energy, timers, loot boxes, power for money. The roadmap rules them out and reviews punish them.
+- Chat and accounts. Moderation and privacy work with no player asking for them.
+- **Google's Level Up programme, for now.** It is voluntary and pays mainly in lower service
+  fees, with promotion on top; it asks for Play Games sign-in, Sidekick, achievements, game
+  stats, rewards, cloud save, large-screen and PC support, controller and keyboard play, 60 fps
+  and Vulkan ([programme](https://google.play/business/levelup/),
+  [guidelines](https://developer.android.com/games/guidelines), Nov 2026). Lower fees are worth
+  nothing to a game with one small purchase. Take the cheap parts only: F6 now, achievements
+  and cloud save in v1.2.
+
+## 6. Calendar
 
 | When | You | Agent |
 |---|---|---|
 | **12–16 Nov** | **Name check** (below). Play account. **Start the closed test with whatever build runs**: the 14 days are the slowest clock. Open the accounts under one handle. | Declarations for the closed test (`store-media.md` §6). |
-| 17–30 Nov | Record the clip batch. Post daily. Post the tester call. | WebGL build on the VPS and itch.io. The invite link and both SHARE buttons. Forty shot files and cut lists. |
-| 1–14 Dec | Submit to CrazyGames. Apply for production access (day 14 of the test). Pre-registration. | First reading of the web dashboard; fix the worst step of the first five minutes. |
+| 17–30 Nov | Record the clip batch. Post daily. Post the tester call. | WebGL build on the VPS and itch.io. The invite link and both SHARE buttons. F0–F3. Forty shot files and cut lists. |
+| 1–14 Dec | Submit to CrazyGames. Apply for production access (day 14 of the test). Pre-registration. | First reading of the web dashboard and the counters; fix the worst step of the first five minutes. F4–F6 if the test is quiet. |
 | 15 Dec – 10 Jan | Trailer, press kit, creator list. Steamworks sign-up. | A second and third round on the web numbers. |
 | Week of 11 Jan | Play launch, staged. Creator e-mails with the browser link. | Fixes within days. |
 | 18–31 Jan | Steam page live. Decide on Poki with the numbers. | CrazyGames SDK if they select the game. |
@@ -181,7 +262,7 @@ first ten results (12 Nov 2026). The trademark registers could not be reached fr
 search TMview and USPTO for DEMOLITION MAN in classes 9 and 41 yourself. If a live mark covers
 games, rename now, while it costs nothing.
 
-## 6. Numbers that decide
+## 7. Numbers that decide
 
 Benchmarks are for all mobile games, from GameAnalytics' 2026 report (16,262 games): day-1
 retention just above 30% puts a game in the top quarter and 40% in the top tenth; day 7 has a
@@ -205,15 +286,15 @@ Two corrections to `marketing.md` §6:
   Play Console shows for your category
   ([Play Console help](https://support.google.com/googleplay/android-developer/answer/9859173)).
 - Check what the Play Console's retention counts. If it counts installs kept instead of days
-  played, the web dashboard is the only real retention figure until the game logs its own.
+  played, take day 1 and day 7 from the counters (§5.1, F0).
 
-## 7. Money
+## 8. Money
 
 | Item | Cost | When |
 |---|---|---|
 | Play account | $25 (roadmap; not re-checked) | Now |
 | Steam Direct | $100 | January |
-| Held back | The rest | Only on the Play row's "scale" in §6 |
+| Held back | The rest | Only on the Play row's "scale" in §7 |
 
 The launch-week Google Ads burst goes. A few hundred euros can't measure what an install
 costs, and money sent to a listing that hasn't proven itself is lost. On income: at three ads
@@ -223,12 +304,16 @@ per daily player and US Android prices of $10–16 per thousand views (vendors d
 US player earns 3–5 cents a day, and most players are worth less (*estimate*). Ads pay only
 at scale, which is why this plan chases reach first.
 
-## 8. Not verified
+## 9. Not verified
 
-- The trademark status of DEMOLITION MAN (§5).
+- The trademark status of DEMOLITION MAN (§6).
 - CrazyGames' revenue share and its view on games published elsewhere; guides disagree.
 - Reviews of comparable Play games (the pages didn't load), so no list of their complaints.
 - The WebGL build's size and its speed in a phone browser: no build is recorded in the repo.
-- How big the portals' "2 player" audience is.
+- How many players the portals' two-player shelves bring. Only that the shelves exist.
+- What Level Up's promotion is worth to a small game: Google's page shows large ones only.
+- Whether Play Games on PC lists a phone game by itself or needs the opt-in: Google's pages
+  differ.
+- The thresholds marked *estimate* in §5.2: set them again once the counters have a baseline.
 - Whether Steam's June 2027 registration deadline is out yet.
 - The project's state after 30 Oct.
