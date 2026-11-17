@@ -6,6 +6,7 @@ Mode installed, `RelayTransport`, `OnlineSession`, `NetPlayer`, `RunNet`, `Onlin
 compiles against the real packages, but it has not run in the editor yet: O2's "done when"
 (§7) is still open. What was built differs from the first plan where §2, §3, §5 and §6 say
 "as built". Online co-op ships with the Android v1.0 (roadmap D4, decided 2026-10-20).
+The invite link (§6) is coded since 2026-11-17 and has not run in a browser build or on a phone.
 
 Two players on two devices play one run together: PC, phone or a browser (WebGL), in any
 mix. This doc picks the topology, says exactly what crosses the wire and who decides what,
@@ -182,7 +183,8 @@ the client skips the validators.
 ## 5. Code shape
 
 `Scripts/Demolition/Online/`:
-- `Model/` — `NetPacking`: health quantization, pose byte, cell addressing. Pure C#, so it
+- `Model/` — `NetPacking`: health quantization, pose byte, cell addressing. `InviteLink` and
+  `RoomCode`: the invite link (§6) and the one rule for what a room code is. Pure C#, so it
   is in the EditMode test build.
 - `Controller/` — its own asmdef **`Demolition.Online`** (references `Demolition`,
   `Unity.Netcode.Runtime` and NativeWebSocket). The core assembly never references netcode.
@@ -272,6 +274,57 @@ leaves, the session ends for both with the reason on screen. A joiner the host t
 (another version) gets the reason and leaves the host's room open.
 
 Online: campaign and daily levels. Tutorial and training stay local. One player per device.
+
+### The invite link
+
+As built 2026-11-17 (`hit-plan.md` §4.2); the model is tested, nothing else has run. A host
+sends a link instead of reading out a code:
+
+```
+<GameConfig.playUrl>/<version>/?r=<room code>     https://play.example.org/1.0.0/?r=ABCDEF
+```
+
+- **SHARE** is beside COPY on the host's room screen once `GameConfig.playUrl` is set (empty,
+  the default: no button, only COPY). On Android it opens the system's share sheet
+  (`Platform.Share`: an `ACTION_SEND` intent with the link as its text); anywhere else it
+  copies the link and the button reads COPIED.
+- **The version** in the path is `OnlineSession.Version`, which is `Application.version`: what
+  a host compares in connection approval (§5) before it lets a joiner in. It is not the relay's
+  protocol number (`RelayTransport.Protocol`, the `v=` of §8): that one is between a device and
+  the relay and has been 1 from the start, so it can't tell two builds apart. Each version's
+  browser build is served from its own folder under the play URL, so a phone that hasn't
+  updated still sends its friend to a build it lets in. That holds only if every release that
+  changes what crosses the wire also raises the version in Player Settings: the Android build
+  script raises the version code alone.
+- **Opening it.** `MainMenu` reads `Application.absoluteURL` once per start of the build
+  (`InviteLink.Code`: the query's first `r`, taken only if it is 6 characters of the relay's
+  alphabet; nothing else in the address is used). With a code it skips the title and the lobby,
+  joins the touchscreen on a phone, else the keyboard, as this device's player, and joins the
+  room (`OnlineView.OpenInvite`). In, the guest is where one who typed the code is: CONNECTED.
+  THE HOST IS PICKING A LEVEL.
+- **When it can't join** (no room with that code, a full room, another version, the relay out of
+  reach, too many tries), the lobby opens under a notice with the reason a typed code gets, so
+  the game can still be played alone.
+- **Once.** Back in the menu, after leaving or after the session ended, the link isn't read
+  again. Reloading the page does read it again: that is the way back in after a failed try.
+- **The host has to be in its game.** A game in the background (a phone in the chat app, a
+  hidden browser tab) runs no frames and answers no joiner; a guest paired with it gets THE HOST
+  STOPPED RESPONDING after 10 s (`LinkWatch`) and the lobby, and reloads once the host is back.
+  After SHARE the host's screen says to wait there. Whether a phone keeps its room's socket
+  while its owner is in the chat app has not been tried (§10).
+- A link joins with no press, so opening one sends its host this device's ranked id and name,
+  as joining by code does (`ranked.md` K-D12).
+- **Counted:** `invite`, once per room whose link was shared (`hit-plan.md` F0). The relay
+  counts `join` by browser or app already.
+- After a run, a guest in an Android phone's browser gets GET THE APP on the results: only on
+  the copy served from `playUrl` (`InviteLink.IsOwnCopy`; a portal may not allow the link), and
+  only once `GameConfig.storeUrl` is set. It is a plain button: the store's badge is art the
+  project doesn't have.
+
+Hosting is the owner's: each release's WebGL build at `<playUrl>/<version>/`, the last two
+kept; the address itself (the rubble card's `play it:` line) serves the newest or redirects
+to it. If the relay's `AllowedOrigins` is set, the play URL's origin goes in it. itch.io can't be
+the play URL: its page frames the build from another address, so `?r=` never reaches the game.
 
 ## 7. Milestones
 
@@ -363,6 +416,7 @@ Check both. 1 TB a month is about 30,000 match-hours.
 | One VPS region adds latency for players far from it | Same as the TCP risk: only remote things lag. Accepted for a free service. |
 | Abuse of the relay's public endpoint | The §8 hardening list. |
 | A phone host goes to the background, or a browser host's tab is hidden | O4: the client gets a clear message; the run is short, so the loss is small. |
+| Sending the invite link takes a phone host out of the game, into the share sheet and the chat app | Untried. Alone in its room the host is not judged (`LinkWatch` only times a pair), and the relay keeps a lobby for 15 minutes, so the room should be there when the host comes back, if Android leaves the socket alone that long. A friend who arrives first gets THE HOST STOPPED RESPONDING and reloads (§6). If rooms don't survive the chat app, the relay has to hold a host's room for a minute and give it back on reconnect: a protocol change. |
 | The client sees its collapses one round trip late | Instant local chips and sound (§4 step 1). |
 | A player's own device decides the damage it takes, which co-op allows | Fine without leaderboards. Ranked co-op runs are checked on our server like any other (`ranked.md` §4): the host logs the client's hits with their cause and the server checks their reach. |
 | The transport is ours, and NativeWebSocket is a small community library | Pin NGO and NativeWebSocket; the relay checks a protocol version; upgrade on purpose. |

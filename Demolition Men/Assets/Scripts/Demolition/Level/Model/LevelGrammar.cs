@@ -19,6 +19,8 @@ namespace Demolition.Levels
         public const int MaxPit = 3;
         /// <summary>Archetype prefix of street props (see <see cref="BuildingPlacement.IsProp"/>).</summary>
         public const string PropPrefix = "prop.";
+        /// <summary>Archetype of a gate (see <see cref="BuildingPlacement.IsGate"/>).</summary>
+        public const string GateArchetype = "gate";
         /// <summary>Breakable props a level uses when its spec names none.</summary>
         public static readonly string[] DefaultProps = { "crate", "car", "barrel" };
         /// <summary>Chance that a free stretch of street gets a prop, and then each further one.</summary>
@@ -317,7 +319,7 @@ namespace Demolition.Levels
         /// footing, two cells thick.</summary>
         public static BuildingSpec Gate(Pcg32 rng, int height)
         {
-            var spec = new BuildingSpec("gate", (int)rng.Next());
+            var spec = new BuildingSpec(GateArchetype, (int)rng.Next());
             for (int x = 0; x < 2; x++)
                 spec.TryPlace(TileKind.Wood, x, 0);
             for (int y = 1; y < height; y++)

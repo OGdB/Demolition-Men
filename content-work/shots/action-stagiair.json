@@ -1,0 +1,66 @@
+{
+  "id": "action-stagiair",
+  "level": "town-01",
+  "building": 5,
+  "offset": -4,
+  "players": 1,
+  "upgrades": 5,
+  "actions": [
+    "stagiair"
+  ],
+  "charged": true,
+  "camera": {
+    "mode": "frame",
+    "pad": 2
+  },
+  "width": 1920,
+  "height": 1920,
+  "length": 35,
+  "takes": 1,
+  "steps": [
+    {
+      "p": 1,
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "p": 1,
+      "do": "action"
+    },
+    {
+      "p": 1,
+      "do": "wait",
+      "seconds": 1.5
+    },
+    {
+      "p": 1,
+      "do": "walk",
+      "to": "weakpoint"
+    },
+    {
+      "p": 1,
+      "do": "hit",
+      "until": "collapse",
+      "cells": 10,
+      "seconds": 14
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "until": "collapse",
+      "cells": 10,
+      "seconds": 22
+    },
+    {
+      "p": 0,
+      "do": "slowmo",
+      "scale": 0.4,
+      "seconds": 1.5
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 5
+    }
+  ]
+}

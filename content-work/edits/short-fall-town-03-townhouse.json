@@ -1,0 +1,22 @@
+{
+  "out": "content-work/media/edits/short-fall-town-03-townhouse.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/fall-town-03-townhouse/take1.mp4",
+      "at": "collapse",
+      "before": 2.0,
+      "after": 5.0,
+      "text": "KNOCK OUT\nONE BRICK",
+      "zoom": 1.4,
+      "x": 0.56,
+      "y": 0.52
+    }
+  ]
+}

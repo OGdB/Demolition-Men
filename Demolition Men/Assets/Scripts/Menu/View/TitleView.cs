@@ -8,7 +8,8 @@ using UnityEngine.UI;
 
 /// <summary>The game's name over the menu backdrop, on a strip of caution tape. The intro
 /// slams it into the middle of the screen, holds, then eases it up to the top, where it
-/// stays above the lobby. Any press skips the intro.</summary>
+/// stays above the lobby. Any press skips the intro. The cold open slams it over the
+/// Tutorial instead, where it fades away (<see cref="PlayOver"/>).</summary>
 public class TitleView : MonoBehaviour
 {
     private const float FontSize = 170f;
@@ -26,6 +27,13 @@ public class TitleView : MonoBehaviour
         StartCoroutine(Intro(done));
     }
 
+    /// <summary>Over a run: slam, hold, fade away; then <paramref name="done"/>.</summary>
+    public void PlayOver(Action done)
+    {
+        Build();
+        StartCoroutine(Over(done));
+    }
+
     /// <summary>Straight to the end of the intro (back from a run).</summary>
     public void ShowRisen()
     {
@@ -39,7 +47,8 @@ public class TitleView : MonoBehaviour
             return;
         if (UiFactory.SkipPressed())
             _skip = true;
-        _title.gameObject.SetActive(!LevelSelectView.IsOpen); // it would show through the backdrop
+        // It would show through the level select's backdrop, and lie over a run's pause menu.
+        _title.gameObject.SetActive(!LevelSelectView.IsOpen && !Demolition.Run.PauseController.MenuOpen);
     }
 
     private void Build()
@@ -61,7 +70,33 @@ public class TitleView : MonoBehaviour
         Place(Vector2.zero, 3f);
         _text.alpha = 0f;
         yield return UiFactory.Tween(0.35f, _ => { }, skip); // let the backdrop settle in
+        yield return Slam(skip);
 
+        yield return UiFactory.Tween(0.8f, t =>
+        {
+            float e = t * t * (3f - 2f * t); // ease in and out
+            Place(Vector2.Lerp(Vector2.zero, Risen, e), Mathf.Lerp(1f, RisenScale, e));
+        }, skip);
+        Place(Risen, RisenScale);
+        _text.alpha = 1f;
+        done();
+    }
+
+    private IEnumerator Over(Action done)
+    {
+        Func<bool> skip = () => _skip;
+        Place(Vector2.zero, 3f);
+        _text.alpha = 0f;
+        yield return Slam(skip);
+        CanvasGroup group = _title.gameObject.AddComponent<CanvasGroup>(); // the tape fades with the name
+        yield return UiFactory.Tween(0.4f, t => group.alpha = 1f - t, skip);
+        Destroy(_title.root.gameObject);
+        done();
+    }
+
+    // In from three times the size, a thud and a shake, then a moment to read it.
+    private IEnumerator Slam(Func<bool> skip)
+    {
         yield return UiFactory.Tween(0.22f, t =>
         {
             Place(Vector2.zero, Mathf.Lerp(3f, 1f, t * t));
@@ -73,15 +108,6 @@ public class TitleView : MonoBehaviour
             yield return UiFactory.Tween(0.35f, t => Place(UnityEngine.Random.insideUnitCircle * 22f * (1f - t), 1f), skip);
             yield return UiFactory.Tween(0.6f, _ => { }, skip);
         }
-
-        yield return UiFactory.Tween(0.8f, t =>
-        {
-            float e = t * t * (3f - 2f * t); // ease in and out
-            Place(Vector2.Lerp(Vector2.zero, Risen, e), Mathf.Lerp(1f, RisenScale, e));
-        }, skip);
-        Place(Risen, RisenScale);
-        _text.alpha = 1f;
-        done();
     }
 
     private void Place(Vector2 position, float scale)

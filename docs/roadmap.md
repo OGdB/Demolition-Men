@@ -355,7 +355,12 @@ declarations that depend on them.
    - the phone letterbox: decided (2026-10-24), full screen everywhere with the HUD drawn over the level;
    - tune scroll speeds, upgrade costs and the cash rate from closed-test feedback;
    - touch glyphs in the tutorial prompts;
-   - from app start to the first falling building in under a minute.
+   - from app start to the first falling building in under a minute. Built 2026-11-17 as the
+     cold open (`hit-plan.md` §5.1 F4): a brand-new profile skips the title and the lobby and
+     starts at the Tutorial's painted weak point, where the first collapse comes about a second
+     after the scene appears plus the player's press (five seconds with no press). Not yet seen
+     in the editor or timed on a phone, where the scene's loading time is the rest of it;
+     `GameConfig.coldOpen` turns it off.
 6. **Clip mode** for marketing: hide the HUD, 9:16 framing, slow motion. Built 2026-10-23
    as an editor tool that records shot files by script (Clip Lab, `tools/media/media.py`,
    `store-media.md` §3); not yet run in Unity.
@@ -444,7 +449,7 @@ select and ticked off on the results screen.
   a finish within par.
 - Picked from the level's own seed (Pcg32), so a level always has the same sheet, and only
   objectives the level makes possible: "one collapse" needs a building whose weak point brings
-  down enough (`ShotPlanning.WeakPoint`). A campaign level can pin its sheet in its JSON. The
+  down enough (`BuildingValidator.WeakPoint`). A campaign level can pin its sheet in its JSON. The
   daily gets a new sheet every day.
 - Model: an objective kind and target, judged by a pure check over a run summary
   (EditMode-tested); the objectives done saved per level in `LevelRecord`.

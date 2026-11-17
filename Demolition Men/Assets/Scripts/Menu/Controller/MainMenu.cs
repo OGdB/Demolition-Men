@@ -4,16 +4,22 @@ using Demolition.Meta;
 using Demolition.Online;
 using Demolition.Run;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// The title screen: the game's name slams into the middle of the screen and rises to the
 /// top (<see cref="TitleView"/>), then the join lobby opens by itself. Back from a run it
 /// goes straight to the level select. There is no quit button: Esc (B on a gamepad, back
-/// on Android) with nobody joined asks whether to quit.
+/// on Android) with nobody joined asks whether to quit. A browser build opened with an invite
+/// link (<see cref="InviteLink"/>) skips the title and the lobby and joins the link's room.
+/// A brand-new profile skips them too and opens in the Tutorial (<see cref="ColdOpen"/>,
+/// <see cref="ColdOpenDirector"/>; <c>GameConfig.coldOpen</c> turns that off).
 /// </summary>
 [RequireComponent(typeof(JoinScreen))]
 public class MainMenu : MonoBehaviour
 {
+    private static bool _inviteRead;
+
     private JoinScreen _join;
     private TitleView _title;
 
@@ -43,7 +49,42 @@ public class MainMenu : MonoBehaviour
             return;
         }
         Session.Clear();
+        string invite = TakeInvite();
+        if (invite != null && Session.Join(DefaultDevice()))
+        {
+            _title.ShowRisen();
+            OnlineView.OpenInvite(invite, OpenLobby);
+            return;
+        }
+        GameConfig config = GameConfig.Instance;
+        if (config != null && ColdOpen.Starts(Profile.Data, config.tutorialScene, config.coldOpen, invite != null,
+                LevelSelection.ReturnToLevelSelect) && Session.Join(DefaultDevice()))
+        {
+            LevelSelection.Clear();
+            ColdOpenDirector.Play(config.tutorialScene);
+            return;
+        }
         _title.PlayIntro(OpenLobby);
+    }
+
+    // The room in the address this build was opened with, the first time the menu loads only:
+    // leaving that room, or coming back here after it, must not join it again.
+    // shortcut: the address keeps its ?r=, so reloading the page tries the room again; strip it with history.replaceState if that bothers.
+    private static string TakeInvite()
+    {
+        if (_inviteRead)
+            return null;
+        _inviteRead = true;
+        return InviteLink.Code(Application.absoluteURL);
+    }
+
+    // Who plays when no lobby asked (a guest by link, the cold open): the touchscreen on a phone, else the
+    // keyboard. The cold open then follows whichever device is pressed (ColdOpenDirector).
+    private static InputDevice DefaultDevice()
+    {
+        InputDevice device = Platform.IsTouch ? Touchscreen.current : null;
+        device ??= Keyboard.current;
+        return device ?? Gamepad.current;
     }
 
     private void OpenLobby() => _join.Open(AskQuit);

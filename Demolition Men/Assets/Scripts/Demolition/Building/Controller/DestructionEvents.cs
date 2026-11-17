@@ -14,8 +14,9 @@ namespace Demolition
         /// <summary>A building finished registering; argument is its structural cell count.</summary>
         public static event Action<int> BuildingReady;
 
-        /// <summary>Cells left the standing structure (destroyed or detached).</summary>
-        public static event Action<int> StandingCellsRemoved;
+        /// <summary>Cells left the standing structure (destroyed or detached): the building's index
+        /// in the level (<c>DestructibleBuilding.NetIndex</c>, -1 for a hand-made one), how many.</summary>
+        public static event Action<int, int> StandingCellsRemoved;
 
         /// <summary>A block was destroyed by damage and had not been credited by a collapse.</summary>
         public static event Action<BlockDestroyedInfo> BlockDestroyed;
@@ -24,7 +25,7 @@ namespace Demolition
         public static event Action<CollapseInfo> Collapsed;
 
         internal static void RaiseBuildingReady(int cells) => BuildingReady?.Invoke(cells);
-        internal static void RaiseStandingCellsRemoved(int cells) => StandingCellsRemoved?.Invoke(cells);
+        internal static void RaiseStandingCellsRemoved(int building, int cells) => StandingCellsRemoved?.Invoke(building, cells);
         internal static void RaiseBlockDestroyed(BlockDestroyedInfo info) => BlockDestroyed?.Invoke(info);
         internal static void RaiseCollapsed(CollapseInfo info) => Collapsed?.Invoke(info);
     }

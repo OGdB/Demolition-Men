@@ -1,0 +1,22 @@
+{
+  "out": "content-work/media/edits/short-action-boer.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/action-boer/take1.mp4",
+      "at": "collapse",
+      "before": 2.6,
+      "after": 4.5,
+      "text": "ONE BURP.\nONE OFFICE.",
+      "zoom": 1.25,
+      "x": 0.5,
+      "y": 0.52
+    }
+  ]
+}

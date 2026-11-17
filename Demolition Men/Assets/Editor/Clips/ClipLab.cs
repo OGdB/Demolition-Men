@@ -25,6 +25,7 @@ public sealed class ClipLab : EditorWindow
 {
     private const string QueueKey = "Demolition.Clips.Queue";
     private const string CurrentKey = "Demolition.Clips.Current";
+    private const string NextKey = "Demolition.Clips.Next"; // the take ended: start the next one
     private const double BootTimeout = 30;
     /// <summary>A director still setting up after this long (the building never streamed in,
     /// the run never started) ends its take, so an unattended batch moves on.</summary>
@@ -295,7 +296,7 @@ public sealed class ClipLab : EditorWindow
                 if (Current == null)
                     break;
                 SessionState.EraseString(CurrentKey);
-                EditorApplication.delayCall += StartNext;
+                SessionState.SetBool(NextKey, true);
                 break;
         }
     }
@@ -304,7 +305,16 @@ public sealed class ClipLab : EditorWindow
     private static void Tick()
     {
         if (Current == null)
+        {
+            // The next take starts from here and not from delayCall: an editor that isn't the
+            // focused window never runs those, so a batch stopped as soon as you looked elsewhere.
+            if (SessionState.GetBool(NextKey, false) && !EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                SessionState.SetBool(NextKey, false);
+                StartNext();
+            }
             return;
+        }
         if (!EditorApplication.isPlayingOrWillChangePlaymode)
         {
             if (_requestedAt > 0 && EditorApplication.timeSinceStartup - _requestedAt > StartTimeout)
@@ -393,7 +403,18 @@ public sealed class ClipLab : EditorWindow
         _wasMuted = EditorUtility.audioMasterMute;
         EditorUtility.audioMasterMute = false;
         if (recorder.StartRecording())
-            return recorder;
+        {
+            // Unity shrinks a Game view its GPU can't hold (a laptop started on its integrated GPU:
+            // 1496 px for a 1920 px shot); the take then has the shot's size and black bars.
+            Vector2 view = Handles.GetMainGameViewSize();
+            if (view.x > shot.width - 1 && view.y > shot.height - 1)
+                return recorder;
+            Debug.LogError($"Clip Lab: the Game view is {view.x:0}x{view.y:0} and {shot.id} needs {shot.width}x{shot.height}. "
+                           + $"Is the editor on the right GPU? ({SystemInfo.graphicsDeviceName}, {SystemInfo.graphicsMemorySize} MB)");
+            recorder.StopRecording();
+            File.Delete(outputBase + ".webm");
+            File.Delete(outputBase + ".mp4");
+        }
         EditorUtility.audioMasterMute = _wasMuted;
         return null;
     }
@@ -415,7 +436,8 @@ public sealed class ClipLab : EditorWindow
     // H.264 encoders in the order tried: x264, else the GPU's (Fedora's ffmpeg leaves x264 out).
     private static readonly string[] H264 =
     {
-        "-c:v libx264 -crf 14 -preset medium",
+        // Eight threads: on every core of a 32-thread machine x264 holds 2.5 GB for a 1920x1920 take.
+        "-c:v libx264 -crf 14 -preset medium -threads 8",
         "-c:v h264_nvenc -preset p7 -tune hq -rc vbr -cq 16 -b:v 0 -profile:v high",
         "-c:v libopenh264 -b:v 40M",
     };

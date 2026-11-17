@@ -1,0 +1,69 @@
+{
+  "id": "action-sloop",
+  "level": "port-03",
+  "building": 5,
+  "offset": -6,
+  "players": 1,
+  "upgrades": 5,
+  "actions": [
+    "sloop"
+  ],
+  "charged": true,
+  "camera": {
+    "mode": "frame",
+    "pad": 1
+  },
+  "width": 1080,
+  "height": 1920,
+  "length": 35,
+  "takes": 1,
+  "steps": [
+    {
+      "p": 1,
+      "do": "walk",
+      "to": "weakpoint"
+    },
+    {
+      "p": 1,
+      "do": "hit",
+      "seconds": 2
+    },
+    {
+      "p": 1,
+      "do": "back",
+      "seconds": 1.8
+    },
+    {
+      "p": 1,
+      "do": "walk",
+      "x": -5.5
+    },
+    {
+      "p": 1,
+      "do": "wait",
+      "seconds": 0.4
+    },
+    {
+      "p": 1,
+      "do": "action"
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 26
+    },
+    {
+      "p": 0,
+      "do": "slowmo",
+      "scale": 0.4,
+      "seconds": 1.5
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 5
+    }
+  ]
+}

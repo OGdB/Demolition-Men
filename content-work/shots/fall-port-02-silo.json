@@ -1,0 +1,47 @@
+{
+  "id": "fall-port-02-silo",
+  "level": "port-02",
+  "building": 9,
+  "offset": -5,
+  "upgrades": 5,
+  "camera": {
+    "mode": "frame",
+    "pad": 1
+  },
+  "width": 1080,
+  "height": 1920,
+  "length": 35,
+  "takes": 1,
+  "steps": [
+    {
+      "p": 1,
+      "do": "walk",
+      "to": "weakpoint"
+    },
+    {
+      "p": 1,
+      "do": "hit",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 12
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 24
+    },
+    {
+      "p": 0,
+      "do": "slowmo",
+      "scale": 0.4,
+      "seconds": 2
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 6
+    }
+  ]
+}

@@ -115,5 +115,105 @@ namespace Demolition.Tests
             both.Read();
             Assert.AreEqual(InputStyle.Gamepad, both.Style);
         }
+
+        // The named keys went down this frame, or (up) were let go.
+        private sealed class Keys : IKeyState
+        {
+            private readonly string[] _keys;
+            private readonly bool _up;
+
+            public Keys(bool up, params string[] keys)
+            {
+                _up = up;
+                _keys = keys;
+            }
+
+            public bool Held(string key) => !_up && System.Array.IndexOf(_keys, key) >= 0;
+            public bool Pressed(string key) => Held(key);
+            public bool Released(string key) => _up && System.Array.IndexOf(_keys, key) >= 0;
+        }
+
+        private static PlayerInputFrame Press(KeyHalf half, params string[] keys) => KeyLayout.Read(half, new Keys(false, keys));
+
+        [Test]
+        public void OneKeyboardPlayer_HasEveryKeyItAlwaysHad()
+        {
+            foreach (string key in new[] { "A", "LeftArrow" })
+                Assert.AreEqual(new Vector2(-1f, 0f), Press(KeyHalf.Whole, key).Move, key);
+            foreach (string key in new[] { "D", "RightArrow" })
+                Assert.AreEqual(new Vector2(1f, 0f), Press(KeyHalf.Whole, key).Move, key);
+            foreach (string key in new[] { "S", "DownArrow" })
+                Assert.AreEqual(new Vector2(0f, -1f), Press(KeyHalf.Whole, key).Move, key);
+            foreach (string key in new[] { "Space", "W", "UpArrow" })
+            {
+                PlayerInputFrame down = Press(KeyHalf.Whole, key);
+                Assert.IsTrue(down.JumpPressed && down.JumpHeld && !down.JumpReleased, key);
+                Assert.AreEqual(key == "Space" ? 0f : 1f, down.Move.y, key);
+                PlayerInputFrame up = KeyLayout.Read(KeyHalf.Whole, new Keys(true, key));
+                Assert.IsTrue(up.JumpReleased && !up.JumpHeld && !up.JumpPressed, key);
+            }
+            foreach (string key in new[] { "Z", "F" })
+                Assert.IsTrue(Press(KeyHalf.Whole, key).AttackHeld, key);
+            foreach (string key in new[] { "X", "R" })
+                Assert.IsTrue(Press(KeyHalf.Whole, key).DynamitePressed, key);
+            Assert.IsTrue(Press(KeyHalf.Whole, "C").ActionPressed);
+            Assert.AreEqual(-1, Press(KeyHalf.Whole, "Q").WeaponCycle);
+            Assert.AreEqual(1, Press(KeyHalf.Whole, "E").WeaponCycle);
+            Assert.AreEqual(new Vector2(1f, 1f), Press(KeyHalf.Whole, "D", "W").Move, "the source clamps, after the stick");
+            foreach (string key in new[] { "G", "K", "L", "O", "U", "I" })
+                Assert.IsFalse(Press(KeyHalf.Whole, key).IsActive, key + " is a key of the halves only");
+            Assert.AreEqual(InputStyle.Keyboard, KeyLayout.Style(KeyHalf.Whole));
+        }
+
+        [TestCase(KeyHalf.Left, KeyHalf.Right, InputStyle.KeysLeft, "A", "D", "Space", "F", "R", "G", "Q", "E")]
+        [TestCase(KeyHalf.Right, KeyHalf.Left, InputStyle.KeysRight, "LeftArrow", "RightArrow", "UpArrow", "K", "O", "L", "U", "I")]
+        public void TwoOnOneKeyboard_EachHalfDrivesItsOwnPlayer_WithTheKeysItsGlyphsShow(KeyHalf mine, KeyHalf theirs, InputStyle style,
+            string left, string right, string jump, string hit, string tnt, string action, string previous, string next)
+        {
+            Assert.AreEqual(style, KeyLayout.Style(mine));
+            Assert.AreEqual(-1f, Press(mine, left).Move.x);
+            Assert.AreEqual(1f, Press(mine, right).Move.x);
+            PlayerInputFrame jumped = Press(mine, jump);
+            Assert.IsTrue(jumped.JumpPressed && jumped.JumpHeld);
+            Assert.IsTrue(KeyLayout.Read(mine, new Keys(true, jump)).JumpReleased);
+            Assert.IsTrue(Press(mine, hit).AttackHeld);
+            Assert.IsTrue(Press(mine, tnt).DynamitePressed);
+            Assert.IsTrue(Press(mine, action).ActionPressed);
+            Assert.AreEqual(-1, Press(mine, previous).WeaponCycle);
+            Assert.AreEqual(1, Press(mine, next).WeaponCycle);
+
+            PlayerInputFrame other = Press(theirs, left, right, jump, hit, tnt, action, previous, next);
+            Assert.IsFalse(other.IsActive || other.JumpPressed, "the other half's player stands still");
+
+            string Label(string key) => "[" + key.Replace("Arrow", string.Empty).ToUpperInvariant() + "]";
+            Assert.AreEqual($"{Label(left)} {Label(right)} {Label(jump)} {Label(hit)} {Label(tnt)} {Label(action)} {Label(previous)} {Label(next)}",
+                InputGlyphs.Format("{MOVE} {JUMP} {HIT} {TNT} {ACTION} {SWAP}", new[] { style }));
+        }
+
+        [Test]
+        public void TwoOnOneKeyboard_NoKeyIsInBothHalves()
+        {
+            var keys = new System.Collections.Generic.List<string> { "Space", "LeftArrow", "RightArrow", "UpArrow", "DownArrow" };
+            for (char c = 'A'; c <= 'Z'; c++)
+                keys.Add(c.ToString());
+            foreach (string key in keys)
+                Assert.IsFalse(Press(KeyHalf.Left, key).IsActive && Press(KeyHalf.Right, key).IsActive, key);
+        }
+
+        [Test]
+        public void Glyphs_OfBothHalves_NameEachPlayersKeys_AndSharedOnesOnce()
+        {
+            var halves = new[] { InputStyle.KeysRight, InputStyle.KeysLeft };
+            Assert.AreEqual("[SPACE] / [UP] to jump, hold [F] / [K] to smash",
+                InputGlyphs.Format("{JUMP} to jump, hold {HIT} to smash", halves), "the WASD half first");
+            Assert.AreEqual("[ESC] pauses, MOUSE WHEEL zooms", InputGlyphs.Format("{PAUSE} pauses, {ZOOM} zooms", halves));
+            Assert.AreEqual("[A] [D] / [LEFT] [RIGHT]", InputGlyphs.Format("{MOVE}", halves));
+            Assert.AreEqual("[R]", InputGlyphs.Buttons(InputGlyphs.Tnt, InputStyle.KeysLeft));
+            Assert.AreEqual("[L]", InputGlyphs.Buttons(InputGlyphs.ActionButton, InputStyle.KeysRight));
+            Assert.AreEqual("[Q] [E]", InputGlyphs.Buttons(InputGlyphs.Swap, InputStyle.Keyboard));
+            Assert.AreEqual(System.Enum.GetValues(typeof(InputStyle)).Length, InputGlyphs.Styles, "a column and a name per style");
+            foreach (InputStyle style in System.Enum.GetValues(typeof(InputStyle)))
+                Assert.IsNotEmpty(InputGlyphs.Name(style));
+        }
     }
 }

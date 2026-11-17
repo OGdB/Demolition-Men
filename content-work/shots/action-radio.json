@@ -1,0 +1,54 @@
+{
+  "id": "action-radio",
+  "level": "town-02",
+  "building": 0,
+  "offset": -2.5,
+  "players": 1,
+  "upgrades": 5,
+  "actions": [
+    "radio"
+  ],
+  "charged": true,
+  "camera": {
+    "mode": "frame",
+    "pad": 2
+  },
+  "width": 1920,
+  "height": 1920,
+  "length": 35,
+  "takes": 1,
+  "steps": [
+    {
+      "p": 1,
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "p": 1,
+      "do": "action"
+    },
+    {
+      "p": 1,
+      "do": "wait",
+      "seconds": 9
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "until": "collapse",
+      "cells": 6,
+      "seconds": 14
+    },
+    {
+      "p": 0,
+      "do": "slowmo",
+      "scale": 0.4,
+      "seconds": 1.5
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 5
+    }
+  ]
+}

@@ -12,6 +12,13 @@ public class NoticeView : MonoBehaviour
     private GameObject _previousSelection;
     private int _openedFrame;
 
+    /// <summary>A notice is up: what is under it leaves the keys to it.</summary>
+    public static bool IsOpen { get; private set; }
+
+    private void OnEnable() => IsOpen = true;
+
+    private void OnDisable() => IsOpen = false;
+
     public static void Show(string title, string message)
     {
         UiFactory.EnsureEventSystem();

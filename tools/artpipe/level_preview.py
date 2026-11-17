@@ -5,8 +5,9 @@
 
 Reads the theme's real assets (ground tiles, building tileset, backdrop layers, sky)
 through their .meta GUIDs, sliced sheets included, and draws every building block where
-BuildingBuilder puts it, and the crew's caravan past the finish. Pickups, spawn, finish and
-segment names are marked.
+BuildingBuilder puts it, the X painted on the weak points of a level's first buildings
+(`weakMarks` in its spec), and the crew's caravan past the finish. Pickups, spawn, finish
+and segment names are marked.
 The level is cut into strips stacked top to bottom so a long level fits one image.
 Parallax and camera framing are not simulated: backdrops sit where they spawn.
 """
@@ -95,6 +96,11 @@ def caravan_sprite():
     m = re.search(r"\n  caravan: (\{[^}]*\})", open(os.path.join(ASSETS, "Resources", "GameConfig.asset"), encoding="utf-8").read())
     refs = ref(m.group(1)) if m else []
     return sprite(*refs[0]) if refs else None
+
+
+def weak_mark():
+    """The X the game paints on a weak point (tools/artpipe/marks.py)."""
+    return Image.open(os.path.join(ASSETS, "Resources", "Marks", "WeakPoint.png")).convert("RGBA"), 32.0, (0.5, 0.5)
 
 
 def tile_sprite(file_id, guid):
@@ -292,6 +298,9 @@ def render(level):
             spr = pool[variant % len(pool)]
             c.draw(spr, b["x"] + bx + bw / 2 + entry["offset"][0], b["y"] + by + bh / 2 + entry["offset"][1],
                    scale=entry["scale"], tint=entry["tint"], rotation=entry["rotation"])
+        if b.get("mark"):  # the painted X on the weak point (WeakPointMark), in the middle of its block
+            wx, wy, ww, wh = b["weak"][:4]
+            c.draw(weak_mark(), b["x"] + wx + ww / 2, b["y"] + wy + wh / 2)
 
     d = ImageDraw.Draw(c.img)
     f = font(12)

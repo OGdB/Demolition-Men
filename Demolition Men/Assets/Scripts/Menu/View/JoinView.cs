@@ -9,7 +9,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>Join lobby panel under the title: one line per player slot plus the controls,
-/// and START / ONLINE buttons for mouse and touch. With the touchscreen joined (a phone) it
+/// and START / ONLINE buttons for mouse and touch. An empty slot names the keys that join it:
+/// once a player is on the keyboard, the other half's key. With the touchscreen joined (a phone) it
 /// is a play menu instead: big PLAY and PLAY ONLINE buttons, and a player row only while a
 /// gamepad is there to join as P2. Both have SETTINGS, so the volume can be set before the
 /// first run, and the NAME this device goes by on the ranked boards (<see cref="PlayerIdentity"/>).
@@ -105,6 +106,11 @@ public class JoinView : MonoBehaviour
         _onlineNote.text = "CO-OP WITH A FRIEND ON\nANOTHER PHONE, PC OR BROWSER";
 
         UiFactory.Button(touch, "SETTINGS", centre, new Vector2(-270f, -295f), new Vector2(360f, 90f), () => SettingsView.Open(null));
+
+        // The lobby's keys are JoinScreen's, and the up arrow joins: it mustn't also walk a
+        // clicked button's selection up onto the name field, which would start typing.
+        foreach (Selectable selectable in _root.GetComponentsInChildren<Selectable>(true))
+            selectable.navigation = new Navigation { mode = Navigation.Mode.None };
     }
 
     // NAME and its field: what this device is called on the ranked boards. A name that isn't
@@ -143,12 +149,14 @@ public class JoinView : MonoBehaviour
 
     private void ShowLobby()
     {
+        // Space joins the keyboard's WASD half; with that taken, the up arrow joins its other half.
+        string key = Keyboard.current != null && Session.IsJoined(Keyboard.current, KeyHalf.Left) ? "UP ARROW" : "SPACE";
         for (int i = 0; i < _slots.Length; i++)
         {
             InputDevice device = Session.DeviceFor(i);
             _slots[i].text = device != null
-                ? $"P{i + 1}  {DeviceName(device)}"
-                : $"<alpha=#66>P{i + 1}  PRESS A / SPACE TO JOIN";
+                ? $"P{i + 1}  {DeviceName(device, Session.KeysFor(i))}"
+                : $"<alpha=#66>P{i + 1}  PRESS A / {key} TO JOIN";
             _slots[i].color = device != null ? UiFactory.Gold : Color.white;
         }
         _start.interactable = Session.PlayerCount > 0;
@@ -168,10 +176,10 @@ public class JoinView : MonoBehaviour
         _onlineNote.color = new Color(0.8f, 0.8f, 0.82f, _playOnline.interactable ? 1f : 0.4f);
     }
 
-    private static string DeviceName(InputDevice device)
+    private static string DeviceName(InputDevice device, KeyHalf half = KeyHalf.Whole)
     {
         if (device is Keyboard)
-            return "KEYBOARD";
+            return half == KeyHalf.Left ? "KEYBOARD: WASD" : half == KeyHalf.Right ? "KEYBOARD: ARROWS" : "KEYBOARD";
         if (device is Touchscreen)
             return "TOUCH";
         int index = 0;

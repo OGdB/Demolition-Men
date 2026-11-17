@@ -3,8 +3,9 @@ using UnityEngine;
 namespace Demolition
 {
     /// <summary>Which button glyphs to show a player: keys, pad buttons, or none (the
-    /// on-screen touch buttons label themselves).</summary>
-    public enum InputStyle { Keyboard, Gamepad, Touch }
+    /// on-screen touch buttons label themselves); the keys of their half when two players
+    /// share the keyboard (<see cref="KeyLayout"/>).</summary>
+    public enum InputStyle { Keyboard, Gamepad, Touch, KeysLeft, KeysRight }
 
     /// <summary>
     /// One frame of one player's intent, whatever produced it (keyboard, gamepad, touch

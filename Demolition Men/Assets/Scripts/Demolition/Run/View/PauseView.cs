@@ -92,12 +92,12 @@ namespace Demolition.Run
         }
 
         // A row per control, a column per kind of device this device's players use (a keyboard
-        // and a gamepad in local co-op), beside the menu.
+        // and a gamepad in local co-op, or the two halves of one keyboard), beside the menu.
         private void BuildCard()
         {
             if (_card != null)
                 Destroy(_card.gameObject);
-            var used = new bool[3];
+            var used = new bool[InputGlyphs.Styles];
             int devices = 0;
             foreach (RunController.Player player in _run.Players)
                 if (!player.Health.IsProxy && player.Input != null && !used[(int)player.Input.Style])
@@ -125,7 +125,7 @@ namespace Demolition.Run
             {
                 if (!used[style])
                     continue;
-                TextMeshProUGUI head = Cell(((InputStyle)style).ToString().ToUpperInvariant(), DeviceX(x, column++), top,
+                TextMeshProUGUI head = Cell(InputGlyphs.Name((InputStyle)style), DeviceX(x, column++), top,
                     DeviceWidth, TextAlignmentOptions.Center);
                 head.color = UiFactory.Gold;
             }

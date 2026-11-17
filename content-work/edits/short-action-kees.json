@@ -1,0 +1,20 @@
+{
+  "out": "content-work/media/edits/short-action-kees.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/cities-port/take1.mp4",
+      "at": "collapse",
+      "before": 3.0,
+      "after": 4.0,
+      "text": "CALL THE CRANE",
+      "zoom": 1.0
+    }
+  ]
+}

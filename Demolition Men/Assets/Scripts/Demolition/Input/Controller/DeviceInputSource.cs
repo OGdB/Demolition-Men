@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace Demolition
 {
@@ -8,10 +10,14 @@ namespace Demolition
     ///
     /// Gamepad: left stick move · A jump · X attack (hold) · B dynamite · Y action · LB/RB weapon ·
     /// right stick up/down zoom in/out.
-    /// Keyboard: A/D or ◀/▶ move · Space/W jump · Z, F or L-Mouse attack · X, R or
-    /// R-Mouse dynamite · C or M-Mouse action · Q/E weapon · mouse wheel zoom.
+    /// Keyboard: the keys are <see cref="KeyLayout"/>'s (one player: A/D or ◀/▶ move · Space/W
+    /// jump · Z or F attack · X or R dynamite · C action · Q/E weapon), plus L-Mouse attack ·
+    /// R-Mouse dynamite · M-Mouse action · mouse wheel zoom. Two players on one keyboard each
+    /// read their <see cref="KeyHalf"/>: nobody has the mouse buttons then (a palm on a
+    /// laptop's trackpad would throw TNT), and the wheel zooms through the left half only,
+    /// so a notch counts once.
     /// </summary>
-    public sealed class DeviceInputSource : IPlayerInputSource
+    public sealed class DeviceInputSource : IPlayerInputSource, IKeyState
     {
         private const float StickZoomSteps = 3f; // zoom steps per second, stick held all the way
         private const float StickZoomDeadzone = 0.35f;
@@ -19,12 +25,19 @@ namespace Demolition
         private readonly InputDevice _assigned;
         private readonly int _gamepadIndex;
         private readonly bool _keyboard;
+        private readonly KeyHalf _half;
 
-        /// <summary>Read only this device (keyboard + mouse, or one gamepad).</summary>
-        public DeviceInputSource(InputDevice device)
+        // KeyLayout names its keys as the Input System's Key enum does.
+        private static readonly Dictionary<string, Key> KeysByName = new Dictionary<string, Key>();
+        private Keyboard _reading; // the keyboard KeyLayout reads through this source
+
+        /// <summary>Read only this device (keyboard + mouse, or one gamepad); of a keyboard
+        /// two players share, only <paramref name="half"/>.</summary>
+        public DeviceInputSource(InputDevice device, KeyHalf half = KeyHalf.Whole)
         {
             _assigned = device;
-            Style = device is Gamepad ? InputStyle.Gamepad : InputStyle.Keyboard;
+            _half = device is Keyboard ? half : KeyHalf.Whole;
+            Style = device is Gamepad ? InputStyle.Gamepad : KeyLayout.Style(_half);
         }
 
         /// <summary>Default input when nobody joined: gamepad <paramref name="gamepadIndex"/>,
@@ -39,8 +52,8 @@ namespace Demolition
         public InputStyle Style { get; private set; }
 
         /// <summary>The source for a joined device: touch controls for the touchscreen.</summary>
-        public static IPlayerInputSource For(InputDevice device) =>
-            device is Touchscreen ? TouchInputSource.Shared : new DeviceInputSource(device);
+        public static IPlayerInputSource For(InputDevice device, KeyHalf half = KeyHalf.Whole) =>
+            device is Touchscreen ? TouchInputSource.Shared : new DeviceInputSource(device, half);
 
         public PlayerInputFrame Read()
         {
@@ -59,11 +72,10 @@ namespace Demolition
             Mouse mouse = kb != null ? Mouse.current : null;
 
             var frame = new PlayerInputFrame();
-            Vector2 move = Vector2.zero;
 
             if (pad != null)
             {
-                move += pad.leftStick.ReadValue();
+                frame.Move = pad.leftStick.ReadValue();
                 frame.JumpPressed |= pad.aButton.wasPressedThisFrame;
                 frame.JumpHeld |= pad.aButton.isPressed;
                 frame.JumpReleased |= pad.aButton.wasReleasedThisFrame;
@@ -81,36 +93,23 @@ namespace Demolition
 
             if (kb != null)
             {
-                float x = 0f, y = 0f;
-                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) x -= 1f;
-                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) x += 1f;
-                if (kb.sKey.isPressed || kb.downArrowKey.isPressed) y -= 1f;
-                if (kb.wKey.isPressed || kb.upArrowKey.isPressed) y += 1f;
-                move += new Vector2(x, y);
-
-                frame.JumpPressed |= kb.spaceKey.wasPressedThisFrame || kb.wKey.wasPressedThisFrame
-                                     || kb.upArrowKey.wasPressedThisFrame;
-                frame.JumpHeld |= kb.spaceKey.isPressed || kb.wKey.isPressed || kb.upArrowKey.isPressed;
-                frame.JumpReleased |= kb.spaceKey.wasReleasedThisFrame || kb.wKey.wasReleasedThisFrame
-                                      || kb.upArrowKey.wasReleasedThisFrame;
-
-                frame.AttackHeld |= kb.zKey.isPressed || kb.fKey.isPressed;
-                frame.DynamitePressed |= kb.xKey.wasPressedThisFrame || kb.rKey.wasPressedThisFrame;
-                frame.ActionPressed |= kb.cKey.wasPressedThisFrame;
-
-                if (kb.eKey.wasPressedThisFrame) frame.WeaponCycle = 1;
-                else if (kb.qKey.wasPressedThisFrame) frame.WeaponCycle = -1;
+                _reading = kb;
+                frame = PlayerInputFrame.Merge(KeyLayout.Read(_half, this), frame); // the keys' weapon swap first, as before
                 if (kb.anyKey.wasPressedThisFrame)
-                    Style = InputStyle.Keyboard;
+                    Style = KeyLayout.Style(_half);
             }
 
-            if (mouse != null)
+            if (mouse != null && _half == KeyHalf.Whole)
             {
                 frame.AttackHeld |= mouse.leftButton.isPressed;
                 frame.DynamitePressed |= mouse.rightButton.wasPressedThisFrame;
                 frame.ActionPressed |= mouse.middleButton.wasPressedThisFrame;
                 if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame)
                     Style = InputStyle.Keyboard;
+            }
+
+            if (mouse != null && _half != KeyHalf.Right)
+            {
                 // One step per frame the wheel turns: its delta is pixels on some platforms and
                 // notches on others. Rolled up: closer.
                 float wheel = mouse.scroll.ReadValue().y;
@@ -118,11 +117,23 @@ namespace Demolition
                     frame.Zoom -= Mathf.Sign(wheel);
             }
 
-            frame.Move = Vector2.ClampMagnitude(move, 1f);
+            frame.Move = Vector2.ClampMagnitude(frame.Move, 1f);
             return frame;
         }
 
-        private static bool AnyButton(Gamepad pad) =>
+        bool IKeyState.Held(string key) => Control(key).isPressed;
+        bool IKeyState.Pressed(string key) => Control(key).wasPressedThisFrame;
+        bool IKeyState.Released(string key) => Control(key).wasReleasedThisFrame;
+
+        private KeyControl Control(string name)
+        {
+            if (!KeysByName.TryGetValue(name, out Key key))
+                KeysByName[name] = key = (Key)System.Enum.Parse(typeof(Key), name);
+            return _reading[key];
+        }
+
+        /// <summary>A button a player plays or joins with went down on <paramref name="pad"/> this frame.</summary>
+        public static bool AnyButton(Gamepad pad) =>
             pad.buttonSouth.wasPressedThisFrame || pad.buttonEast.wasPressedThisFrame
             || pad.buttonWest.wasPressedThisFrame || pad.buttonNorth.wasPressedThisFrame
             || pad.leftShoulder.wasPressedThisFrame || pad.rightShoulder.wasPressedThisFrame

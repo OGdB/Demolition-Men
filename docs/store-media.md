@@ -165,7 +165,7 @@ Clip 8 is for r/gamedev, r/Unity2D and Bluesky, where how-it-works posts do well
 | Piece | What it does | Where |
 |---|---|---|
 | Unity Recorder | `com.unity.recorder` 5.1.7 in `Packages/manifest.json` (it brings Timeline). It records the Game view at a constant frame rate and sets `Time.captureFramerate`, so a heavy collapse never drops a frame in the video, even if the editor slows down. On Linux it has no H.264: the Clip Lab records VP8 WebM at a high bitrate and, when the take ends, ffmpeg turns it into `take<n>.mp4` in the background (libx264, else the GPU's `h264_nvenc`, else `libopenh264`; `ClipLab.Status()` counts the takes still converting). The Game view's Mute Audio is switched off while a take records, or the take is silent. | Package |
-| `ShotSpec`, `ShotPlanning` | Models: a shot file, its checks (`Errors()`), its lanes, the take's event log (`ShotLog`), the framing maths and the weak-point finder. Unit-tested (`ShotTests`), including every file in `content-work/shots`. | `Scripts/Demolition/Clips/Model/` |
+| `ShotSpec`, `ShotPlanning` | Models: a shot file, its checks (`Errors()`), its lanes, the take's event log (`ShotLog`) and the framing maths; the weak point a step walks to is `BuildingValidator.WeakPoint`. Unit-tested (`ShotTests`), including every file in `content-work/shots`. | `Scripts/Demolition/Clips/Model/` |
 | `ClipDirector` | Plays a shot in the Level scene (editor only): a temporary profile with the shot's upgrades and no music, the players placed at the building with their kit and driven through `ScriptedInputSource`s (walks go through the `BotPilot`), the camera framed, the HUD hidden, the time scale owned. Logs every collapse, break and blast at its video time to `take<n>.json`, plus any step that timed out or was still waiting when the shot ended. | `Scripts/Demolition/Clips/Controller/` |
 | `ClipLab` | Tools ▸ Demolition ▸ Clip Lab: every shot file with Preview and Record, Record all, Stop, Still (the Game view at 2x, for menus), Open media folder. Takes run one after another, each in its own play mode. For agents through the Unity MCP: `ClipLab.Record("one-hit")`, `ClipLab.Record("one-hit", 1)`, `ClipLab.RecordAll()`, `ClipLab.Preview(id)`, `ClipLab.Status()`, `ClipLab.Stop()`, `ClipLab.Still()`; `ClipLab.RecordTake(name, w, h, fps)` and `StopTake()` record whatever plays (a run by hand, online play) into `raw/<name>/`. Like a shot, a take records at a fixed step: at 1080p60 the game runs at about a quarter speed for whoever plays it (the encoder can't keep up), while 960×540 at 30 fps with `Application.targetFrameRate` about 34 keeps real time, which online play needs. Its own asmdef (`Demolition.Clips.Editor`), compiled only when the Recorder is installed. | `Assets/Editor/Clips/` |
 | Game hooks | `BotPilot.StopX` / `ThrowsDynamite` / `Arrived`, `PlayerHealth.Invincible` (a shot's `invincible`), `LevelBootstrap.Players`, `RunController.IgnoreBounds`, `RunJuice.BaseTimeScale`, `ScrollCamera.PlaceScrolling` (a `run` shot at a building starts with the camera already scrolling). Nothing changes in normal play. | |
@@ -213,7 +213,8 @@ the HUD.
   `length`). Seconds are video seconds.
 - **Player steps:** `walk` (`to`: `weakpoint`, `building` (its left edge), `end` (past it), or
   `x` from the left edge; the bot breaks what's in the way and stops where a swing would
-  reach the target), `hit` (for `seconds`, or `until` an event), `tnt`, `jump` (`x` + or -
+  reach the target), `hit` (for `seconds`, or `until` an event), `tnt`, `action` (fires the player's
+  action; the shot starts `charged`), `jump` (`x` + or -
   moves while jumping), `back` (walk left for `seconds`), `swap`, `wait`, `bot` (the
   `BotPilot` plays, dynamite included, for `seconds` or `until`).
 - **Director steps:** `wait` (`seconds`, or `until` an event with `seconds` as the
@@ -395,6 +396,42 @@ again. The bot fires its action now (`BotTactics`), so the bot footage carries o
 intern, `broll-neon-02` the radio; `cities-*` start charged with the burp, the crane and the
 demolition. The bot footage plays mortal with the HUD on, so first run `BotSurvivesLevel`
 (PlayMode, Test Runner window): every level the bot dies on gets tuned before the batch.
+
+### 4.4 Re-recorded by the agent (2026-11-16 and 17)
+
+Recorded unattended through the Unity MCP on the Linux laptop, 67 takes in `content-work/media/raw/`
+(gitignored: back it up). What it took, so the next batch runs clean:
+- **The editor on the NVIDIA card.** On the integrated GPU Unity caps the Game view at 1496 px and
+  a 1920 px take comes out with black bars; the Clip Lab now refuses such a take.
+- **The queue runs without focus.** The next take started from `EditorApplication.delayCall`, which
+  an editor that isn't the focused window never runs; `ClipLab.Tick` starts it now.
+- **A shot's `actions` are owned.** Since the shop sells actions, a profile that doesn't own one
+  carries the burp: every shot and `BotSurvivesLevel` fired the burp whatever they asked for.
+- **Memory.** x264 on 32 threads held 2.5 GB per conversion (now `-threads 8`); render edits
+  between batches, not during one; never edit a project `.cs` while a batch records (Unity
+  recompiles inside the take and the shot never starts).
+
+**On disk:** 25 Shorts (`edits/short-*`: the 6 of §2.4 re-cut, 11 collapses on buildings no other
+clip uses, 8 actions), 3 GIF clips, `edits/trailer-draft.mp4` (32 s, from takes the editor makes by
+itself), all 8 screenshots with their ads images (`store/`), and 36 landscape highlights cut from
+the bot's runs (`raw/broll-*/take1-hl*.mp4`). The shot files: 9 directed, 11 `fall-*`, 8 `action-*`
+(the new `action` step fires the player's action), 12 `broll-*` (one per level, each with another
+action), 3 `cities-*`, 5 `store-*`.
+
+**Changed against §2:** co-op and screenshot 3 moved to the Port cannery (`port-01` #8), so the
+Town rowhouse is the one-hit's alone; the screenshots lead with the bright ones (one-hit, tower,
+co-op) and Neon's two follow; screenshot 7 is the bot's own finish on Main Street with three gold
+stars, captioned WRECK IT ALL FOR 3 STARS, because no run is within par yet (below).
+
+**The bot** (`BotPilot`, mortal, upgrades 5) finishes all 12 levels after one change: with the
+camera closing in it starts working itself loose after 1.2 s, not 3. Demolition 97% on `town-01`
+down to 35% on `neon-04`; seven levels reach three stars. It is 15–70% over par everywhere (par is
+55% of the scroll time: 45.7 s on `town-01`, the bot takes 52.5), so there are no rainbow stars.
+
+**Still open:** the butt slam's clip (no roof in the 12 levels can be reached: it needs a street
+made for it); Neon reads dark (§4.1); the takes of §2.5 (phone, online pair, gamepads); the three
+hooks of `hit-plan.md` §4.3; a run within par for rainbow stars; the headbutt no longer brings the
+wall down on the player.
 
 ## 5. Decisions for the start of the session
 

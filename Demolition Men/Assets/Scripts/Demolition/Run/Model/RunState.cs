@@ -196,6 +196,15 @@ namespace Demolition.Run
             }
         }
 
+        /// <summary>GO at once, whatever is left of the countdown (the cold open plays in its place).</summary>
+        public void Go()
+        {
+            if (Phase != RunPhase.Countdown)
+                return;
+            Countdown = 0f;
+            SetPhase(RunPhase.Playing);
+        }
+
         public void ReportDepleted(int player)
         {
             if (Phase == RunPhase.Playing && _slots[player].Status == PlayerStatus.Alive)

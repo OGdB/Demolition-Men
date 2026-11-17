@@ -54,6 +54,7 @@ namespace Demolition.Tests
         public IEnumerator BotSurvivesLevel([ValueSource(nameof(Levels))] int index)
         {
             ActionInfo action = ActionCatalog.All[index % ActionCatalog.All.Count];
+            Profile.Data.ownedActions.Add(action.Id); // or the bot carries the burp on every level
             ActionCatalog.Equip(Profile.Data, 0, action.Kind);
             foreach (UpgradeDefinition upgrade in UpgradeCatalog.All)
                 Profile.Data.SetUpgradeLevel(upgrade.Id, Mathf.Min(FootageUpgrades, upgrade.MaxLevel));

@@ -71,23 +71,10 @@ MonoBehaviour:
       - rid: 8901573159932657664
       - rid: 8901573159932657665
       - rid: 8901573159932657666
+      - rid: 1597700726308995159
+      - rid: 1597700726308995160
     m_RuntimeSettings:
-      m_List:
-      - rid: 8901572977945477398
-      - rid: 8901572977945477403
-      - rid: 8901572977945477404
-      - rid: 8901572977945477405
-      - rid: 8901572977945477408
-      - rid: 8901572977945477413
-      - rid: 8901572977945477414
-      - rid: 8901572977945477416
-      - rid: 8901572977945477418
-      - rid: 8901572977945477420
-      - rid: 8901572977945477421
-      - rid: 8901572977945477424
-      - rid: 8901573159932657664
-      - rid: 8901573159932657665
-      - rid: 8901573159932657666
+      m_List: []
   m_AssetVersion: 11
   m_ObsoleteDefaultVolumeProfile: {fileID: 0}
   m_RenderingLayerNames:
@@ -111,6 +98,23 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
+    - rid: 1597700726308995159
+      type: {class: ScreenSpaceAmbientOcclusionBlueNoiseResources, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
+      data:
+        m_BlueNoise256Textures:
+        - {fileID: 2800000, guid: 36f118343fc974119bee3d09e2111500, type: 3}
+        - {fileID: 2800000, guid: 4b7b083e6b6734e8bb2838b0b50a0bc8, type: 3}
+        - {fileID: 2800000, guid: c06cc21c692f94f5fb5206247191eeee, type: 3}
+        - {fileID: 2800000, guid: cb76dd40fa7654f9587f6a344f125c9a, type: 3}
+        - {fileID: 2800000, guid: e32226222ff144b24bf3a5a451de54bc, type: 3}
+        - {fileID: 2800000, guid: 3302065f671a8450b82c9ddf07426f3a, type: 3}
+        - {fileID: 2800000, guid: 56a77a3e8d64f47b6afe9e3c95cb57d5, type: 3}
+        m_Version: 0
+    - rid: 1597700726308995160
+      type: {class: ScreenSpaceAmbientOcclusionCoreResources, ns: UnityEngine.Rendering.Universal, asm: Unity.RenderPipelines.Universal.Runtime}
+      data:
+        m_RasterizationShader: {fileID: 4800000, guid: 0849e84e3d62649e8882e9d6f056a017, type: 3}
+        m_Version: 0
     - rid: 8901572977945477394
       type: {class: RayTracingRenderPipelineResources, ns: UnityEngine.Rendering.UnifiedRayTracing, asm: Unity.UnifiedRayTracing.Runtime}
       data:

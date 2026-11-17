@@ -7,7 +7,7 @@ using System.Threading.Channels;
 using System.Threading.RateLimiting;
 
 /// Pairs a host and a joiner by code and copies binary messages between them. Runs no game code.
-public sealed class RelayServer(RelayOptions opt, ILogger log)
+public sealed class RelayServer(RelayOptions opt, ILogger log, Counters? counts = null)
 {
     const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O, 1/I
     static readonly byte[] Joined = "joined"u8.ToArray(), PeerJoined = "peer-joined"u8.ToArray(), PeerLeft = "peer-left"u8.ToArray();
@@ -61,15 +61,20 @@ public sealed class RelayServer(RelayOptions opt, ILogger log)
         if (!connects.AttemptAcquire(ip).IsAcquired) return 4029;
         if (!int.TryParse(query["v"].ToString(), out var version)) return 4006;
         if (version != opt.Protocol) return 4003;
+        // For the counters: only browsers send Origin. Nothing else about the device is looked at.
+        var platform = ctx.Request.Headers.ContainsKey("Origin") ? "web" : "app";
         switch (query["role"].ToString())
         {
             case "host":
-                return Open(peer, ip, out room);
+                var refused = Open(peer, ip, out room);
+                if (refused == 0) counts?.Count("room", platform);
+                return refused;
             case "join":
                 // Unknown codes and full rooms count against the IP, so codes can't be brute-forced.
                 if (!failedJoins.AttemptAcquire(ip, 0).IsAcquired) return 4029;
                 var error = Join(peer, query["code"].ToString(), out room);
                 if (error != 0) failedJoins.AttemptAcquire(ip);
+                else counts?.Count("join", platform);
                 return error;
             default:
                 return 4006;

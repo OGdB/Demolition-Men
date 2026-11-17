@@ -1,35 +1,10 @@
 using System;
-using Demolition.Generation;
 
 namespace Demolition.Clips
 {
-    /// <summary>Where to hit and how to frame it: the pure parts of a shot.</summary>
+    /// <summary>How to frame it: the pure parts of a shot.</summary>
     public static class ShotPlanning
     {
-        /// <summary>
-        /// The ground-level block whose loss brings down the most of the building, replayed the
-        /// way <see cref="BuildingValidator"/> judges weak points (detach, then overload crumble).
-        /// Null when nothing at ground level can be hit (no blocks, only glass).
-        /// </summary>
-        public static SpecBlock WeakPoint(BuildingSpec spec, out float cascade)
-        {
-            cascade = 0f;
-            SpecBlock best = null;
-            var baseline = BuildingValidator.Stress(spec.ToStructure());
-            foreach (SpecBlock block in spec.Blocks)
-            {
-                if (block.Rect.yMin > 1 || block.Material == BlockMaterial.Glass)
-                    continue;
-                float lost = BuildingValidator.Cascade(spec, baseline, block);
-                if (best == null || lost > cascade)
-                {
-                    best = block;
-                    cascade = lost;
-                }
-            }
-            return best;
-        }
-
         /// <summary>Share of the frame's short side the subject must fit in. A square master is
         /// cut to 9:16 and 16:9 afterwards, and both keep only its middle 9/16.</summary>
         public static float SafeShare(int width, int height) => width == height ? 9f / 16f : 1f;

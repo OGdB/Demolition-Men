@@ -367,5 +367,70 @@ namespace Demolition.Tests
             Assert.AreEqual(Daily.TemplateIndex(day, 4), Daily.TemplateIndex(day, 4));
             Assert.That(Daily.TemplateIndex(day.AddDays(-400), 4), Is.InRange(0, 3));
         }
+
+        // ---------------- The painted weak point (docs/hit-plan.md F1) ----------------
+
+        [Test]
+        public void WeakMarks_AreOffUnlessTheSpecAsks()
+        {
+            Assert.AreEqual(0, new LevelSpec().weakMarks);
+            Assert.AreEqual(0, LevelSpec.FromJson(@"{ ""id"": ""x"", ""pacing"": [""start"", ""street"", ""finish""] }").weakMarks);
+            Assert.AreEqual(3, LevelSpec.FromJson(@"{ ""id"": ""x"", ""weakMarks"": 3 }").weakMarks);
+        }
+
+        [Test]
+        public void WeakMarks_OnlyTheFirstTwoLevelsAsk([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            Assert.AreEqual(spec.id == "town-01" || spec.id == "town-02", spec.weakMarks > 0, spec.id);
+        }
+
+        // The X goes on the weak point of the level's first weakMarks buildings, props not counted:
+        // the block the level dump calls `weak` (tools/unity-check/LevelDump.cs), in reach from the
+        // street, and a weak point as its archetype counts them. No other building, and no
+        // building of a level that doesn't ask, carries one.
+        [Test]
+        public void WeakMark_IsTheWeakPointOfTheLevelsFirstBuildings([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            List<BuildingArchetype> archetypes = ArchetypesFor(path);
+            LevelLayout layout = LevelGrammar.Generate(spec, archetypes);
+            int buildings = 0, marks = 0;
+            for (int i = 0; i < layout.Buildings.Count; i++)
+            {
+                BuildingPlacement b = layout.Buildings[i];
+                SpecBlock mark = layout.WeakMark(i);
+                if (b.IsProp || buildings++ >= spec.weakMarks)
+                {
+                    Assert.IsNull(mark, $"{spec.id}: building {i} ({b.Spec.Archetype})");
+                    continue;
+                }
+                Assert.AreSame(BuildingValidator.WeakPoint(b.Spec, out float cascade), mark, $"{spec.id}: building {i}");
+                Assert.IsNotNull(mark, $"{spec.id}: building {i} ({b.Spec.Archetype}) has no weak point to paint");
+                Assert.LessOrEqual(mark.Rect.yMin, 1, $"{spec.id}: building {i}");
+                BuildingArchetype archetype = archetypes.FirstOrDefault(a => a.id == b.Spec.Archetype); // none: a gate
+                Assert.GreaterOrEqual(cascade + 1e-4f, archetype != null ? archetype.weakPointCascade : 1f,
+                    $"{spec.id}: building {i} ({b.Spec.Archetype}): the X brings too little down");
+                marks++;
+            }
+            Assert.AreEqual(System.Math.Min(spec.weakMarks, buildings), marks, spec.id);
+        }
+
+        // A daily and a ranked run are a campaign level under another seed (LevelSelection.SelectDaily
+        // and SelectRanked, the ranked server's Levels): town-01's turn must not bring its paint along.
+        [Test]
+        public void WeakMarks_NeverInADailyOrARankedRun([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            var date = new System.DateTime(2026, 11, 17);
+            Ranked.RankedDay ranked = Ranked.RankedDay.Local(date, spec.id, Ranked.RankedMode.Solo);
+            foreach (LevelSpec played in new[] { spec.WithSeed(Daily.Seed(date), Daily.Id(date)), spec.WithSeed(ranked.Seed, ranked.LevelId) })
+            {
+                Assert.AreEqual(0, played.weakMarks, played.id);
+                LevelLayout layout = LevelGrammar.Generate(played, ArchetypesFor(path));
+                for (int i = 0; i < layout.Buildings.Count; i++)
+                    Assert.IsNull(layout.WeakMark(i), $"{played.id} from {spec.id}: building {i}");
+            }
+        }
     }
 }

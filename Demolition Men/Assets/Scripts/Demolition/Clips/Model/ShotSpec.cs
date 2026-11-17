@@ -17,7 +17,7 @@ namespace Demolition.Clips
     public sealed class ShotSpec
     {
         public static readonly string[] DirectorSteps = { "wait", "slowmo", "still", "end" };
-        public static readonly string[] PlayerSteps = { "walk", "hit", "tnt", "jump", "back", "wait", "swap", "bot" };
+        public static readonly string[] PlayerSteps = { "walk", "hit", "tnt", "action", "jump", "back", "wait", "swap", "bot" };
         public static readonly string[] Events = { "", "collapse", "break", "blast", "over" };
         public static readonly string[] Targets = { "", "weakpoint", "building", "end" };
         public static readonly string[] CameraModes = { "frame", "pan", "follow", "run" };

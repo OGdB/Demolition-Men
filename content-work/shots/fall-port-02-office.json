@@ -1,0 +1,55 @@
+{
+  "id": "fall-port-02-office",
+  "level": "port-02",
+  "building": 1,
+  "offset": -3,
+  "upgrades": 5,
+  "dynamite": 3,
+  "camera": {
+    "mode": "frame",
+    "pad": 2
+  },
+  "width": 1920,
+  "height": 1920,
+  "length": 35,
+  "takes": 1,
+  "steps": [
+    {
+      "p": 1,
+      "do": "walk",
+      "to": "weakpoint"
+    },
+    {
+      "p": 1,
+      "do": "hit",
+      "seconds": 2
+    },
+    {
+      "p": 1,
+      "do": "tnt"
+    },
+    {
+      "p": 1,
+      "do": "back",
+      "seconds": 1.5
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 24
+    },
+    {
+      "p": 0,
+      "do": "slowmo",
+      "scale": 0.3,
+      "seconds": 1.5
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 5
+    }
+  ]
+}

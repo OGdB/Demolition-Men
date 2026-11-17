@@ -20,16 +20,16 @@
       "y": 0.52
     },
     {
-      "file": "content-work/media/raw/night-tnt/take1.mp4",
-      "at": "blast",
-      "before": 0.6,
-      "after": 2.4
-    },
-    {
-      "file": "content-work/media/raw/gas-chain/take1.mp4",
+      "file": "content-work/media/raw/tower/take1.mp4",
       "at": "blast",
       "before": 0.5,
-      "after": 2.5
+      "after": 3.5,
+      "y": 0.76
+    },
+    {
+      "file": "content-work/media/raw/cities-port/take1.mp4",
+      "start": 0.9,
+      "end": 3.4
     },
     {
       "file": "content-work/media/raw/co-op/take1.mp4",
@@ -42,18 +42,6 @@
       "y": 0.52
     },
     {
-      "file": "content-work/media/raw/wrecking-ball/take1.mp4",
-      "at": "break",
-      "before": 0.3,
-      "after": 1.2
-    },
-    {
-      "file": "content-work/media/raw/headbutt/take1.mp4",
-      "at": "break",
-      "before": -1.5,
-      "after": 3.0
-    },
-    {
       "file": "content-work/media/raw/gate/take3.mp4",
       "at": "collapse",
       "before": 0.5,
@@ -63,34 +51,50 @@
       "y": 0.55
     },
     {
+      "file": "content-work/media/raw/headbutt/take1.mp4",
+      "start": 3.2,
+      "end": 5.6
+    },
+    {
+      "file": "content-work/media/raw/wrecking-ball/take1.mp4",
+      "at": "collapse",
+      "before": 0.4,
+      "after": 1.2
+    },
+    {
       "file": "content-work/media/raw/keep-up/take2.mp4",
-      "start": 3.4,
-      "end": 7.4,
+      "start": 4.4,
+      "end": 6.4,
       "text": "KEEP UP"
     },
     {
-      "file": "content-work/media/raw/tower/take1.mp4",
+      "file": "content-work/media/raw/night-tnt/take1.mp4",
       "at": "blast",
-      "before": 0.5,
-      "after": 3.5,
-      "y": 0.76
+      "before": 0.4,
+      "after": 2.1
+    },
+    {
+      "file": "content-work/media/raw/gas-chain/take1.mp4",
+      "at": "blast",
+      "before": 0.3,
+      "after": 2.2
     },
     {
       "file": "content-work/media/raw/cities-town/take1.mp4",
-      "start": 5.9,
-      "end": 6.9,
+      "start": 2.7,
+      "end": 3.7,
       "text": "3 CITIES + A DAILY STREET"
     },
     {
       "file": "content-work/media/raw/cities-port/take1.mp4",
-      "start": 3.6,
-      "end": 4.6,
+      "start": 3.4,
+      "end": 4.4,
       "text": "3 CITIES + A DAILY STREET"
     },
     {
       "file": "content-work/media/raw/cities-neon/take1.mp4",
-      "start": 9.2,
-      "end": 10.0,
+      "start": 7.8,
+      "end": 8.8,
       "text": "3 CITIES + A DAILY STREET"
     },
     {

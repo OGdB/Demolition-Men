@@ -1,5 +1,6 @@
 # The relay behind the host's existing Caddy container: it joins Caddy's Docker network and
-# publishes no ports. deploy/install.sh writes the .env next to this file.
+# publishes no ports. deploy/install.sh writes the .env next to this file and keeps data/ (the
+# counters' database) and relay.env across deploys.
 name: demolition-relay
 services:
   relay:
@@ -8,10 +9,12 @@ services:
     container_name: demolition-relay
     restart: unless-stopped
     expose: ["5080"]
-    env_file: relay.env # your overrides (Relay__MaxRooms=1000, ...); deploys never touch it
+    env_file: relay.env # your overrides (Relay__MaxRooms=1000, ...), the counters' database and the admin token
     environment:
       # Caddy's network: X-Forwarded-For from there carries the player's real address.
       Relay__TrustedProxyNetworks__0: ${RELAY_TRUSTED_PROXY_NETWORK:?the subnet of the proxy network}
+    volumes:
+      - ./data:/data
     networks: [proxy]
     read_only: true
     tmpfs: [/tmp]

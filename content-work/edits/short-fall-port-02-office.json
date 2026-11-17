@@ -1,0 +1,22 @@
+{
+  "out": "content-work/media/edits/short-fall-port-02-office.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/fall-port-02-office/take1.mp4",
+      "at": "blast",
+      "before": 2.5,
+      "after": 4.5,
+      "text": "DYNAMITE AT\nTHE OFFICE",
+      "zoom": 1.4,
+      "x": 0.56,
+      "y": 0.52
+    }
+  ]
+}

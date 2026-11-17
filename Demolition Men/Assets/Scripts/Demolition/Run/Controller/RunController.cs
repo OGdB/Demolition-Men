@@ -61,7 +61,10 @@ namespace Demolition.Run
         private int _totalCells;
         private int _plannedCells;
         private int _removedCells;
+        private LevelLayout _layout;
+        private int[] _removedIn; // cells gone per building of the layout: a streamed-out building keeps its count
         private Action _nextLevel;
+        private bool _shared;
 
         /// <summary>The run in progress, if the scene has one.</summary>
         public static RunController Current { get; private set; }
@@ -97,6 +100,13 @@ namespace Demolition.Run
         /// <summary>Nobody goes out of bounds (the Clip Lab frames shots with its own camera).</summary>
         public bool IgnoreBounds { get; set; }
 
+        /// <summary>The countdown stands still and the HUD shows no digits and no tutorial signs:
+        /// the cold open plays in its place and ends it with <see cref="RunState.Go"/>.</summary>
+        public bool Held { get; set; }
+
+        /// <summary>What breaks scores and is felt: the run is playing, or the cold open is.</summary>
+        public bool Live => State.Phase == RunPhase.Playing || Held;
+
         public string LevelId => string.IsNullOrEmpty(levelId) ? SceneManager.GetActiveScene().name : levelId;
 
         /// <summary>What the profile got from this run, once it is over.</summary>
@@ -106,6 +116,11 @@ namespace Demolition.Run
         /// so debris still falling afterwards can't light a star the profile never recorded.</summary>
         public float BankedFraction { get; private set; }
         public int BankedScore { get; private set; }
+
+        /// <summary>The run as text to share (<see cref="RubbleCard"/>), banked with it. Null when
+        /// there is none: a failed run, the Tutorial (no generated street), an online client
+        /// (the host counts the buildings).</summary>
+        public string Card { get; private set; }
 
         public int FinalScore => State.Phase == RunPhase.Finished
             ? Score.FinalTotal(State.Elapsed, parTime)
@@ -121,12 +136,14 @@ namespace Demolition.Run
         public bool HasNextLevel => _nextLevel != null || !string.IsNullOrEmpty(nextScene);
 
         /// <summary>Set up by a generated level before the run starts: its save id, par,
-        /// every cell it will spawn, and what Next does (null hides it).</summary>
-        public void Configure(string id, float par, int plannedCells, Action nextLevel)
+        /// its layout (every cell it will spawn), and what Next does (null hides it).</summary>
+        public void Configure(string id, float par, LevelLayout layout, Action nextLevel)
         {
             levelId = id;
             parTime = par;
-            _plannedCells = plannedCells;
+            _layout = layout;
+            _plannedCells = layout.TotalCells;
+            _removedIn = new int[layout.Buildings.Count];
             _nextLevel = nextLevel;
         }
 
@@ -172,6 +189,8 @@ namespace Demolition.Run
         {
             Current = this;
             FindPlayers();
+            if (!Profile.IsTemporary) // players' hands, never the Clip Lab's or a bot test's
+                gameObject.AddComponent<RunHaptics>();
             if (Debug.isDebugBuild && !LevelSelection.IsRanked) // a full meter for free would void the ranked log
                 gameObject.AddComponent<ActionTestKeys>(); // 1-9: try any action with a full meter
             State = new RunState(_players.Count, rules);
@@ -218,8 +237,10 @@ namespace Demolition.Run
                 var input = go.GetComponent<PlayerInputReader>();
                 player.Input = input;
                 input.PlayerIndex = player.Index;
-                input.AssignDevice(!NetRole.IsOnline ? Session.DeviceFor(player.Index)
-                    : player.Index == NetRole.LocalPlayer ? Session.DeviceFor(0) : null);
+                if (NetRole.IsOnline) // one player per device: all of its keyboard
+                    input.AssignDevice(player.Index == NetRole.LocalPlayer ? Session.DeviceFor(0) : null);
+                else
+                    input.AssignDevice(Session.DeviceFor(player.Index), Session.KeysFor(player.Index));
                 player.Health.ManagedByRun = true;
                 player.Health.Depleted += OnDepleted;
                 PlayerUpgrades.Apply(player, LevelSelection.IsRanked ? RankedKit : Profile.Data);
@@ -274,7 +295,7 @@ namespace Demolition.Run
             if (_camera != null && finish != null)
                 _camera.Edge.FinishX = finish.X;
 
-            if (!NetRole.IsClient)
+            if (!NetRole.IsClient && !Held)
                 State.Tick(Time.deltaTime);
         }
 
@@ -303,6 +324,9 @@ namespace Demolition.Run
             State.Leave(index);
             PromptShown?.Invoke($"PLAYER {index + 1} LEFT THE GAME", 3f);
         }
+
+        /// <summary>A line for everyone at the bottom of the HUD, for this many seconds.</summary>
+        public void ShowPrompt(string message, float seconds) => PromptShown?.Invoke(message, seconds);
 
         /// <summary>Online client: show points the host awarded (the score itself arrives with the run state).</summary>
         public void ShowScored(int player, int points, Vector3 at) => Scored?.Invoke(player, points, at);
@@ -386,8 +410,25 @@ namespace Demolition.Run
             Reward = Profile.Data.RecordRun(LevelId, finished, RunScore.GradeFor(BankedFraction), BankedScore, State.Elapsed,
                 withinPar, Objectives.MetMask(Sheet, Tally, finished, BankedFraction, withinPar),
                 GameConfig.Instance != null && LevelId == GameConfig.Instance.tutorialScene);
+            // The counters (docs/hit-plan.md F0): players' finishes, never a bot's. Online both devices
+            // count theirs, told apart by host and guest.
+            if (finished && !_players.Exists(p => p.Transform.GetComponent<BotPilot>() != null))
+                CounterSender.LevelFinished(LevelId, RunScore.Stars(RunScore.GradeFor(BankedFraction)), _players.Count,
+                    (int)NetRole.Mode, Reward.StartingCash > 0);
             Profile.Save();
+            if (finished && _layout != null && !NetRole.IsClient)
+                Card = RubbleCard.Text(LevelSelection.IsDaily ? RubbleCard.DailyTitle(LevelSelection.DailyDate) : _layout.Spec.name,
+                    BankedFraction, withinPar, State.Elapsed, RubbleCard.Street(_layout, _removedIn),
+                    GameConfig.Instance != null ? GameConfig.Instance.playUrl : null);
             Ended?.Invoke();
+        }
+
+        /// <summary>SHARE copied the <see cref="Card"/>: counted once per run.</summary>
+        public void Shared()
+        {
+            if (!_shared)
+                CounterSender.Shared();
+            _shared = true;
         }
 
         /// <summary>A rewarded ad paid out: bank the run's cash once more.</summary>
@@ -458,12 +499,17 @@ namespace Demolition.Run
 
         private void OnBuildingReady(int cells) => _totalCells += cells;
 
-        private void OnStandingCellsRemoved(int cells) => _removedCells += cells;
+        private void OnStandingCellsRemoved(int building, int cells)
+        {
+            _removedCells += cells;
+            if (_removedIn != null && building >= 0 && building < _removedIn.Length)
+                _removedIn[building] += cells;
+        }
 
         // Online only the host scores; a client shows the host's score.
         private void OnBlockDestroyed(BlockDestroyedInfo info)
         {
-            if (State.Phase != RunPhase.Playing || NetRole.IsClient)
+            if (!Live || NetRole.IsClient)
                 return;
             int points = Score.AddDestroyed(info.Instigator, info.Material, info.Cells);
             Scored?.Invoke(info.Instigator, points, info.Position);
@@ -471,7 +517,7 @@ namespace Demolition.Run
 
         private void OnCollapsed(CollapseInfo info)
         {
-            if (State.Phase != RunPhase.Playing || NetRole.IsClient)
+            if (!Live || NetRole.IsClient)
                 return;
             int points = Score.AddCollapse(info.Instigator, info.Cells);
             Tally.Collapsed(info.Cells.Count, Time.time);

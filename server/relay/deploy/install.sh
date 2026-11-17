@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs on the VPS as root; deploy.sh uploads the sources and calls it:
 #   install.sh <staging-dir> <domain> <network> <caddy-container> <caddyfile-on-host>
-# Safe to re-run: it rebuilds the image and adds the Caddy site only once.
+# Safe to re-run: it rebuilds the image, keeps data/ and relay.env, and adds the Caddy site only once.
 set -euo pipefail
 stage=$1 domain=$2 network=$3 caddy=$4 caddyfile=$5
 app=/opt/demolition-relay
@@ -30,7 +30,16 @@ install -d -m 755 "$app"
 rm -rf "$app/Relay"
 cp -r "$stage/Dockerfile" "$stage/.dockerignore" "$stage/compose.yaml" "$stage/Relay" "$app/"
 printf 'RELAY_NETWORK=%s\nRELAY_TRUSTED_PROXY_NETWORK=%s\n' "$network" "$subnet" > "$app/.env"
+# The counters' database (Relay/Counters.cs): the image runs as its non-root "app" user (uid 1654).
+install -d -m 700 -o 1654 -g 1654 "$app/data"
 touch "$app/relay.env"
+chmod 600 "$app/relay.env"
+# Added once; relay.env is yours after that (an empty Relay__CountersDatabase= turns the counters off).
+grep -q '^Relay__CountersDatabase=' "$app/relay.env" || echo "Relay__CountersDatabase=/data/counters.db" >> "$app/relay.env"
+if ! grep -q '^Relay__AdminToken=' "$app/relay.env"; then
+  echo "Relay__AdminToken=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')" >> "$app/relay.env"
+  echo "    a token for /admin/counts is now in $app/relay.env"
+fi
 # The image running now becomes :previous, for rollback.sh.
 if docker image inspect demolition-relay:latest >/dev/null 2>&1; then
   docker image tag demolition-relay:latest demolition-relay:previous

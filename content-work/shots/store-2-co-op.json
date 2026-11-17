@@ -1,30 +1,89 @@
 {
   "id": "store-2-co-op",
-  "level": "town-04",
+  "level": "port-01",
   "players": 2,
-  "building": 0,
+  "building": 8,
   "offset": -5,
   "upgrades": 5,
   "hud": true,
-  "camera": {"mode": "frame", "pad": 2},
+  "camera": {
+    "mode": "frame",
+    "pad": 2
+  },
   "width": 1920,
   "height": 1080,
   "length": 35,
   "takes": 2,
   "stillScale": 2,
   "steps": [
-    {"p": 1, "do": "walk", "x": 9},
-    {"p": 1, "do": "hit", "seconds": 12},
-    {"p": 2, "do": "wait", "seconds": 3},
-    {"p": 2, "do": "walk", "to": "weakpoint"},
-    {"p": 2, "do": "hit", "until": "collapse", "cells": 15, "seconds": 14},
-    {"p": 0, "do": "wait", "until": "collapse", "cells": 15, "seconds": 25},
-    {"p": 0, "do": "wait", "seconds": 0.3},
-    {"p": 0, "do": "still", "name": "a"},
-    {"p": 0, "do": "wait", "seconds": 0.4},
-    {"p": 0, "do": "still", "name": "b"},
-    {"p": 0, "do": "wait", "seconds": 0.5},
-    {"p": 0, "do": "still", "name": "c"},
-    {"p": 0, "do": "wait", "seconds": 2}
+    {
+      "p": 1,
+      "do": "walk",
+      "x": 11
+    },
+    {
+      "p": 1,
+      "do": "hit",
+      "seconds": 12
+    },
+    {
+      "p": 2,
+      "do": "wait",
+      "seconds": 3
+    },
+    {
+      "p": 2,
+      "do": "walk",
+      "to": "weakpoint"
+    },
+    {
+      "p": 2,
+      "do": "hit",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 14
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 25
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 0.3
+    },
+    {
+      "p": 0,
+      "do": "still",
+      "name": "a"
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 0.4
+    },
+    {
+      "p": 0,
+      "do": "still",
+      "name": "b"
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 0.5
+    },
+    {
+      "p": 0,
+      "do": "still",
+      "name": "c"
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 2
+    }
   ]
 }

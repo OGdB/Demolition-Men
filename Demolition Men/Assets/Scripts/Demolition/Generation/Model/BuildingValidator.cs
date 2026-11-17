@@ -59,6 +59,32 @@ namespace Demolition.Generation
         }
 
         /// <summary>
+        /// The ground-level block whose loss brings down the most of the building, replayed the
+        /// way <see cref="Validate"/> judges weak points (detach, then overload crumble). A Clip
+        /// Lab shot hits it, and a level's first buildings carry their painted X on it
+        /// (<c>LevelLayout.WeakMark</c>). Null when nothing at ground level can be hit (no blocks,
+        /// only glass).
+        /// </summary>
+        public static SpecBlock WeakPoint(BuildingSpec spec, out float cascade)
+        {
+            cascade = 0f;
+            SpecBlock best = null;
+            Dictionary<Vector2Int, CellStress> baseline = Stress(spec.ToStructure());
+            foreach (SpecBlock block in spec.Blocks)
+            {
+                if (block.Rect.yMin > 1 || block.Material == BlockMaterial.Glass)
+                    continue;
+                float lost = Cascade(spec, baseline, block);
+                if (best == null || lost > cascade)
+                {
+                    best = block;
+                    cascade = lost;
+                }
+            }
+            return best;
+        }
+
+        /// <summary>
         /// Share of the building's cells lost when <paramref name="first"/> is destroyed:
         /// its own cells, whatever detaches, and every support that then crumbles under
         /// overload within <see cref="CrumbleWindowSeconds"/> — one at a time, quickest to

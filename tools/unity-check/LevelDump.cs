@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Demolition.Clips;
 using Demolition.Generation;
 using Demolition.Levels;
 
@@ -9,7 +8,8 @@ using Demolition.Levels;
 /// `ModelTests.dll dump-levels <out-dir> [level-id...]`: every level spec under
 /// Assets/Content as the layout the game generates from it (ground, buildings block by
 /// block, pickups, segments), one JSON per level, for tools/artpipe/level_preview.py. Each
-/// building's `weak` is the Clip Lab's weak point: [x, y, w, h, share of the building it brings down].
+/// building's `weak` is its weak point (BuildingValidator.WeakPoint): [x, y, w, h, share of the building
+/// it brings down]; `mark` is true where the game paints its X on that block (LevelLayout.WeakMark).
 /// Run from the Unity project folder, like the tests.
 /// </summary>
 public static class LevelDump
@@ -69,9 +69,10 @@ public static class LevelDump
             for (int k = 0; k < interior.Count; k++)
                 s.Append(k > 0 ? "," : "").Append($"[{interior[k].Cell.x},{interior[k].Cell.y},{(interior[k].UnderCeiling ? 1 : 0)},{interior[k].Storey},{(interior[k].SeeThrough ? 1 : 0)}]");
             float cascade = 0f;
-            SpecBlock weak = b.IsProp ? null : ShotPlanning.WeakPoint(b.Spec, out cascade);
+            SpecBlock weak = b.IsProp ? null : BuildingValidator.WeakPoint(b.Spec, out cascade);
             s.Append("],\"weak\":").Append(weak == null ? "null"
                 : $"[{weak.Rect.x},{weak.Rect.y},{weak.Rect.width},{weak.Rect.height},{F(cascade)}]");
+            s.Append(",\"mark\":").Append(layout.WeakMark(i) != null ? "true" : "false");
             s.Append("}");
         }
         s.Append("],\"decor\":[");

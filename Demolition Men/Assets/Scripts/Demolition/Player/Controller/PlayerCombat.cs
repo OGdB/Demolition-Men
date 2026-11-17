@@ -127,6 +127,8 @@ namespace Demolition
         /// <summary>Picked-up weapons get this many times their hits (skill shop).</summary>
         public float WeaponHitMultiplier { get; set; } = 1f;
         public int PlayerIndex => _input.PlayerIndex;
+        /// <summary>A swing or a headbutt landed on a block: true with a picked-up weapon.</summary>
+        public event System.Action<bool> Landed;
 
         private Vector2 AttackOrigin =>
             (Vector2)transform.position + new Vector2(attackOffset.x * _motor.Facing, attackOffset.y);
@@ -216,6 +218,8 @@ namespace Demolition
 
             if (hitAnything && hitSound != null && _audio != null)
                 _audio.PlayOneShot(hitSound);
+            if (hitAnything)
+                Landed?.Invoke(weapon != WeaponType.Fists);
 
             if (hitAnything && weapon != WeaponType.Fists)
                 WeaponHits++;
@@ -244,6 +248,7 @@ namespace Demolition
                 HitCause.Headbutt, contact.point);
             if (hitSound != null && _audio != null)
                 _audio.PlayOneShot(hitSound);
+            Landed?.Invoke(false);
         }
 
         /// <summary>Pick up a weapon: add landed hits and switch to it.</summary>

@@ -1,0 +1,19 @@
+{
+  "out": "content-work/media/edits/short-action-sloop.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/action-sloop/take1.mp4",
+      "at": "collapse",
+      "before": 4.0,
+      "after": 4.0,
+      "text": "CONTROLLED\nDEMOLITION"
+    }
+  ]
+}

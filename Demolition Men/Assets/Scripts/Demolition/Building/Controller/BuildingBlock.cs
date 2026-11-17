@@ -63,6 +63,8 @@ namespace Demolition
         /// <summary>Player who last damaged this block, -1 if none.</summary>
         public int LastInstigator { get; private set; } = -1;
         public DestructibleBuilding Building => _building;
+        /// <summary>The child that holds the sprite and leans with the stress; paint on the block hangs under it.</summary>
+        public Transform Visual => _visual;
         public float HealthFraction => _resolvedMaxHealth > 0f ? Mathf.Clamp01(_health / _resolvedMaxHealth) : 0f;
 
         private readonly List<Vector2Int> _coords = new List<Vector2Int>();

@@ -234,9 +234,11 @@ namespace Demolition
             // then step back and take a running jump at it, and round again.
             bool unstickJump = false;
             float stuckFor = now - _stuckSince;
-            if (stuckFor > DigSeconds)
+            // On a fast street three seconds is all the lead the camera gives: with it closing in, start at once.
+            float dig = Room(feet) < DigSeconds + UnstickCycle ? StuckSeconds : DigSeconds;
+            if (stuckFor > dig)
             {
-                float phase = (stuckFor - DigSeconds) % UnstickCycle;
+                float phase = (stuckFor - dig) % UnstickCycle;
                 attack = phase < 1.2f;
                 if (phase >= 1.2f && phase < 1.8f)
                     move = Back(feet);

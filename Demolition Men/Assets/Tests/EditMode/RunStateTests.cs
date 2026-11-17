@@ -36,6 +36,24 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Go_EndsTheCountdownAtOnce_AndDoesNothingAfter()
+        {
+            var state = new RunState(1, RunRules.Default);
+            int changes = 0;
+            state.PhaseChanged += _ => changes++;
+
+            state.Go();
+            Assert.AreEqual(RunPhase.Playing, state.Phase);
+            Assert.AreEqual(0f, state.Countdown);
+            Assert.AreEqual(0f, state.Elapsed);
+
+            state.Tick(1f);
+            state.Go();
+            Assert.AreEqual(1, changes);
+            Assert.AreEqual(1f, state.Elapsed, 1e-5f);
+        }
+
+        [Test]
         public void OutOfBounds_ReturningWithinGrace_CancelsTheCountdown()
         {
             var state = Playing(1);

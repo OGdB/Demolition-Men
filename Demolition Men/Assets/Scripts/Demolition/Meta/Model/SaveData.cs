@@ -11,6 +11,8 @@ namespace Demolition.Meta
         public float masterVolume = 1f;
         public float musicVolume = 0.6f;
         public bool screenShake = true;
+        /// <summary>Rumble in the gamepads and the phone's motor (<see cref="Haptics"/>).</summary>
+        public bool vibration = true;
         /// <summary>2D lights and post-processing (bloom, vignette); off for slow phones.</summary>
         public bool effects = true;
         /// <summary>A <see cref="QualityChoice"/>; AUTO lets the device decide (<see cref="QualityPolicy"/>).</summary>
@@ -117,6 +119,8 @@ namespace Demolition.Meta
         /// <summary>The action each player carries into a ranked run, by id, P1 first: any action, owned or
         /// not (docs/ranked.md K-D2), picked apart from <see cref="actions"/> so the campaign's stays its own.</summary>
         public List<string> rankedActions = new List<string>();
+        /// <summary>What the anonymous counters have counted already (<see cref="Counters"/>).</summary>
+        public CounterState counters = new CounterState();
 
         public LevelRecord Level(string id)
         {

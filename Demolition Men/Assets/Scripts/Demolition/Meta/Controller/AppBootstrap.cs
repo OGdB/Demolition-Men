@@ -41,15 +41,18 @@ namespace Demolition.Meta
             Application.focusChanged -= OnFocusChanged;
             Application.focusChanged += OnFocusChanged;
             Apply();
+            CounterSender.Session();
         }
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Apply();
 
-        // Android kills a backgrounded app without quitting it.
+        // Android kills a backgrounded app without quitting it, and brings one back days later.
         private static void OnFocusChanged(bool focused)
         {
             if (!focused)
                 Profile.Save();
+            else
+                CounterSender.Session();
         }
 
         public static void Apply()

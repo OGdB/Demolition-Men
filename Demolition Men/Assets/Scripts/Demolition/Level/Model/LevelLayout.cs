@@ -29,6 +29,9 @@ namespace Demolition.Levels
 
         /// <summary>A street prop (crates, a car, gas tanks, a container), not a building.</summary>
         public bool IsProp => Spec.Archetype.StartsWith(LevelGrammar.PropPrefix, System.StringComparison.Ordinal);
+
+        /// <summary>A gate: the wall across the street that every run has to bring down.</summary>
+        public bool IsGate => Spec.Archetype == LevelGrammar.GateArchetype;
     }
 
     /// <summary>One piece of street dressing standing on column <see cref="X"/>'s ground.</summary>
@@ -106,6 +109,21 @@ namespace Demolition.Levels
                 if (Ground[x] != NoGround && (low == NoGround || Ground[x] < low))
                     low = Ground[x];
             return low;
+        }
+
+        /// <summary>The block of building <paramref name="index"/> that carries the painted X, or
+        /// null: the weak point of each of the level's first <see cref="LevelSpec.weakMarks"/>
+        /// buildings, left to right, props not counted. From the layout alone, so every device
+        /// paints the same blocks.</summary>
+        public SpecBlock WeakMark(int index)
+        {
+            if (Buildings[index].IsProp)
+                return null;
+            int before = 0;
+            for (int i = 0; i < index; i++)
+                if (!Buildings[i].IsProp)
+                    before++;
+            return before < Spec.weakMarks ? BuildingValidator.WeakPoint(Buildings[index].Spec, out _) : null;
         }
 
         /// <summary>Destructible cells over the whole level (the demolition meter's 100%).</summary>

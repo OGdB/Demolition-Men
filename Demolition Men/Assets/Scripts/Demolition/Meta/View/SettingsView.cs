@@ -11,7 +11,8 @@ namespace Demolition.Meta
 {
     /// <summary>
     /// Settings overlay built in code, usable from the menu and the pause screen: volumes,
-    /// screen shake, effects (lights and post-processing), quality (<see cref="Quality"/>: AUTO, LOW,
+    /// screen shake, vibration (<see cref="RunHaptics"/>; a row only where a gamepad or the phone's
+    /// motor can buzz), effects (lights and post-processing), quality (<see cref="Quality"/>: AUTO, LOW,
     /// HIGH), touch controls (mode, size, opacity). Every row is a pair of − / +
     /// buttons (or one toggle), so it works the same with a mouse, a gamepad and a thumb.
     /// CREDITS opens <see cref="CreditsView"/>; PRIVACY (EEA/UK phones) reopens the ad consent form.
@@ -20,8 +21,9 @@ namespace Demolition.Meta
     public sealed class SettingsView : MonoBehaviour
     {
         private static readonly string[] TouchModes = { "AUTO", "ON", "OFF" };
-        private const float RowStep = 80f;
-        private const float RowHeight = 74f;
+        // Nine rows; with VIBRATION there are ten on the same plate, so they sit closer.
+        private float _rowStep = 80f;
+        private float _rowHeight = 74f;
 
         private GameObject _previousSelection;
         private System.Action _unblock;
@@ -77,10 +79,19 @@ namespace Demolition.Meta
 
             UiFactory.TitledPanel(root, new Vector2(0f, -20f), new Vector2(1300f, 1000f), "SETTINGS", 80f);
 
+            bool vibration = PhoneMotor.Supported || (RunHaptics.PadsRumble && Gamepad.all.Count > 0);
+            if (vibration)
+            {
+                _rowStep = 72f;
+                _rowHeight = 68f;
+            }
+
             float y = 300f;
             Button first = Stepper(root, ref y, "VOLUME", () => Percent(s.masterVolume), d => s.masterVolume = Step(s.masterVolume, d, 0.1f, 0f, 1f));
             Stepper(root, ref y, "MUSIC", () => Percent(s.musicVolume), d => s.musicVolume = Step(s.musicVolume, d, 0.1f, 0f, 1f));
             Toggle(root, ref y, "SCREEN SHAKE", () => s.screenShake ? "ON" : "OFF", () => s.screenShake = !s.screenShake);
+            if (vibration)
+                Toggle(root, ref y, "VIBRATION", () => s.vibration ? "ON" : "OFF", () => s.vibration = !s.vibration);
             Toggle(root, ref y, "EFFECTS", () => s.effects ? "ON" : "OFF", () => s.effects = !s.effects);
             Toggle(root, ref y, "QUALITY", () => QualityLabel(s), () => s.quality = (s.quality + 1) % 3);
             Stepper(root, ref y, "HUD SIZE", () => s.hudScale > 0f ? Percent(s.HudScale(Platform.IsMobile, RunHud.SafeAspect())) : "AUTO",
@@ -106,26 +117,26 @@ namespace Demolition.Meta
         {
             TextMeshProUGUI text = Row(root, y, label);
             var centre = new Vector2(0.5f, 0.5f);
-            Button minus = UiFactory.Button(root, "-", centre, new Vector2(130f, y), new Vector2(90f, RowHeight), () => Changed(() => change(-1)));
-            TextMeshProUGUI shown = UiFactory.Text(root, label + " Value", centre, new Vector2(290f, y), 40f, TextAlignmentOptions.Center, new Vector2(200f, RowHeight));
-            UiFactory.Button(root, "+", centre, new Vector2(450f, y), new Vector2(90f, RowHeight), () => Changed(() => change(1)));
+            Button minus = UiFactory.Button(root, "-", centre, new Vector2(130f, y), new Vector2(90f, _rowHeight), () => Changed(() => change(-1)));
+            TextMeshProUGUI shown = UiFactory.Text(root, label + " Value", centre, new Vector2(290f, y), 40f, TextAlignmentOptions.Center, new Vector2(200f, _rowHeight));
+            UiFactory.Button(root, "+", centre, new Vector2(450f, y), new Vector2(90f, _rowHeight), () => Changed(() => change(1)));
             _refresh += () => shown.text = value();
-            y -= RowStep;
+            y -= _rowStep;
             return minus;
         }
 
         private void Toggle(RectTransform root, ref float y, string label, Func<string> value, Action toggle)
         {
             Row(root, y, label);
-            Button button = UiFactory.Button(root, "Toggle", new Vector2(0.5f, 0.5f), new Vector2(290f, y), new Vector2(410f, RowHeight), () => Changed(toggle));
+            Button button = UiFactory.Button(root, "Toggle", new Vector2(0.5f, 0.5f), new Vector2(290f, y), new Vector2(410f, _rowHeight), () => Changed(toggle));
             TextMeshProUGUI shown = button.GetComponentInChildren<TextMeshProUGUI>();
             _refresh += () => shown.text = value();
-            y -= RowStep;
+            y -= _rowStep;
         }
 
-        private static TextMeshProUGUI Row(RectTransform root, float y, string label)
+        private TextMeshProUGUI Row(RectTransform root, float y, string label)
         {
-            TextMeshProUGUI text = UiFactory.Text(root, label, new Vector2(0.5f, 0.5f), new Vector2(-330f, y), 40f, TextAlignmentOptions.Right, new Vector2(620f, RowHeight));
+            TextMeshProUGUI text = UiFactory.Text(root, label, new Vector2(0.5f, 0.5f), new Vector2(-330f, y), 40f, TextAlignmentOptions.Right, new Vector2(620f, _rowHeight));
             text.text = label;
             return text;
         }

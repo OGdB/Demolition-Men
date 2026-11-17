@@ -13,7 +13,9 @@ using UnityEngine.InputSystem;
 /// "Press to join" lobby under the title, before the level select (the training yard on a
 /// new profile's first play). Any keyboard or gamepad joins with A / Space and leaves with
 /// B / Esc; Start / Enter continues once someone has joined; Select / Tab opens the settings. B / Esc from a device that
-/// hasn't joined is "back", which the menu turns into the quit question. On a phone the touchscreen joins as
+/// hasn't joined is "back", which the menu turns into the quit question. Two players can share a keyboard: each half
+/// joins with its jump key (<see cref="KeyLayout"/>), Space for WASD and the up arrow for the arrows; alone on it, either
+/// has the whole keyboard, and Esc takes off whoever joined it last. On a phone the touchscreen joins as
 /// player 1 straight away and the view becomes a play menu: PLAY continues, PLAY ONLINE
 /// goes online (a gamepad can still join as player 2). Joined devices go to
 /// <see cref="Session"/>, which the run uses to give each player their own device.
@@ -48,15 +50,15 @@ public class JoinScreen : MonoBehaviour
     private void Update()
     {
         // Not on the frame it opened: the press that skipped the title or closed the level
-        // select must not also join or leave someone. Settings take the presses while open, the name field while typing.
-        if (!_open || Time.frameCount == _openedFrame || QuitView.IsOpen || SettingsView.IsOpen || _view.Typing)
+        // select must not also join or leave someone. Settings and a notice take the presses while open, the name field while typing.
+        if (!_open || Time.frameCount == _openedFrame || QuitView.IsOpen || SettingsView.IsOpen || NoticeView.IsOpen || _view.Typing)
             return; // typing a name: Space, Enter and Esc are the field's
 
         foreach (InputDevice device in InputSystem.devices)
         {
-            if (JoinPressed(device))
+            if (JoinPressed(device, out KeyHalf half))
             {
-                Session.Join(device);
+                Session.Join(device, half);
             }
             else if (LeavePressed(device))
             {
@@ -114,12 +116,15 @@ public class JoinScreen : MonoBehaviour
         then();
     }
 
-    private static bool JoinPressed(InputDevice device)
+    private static bool JoinPressed(InputDevice device, out KeyHalf half)
     {
+        half = KeyHalf.Whole;
         switch (device)
         {
             case Gamepad pad: return pad.buttonSouth.wasPressedThisFrame;
-            case Keyboard kb: return kb.spaceKey.wasPressedThisFrame;
+            case Keyboard kb:
+                half = kb.spaceKey.wasPressedThisFrame ? KeyHalf.Left : KeyHalf.Right;
+                return kb.spaceKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame;
             default: return false;
         }
     }

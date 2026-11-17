@@ -373,10 +373,11 @@ namespace Demolition.Run
                 if (!(lit && withinPar))
                     _meterStars[star].color = lit ? UiFactory.StarLit : UiFactory.StarDark;
             }
-            _center.text = CenterText(state);
+            _center.text = _run.Held ? string.Empty : CenterText(state);
             _prompt.gameObject.SetActive(Time.time < _promptUntil && !state.IsOver);
             _prompt.rectTransform.sizeDelta = new Vector2(Mathf.Min(1800f, _root.rect.width - 80f), 100f);
-            _signs?.Tick(_run, world => ToCanvas(world) + _root.rect.size * 0.5f);
+            if (!_run.Held) // the cold open asks for one thing; the signs come up at GO
+                _signs?.Tick(_run, world => ToCanvas(world) + _root.rect.size * 0.5f);
 
             for (int i = 0; i < _panels.Count; i++)
                 UpdatePanel(i, state);
@@ -497,7 +498,7 @@ namespace Demolition.Run
             panel.LastTnt = count;
 
             panel.Tnt.text = "x" + count;
-            panel.TntKey.text = count > 0 ? Key(player, "X", "B", string.Empty) : string.Empty;
+            panel.TntKey.text = count > 0 ? Key(player, InputGlyphs.Tnt, string.Empty) : string.Empty;
             float alpha = count > 0 ? 1f : 0.35f;
             panel.TntIcon.color = new Color(1f, 1f, 1f, alpha);
             panel.Tnt.alpha = alpha;
@@ -521,7 +522,7 @@ namespace Demolition.Run
             panel.ActionFillImage.color = ready
                 ? Color.Lerp(UiFactory.Gold, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.time * 9f))
                 : ActionCharging;
-            string key = ready ? Key(player, "C", "Y", "TAP ACTION") : string.Empty;
+            string key = ready ? Key(player, InputGlyphs.ActionButton, "TAP ACTION") : string.Empty;
             panel.ActionLabel.text = key.Length > 0 ? $"{action.Info.Name}  {key}" : action.Info.Name;
             panel.ActionLabel.color = ready ? UiFactory.Ink : Color.white;
             panel.ActionPulse = Mathf.Max(0f, panel.ActionPulse - Time.deltaTime);
@@ -535,13 +536,11 @@ namespace Demolition.Run
                 return;
             RunController.Player player = _run.Players[index];
             bool hints = !player.Health.IsProxy; // the other device's player: its controls aren't ours to show
-            string switchKeys = player.Input != null && player.Input.Style == InputStyle.Touch
-                ? "TAP SWAP"
-                : Key(player, "Q", "LB", string.Empty) + " " + Key(player, "E", "RB", string.Empty);
+            string switchKeys = Key(player, InputGlyphs.Swap, "TAP SWAP");
             switch (kind)
             {
                 case PickupKind.Dynamite:
-                    _panels[index].Toast.text = $"+{amount} TNT" + (hints ? $"   {Key(player, "X", "B", "TAP TNT")} TO THROW" : string.Empty);
+                    _panels[index].Toast.text = $"+{amount} TNT" + (hints ? $"   {Key(player, InputGlyphs.Tnt, "TAP TNT")} TO THROW" : string.Empty);
                     break;
                 case PickupKind.Axe:
                 case PickupKind.WreckingBall:
@@ -566,18 +565,15 @@ namespace Demolition.Run
             ((RectTransform)panel.Toast.transform).anchoredPosition = local + _root.rect.size * 0.5f;
         }
 
-        /// <summary>A button prompt for whatever this player last used: [X] key, (B) pad
-        /// button, or the name on the on-screen touch button.</summary>
-        private static string Key(RunController.Player player, string keyboard, string gamepad, string touch)
+        /// <summary>A button prompt for whatever this player last used: [X] key (their half's
+        /// when two share the keyboard), (B) pad button, or <paramref name="touch"/> for the
+        /// on-screen button.</summary>
+        private static string Key(RunController.Player player, int control, string touch)
         {
             if (player.Health.IsProxy)
                 return string.Empty;
-            switch (player.Input != null ? player.Input.Style : InputStyle.Keyboard)
-            {
-                case InputStyle.Gamepad: return $"({gamepad})";
-                case InputStyle.Touch: return touch;
-                default: return $"[{keyboard}]";
-            }
+            InputStyle style = player.Input != null ? player.Input.Style : InputStyle.Keyboard;
+            return style == InputStyle.Touch ? touch : InputGlyphs.Buttons(control, style);
         }
 
         private void OnScored(int player, int points, Vector3 world)

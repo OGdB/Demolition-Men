@@ -81,7 +81,7 @@ namespace Demolition.Tests
             for (int seed = 0; seed < 20; seed++)
             {
                 BuildingSpec spec = BuildingGrammar.GenerateValid(rowhouse, seed, out BuildingReport report);
-                SpecBlock weak = ShotPlanning.WeakPoint(spec, out float cascade);
+                SpecBlock weak = BuildingValidator.WeakPoint(spec, out float cascade);
                 Assert.IsNotNull(weak, $"seed {seed}");
                 Assert.LessOrEqual(weak.Rect.yMin, 1, $"seed {seed}: reachable from the street");
                 Assert.AreNotEqual(BlockMaterial.Glass, weak.Material, $"seed {seed}");
@@ -113,7 +113,7 @@ namespace Demolition.Tests
             BuildingPlacement placement = layout.Buildings[shot.building];
             Assert.IsFalse(placement.IsProp && shot.Lane(1).Any(s => s.to == "weakpoint"), $"{shot.id}: building {shot.building} is a {placement.Spec.Archetype}");
             if (shot.steps.Any(s => s.to == "weakpoint"))
-                Assert.IsNotNull(ShotPlanning.WeakPoint(placement.Spec, out _), $"{shot.id}: no weak point at ground level");
+                Assert.IsNotNull(BuildingValidator.WeakPoint(placement.Spec, out _), $"{shot.id}: no weak point at ground level");
 
             // The camera never sees past the level's ground: not left of it, not under it (with
             // room for the screen shake), where only the sky colour would show.

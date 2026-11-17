@@ -1,0 +1,22 @@
+{
+  "out": "content-work/media/edits/short-action-schep.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/action-schep/take1.mp4",
+      "at": "collapse",
+      "before": 5.0,
+      "after": 3.5,
+      "text": "SOMEONE HAS\nTO SUPERVISE",
+      "zoom": 1.25,
+      "x": 0.5,
+      "y": 0.52
+    }
+  ]
+}

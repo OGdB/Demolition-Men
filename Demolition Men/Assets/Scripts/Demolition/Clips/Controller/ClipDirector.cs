@@ -117,7 +117,11 @@ namespace Demolition.Clips
             foreach (UpgradeDefinition upgrade in UpgradeCatalog.All)
                 Profile.Data.SetUpgradeLevel(upgrade.Id, Mathf.Clamp(shot.upgrades, 0, upgrade.MaxLevel));
             for (int i = 0; i < shot.actions.Length; i++)
+            {
+                // The shot's kit, bought or not: a player carries the burp instead of an action the profile doesn't own.
+                Profile.Data.ownedActions.Add(shot.actions[i]);
                 ActionCatalog.Equip(Profile.Data, i, ActionCatalog.FromId(shot.actions[i]));
+            }
             GameSettings settings = Profile.Data.settings;
             settings.musicVolume = 0f;
             settings.quality = (int)QualityChoice.High; // full resolution, every block falls as a body
@@ -235,7 +239,7 @@ namespace Demolition.Clips
             {
                 _placement = layout.Buildings[Shot.building];
                 _anchor = origin + new Vector3(_placement.X, _placement.GroundY, 0f);
-                _weak = ShotPlanning.WeakPoint(_placement.Spec, out _);
+                _weak = BuildingValidator.WeakPoint(_placement.Spec, out _);
             }
             else
             {
@@ -398,6 +402,10 @@ namespace Demolition.Clips
                     break;
                 case "tnt":
                     source.Next.DynamitePressed = true;
+                    Advance(lane);
+                    break;
+                case "action": // fires with a full meter: the shot starts charged, or waits until it is
+                    source.Next.ActionPressed = true;
                     Advance(lane);
                     break;
                 case "jump":

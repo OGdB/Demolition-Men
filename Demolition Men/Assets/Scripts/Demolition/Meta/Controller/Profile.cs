@@ -17,6 +17,9 @@ namespace Demolition.Meta
 
         public static SaveData Data => _data ??= Load();
 
+        /// <summary>Playing on <see cref="UseTemporary"/>'s profile: a test or a tool, not a player.</summary>
+        public static bool IsTemporary => _temporary;
+
         /// <summary>Raised after settings changed, so live systems pick them up.</summary>
         public static event Action SettingsChanged;
 
@@ -65,7 +68,7 @@ namespace Demolition.Meta
         public static void ResetProgress()
         {
             GameSettings settings = Data.settings;
-            _data = new SaveData { settings = settings };
+            _data = new SaveData { settings = settings, counters = _data.counters }; // the same install, counted once
             Save();
         }
 
@@ -85,6 +88,7 @@ namespace Demolition.Meta
                 if (data == null)
                     throw new InvalidDataException("empty profile");
                 data.settings ??= new GameSettings();
+                data.counters ??= new CounterState();
                 return data;
             }
             catch (Exception e)

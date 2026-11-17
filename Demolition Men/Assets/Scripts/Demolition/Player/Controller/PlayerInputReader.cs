@@ -58,8 +58,10 @@ namespace Demolition
         private Vector2 _smoothedVelocity;
 
         /// <summary>Read only this device (keyboard + mouse, one gamepad, or the touch
-        /// controls). Null restores the default.</summary>
-        public void AssignDevice(InputDevice device) => _source = device != null ? DeviceInputSource.For(device) : null;
+        /// controls); of a keyboard another player is on too, only <paramref name="half"/>.
+        /// Null restores the default.</summary>
+        public void AssignDevice(InputDevice device, KeyHalf half = KeyHalf.Whole) =>
+            _source = device != null ? DeviceInputSource.For(device, half) : null;
 
         private IPlayerInputSource DefaultSource()
         {

@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Text;
 using Demolition.Ads;
+using Demolition.Levels;
 using Demolition.Meta;
+using Demolition.Online;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,8 +15,9 @@ namespace Demolition.Run
     /// the title slams down, the demolition meter fills and lights a star at 40, 60 and 80%
     /// (finished runs only), the total and the cash count up (job-sheet objectives done for the
     /// first time pay on top), the job sheet shows, then any record stamp lands.
-    /// Any press skips the reveal. Then Next / Retry / Shop / Menu, and the rewarded
-    /// "2x cash" on phones. The Tutorial's first finish tells of the starting cash and the shop
+    /// Any press skips the reveal. Then Next / Retry / Shop / Share / Menu, and the rewarded
+    /// "2x cash" on phones. SHARE copies the run's rubble card (<see cref="RunController.Card"/>)
+    /// and is there only when the run has one. The Tutorial's first finish tells of the starting cash and the shop
     /// (<see cref="StartingCashView"/>) before those wake.</summary>
     [RequireComponent(typeof(RunController))]
     public sealed class ResultsView : MonoBehaviour
@@ -218,19 +221,40 @@ namespace Demolition.Run
                 waiting.text = "THE HOST PICKS\nWHAT'S NEXT";
                 _first = UiFactory.Button(_content, "SHOP", centre, new Vector2(160f, -350f), size, () => ShopView.Open(transform, ShowCash));
                 UiFactory.Button(_content, "LEAVE", centre, new Vector2(470f, -350f), size, () => Leave(_run.QuitToMenu));
+                // A guest in an Android phone's browser, on our own copy of the browser build (a portal
+                // may not allow the link): the app is one tap away. Where the host's 2x CASH would be.
+                GameConfig config = GameConfig.Instance;
+                if (config != null && !string.IsNullOrEmpty(config.storeUrl) && Platform.IsAndroidBrowser
+                    && InviteLink.IsOwnCopy(Application.absoluteURL, config.playUrl))
+                    UiFactory.Button(_content, "GET THE APP", centre, new Vector2(0f, -490f), new Vector2(640f, 80f),
+                        () => Application.OpenURL(config.storeUrl));
                 return;
             }
             bool next = finished && _run.HasNextLevel;
-            float x = next ? -465f : -310f;
-            Button first = null;
-            if (next)
+            string card = _run.Card; // null: nothing to share (see RunController.Card)
+            int count = 3 + (next ? 1 : 0) + (card != null ? 1 : 0);
+            // Up to four across as ever; five only fit the plate narrower and closer together.
+            float step = count > 4 ? 256f : 310f;
+            if (count > 4)
+                size.x = 240f;
+            float x = -(count + 1) * 0.5f * step; // one step left of the row, which is centred
+            Vector2 Slot() => new Vector2(x += step, -350f);
+            Button first = next ? UiFactory.Button(_content, "NEXT", centre, Slot(), size, () => Leave(_run.NextLevel)) : null;
+            Button retry = UiFactory.Button(_content, "RETRY", centre, Slot(), size, () => Leave(_run.Retry));
+            _shop = UiFactory.Button(_content, "SHOP", centre, Slot(), size, () => ShopView.Open(transform, ShowCash));
+            if (card != null)
             {
-                first = UiFactory.Button(_content, "NEXT", centre, new Vector2(x, -350f), size, () => Leave(_run.NextLevel));
-                x += 310f;
+                Button share = null;
+                share = UiFactory.Button(_content, "SHARE", centre, Slot(), size, () =>
+                {
+                    _run.Shared();
+                    if (Platform.Share(card))
+                        return; // the phone's share sheet has it
+                    Platform.Copy(card);
+                    share.GetComponentInChildren<TextMeshProUGUI>().text = "COPIED";
+                });
             }
-            Button retry = UiFactory.Button(_content, "RETRY", centre, new Vector2(x, -350f), size, () => Leave(_run.Retry));
-            _shop = UiFactory.Button(_content, "SHOP", centre, new Vector2(x + 310f, -350f), size, () => ShopView.Open(transform, ShowCash));
-            UiFactory.Button(_content, "MENU", centre, new Vector2(x + 620f, -350f), size, () => Leave(_run.QuitToMenu));
+            UiFactory.Button(_content, "MENU", centre, Slot(), size, () => Leave(_run.QuitToMenu));
 
             if (reward.Cash > 0 && AdManager.CanOfferReward)
                 _double = UiFactory.Button(_content, "WATCH AD: 2x CASH", centre, new Vector2(0f, -490f), new Vector2(640f, 80f), DoubleCash);

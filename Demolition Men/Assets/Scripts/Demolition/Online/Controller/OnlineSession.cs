@@ -39,6 +39,10 @@ namespace Demolition.Online
 
         private static string _endReason;
 
+        /// <summary>What two devices must share to play together: a host turns away a joiner on
+        /// another (<see cref="Approve"/>). The invite link names it (<see cref="InviteLink"/>).</summary>
+        public static string Version => Application.version;
+
         public bool IsHost => _host;
         public bool IsConnected { get; private set; }
         public string Code => _transport.Code;
@@ -82,7 +86,7 @@ namespace Demolition.Online
             config.TickRate = TickRate;
             config.ConnectionApproval = true;
             // The version first (both sides must run the same build), then who this is on the ranked boards.
-            config.ConnectionData = Encoding.UTF8.GetBytes($"{Application.version}\n{PlayerIdentity.Id}\n{PlayerIdentity.Name}");
+            config.ConnectionData = Encoding.UTF8.GetBytes($"{Version}\n{PlayerIdentity.Id}\n{PlayerIdentity.Name}");
             config.EnableSceneManagement = true;
             config.PlayerPrefab = null;
             go.SetActive(true);
@@ -126,7 +130,7 @@ namespace Demolition.Online
         {
             bool self = request.ClientNetworkId == NetworkManager.ServerClientId;
             string[] payload = request.Payload != null ? Encoding.UTF8.GetString(request.Payload).Split('\n') : new string[0];
-            bool sameVersion = payload.Length > 0 && payload[0] == Application.version;
+            bool sameVersion = payload.Length > 0 && payload[0] == Version;
             response.Approved = self || (sameVersion && !IsConnected);
             if (response.Approved && !self && payload.Length >= 3 && RankedApi.IsPlayerId(payload[1]))
             {

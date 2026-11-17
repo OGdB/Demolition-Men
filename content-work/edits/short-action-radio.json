@@ -1,0 +1,21 @@
+{
+  "out": "content-work/media/edits/short-action-radio.mp4",
+  "size": [
+    1080,
+    1920
+  ],
+  "fps": 60,
+  "music": "Demolition Men/Assets/Sounds/Music/Summon the Rawk.ogg",
+  "musicVolume": 0.6,
+  "segments": [
+    {
+      "file": "content-work/media/raw/action-radio/take1.mp4",
+      "start": 0.5,
+      "end": 8.5,
+      "text": "TURN IT UP",
+      "zoom": 1.25,
+      "x": 0.5,
+      "y": 0.52
+    }
+  ]
+}

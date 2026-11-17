@@ -592,7 +592,7 @@ namespace Demolition
             }
 
             if (removed > 0)
-                DestructionEvents.RaiseStandingCellsRemoved(removed);
+                DestructionEvents.RaiseStandingCellsRemoved(_netIndex, removed);
             if (collapsed.Count > 0)
                 DestructionEvents.RaiseCollapsed(new CollapseInfo(instigator, collapsed, block.transform.position));
 

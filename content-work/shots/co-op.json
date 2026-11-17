@@ -1,22 +1,62 @@
 {
   "id": "co-op",
-  "level": "town-04",
+  "level": "port-01",
   "players": 2,
-  "building": 0,
+  "building": 8,
   "offset": -5,
   "upgrades": 5,
-  "camera": {"mode": "frame", "pad": 2},
+  "camera": {
+    "mode": "frame",
+    "pad": 2
+  },
   "width": 1920,
   "height": 1920,
   "length": 35,
   "steps": [
-    {"p": 1, "do": "walk", "x": 9},
-    {"p": 1, "do": "hit", "seconds": 12},
-    {"p": 2, "do": "wait", "seconds": 3},
-    {"p": 2, "do": "walk", "to": "weakpoint"},
-    {"p": 2, "do": "hit", "until": "collapse", "cells": 15, "seconds": 14},
-    {"p": 0, "do": "wait", "until": "collapse", "cells": 15, "seconds": 25},
-    {"p": 0, "do": "slowmo", "scale": 0.3, "seconds": 1.5},
-    {"p": 0, "do": "wait", "seconds": 5}
+    {
+      "p": 1,
+      "do": "walk",
+      "x": 11
+    },
+    {
+      "p": 1,
+      "do": "hit",
+      "seconds": 12
+    },
+    {
+      "p": 2,
+      "do": "wait",
+      "seconds": 3
+    },
+    {
+      "p": 2,
+      "do": "walk",
+      "to": "weakpoint"
+    },
+    {
+      "p": 2,
+      "do": "hit",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 14
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "until": "collapse",
+      "cells": 15,
+      "seconds": 25
+    },
+    {
+      "p": 0,
+      "do": "slowmo",
+      "scale": 0.3,
+      "seconds": 1.5
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 5
+    }
   ]
 }

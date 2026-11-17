@@ -9,22 +9,22 @@
       "alt": "A muscled demolition man punches a support column and a red brick row house collapses into dust."
     },
     {
+      "image": "content-work/media/raw/store-4-tower/take1-a.png",
+      "name": "02-tower",
+      "caption": "TOPPLE THE TOWER",
+      "alt": "A tall dockside crane tower collapses onto the street."
+    },
+    {
       "image": "content-work/media/raw/store-2-co-op/take1-a.png",
-      "name": "02-co-op",
+      "name": "03-co-op",
       "caption": "WRECK IT WITH A FRIEND",
       "alt": "Two demolition men smash a building from both sides while bricks and glass rain down."
     },
     {
       "image": "content-work/media/raw/store-3-night-tnt/take1-a.png",
-      "name": "03-dynamite",
+      "name": "04-dynamite",
       "caption": "BRING DYNAMITE",
       "alt": "A stick of dynamite explodes against a neon-lit building at night and the floors above start to fall."
-    },
-    {
-      "image": "content-work/media/raw/store-4-tower/take1-a.png",
-      "name": "04-tower",
-      "caption": "TOPPLE THE TOWER",
-      "alt": "A tall dockside crane tower collapses onto the street."
     },
     {
       "image": "content-work/media/raw/store-5-wrecking-ball/take1-a.png",
@@ -40,9 +40,9 @@
     },
     {
       "image": "content-work/media/stills/results.png",
-      "name": "07-rainbow-stars",
-      "caption": "BEAT PAR FOR RAINBOW STARS",
-      "alt": "The results screen: three rainbow stars for a finish within par, score and cash counting up."
+      "name": "07-three-stars",
+      "caption": "WRECK IT ALL FOR 3 STARS",
+      "alt": "The results screen after a street: three gold stars for 97% demolition, the score, cash earned and the job sheet."
     },
     {
       "image": "content-work/media/stills/shop.png",

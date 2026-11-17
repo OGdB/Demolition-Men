@@ -41,6 +41,10 @@ namespace Demolition.Levels
         public string[] props = new string[0];
         /// <summary>Job-sheet objectives pinned by id (<c>Objectives.Id</c>); the seed picks the rest.</summary>
         public string[] objectives = new string[0];
+        /// <summary>The level's first so many buildings (props not counted) carry a spray-painted X on
+        /// their weak point (<see cref="LevelLayout.WeakMark"/>): the campaign's first levels, for
+        /// players who don't know yet that one hit can drop a building. 0 = none.</summary>
+        public int weakMarks;
 
         public static LevelSpec FromJson(string json) => JsonUtility.FromJson<LevelSpec>(json);
 
@@ -51,6 +55,7 @@ namespace Demolition.Levels
             copy.seed = newSeed;
             copy.id = newId;
             copy.objectives = new string[0]; // pinned for the original's seed: a new seed picks its own sheet
+            copy.weakMarks = 0; // paint is for a campaign level as written: never a daily, a ranked run, a reroll
             return copy;
         }
     }

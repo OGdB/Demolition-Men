@@ -242,7 +242,8 @@ def cmd_contact(a):
                 times = [t - 1.0, t - 0.2, t + 0.4, t + 1.0, t + 2.0, t + 3.5]
             else:
                 times = [(i + 0.5) / 6 * info["duration"] for i in range(6)]
-            times = [min(max(0.0, x), info["duration"] - 0.05) for x in times[:a.frames]]
+            # 0.3 s off the end: the sound track runs a little past the last picture, and a seek there gives no frame
+            times = [min(max(0.0, x), info["duration"] - 0.3) for x in times[:a.frames]]
             frames = []
             for i, t in enumerate(times):
                 png = os.path.join(tmp, f"{len(rows)}-{i}.png")

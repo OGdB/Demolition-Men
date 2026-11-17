@@ -230,8 +230,9 @@ namespace Demolition.Levels
                 DestructibleBuilding building = BuildingBuilder.Build(placement.Spec, _theme.tileset,
                     transform.position + new Vector3(placement.X, placement.GroundY, 0f), root);
                 building.NetIndex = b;
-                if (placement.Spec.Archetype == "gate")
+                if (placement.IsGate)
                     building.CrumbleDetached = true;
+                MarkWeakPoint(building, b);
             }
 
             for (int p = 0; p < _layout.Pickups.Count; p++)
@@ -270,6 +271,18 @@ namespace Demolition.Levels
             if (_caravan != null && _layout.CaravanX >= segment.X0 && _layout.CaravanX < segment.X1)
                 SpawnCaravan(root);
             return root;
+        }
+
+        // The painted X on the weak point of the level's first buildings (LevelSpec.weakMarks).
+        private void MarkWeakPoint(DestructibleBuilding building, int index)
+        {
+#if UNITY_EDITOR
+            if (Clips.ClipDirector.Current != null)
+                return; // store footage shows the buildings bare
+#endif
+            SpecBlock weak = _layout.WeakMark(index);
+            if (weak != null && building.TryGetBlock(weak.Rect.min, out BuildingBlock block))
+                WeakPointMark.Paint(block);
         }
 
         // The crew's caravan past the finish line, as at the end of the Tutorial. Cosmetic like
