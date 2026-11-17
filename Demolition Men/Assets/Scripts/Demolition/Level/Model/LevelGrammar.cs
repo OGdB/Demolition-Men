@@ -8,7 +8,8 @@ namespace Demolition.Levels
     /// <summary>
     /// Spec + seed → <see cref="LevelLayout"/> (roadmap §5.2). Walks the pacing tokens left
     /// to right, writing ground columns, building placements (each a validated
-    /// <see cref="BuildingSpec"/>) and pickup spots, then spends the pickup budget. A layout
+    /// <see cref="BuildingSpec"/>) and pickup spots, then dresses the street (ways up, props,
+    /// decor) and spends the pickup budget. A layout
     /// the <see cref="TraversalValidator"/> rejects is re-rolled from a derived seed.
     /// Uses <see cref="Pcg32"/> only, so the same spec gives the same level everywhere.
     /// </summary>
@@ -21,6 +22,15 @@ namespace Demolition.Levels
         public const string PropPrefix = "prop.";
         /// <summary>Archetype of a gate (see <see cref="BuildingPlacement.IsGate"/>).</summary>
         public const string GateArchetype = "gate";
+        /// <summary>Archetype prefix of a way up built of blocks (a scaffold, a stair of crates):
+        /// a street prop to every rule.</summary>
+        public const string WayPrefix = PropPrefix + "way.";
+        /// <summary>Chance that a building with a way in above the street (<see cref="BuildingSpec.WayIn"/>)
+        /// and a free column in front gets a ladder up to it. A plated building always does.</summary>
+        public const float LadderChance = 0.35f;
+        /// <summary>Chance that a ladder gets a scaffold or a stair of crates in front of it as well,
+        /// at a plated building and at any other.</summary>
+        public const float PlatedWayChance = 0.6f, WayChance = 0.3f;
         /// <summary>Breakable props a level uses when its spec names none.</summary>
         public static readonly string[] DefaultProps = { "crate", "car", "barrel" };
         /// <summary>Chance that a free stretch of street gets a prop, and then each further one.</summary>
@@ -85,12 +95,18 @@ namespace Demolition.Levels
             if (Parse(tokens[tokens.Count - 1], out _) != SegmentKind.Finish)
                 tokens.Add("finish");
 
-            for (int i = 0; i < tokens.Count; i++)
+            // A `plated` token takes nothing from the level around it: no number from the random
+            // stream, no place in the count that decides how big the other buildings get, no
+            // pickup spot. So a level gains one and keeps every other building.
+            int paced = tokens.FindAll(t => Parse(t, out _) != SegmentKind.Plated).Count;
+            for (int i = 0, ordinal = 0; i < tokens.Count; i++)
             {
                 SegmentKind kind = Parse(tokens[i], out int count);
                 var segment = new LevelSegment { Kind = kind, X0 = layout.Width };
                 int index = layout.Segments.Count;
-                float progress = tokens.Count > 1 ? i / (float)(tokens.Count - 1) : 0f;
+                float progress = paced > 1 ? ordinal / (float)(paced - 1) : 0f;
+                if (kind != SegmentKind.Plated)
+                    ordinal++;
 
                 switch (kind)
                 {
@@ -174,6 +190,15 @@ namespace Demolition.Levels
                         break;
                     case SegmentKind.Breather:
                         Flat(layout, rng.Range(8, 11), height, spots, index);
+                        break;
+                    case SegmentKind.Plated:
+                        // The theme's plated building on its own stretch of street: the way in is up.
+                        BuildingArchetype plated = archetypes.Find(a => a.Plated);
+                        if (plated == null)
+                            break; // none in this theme
+                        Flat(layout, 3, height);
+                        PlaceBuilding(layout, new Pcg32(unchecked(seed * 31 + i * 8191 + 0x91A7)), plated, height, index, new List<Spot>());
+                        Flat(layout, 3, height);
                         break;
                     case SegmentKind.Finish:
                         Flat(layout, 6, height);
@@ -281,12 +306,13 @@ namespace Demolition.Levels
 
         // ---------------- Buildings ----------------
 
-        // Smallest archetypes early, the whole range by the end; towers only when asked.
+        // Smallest archetypes early, the whole range by the end; towers only when asked. Never a
+        // plated one: those stand where the pacing says `plated`.
         private static BuildingArchetype Pick(List<BuildingArchetype> archetypes, Pcg32 rng, float progress, bool tower)
         {
             var pool = new List<BuildingArchetype>();
             foreach (BuildingArchetype a in archetypes)
-                if (a.IsTower == tower)
+                if (a.IsTower == tower && !a.Plated)
                     pool.Add(a);
             if (pool.Count == 0)
             {
@@ -302,7 +328,10 @@ namespace Demolition.Levels
             List<Spot> spots)
         {
             int seed = (int)rng.Next();
-            Place(layout, BuildingGrammar.GenerateValid(archetype, seed, out _), height, segment, spots);
+            BuildingSpec spec = BuildingGrammar.GenerateValid(archetype, seed, out _);
+            if (spec.Plated) // the way in is up: street in front for the ladder and a scaffold, whatever stands next door
+                Flat(layout, 2 + ScaffoldWidth(spec.WayIn()), height);
+            Place(layout, spec, height, segment, spots);
         }
 
         private static void Place(LevelLayout layout, BuildingSpec spec, int height, int segment, List<Spot> spots)
@@ -346,6 +375,32 @@ namespace Demolition.Levels
             Mark(null, taken, layout.SpawnX - 3, 10);   // room to start
             Mark(null, taken, layout.FinishX - 2, 5);   // the finish line stays clear
             Mark(solid, taken, layout.CaravanX, LevelLayout.CaravanWidth);   // the caravan's spot
+
+            // Ways up, before the props take the street: a ladder against the street wall of every
+            // plated building and of some others, and in front of some ladders a scaffold or a
+            // stair of crates, one column short of the wall (the ladder's).
+            // Each from the building's own seed: a way more or less shifts no prop's dice.
+            for (int i = 0, buildings = layout.Buildings.Count; i < buildings; i++)
+            {
+                BuildingPlacement b = layout.Buildings[i];
+                var ways = new Pcg32(unchecked(b.Spec.Seed * 31 + 0x1ADD));
+                int sill = b.IsProp || b.IsGate ? -1 : b.Spec.WayIn(); // buildings only: no ladder up a stack of containers
+                int free = 0; // flat, unbuilt street in front of the wall, clear of the start
+                while (b.X - 1 - free > layout.SpawnX + 6 && !solid[b.X - 1 - free] && layout.GroundAt(b.X - 1 - free) == b.GroundY)
+                    free++;
+                if (sill < 0 || free < 1 || !(b.Spec.Plated || ways.Chance(LadderChance)) || !b.Spec.AddStreetLadder())
+                    continue;
+                if (!ways.Chance(b.Spec.Plated ? PlatedWayChance : WayChance))
+                    continue;
+                // A stair of crates fills the street: only where the wall behind it is plated anyway.
+                BuildingSpec way = b.Spec.Plated && Steps(sill) <= 2 && ways.Chance(0.5f) ? CrateStair(sill, ways) : Scaffold(sill, ways);
+                int wx = b.X - 1 - way.Width;
+                if (free < 2 + way.Width) // the ladder's column, and a free one before it like any prop
+                    continue;
+                layout.Buildings.Add(new BuildingPlacement { X = wx, GroundY = b.GroundY, Spec = way, Segment = SegmentAt(layout, wx) });
+                Mark(solid, taken, wx, way.Width);
+                spots.RemoveAll(s => !s.Roof && s.X > wx - 1f && s.X < wx + way.Width + 1f);
+            }
 
             // Each free stretch of flat street: props with a free column either side.
             List<string> kinds = PropKinds(layout.Spec);
@@ -457,6 +512,43 @@ namespace Demolition.Levels
             return spec;
         }
 
+        /// <summary>Steps of two rows that bring a player within a jump of a sill this high.</summary>
+        public static int Steps(int sill) => Mathf.Max(1, (sill - 1) / 2);
+
+        private static int ScaffoldWidth(int sill) => 3 + 2 * (Steps(sill) - 1);
+
+        /// <summary>A stair of crates to a sill: columns of crates two wide, each two rows higher
+        /// than the last. Punch out the bottom ones and it comes down.</summary>
+        public static BuildingSpec CrateStair(int sill, Pcg32 rng)
+        {
+            var spec = new BuildingSpec(WayPrefix + "crates", (int)rng.Next());
+            for (int step = 0; step < Steps(sill); step++)
+                for (int x = 2 * step; x < 2 * step + 2; x++)
+                    for (int y = 0; y < 2 * (step + 1); y++)
+                        spec.TryPlace(TileKind.Crate, x, y, (int)(rng.Next() & 0xFF));
+            return spec;
+        }
+
+        /// <summary>A scaffold to a sill: two crates high to start from, a free column (the street
+        /// stays open: over the crates, then under the decks), then plank decks on poles, each two
+        /// rows higher than the last. The poles are walked through; knock one out and its deck drops.</summary>
+        public static BuildingSpec Scaffold(int sill, Pcg32 rng)
+        {
+            var spec = new BuildingSpec(WayPrefix + "scaffold", (int)rng.Next());
+            for (int x = 0; x < 2; x++)
+                for (int y = 0; y < 2; y++)
+                    spec.TryPlace(TileKind.Crate, x, y, (int)(rng.Next() & 0xFF));
+            for (int step = 1; step < Steps(sill); step++)
+                for (int x = 1 + 2 * step; x < 3 + 2 * step; x++)
+                {
+                    int deck = 2 * (step + 1) - 1;
+                    for (int y = 0; y < deck; y++)
+                        spec.TryPlace(TileKind.Pole, x, y);
+                    spec.TryPlace(TileKind.Plank, x, deck);
+                }
+            return spec;
+        }
+
         private static void Mark(bool[] solid, bool[] taken, int x0, int width)
         {
             for (int x = x0 - 1; x <= x0 + width; x++)
@@ -501,7 +593,7 @@ namespace Demolition.Levels
         private static bool JustBeforeBuilding(LevelLayout layout, Spot spot)
         {
             foreach (BuildingPlacement b in layout.Buildings)
-                if (!b.IsProp && spot.X < b.X && spot.X >= b.X - WeaponLeadIn)
+                if ((!b.IsProp || b.IsWay) && spot.X < b.X && spot.X >= b.X - WeaponLeadIn) // before its scaffold counts
                     return true;
             return false;
         }

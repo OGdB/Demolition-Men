@@ -19,6 +19,7 @@ MonoBehaviour:
   archetypes:
   - {fileID: 4900000, guid: bc5d4f1dca91453a9718588ac9afe9f6, type: 3}
   - {fileID: 4900000, guid: 7458a391e0fe422ebdaaf774fb03e6cb, type: 3}
+  - {fileID: 4900000, guid: 269470ecaaf44768aa0f8dcc9c210d58, type: 3}
   - {fileID: 4900000, guid: ef97113fae19405292de63502b30b1ca, type: 3}
   - {fileID: 4900000, guid: a51008ff24d1421f9e587ad82b4d6dfc, type: 3}
   - {fileID: 4900000, guid: 54f267f410ce46c6aa744de774826a18, type: 3}

@@ -27,6 +27,17 @@ namespace Demolition.Generation
         }
     }
 
+    /// <summary>A ladder: a column players climb by holding up, from <see cref="Y"/> until their
+    /// feet are at <see cref="Top"/>. No block: it can't be hit, carries nothing, and goes when
+    /// the block cell it is fixed to (<see cref="Host"/>) leaves the structure.</summary>
+    public sealed class SpecLadder
+    {
+        /// <summary>Its column; -1 is the street in front of the left wall.</summary>
+        public int X;
+        public int Y, Top;
+        public Vector2Int Host;
+    }
+
     /// <summary>
     /// A generated building as data: blocks on a cell grid with (0,0) at the bottom-left,
     /// ground row y = 0. Turned into GameObjects by the builder; judged by the validator.
@@ -58,6 +69,13 @@ namespace Demolition.Generation
         public string Archetype { get; }
         public int Seed { get; }
         public List<SpecBlock> Blocks { get; } = new List<SpecBlock>();
+        /// <summary>What stands in the rooms and on the roof (<see cref="Furnishing"/>): looks only,
+        /// so not in <see cref="Hash"/>.</summary>
+        public List<SpecProp> Props { get; } = new List<SpecProp>();
+        /// <summary>Up the stairwells, and maybe up the street wall (<see cref="AddStreetLadder"/>).</summary>
+        public List<SpecLadder> Ladders { get; } = new List<SpecLadder>();
+        /// <summary>Storeys with the lights on, where the theme lights its buildings.</summary>
+        public HashSet<int> LitStoreys { get; } = new HashSet<int>();
         public string Name => $"{Archetype} #{Seed}";
 
         public int CellCount => _occupied.Count;
@@ -127,10 +145,7 @@ namespace Demolition.Generation
         public List<InteriorCell> Interior()
         {
             var cells = new List<InteriorCell>();
-            var slabRows = new HashSet<int>();
-            foreach (SpecBlock b in Blocks)
-                if (IsFloor(b.Kind))
-                    slabRows.Add(b.Rect.yMin);
+            HashSet<int> slabRows = SlabRows();
             int storey = 0;
             for (int y = 0; y < Height; y++)
             {
@@ -159,9 +174,72 @@ namespace Demolition.Generation
             return cells;
         }
 
+        /// <summary>Rows a floor slab (or a roof of floor boards) runs through.</summary>
+        public HashSet<int> SlabRows()
+        {
+            var rows = new HashSet<int>();
+            foreach (SpecBlock b in Blocks)
+                if (IsFloor(b.Kind))
+                    rows.Add(b.Rect.yMin);
+            return rows;
+        }
+
+        /// <summary>Storey of row y (0 = street level), counted as <see cref="Interior"/> counts.</summary>
+        public int StoreyOf(int y)
+        {
+            int storey = 0;
+            foreach (int row in SlabRows())
+                if (row > 0 && row <= y)
+                    storey++;
+            return storey;
+        }
+
+        /// <summary>Its street wall is plated at ground level (an archetype's <c>shutter</c>): the
+        /// way in is up.</summary>
+        public bool Plated => At(Vector2Int.zero)?.Kind == TileKind.Steel;
+
+        /// <summary>How high the first way in above the street is, on the side players come from:
+        /// the sill of the left wall's first-floor window, or the roof of a building of one storey;
+        /// -1 when there is neither within <see cref="HighestWayIn"/> rows.</summary>
+        public int WayIn()
+        {
+            for (int y = 3; y <= HighestWayIn; y++)
+            {
+                SpecBlock block = At(new Vector2Int(0, y));
+                if (block == null)
+                    return y > 3 ? y : -1; // above the roof's edge (a wall is at least 4 rows)
+                if (block.Kind == TileKind.Glass)
+                    return y;
+            }
+            return -1;
+        }
+
+        /// <summary>A storey is at most 6 rows, so a window sill or a low roof is at most this high.</summary>
+        public const int HighestWayIn = 7;
+
+        /// <summary>A ladder in the street against the left wall, up to <see cref="WayIn"/>; false
+        /// when there is nothing to climb to.</summary>
+        public bool AddStreetLadder()
+        {
+            int top = WayIn();
+            if (top < 0)
+                return false;
+            Ladders.Add(new SpecLadder { X = -1, Y = 0, Top = top, Host = new Vector2Int(0, top - 1) });
+            return true;
+        }
+
+        /// <summary>Whether a prop that gives light is on: the ceiling lights are on their room's
+        /// switch; a screen, a fridge, the roof sign always are.</summary>
+        public bool Glows(SpecProp prop) =>
+            !(Furnishing.TryGet(prop.Name, out PropInfo info) && info.Slot == PropSlot.Ceiling) || LitStoreys.Contains(prop.Storey);
+
+        /// <summary>Whether a block that gives light is on: a window glows when its room's lights
+        /// are on; a door's pane, a sign box on the roof always do.</summary>
+        public bool Glows(SpecBlock block) => block.Kind != TileKind.Glass || LitStoreys.Contains(StoreyOf(block.Rect.yMin));
+
         /// <summary>The nearest block cell from (x, y) along dy that isn't glass: a pane breaks
         /// long before the wall around it, so it holds no back wall.</summary>
-        private bool TryFind(int x, int y, int dy, out Vector2Int found)
+        public bool TryFind(int x, int y, int dy, out Vector2Int found)
         {
             for (int yy = y + dy; yy >= 0 && yy < Height; yy += dy)
             {
@@ -200,6 +278,12 @@ namespace Demolition.Generation
                     Mix(b.Rect.y);
                     Mix(b.Anchor ? 1 : 0);
                     Mix(b.Variant);
+                }
+                foreach (SpecLadder ladder in Ladders) // a rule, unlike the props: where a player may climb
+                {
+                    Mix(ladder.X);
+                    Mix(ladder.Y);
+                    Mix(ladder.Top);
                 }
                 return (int)h;
             }

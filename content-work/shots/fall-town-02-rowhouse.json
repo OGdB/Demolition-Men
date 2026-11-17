@@ -1,7 +1,7 @@
 {
   "id": "fall-town-02-rowhouse",
   "level": "town-02",
-  "building": 10,
+  "building": 12,
   "offset": -5,
   "upgrades": 5,
   "camera": {

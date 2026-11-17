@@ -3,7 +3,7 @@ using Demolition.Generation;
 
 namespace Demolition.Levels
 {
-    public enum SegmentKind { Start, Street, Cluster, Tower, Gap, Hill, Sewer, Gate, Breather, Finish, Islands, Plateau, Terrace, Yard }
+    public enum SegmentKind { Start, Street, Cluster, Tower, Gap, Hill, Sewer, Gate, Breather, Finish, Islands, Plateau, Terrace, Yard, Plated }
 
     /// <summary>Street dressing, cosmetic only; each theme draws its own (a Town lamp post,
     /// a Port dock light...).</summary>
@@ -29,6 +29,9 @@ namespace Demolition.Levels
 
         /// <summary>A street prop (crates, a car, gas tanks, a container), not a building.</summary>
         public bool IsProp => Spec.Archetype.StartsWith(LevelGrammar.PropPrefix, System.StringComparison.Ordinal);
+
+        /// <summary>A way up to the building behind it (a scaffold, a stair of crates): a prop too.</summary>
+        public bool IsWay => Spec.Archetype.StartsWith(LevelGrammar.WayPrefix, System.StringComparison.Ordinal);
 
         /// <summary>A gate: the wall across the street that every run has to bring down.</summary>
         public bool IsGate => Spec.Archetype == LevelGrammar.GateArchetype;

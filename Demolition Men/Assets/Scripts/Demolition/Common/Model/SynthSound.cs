@@ -174,6 +174,37 @@ namespace Demolition
             return Normalise(data, 0.75f);
         }
 
+        public const float ClubBpm = 124f;
+
+        /// <summary>A club's sound system heard from the street: one bar of four on the floor at
+        /// <see cref="ClubBpm"/>, mostly kick and bass under a clap and a little hi-hat. A sound
+        /// that runs past the bar's end wraps to its start, so the loop has no seam.</summary>
+        public static float[] ClubLoop()
+        {
+            int beat = (int)(60f / ClubBpm * SampleRate);
+            var data = new float[beat * 4];
+            void Mix(float[] sound, int at, float gain)
+            {
+                for (int i = 0; i < sound.Length; i++)
+                    data[(at + i) % data.Length] += sound[i] * gain;
+            }
+
+            float[] kick = Sweep(0.24f, 150f, 42f, decay: 6f);
+            float[] hat = Noise(0.06f, 41, 0.9f, 0.9f, highPass: true, decay: 9f);
+            float[] clap = Noise(0.14f, 42, 0.45f, 0.35f, grain: 0.5f, decay: 7f);
+            float[] low = Sweep(0.2f, 55f, 55f, decay: 2.5f, square: true);
+            float[] high = Sweep(0.2f, 65.4f, 65.4f, decay: 2.5f, square: true);
+            for (int b = 0; b < 4; b++)
+            {
+                Mix(kick, b * beat, 1f);
+                Mix(hat, b * beat + beat / 2, 0.18f);
+                Mix(b < 3 ? low : high, b * beat + beat / 2, 0.4f);
+                if (b % 2 == 1)
+                    Mix(clap, b * beat, 0.3f);
+            }
+            return Normalise(data, 0.8f);
+        }
+
         // Quick attack, then exponential decay; t in 0..1.
         private static float Envelope(float t, float attack, float decay) =>
             (t < attack ? t / attack : 1f) * (float)Math.Exp(-decay * t);

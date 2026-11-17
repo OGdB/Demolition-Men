@@ -38,6 +38,8 @@ namespace Demolition.Levels
         [Tooltip("Light around street signs (neon); 0 = none.")]
         public float signLight;
         public Color signColor = new Color(1f, 0.3f, 0.8f);
+        [Tooltip("The buildings' own lights: lit windows, lamps, screens and roof signs glow, and the lamps light their rooms this strongly, until the building comes down. 0 = dark buildings (daylight).")]
+        public float buildingLight;
         [Tooltip("The demolition men wear lamps on their hard hats.")]
         public bool headlamps;
         [Tooltip("How far the hard-hat lamps reach, in world units (blocks).")]

@@ -9,6 +9,13 @@ You write `Demolition Men/Assets/Content/<Theme>/Archetypes/*.json` for the brie
 `Content/Town/Archetypes`. Ids are `<theme>.<name>`; an id containing `tower` is used for
 `tower` segments. Tile names must be `TileKind` values.
 
+Every archetype says what it is for in `furnish`: prop names from the catalog in
+`Generation/Model/Furnishing.cs` for `any`, `ground` and `upper` storeys, a `roof` sign
+(`sign_<word>`), `clutter` and `lights`. Name what the building would hold (a bar and
+speakers, not a random shelf), and tell the artist which props the theme needs. One
+archetype per theme is plated (`"shutter": "Steel"`, with `columnSpacing` and at least two
+floors): the way in is the first-floor window, and levels place it with the `plated` token.
+
 Validate (hard pass/fail, no arguing with it):
 ```
 tools/unity-check/setup.sh            # once per machine

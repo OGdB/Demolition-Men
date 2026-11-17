@@ -1,7 +1,7 @@
 {
   "id": "cities-port",
   "level": "port-04",
-  "building": 6,
+  "building": 8,
   "offset": -4,
   "upgrades": 5,
   "actions": ["kees"],

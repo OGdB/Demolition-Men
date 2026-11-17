@@ -6,7 +6,9 @@ namespace Demolition.Generation
     /// <summary>How each <see cref="TileKind"/> looks in a theme: sprite variants plus the
     /// tint, rotation and scale that fit them to the block's footprint. Wall kinds can bring
     /// corner variants (the building's left and right silhouette edges, with quoins, posts or
-    /// pilasters); the back wall has one look per storey and details scattered over rooms.</summary>
+    /// pilasters); the back wall has one look per storey, and the rooms' props
+    /// (<see cref="Furnishing"/>) come from here by name. A sprite that gives light has a lit
+    /// overlay: only the pixels that glow, drawn over it where a theme lights its buildings.</summary>
     [CreateAssetMenu(menuName = "Demolition/Building Tileset")]
     public sealed class BuildingTileset : ScriptableObject
     {
@@ -19,6 +21,8 @@ namespace Demolition.Generation
             public Sprite[] left = new Sprite[0];
             [Tooltip("Variants for a block on the building's right edge (empty: the plain sprites).")]
             public Sprite[] right = new Sprite[0];
+            [Tooltip("The glowing pixels of each plain sprite, in the same order (none: it gives no light).")]
+            public Sprite[] lit = new Sprite[0];
             public Color tint = Color.white;
             public float rotation;
             public Vector2 scale = Vector2.one;
@@ -37,6 +41,18 @@ namespace Demolition.Generation
             }
         }
 
+        [Serializable]
+        public sealed class Prop
+        {
+            [Tooltip("Its name in the archetypes' furnish lists (Furnishing's catalog).")]
+            public string name;
+            public Sprite sprite;
+            [Tooltip("The glowing pixels, drawn over the sprite while the building has power. None: it gives no light.")]
+            public Sprite lit;
+            [Tooltip("The colour of the light it casts.")]
+            public Color light = Color.white;
+        }
+
         [SerializeField] private Entry[] entries = new Entry[0];
         [Tooltip("The building's back wall, behind open rooms, see-through blocks and windows. None: the sky shows through.")]
         [SerializeField] private Sprite interior;
@@ -46,11 +62,13 @@ namespace Demolition.Generation
         [SerializeField] private Sprite[] interiorVariants = new Sprite[0];
         [Tooltip("The under-ceiling version of each variant, in the same order.")]
         [SerializeField] private Sprite[] interiorTopVariants = new Sprite[0];
-        [Tooltip("Things on the back wall of open rooms (a picture, a shelf...), drawn over the wallpaper of some cells.")]
-        [SerializeField] private Sprite[] interiorDetails = new Sprite[0];
-        [Tooltip("Share of open room cells that get a detail.")]
-        [SerializeField, Range(0f, 1f)] private float interiorDetailChance = 0.18f;
+        [Tooltip("What stands in the rooms and on the roofs, by name. An archetype's prop this theme has no sprite for is left out.")]
+        [SerializeField] private Prop[] props = new Prop[0];
 
+        [Tooltip("One cell of a ladder (up a stairwell, up a street wall), tiled upwards.")]
+        [SerializeField] private Sprite ladder;
+
+        public Sprite Ladder => ladder;
         public Sprite Interior => interior;
         public Sprite InteriorTop => interiorTop != null ? interiorTop : interior;
 
@@ -66,29 +84,23 @@ namespace Demolition.Generation
             return underCeiling && top != null ? top : interiorVariants[i - 1];
         }
 
-        /// <summary>A detail for the open room cell (x, y), or null: the same building shows
-        /// the same details on every machine.</summary>
-        public Sprite InteriorDetail(int x, int y, int seed)
+        /// <summary>The look of a prop, or null when this theme doesn't draw it.</summary>
+        public Prop PropFor(string name)
         {
-            if (interiorDetails.Length == 0)
-                return null;
-            uint h = CellHash(x, y, seed);
-            if ((h & 0xFFFF) / 65536f >= interiorDetailChance)
-                return null;
-            return interiorDetails[(h >> 16) % (uint)interiorDetails.Length];
+            foreach (Prop prop in props)
+                if (prop.name == name && prop.sprite != null)
+                    return prop;
+            return null;
         }
 
-        /// <summary>A well-mixed hash of a cell within a building (mirrored by level_preview.py).</summary>
-        public static uint CellHash(int x, int y, int seed)
+        /// <summary>The glowing pixels of the sprite <see cref="Dress"/> gives this block, or null.</summary>
+        public Sprite LitFor(SpecBlock spec, BlockEdge edge = BlockEdge.None)
         {
-            unchecked
-            {
-                uint h = (uint)seed * 73856093u ^ (uint)x * 19349663u ^ (uint)y * 83492791u;
-                h ^= h >> 13;
-                h *= 0x5bd1e995u;
-                h ^= h >> 15;
-                return h;
-            }
+            Entry entry = Find(spec.Kind);
+            if (entry == null || entry.sprites.Length == 0 || entry.Pool(edge) != entry.sprites)
+                return null;
+            int i = spec.Variant % entry.sprites.Length;
+            return i < entry.lit.Length ? entry.lit[i] : null;
         }
 
         /// <summary>Add the block's sprite as a child "Visual".</summary>

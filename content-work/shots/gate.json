@@ -1,7 +1,7 @@
 {
   "id": "gate",
   "level": "town-02",
-  "building": 12,
+  "building": 14,
   "offset": -3,
   "upgrades": 3,
   "camera": {"mode": "frame", "pad": 1.5},

@@ -13,7 +13,10 @@ foreground only, readable at phone size, walls/glass/sky clearly separated in va
 `tools/artpipe/themes/<theme>.json` (or a generator in `tiles.py` if the theme truly needs a
 new look), and rebuild until it reads as the same game as Town. `qa.py` must exit 0.
 The back wall (`interior`, `interior_top`) must sit darker than the walls and let the
-trusses and supports (the weak points) stand out. To see the sprites in real levels, run
+trusses and supports (the weak points) stand out. The rooms' props (`prop_<name>`, the
+names in the theme's archetypes' `furnish` lists) are background too, but each must be
+recognisable at a glance; whatever gives light also has `<sprite>_lit` with only its glowing
+pixels (the base sprite looks switched off). To see the sprites in real levels, run
 `tools/unity-check/check.sh levels && python3 tools/artpipe/level_preview.py` and open
 `content-work/levels/*.png`.
 Never hand-edit PNGs or change existing `.meta` GUIDs. A human picks between candidates

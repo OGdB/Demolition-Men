@@ -300,6 +300,78 @@ namespace Demolition.Tests
             Assert.IsFalse(layout.Buildings.Any(b => b.X <= layout.SpawnX), $"{spec.id}: a building or prop on the run-up");
         }
 
+        // ---------------- Ways up ----------------
+
+        [Test]
+        public void PlatedBuildings_HaveALadder_UpAFreeColumnOfStreet([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            for (int seed = 0; seed < 10; seed++)
+            {
+                LevelLayout layout = LevelGrammar.Generate(spec.WithSeed(spec.seed + seed, spec.id), ArchetypesFor(path));
+                foreach (BuildingPlacement b in layout.Buildings)
+                {
+                    SpecLadder street = b.Spec.Ladders.FirstOrDefault(l => l.X < 0);
+                    if (b.Spec.Plated)
+                        Assert.IsNotNull(street, $"{spec.id}: {b.Spec.Name} at {b.X} is plated and has no ladder");
+                    if (street == null)
+                        continue;
+                    Assert.IsFalse(b.IsProp || b.IsGate, $"{spec.id}: a ladder up {b.Spec.Name}");
+                    Assert.AreEqual(b.Spec.WayIn(), street.Top, $"{spec.id}: {b.Spec.Name}");
+                    Assert.AreEqual(b.GroundY, layout.GroundAt(b.X - 1), $"{spec.id}: {b.Spec.Name}'s ladder stands on no street");
+                    Assert.IsFalse(layout.Buildings.Any(o => o != b && b.X - 1 >= o.X && b.X - 1 < o.X + o.Spec.Width),
+                        $"{spec.id}: {b.Spec.Name}'s ladder is inside something");
+                }
+            }
+        }
+
+        [Test]
+        public void WaysUp_AreStepsAJumpApart_ToTheSill([ValueSource(nameof(Levels))] string path)
+        {
+            LevelSpec spec = Load(path);
+            int maxRise = TraversalValidator.MaxRise(JumpProfile.Default);
+            for (int seed = 0; seed < 20; seed++)
+            {
+                LevelLayout layout = LevelGrammar.Generate(spec.WithSeed(spec.seed + seed, spec.id), ArchetypesFor(path));
+                foreach (BuildingPlacement way in layout.Buildings.Where(b => b.IsWay))
+                {
+                    string what = $"{spec.id} seed {spec.seed + seed}: {way.Spec.Archetype} at {way.X}";
+                    Assert.IsTrue(way.IsProp, what);
+                    BuildingPlacement to = layout.Buildings.Single(b => b.X == way.X + way.Spec.Width + 1); // one column on: the ladder's
+                    Assert.IsTrue(to.Spec.Ladders.Any(l => l.X < 0) && to.GroundY == way.GroundY, what);
+                    int top = 0; // each column's top is the last one, or at most a jump higher, or open street
+                    for (int x = 0; x < way.Spec.Width; x++)
+                    {
+                        int height = way.Spec.Blocks.Where(k => k.Rect.xMin <= x && k.Rect.xMax > x).Select(k => k.Rect.yMax).DefaultIfEmpty(0).Max();
+                        if (height == 0)
+                            continue;
+                        Assert.That(height - top, Is.InRange(0, maxRise), what + $": step at column {x}");
+                        top = height;
+                    }
+                    Assert.That(to.Spec.WayIn() - top, Is.InRange(0, maxRise), what + ": from its top to the sill");
+                    var structure = way.Spec.ToStructure();
+                    Assert.AreEqual(0, BuildingValidator.Validate(way.Spec, new BuildingArchetype()).UnsupportedCells, what + " doesn't stand");
+                }
+            }
+        }
+
+        [Test]
+        public void WaysUp_ComeInEveryKind_OverTheCampaign()
+        {
+            var kinds = new HashSet<string>();
+            int ladders = 0;
+            foreach (string path in Levels())
+                for (int seed = 0; seed < 5; seed++)
+                {
+                    LevelSpec spec = Load(path);
+                    LevelLayout layout = LevelGrammar.Generate(spec.WithSeed(spec.seed + seed, spec.id), ArchetypesFor(path));
+                    kinds.UnionWith(layout.Buildings.Where(b => b.IsWay).Select(b => b.Spec.Archetype));
+                    ladders += layout.Buildings.Count(b => b.Spec.Ladders.Any(l => l.X < 0));
+                }
+            CollectionAssert.AreEquivalent(new[] { LevelGrammar.WayPrefix + "crates", LevelGrammar.WayPrefix + "scaffold" }, kinds);
+            Assert.Greater(ladders, 20);
+        }
+
         [Test]
         public void Props_FollowTheSpec_AndContainersComeOnlyWhenAsked()
         {

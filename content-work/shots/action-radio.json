@@ -25,19 +25,24 @@
     },
     {
       "p": 1,
+      "do": "walk",
+      "x": 5.5
+    },
+    {
+      "p": 1,
       "do": "action"
     },
     {
       "p": 1,
       "do": "wait",
-      "seconds": 9
+      "seconds": 11
     },
     {
       "p": 0,
       "do": "wait",
       "until": "collapse",
       "cells": 6,
-      "seconds": 14
+      "seconds": 16
     },
     {
       "p": 0,
@@ -48,7 +53,7 @@
     {
       "p": 0,
       "do": "wait",
-      "seconds": 5
+      "seconds": 6
     }
   ]
 }

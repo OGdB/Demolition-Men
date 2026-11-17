@@ -1007,7 +1007,7 @@ namespace Demolition.Ranked
                         + (OnlinePartner(p) ? 0.5f : 0f);
                     if (b.Y - a.Y > up)
                         return No($"player {p + 1} rose {b.Y - a.Y:0.0} in 0.1s at {t:0.0}s");
-                    rising = b.Y - a.Y > 0.05f && !knocked ? rising + 1 : 0;
+                    rising = b.Y - a.Y > 0.05f && !knocked && !OnLadder(a, b) ? rising + 1 : 0;
                     if (rising * RunLog.PoseInterval > riseLimit && !OnlinePartner(p))
                         return No($"player {p + 1} kept rising at {t:0.0}s");
                     if (!knocked && b.Y > Tallest(b.X) + highest + (OnlinePartner(p) ? 1f : 0f))
@@ -1015,6 +1015,20 @@ namespace Demolition.Ranked
                 }
             }
             return true;
+        }
+
+        // Climbing: at a ladder of the level as it started (one that has since come down is no way to
+        // fly: the height check holds either way), and no faster than a climb.
+        private bool OnLadder(LogPose a, LogPose b)
+        {
+            if (b.Y - a.Y > RankedRules.ClimbSpeed * RunLog.PoseInterval * RankedRules.SpeedSlack + RankedRules.MoveMargin)
+                return false;
+            foreach (BuildingPlacement p in _layout.Buildings)
+                foreach (SpecLadder ladder in p.Spec.Ladders)
+                    if (Mathf.Abs(b.X - (p.X + ladder.X + 0.5f)) < 1f + RankedRules.PoseSlack
+                        && b.Y > p.GroundY + ladder.Y - 1f && b.Y < p.GroundY + ladder.Top + 1f)
+                        return true;
+            return false;
         }
 
         // The highest ground or building around x, as the level started: rubble only ever lies lower.

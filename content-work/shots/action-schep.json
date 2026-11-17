@@ -1,7 +1,7 @@
 {
   "id": "action-schep",
   "level": "port-02",
-  "building": 8,
+  "building": 10,
   "offset": -5,
   "players": 2,
   "upgrades": 5,

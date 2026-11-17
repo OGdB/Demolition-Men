@@ -14,5 +14,12 @@
   "door": true,
   "chimneyChance": 0.6,
   "weakPoints": { "min": 1, "max": 4 },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "ground": ["desk", "sofa", "plant", "clock", "lamp"],
+    "upper": ["bed", "plant", "picture", "tv", "lamp"],
+    "roof": "sign_hotel",
+    "clutter": 0.6,
+    "lights": 0.7
+  }
 }

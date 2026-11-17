@@ -1,7 +1,7 @@
 {
   "id": "fall-port-02-silo",
   "level": "port-02",
-  "building": 9,
+  "building": 11,
   "offset": -5,
   "upgrades": 5,
   "camera": {

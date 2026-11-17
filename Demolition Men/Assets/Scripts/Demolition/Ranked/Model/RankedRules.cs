@@ -9,11 +9,13 @@ namespace Demolition.Ranked
     /// </summary>
     public static class RankedRules
     {
-        public const int Version = 2;
+        public const int Version = 3;
 
         // ---------------- Players (Player_1.prefab: PlayerMotor, PlayerCombat; Run.prefab) ----------------
 
         public const float RunSpeed = 8f;
+        /// <summary>PlayerMotor's climbSpeed: up a ladder, for as long as the ladder is.</summary>
+        public const float ClimbSpeed = 5f;
         /// <summary>Jump impulse over mass: the take-off speed.</summary>
         public const float JumpSpeed = 45f / 3f;
         public const float Gravity = 9.81f * 2.2f;

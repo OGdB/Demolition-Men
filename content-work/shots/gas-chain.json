@@ -1,7 +1,7 @@
 {
   "id": "gas-chain",
   "level": "neon-04",
-  "building": 19,
+  "building": 21,
   "offset": 3.6,
   "upgrades": 5,
   "camera": {"mode": "pan", "from": -3, "to": -2, "seconds": 12, "size": 11},

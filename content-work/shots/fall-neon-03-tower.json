@@ -1,7 +1,7 @@
 {
   "id": "fall-neon-03-tower",
   "level": "neon-03",
-  "building": 9,
+  "building": 11,
   "offset": -3,
   "upgrades": 5,
   "dynamite": 3,

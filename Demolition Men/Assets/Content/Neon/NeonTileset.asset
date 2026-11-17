@@ -24,6 +24,7 @@ MonoBehaviour:
     right:
     - {fileID: 21300000, guid: 5dfa67458a174d2a9fc45b94c06d8a9f, type: 3}
     - {fileID: 21300000, guid: acc7a8961ac642a8a96c2d5e9c535c55, type: 3}
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -36,6 +37,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 8691bfb9c7d2491e8a9fc390e01d2b35, type: 3}
     right:
     - {fileID: 21300000, guid: 574f5f7701fd4f3c969608489d132799, type: 3}
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -49,6 +51,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 443f5305f17f46cdb6a0280bf2ef018f, type: 3}
     right:
     - {fileID: 21300000, guid: cd813c7290c74b36b2dfae8d1b9d5a72, type: 3}
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -61,6 +64,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 0ab913bb8d6b45ffa852bf74e98414ed, type: 3}
     right:
     - {fileID: 21300000, guid: e46e7950e997473d8924d48a9c037808, type: 3}
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -73,6 +77,10 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 1dc7995def8d43c898ce7f0fc2be666a, type: 3}
     left: []
     right: []
+    lit:
+    - {fileID: 21300000, guid: 9290d419defe43eba2dd90dfbd52f7b0, type: 3}
+    - {fileID: 21300000, guid: 17d417f0a25e4c65b5323614a9868329, type: 3}
+    - {fileID: 0}
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -83,6 +91,8 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 219e4e970630488285ae4b1f6647b6e8, type: 3}
     left: []
     right: []
+    lit:
+    - {fileID: 21300000, guid: c4823c6b94244ffba82ea072d895316a, type: 3}
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -93,6 +103,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 61cf264ccfdc44c1ba13d157e7ca9725, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -103,6 +114,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 0c615f1f41fe4ba6af01caae848e1b9b, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -113,6 +125,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 975f21f29d084ada8148ce20a66f74b2, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -123,6 +136,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 3b6000ddd5fe400f85863035c2aea987, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -133,6 +147,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: b1e11fd605e34d9cb2194cbdc7b00d74, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -145,6 +160,10 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 8a66a40ab1fd44f68dc30682b78c942e, type: 3}
     left: []
     right: []
+    lit:
+    - {fileID: 21300000, guid: a9ad912db1cf4c02bc60102eff26c48c, type: 3}
+    - {fileID: 21300000, guid: 15c715438420467b80f3adf1cc3c894a, type: 3}
+    - {fileID: 0}
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -155,6 +174,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 42129e915cfd472e9b9d03e09cca081e, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -165,6 +185,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 0b8ec01f93884b7eb64ad7bbaee15afa, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -175,6 +196,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 8d7843d050424c899de6472b303210da, type: 3}
     left: []
     right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -185,6 +207,29 @@ MonoBehaviour:
     - {fileID: 21300000, guid: b06a093294fc4985a6f88fb515582ef9, type: 3}
     left: []
     right: []
+    lit: []
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 16
+    sprites:
+    - {fileID: 21300000, guid: 5507d680c78a40abae8682e077a7e789, type: 3}
+    left: []
+    right: []
+    lit: []
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    rotation: 0
+    scale: {x: 1, y: 1}
+    offset: {x: 0, y: 0}
+    sortingOrder: 0
+  - kind: 17
+    sprites:
+    - {fileID: 21300000, guid: 281b48ce236c4dc2b262e785085bc8d1, type: 3}
+    left: []
+    right: []
+    lit: []
     tint: {r: 1, g: 1, b: 1, a: 1}
     rotation: 0
     scale: {x: 1, y: 1}
@@ -198,8 +243,137 @@ MonoBehaviour:
   interiorTopVariants:
   - {fileID: 21300000, guid: 8e38626b86844a2a96daf4ba3f0e9f2b, type: 3}
   - {fileID: 21300000, guid: c22d8f464c264872821c59a0f4638104, type: 3}
-  interiorDetails:
-  - {fileID: 21300000, guid: 2a0e196385e745aebdc714d7a9ba5553, type: 3}
-  - {fileID: 21300000, guid: 011ed251f6db4e52907e9554a46148c9, type: 3}
-  - {fileID: 21300000, guid: bdb87b47aae04cd4a67c324bd0852143, type: 3}
-  interiorDetailChance: 0.18
+  props:
+  - name: bar
+    sprite: {fileID: 21300000, guid: 2c7115b9c2834fe9a7b3953eda4c0ea9, type: 3}
+    lit: {fileID: 21300000, guid: fe214ac3131d45d58c71cc46838ba31b, type: 3}
+    light: {r: 1.0, g: 0.377, b: 0.839, a: 1}
+  - name: bed
+    sprite: {fileID: 21300000, guid: 4f59dfa197ec4212a5b7b2b03f82a72a, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: board
+    sprite: {fileID: 21300000, guid: 6211efe0cfea4934ad7f2073d6352d64, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: bottles
+    sprite: {fileID: 21300000, guid: 49cbda7f17404532bd5b6c2c40eb014e, type: 3}
+    lit: {fileID: 21300000, guid: 64bf679b3ce143099c015fe38e1caa8e, type: 3}
+    light: {r: 1.0, g: 0.762, b: 0.443, a: 1}
+  - name: cabinet
+    sprite: {fileID: 21300000, guid: c9b463c95ce54603ad09de2012924b36, type: 3}
+    lit: {fileID: 21300000, guid: 11d9373002674851ba9213eff52e7130, type: 3}
+    light: {r: 0.943, g: 0.502, b: 1.0, a: 1}
+  - name: clock
+    sprite: {fileID: 21300000, guid: e994ea651b7b4fe1aa1a66597c6382ba, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: counter
+    sprite: {fileID: 21300000, guid: cf34fe83f1c74d92b245c991049d48d5, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: desk
+    sprite: {fileID: 21300000, guid: e2810345b2414e0fa8c79a80323ad032, type: 3}
+    lit: {fileID: 21300000, guid: b00fe7719a2d42f9aada1cca5258ff78, type: 3}
+    light: {r: 0.498, g: 0.878, b: 1.0, a: 1}
+  - name: discoball
+    sprite: {fileID: 21300000, guid: 281d54d61b1b445382ef05b857cfc6b1, type: 3}
+    lit: {fileID: 21300000, guid: 2c969fc0574f4954b787e3f25244956a, type: 3}
+    light: {r: 0.857, g: 0.898, b: 1.0, a: 1}
+  - name: djdesk
+    sprite: {fileID: 21300000, guid: 9543852a64ed4588832bf79c2cdc08bd, type: 3}
+    lit: {fileID: 21300000, guid: e07c50aa9c674318a59e2e4162afdaa4, type: 3}
+    light: {r: 0.784, g: 0.746, b: 1.0, a: 1}
+  - name: filing
+    sprite: {fileID: 21300000, guid: de2b2196ce9245f78252fbc6921f21d6, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: fridge
+    sprite: {fileID: 21300000, guid: 8eb1355efb68478e8aba3286a51c2b26, type: 3}
+    lit: {fileID: 21300000, guid: c807f43292614b9fa21e7fb9ff9dd546, type: 3}
+    light: {r: 0.773, g: 0.857, b: 1.0, a: 1}
+  - name: lamp
+    sprite: {fileID: 21300000, guid: e9cd5f69047749a0824b5e2450d4c61b, type: 3}
+    lit: {fileID: 21300000, guid: eceaaa16e2a44291860a31cd0e8de5b7, type: 3}
+    light: {r: 1.0, g: 0.827, b: 0.469, a: 1}
+  - name: neon
+    sprite: {fileID: 21300000, guid: a3a303d8199a42ac8af1a7027d52b792, type: 3}
+    lit: {fileID: 21300000, guid: 326165e925b34ff5b549e56f3287a2bc, type: 3}
+    light: {r: 0.8, g: 0.767, b: 1.0, a: 1}
+  - name: pallet
+    sprite: {fileID: 21300000, guid: 5f3524f002c84754b584a15658dded11, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: picture
+    sprite: {fileID: 21300000, guid: 67d6455d712a41d0a88e76e9c464466d, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: plant
+    sprite: {fileID: 21300000, guid: 99f37804bb994db0b3aae9061037b1c9, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: poster
+    sprite: {fileID: 21300000, guid: cd567cccaa3649b493619afe3507d73d, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: rack
+    sprite: {fileID: 21300000, guid: fd9fce4cdac1480685181551dc67de66, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: shelf
+    sprite: {fileID: 21300000, guid: b0b16708ae1545539e9e61b7d332430c, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: sign_arcade
+    sprite: {fileID: 21300000, guid: 52ecb6f69b3d47f38634ccceccb84db7, type: 3}
+    lit: {fileID: 21300000, guid: 5afef18a8e7546cba0a490a9a8f67588, type: 3}
+    light: {r: 1.0, g: 0.37, b: 0.837, a: 1}
+  - name: sign_casino
+    sprite: {fileID: 21300000, guid: d347fb4abee4412aabbbe600cadff038, type: 3}
+    lit: {fileID: 21300000, guid: 94b1fe2d23654fbdb820452e159125f4, type: 3}
+    light: {r: 1.0, g: 0.361, b: 0.834, a: 1}
+  - name: sign_club
+    sprite: {fileID: 21300000, guid: 0fd64887c4784bb48aeb91ca0a67e35f, type: 3}
+    lit: {fileID: 21300000, guid: fff51e780b204f6bb043f2696d4032c9, type: 3}
+    light: {r: 1.0, g: 0.362, b: 0.834, a: 1}
+  - name: sign_hotel
+    sprite: {fileID: 21300000, guid: b1649f2900214bbd9ff195648c25577e, type: 3}
+    lit: {fileID: 21300000, guid: e3aca4f5dfa94e548e82ee91a1bad8a0, type: 3}
+    light: {r: 1.0, g: 0.372, b: 0.838, a: 1}
+  - name: sign_kiosk
+    sprite: {fileID: 21300000, guid: 069605a100ab4f57a95ff1ad48f04a23, type: 3}
+    lit: {fileID: 21300000, guid: 712678af900e4a5e8696c8c7ad486746, type: 3}
+    light: {r: 1.0, g: 0.351, b: 0.831, a: 1}
+  - name: slot
+    sprite: {fileID: 21300000, guid: 97325ac45d774cbf93756da4c212aeb4, type: 3}
+    lit: {fileID: 21300000, guid: c57eade5838143ec98d6c240ea5bce0f, type: 3}
+    light: {r: 1.0, g: 0.917, b: 0.958, a: 1}
+  - name: sofa
+    sprite: {fileID: 21300000, guid: e8cdb32b286b45d1892eb1f36c397844, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: speaker
+    sprite: {fileID: 21300000, guid: 0a47cf99060a4883bd3d469dc7f1961e, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: spot
+    sprite: {fileID: 21300000, guid: aa2ca126b03240ecafa56bf30ceb2380, type: 3}
+    lit: {fileID: 21300000, guid: 98eb1ace9fa0420684270f5e466b6bb8, type: 3}
+    light: {r: 1.0, g: 0.879, b: 0.92, a: 1}
+  - name: table
+    sprite: {fileID: 21300000, guid: ebfc8141460c406f8bba59f2eb175870, type: 3}
+    lit: {fileID: 0}
+    light: {r: 1, g: 1, b: 1, a: 1}
+  - name: tube
+    sprite: {fileID: 21300000, guid: e34d832c69ec44959e513418dd001d1a, type: 3}
+    lit: {fileID: 21300000, guid: 698c70a3a03a466f8b649046a9746fe6, type: 3}
+    light: {r: 0.592, g: 0.968, b: 1.0, a: 1}
+  - name: tv
+    sprite: {fileID: 21300000, guid: 7e11e059f1774e71ae23e3488fb9b6c7, type: 3}
+    lit: {fileID: 21300000, guid: e754eb092fab485fb4a0573829b7d6b9, type: 3}
+    light: {r: 0.645, g: 0.844, b: 1.0, a: 1}
+  - name: vault
+    sprite: {fileID: 21300000, guid: 2120b5f486f3425a832dcd1dc9fdfbed, type: 3}
+    lit: {fileID: 21300000, guid: 6cc4d763cd9c476c8916607ccfd5aa54, type: 3}
+    light: {r: 0.611, g: 0.971, b: 1.0, a: 1}
+  ladder: {fileID: 21300000, guid: 6b46df14110f4ddd9706a0ded5c6a228, type: 3}

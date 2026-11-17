@@ -5,7 +5,8 @@
 
 Reads the theme's real assets (ground tiles, building tileset, backdrop layers, sky)
 through their .meta GUIDs, sliced sheets included, and draws every building block where
-BuildingBuilder puts it, the X painted on the weak points of a level's first buildings
+BuildingBuilder puts it, the rooms' props, the lit overlays of what glows where the theme
+lights its buildings (the level itself is drawn in daylight), the X painted on the weak points of a level's first buildings
 (`weakMarks` in its spec), and the crew's caravan past the finish. Pickups, spawn, finish
 and segment names are marked.
 The level is cut into strips stacked top to bottom so a long level fits one image.
@@ -29,7 +30,7 @@ STRIP = 70         # world units per strip
 GROUND_DEPTH = 12  # LevelLayout.GroundDepth
 CARAVAN_WIDTH = 6  # LevelLayout.CaravanWidth
 KINDS = ["Brick", "BrickTall", "Concrete", "Wood", "Glass", "Door", "Plank", "MetalTruss", "Beam", "BrickCap",
-         "Support", "Chimney", "Crate", "Car", "Barrel", "Container"]
+         "Support", "Chimney", "Crate", "Car", "Barrel", "Container", "Steel", "Pole"]
 DECOR = ["Lamp", "Fence", "Bush", "Bin", "Sign"]
 PICKUPS = {"Dynamite": ((220, 60, 40), "D"), "Axe": ((90, 160, 230), "A"), "WreckingBall": ((120, 120, 140), "W"),
            "Resurrect": ((90, 210, 110), "R")}
@@ -138,6 +139,7 @@ def load_theme(name):
         kind = int(entry.split("\n", 1)[0])
         theme["tiles"][KINDS[kind]] = {
             "sprites": [sprite(*r) for r in ref(yaml_list(entry, "sprites", 4))],
+            "lit": [sprite(*ref(line)[0]) if ref(line) else None for line in yaml_list(entry, "lit", 4).splitlines()],
             "left": [sprite(*r) for r in ref(yaml_list(entry, "left", 4))],
             "right": [sprite(*r) for r in ref(yaml_list(entry, "right", 4))],
             "tint": color(entry, "tint"),
@@ -150,10 +152,16 @@ def load_theme(name):
         m = re.search(field + r": (\{[^}]*\})", tileset)
         theme[key] = sprite(*ref(m.group(1))[0]) if m and ref(m.group(1)) else None
     theme["interiorTop"] = theme["interiorTop"] or theme["interior"]
-    for key in ("interiorVariants", "interiorTopVariants", "interiorDetails"):
+    for key in ("interiorVariants", "interiorTopVariants"):
         theme[key] = [sprite(*r) for r in ref(yaml_list(tileset, key, 2))]
-    m = re.search(r"interiorDetailChance: ([\d.]+)", tileset)
-    theme["interiorDetailChance"] = float(m.group(1)) if m else 0.0
+    theme["props"] = {}  # name -> (sprite, lit overlay or None)
+    for entry in re.split(r"\n  - name: ", tileset)[1:]:
+        refs = [ref(re.search(key + r": (\{[^}]*\})", entry).group(1)) for key in ("sprite", "lit")]
+        theme["props"][entry.split("\n", 1)[0].strip()] = tuple(sprite(*r[0]) if r else None for r in refs)
+    m = re.search(r"\n  ladder: (\{[^}]*\})", tileset)
+    theme["ladder"] = sprite(*ref(m.group(1))[0]) if m and ref(m.group(1)) else None
+    m = re.search(r"buildingLight: ([\d.]+)", asset)
+    theme["lit"] = bool(m) and float(m.group(1)) > 0
     return theme
 
 
@@ -161,16 +169,6 @@ def yaml_list(text, name, indent):
     """The lines of the list `name:` at the given indent, up to the next key ('' if empty)."""
     m = re.search(rf"^{' ' * indent}{name}:(?: \[\]\n|\n((?:{' ' * indent}- .*\n)*))", text, re.M)
     return m.group(1) or "" if m else ""
-
-
-def cell_hash(x, y, seed):
-    """BuildingTileset.CellHash: which open room cells get a detail, and which one."""
-    u = lambda v: v & 0xFFFFFFFF
-    h = u(u(seed * 73856093) ^ u(x * 19349663) ^ u(y * 83492791))
-    h ^= h >> 13
-    h = u(h * 0x5bd1e995)
-    h ^= h >> 15
-    return h
 
 
 def interior_sprite(theme, storey, under, seed):
@@ -277,27 +275,32 @@ def render(level):
         h = CARAVAN_WIDTH * caravan[0].height / caravan[0].width  # scaled to its columns (LevelBuilder.SpawnCaravan)
         c.draw(caravan, x + caravan[2][0] * CARAVAN_WIDTH, ground[x] + caravan[2][1] * h, size=(CARAVAN_WIDTH, h))
 
-    # Buildings: the back wall (BuildingInterior: one look per storey, details on some room
-    # cells), then each block's visual centred on its rect (BuildingBuilder +
-    # BuildingTileset.Dress: corner variants on the building's edges).
+    # Buildings: the back wall (BuildingInterior: one look per storey) and the props on it,
+    # then each block's visual centred on its rect (BuildingBuilder + BuildingTileset.Dress:
+    # corner variants on the building's edges), each with its glow if it has one and is on.
     for b in level["buildings"]:
         seed = b.get("seed", 0)
         for x, y, under, storey, see_through in b.get("interior", []) if theme["interior"] else []:
             c.draw(interior_sprite(theme, storey, under, seed), b["x"] + x + 0.5, b["y"] + y + 0.5)
-            details = theme["interiorDetails"]
-            if details and not see_through:
-                h = cell_hash(x, y, seed)
-                if (h & 0xFFFF) / 65536 < theme["interiorDetailChance"]:
-                    c.draw(details[(h >> 16) % len(details)], b["x"] + x + 0.5, b["y"] + y + 0.5)
+        for name, x, y, w, h, glows, lift in b.get("props", []):
+            for layer, spr in enumerate(theme["props"].get(name, ())):
+                if layer == 0 or (theme["lit"] and glows):
+                    c.draw(spr, b["x"] + x + w / 2, b["y"] + y + h / 2 + lift)
+        for x, y, ladder_top in b.get("ladders", []):  # Ladder: rung by rung, behind the blocks
+            for cell in range(y, ladder_top):
+                c.draw(theme["ladder"], b["x"] + x + 0.5, b["y"] + cell + 0.5)
         blocks = sorted(b["blocks"], key=lambda k: theme["tiles"].get(k[0], {}).get("order", 0))
-        for kind, bx, by, bw, bh, variant, _, edge in blocks:
+        for kind, bx, by, bw, bh, variant, _, edge, glows in blocks:
             entry = theme["tiles"].get(kind)
             if not entry or not entry["sprites"]:
                 continue
             pool = entry["left"] if edge & 1 and entry["left"] else entry["right"] if edge & 2 and entry["right"] else entry["sprites"]
             spr = pool[variant % len(pool)]
-            c.draw(spr, b["x"] + bx + bw / 2 + entry["offset"][0], b["y"] + by + bh / 2 + entry["offset"][1],
-                   scale=entry["scale"], tint=entry["tint"], rotation=entry["rotation"])
+            at = b["x"] + bx + bw / 2 + entry["offset"][0], b["y"] + by + bh / 2 + entry["offset"][1]
+            c.draw(spr, *at, scale=entry["scale"], tint=entry["tint"], rotation=entry["rotation"])
+            i = variant % len(pool)
+            if theme["lit"] and glows and pool is entry["sprites"] and i < len(entry["lit"]):
+                c.draw(entry["lit"][i], *at, scale=entry["scale"], rotation=entry["rotation"])
         if b.get("mark"):  # the painted X on the weak point (WeakPointMark), in the middle of its block
             wx, wy, ww, wh = b["weak"][:4]
             c.draw(weak_mark(), b["x"] + wx + ww / 2, b["y"] + wy + wh / 2)

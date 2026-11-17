@@ -1,0 +1,24 @@
+{
+  "id": "neon.casino",
+  "width": { "min": 10, "max": 13 },
+  "floors": { "min": 2, "max": 3 },
+  "floorHeight": { "min": 4, "max": 4 },
+  "wall": "Brick",
+  "shutter": "Steel",
+  "tallBrickChance": 0.3,
+  "floor": "Plank",
+  "roof": "BrickCap",
+  "columnSpacing": { "min": 4, "max": 4 },
+  "windowChance": 0.9,
+  "door": true,
+  "chimneyChance": 0.3,
+  "weakPoints": { "min": 1, "max": 5 },
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "ground": ["slot", "bar", "bottles", "vault", "spot", "neon"],
+    "upper": ["slot", "table", "sofa", "spot", "neon"],
+    "roof": "sign_casino",
+    "clutter": 0.8,
+    "lights": 1.0
+  }
+}

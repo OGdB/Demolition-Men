@@ -27,5 +27,8 @@
     "min": 1,
     "max": 5
   },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "any": ["desk", "filing", "plant", "clock", "tube", "board"]
+  }
 }

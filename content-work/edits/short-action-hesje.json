@@ -9,9 +9,9 @@
   "musicVolume": 0.6,
   "segments": [
     {
-      "file": "content-work/media/raw/action-hesje/take1.mp4",
+      "file": "content-work/media/raw/action-hesje/take2.mp4",
       "at": "collapse",
-      "before": 4.0,
+      "before": 5.5,
       "after": 4.0,
       "text": "SAFETY FIRST",
       "zoom": 1.25,

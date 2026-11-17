@@ -17,8 +17,10 @@ Writes  Content/<Theme>/Tiles/GroundTop.asset, GroundFill.asset (Tile, grid coll
 
 Sprite naming: `<kind>`, `<kind>_1`, `<kind>_2`... are a block's variants; `<kind>_l`,
 `<kind>_l_1`... and `<kind>_r`... its variants on the building's left and right edge;
-`interior_1`..., `interior_top_1`... the storey looks and `interior_detail`... the room
-details; `lamp`, `sign_1`... the decor variants.
+`interior_1`..., `interior_top_1`... the storey looks; `prop_<name>` the rooms' props by
+their name in the archetypes' furnish lists; `<sprite>_lit` the glowing pixels of a block
+variant or a prop (its light's colour is their average); `ladder` one cell of a ladder;
+`lamp`, `sign_1`... the decor variants.
 """
 import argparse
 import glob
@@ -51,6 +53,8 @@ KINDS = [
     ("Car", "car"),
     ("Barrel", "barrel"),
     ("Container", "container"),
+    ("Steel", "steel"),
+    ("Pole", "pole"),
 ]
 # DecorKind enum order (Scripts/Demolition/Level/Model/LevelLayout.cs) -> sprite file.
 DECOR = ["lamp", "fence", "bush", "bin", "sign"]
@@ -101,12 +105,48 @@ def sprite_ref(theme_dir, name):
 
 def variants(theme_dir, name):
     """Sprite refs of `name`, `name_1`, `name_2`... as far as the files go (maybe none)."""
-    refs = []
+    return [sprite_ref(theme_dir, n) for n in variant_names(theme_dir, name)]
+
+
+def variant_names(theme_dir, name):
+    """`name`, `name_1`, `name_2`... as far as the files go."""
+    names = []
     for i in range(16):
-        if not os.path.exists(os.path.join(theme_dir, "Sprites", f"{name}{'_' + str(i) if i else ''}.png")):
+        n = f"{name}{'_' + str(i) if i else ''}"
+        if not os.path.exists(os.path.join(theme_dir, "Sprites", n + ".png")):
             break
-        refs.append(sprite_ref(theme_dir, f"{name}{'_' + str(i) if i else ''}"))
-    return refs
+        names.append(n)
+    return names
+
+
+def lit_ref(theme_dir, name):
+    """The sprite's lit overlay, or no sprite."""
+    lit = name + "_lit"
+    return sprite_ref(theme_dir, lit) if os.path.exists(os.path.join(theme_dir, "Sprites", lit + ".png")) else "{fileID: 0}"
+
+
+def light_colour(theme_dir, name):
+    """The colour of a lit overlay's light: the average of its pixels at full brightness."""
+    from PIL import Image
+    raw = Image.open(os.path.join(theme_dir, "Sprites", name + "_lit.png")).convert("RGBA").tobytes()
+    pixels = [raw[i:i + 3] for i in range(0, len(raw), 4) if raw[i + 3]]
+    if not pixels:
+        return "{r: 1, g: 1, b: 1, a: 1}"
+    mean = [sum(p[i] for p in pixels) / len(pixels) for i in range(3)]
+    return colour([round(c / max(max(mean), 1), 3) for c in mean])
+
+
+def props_block(theme_dir):
+    """The tileset's `props` list: every prop_<name>.png, with its overlay and light colour."""
+    out = []
+    for path in sorted(glob.glob(os.path.join(theme_dir, "Sprites", "prop_*.png"))):
+        sprite = os.path.splitext(os.path.basename(path))[0]
+        if sprite.endswith("_lit"):
+            continue
+        lit = lit_ref(theme_dir, sprite)
+        out.append(f"  - name: {sprite[len('prop_'):]}\n    sprite: {sprite_ref(theme_dir, sprite)}\n    lit: {lit}\n"
+                   f"    light: {light_colour(theme_dir, sprite) if lit != '{fileID: 0}' else '{r: 1, g: 1, b: 1, a: 1}'}\n")
+    return "  props:\n" + "".join(out) if out else "  props: []\n"
 
 
 def colour(rgb):
@@ -140,7 +180,9 @@ def tileset(theme, theme_dir):
     for kind, (_, base) in enumerate(KINDS):
         sprites = variants(theme_dir, base)
         if sprites:
-            lines.append(entry(kind, sprites, variants(theme_dir, base + "_l"), variants(theme_dir, base + "_r")))
+            lit = [lit_ref(theme_dir, n) for n in variant_names(theme_dir, base)]
+            lines.append(entry(kind, sprites, variants(theme_dir, base + "_l"), variants(theme_dir, base + "_r"),
+                               lit if any(r != "{fileID: 0}" for r in lit) else ()))
             continue
         kept = re.search(rf"  - kind: {kind}\n(?:    .*\n)*", old)  # hand-drawn in this theme: keep it
         if kept:
@@ -148,8 +190,9 @@ def tileset(theme, theme_dir):
     lines.append(f"  interior: {sprite_ref(theme_dir, 'interior')}\n  interiorTop: {sprite_ref(theme_dir, 'interior_top')}\n")
     lines.append(sprite_list("interiorVariants", variants(theme_dir, "interior")[1:]))
     lines.append(sprite_list("interiorTopVariants", variants(theme_dir, "interior_top")[1:]))
-    lines.append(sprite_list("interiorDetails", variants(theme_dir, "interior_detail")))
-    lines.append("  interiorDetailChance: 0.18\n")
+    lines.append(props_block(theme_dir))
+    if os.path.exists(os.path.join(theme_dir, "Sprites", "ladder.png")):
+        lines.append(f"  ladder: {sprite_ref(theme_dir, 'ladder')}\n")
     write(path, "".join(lines))
     return f"{{fileID: 11400000, guid: {ensure_meta(path, 'asset')}, type: 2}}"
 
@@ -158,10 +201,10 @@ def sprite_list(field, refs):
     return f"  {field}: []\n" if not refs else f"  {field}:\n" + "".join(f"  - {r}\n" for r in refs)
 
 
-def entry(kind, sprites_refs, left=(), right=()):
+def entry(kind, sprites_refs, left=(), right=(), lit=()):
     def lst(name, refs):
         return f"    {name}: []\n" if not refs else f"    {name}:\n" + "".join(f"    - {r}\n" for r in refs)
-    return (f"  - kind: {kind}\n" + lst("sprites", sprites_refs) + lst("left", left) + lst("right", right)
+    return (f"  - kind: {kind}\n" + lst("sprites", sprites_refs) + lst("left", left) + lst("right", right) + lst("lit", lit)
             + "    tint: {r: 1, g: 1, b: 1, a: 1}\n    rotation: 0\n    scale: {x: 1, y: 1}\n"
             "    offset: {x: 0, y: 0}\n    sortingOrder: 0\n")
 

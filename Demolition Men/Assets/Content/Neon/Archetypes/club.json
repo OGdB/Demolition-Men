@@ -27,5 +27,12 @@
     "min": 1,
     "max": 4
   },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "ground": ["bar", "speaker", "djdesk", "bottles", "discoball", "spot", "neon"],
+    "upper": ["sofa", "table", "speaker", "neon", "spot", "poster"],
+    "roof": "sign_club",
+    "clutter": 0.8,
+    "lights": 1.0
+  }
 }

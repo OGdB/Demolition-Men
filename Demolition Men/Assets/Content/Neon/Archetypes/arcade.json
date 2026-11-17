@@ -12,5 +12,13 @@
   "door": true,
   "chimneyChance": 0.9,
   "weakPoints": { "min": 1, "max": 5 },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "any": ["cabinet", "tube", "neon", "poster"],
+    "ground": ["counter", "slot"],
+    "upper": ["sofa", "tv"],
+    "roof": "sign_arcade",
+    "clutter": 0.8,
+    "lights": 1.0
+  }
 }

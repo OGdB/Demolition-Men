@@ -1,7 +1,7 @@
 {
   "id": "action-sloop",
   "level": "port-03",
-  "building": 5,
+  "building": 10,
   "offset": -6,
   "players": 1,
   "upgrades": 5,

@@ -1,7 +1,7 @@
 {
   "id": "cities-town",
   "level": "town-02",
-  "building": 9,
+  "building": 11,
   "offset": -4,
   "upgrades": 5,
   "actions": ["boer"],

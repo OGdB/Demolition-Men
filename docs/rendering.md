@@ -94,8 +94,16 @@ Report each step's result and attach screenshots of step 5."
 
 - R1 profiling measures the worst collapse on a phone with EFFECTS on and off. The result
   decides the phone default, and whether the light texture scale or bloom need to come down.
+- Built 2026-11-17: the buildings' own lights. A theme with `buildingLight` above 0 (Neon: 1)
+  gives every window of a lit storey, every screen, lamp and roof sign a glow: its lit overlay
+  (`<sprite>_lit.png`, only the pixels that give light), drawn with URP's unlit sprite shader at 1.5
+  times its colour, so the bloom picks it up. Up to four per building (two on LOW) also carry a
+  point light at `buildingLight` strength (`BuildingLights.Sockets`: the sign first, then one
+  per storey); a club's disco ball and spots turn through the colours on the beat
+  (`DiscoLight`). When the building comes down its lights die from the break outward
+  (`PowerCut`). EFFECTS off: no point lights, the glows stay. Not profiled on a phone yet: R1
+  should count lights in view on neon-04 (a street of six buildings can hold 24).
 - Possible next lights (not built):
-  - window glow from the back walls at night;
   - fire;
   - a darker Port at dusk;
   - normal maps for the sprites.

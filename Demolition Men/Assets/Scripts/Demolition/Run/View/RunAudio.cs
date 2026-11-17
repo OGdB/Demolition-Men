@@ -4,7 +4,8 @@ namespace Demolition.Run
 {
     /// <summary>
     /// The sound of things breaking: a crunch per destroyed block (pitched by material, a
-    /// clang for metal) and a rumble per collapse scaled by its size. Clips are synthesised
+    /// clang for metal), a rumble per collapse scaled by its size and a zap when a building's
+    /// power fails. Clips are synthesised
     /// once (<see cref="SynthSound"/>); a small pool of 2D sources plays them.
     /// </summary>
     public sealed class RunAudio : MonoBehaviour
@@ -18,6 +19,7 @@ namespace Demolition.Run
         private static AudioClip[] _crunches;
         private static AudioClip _clang;
         private static AudioClip _rumble;
+        private static AudioClip _zap;
         private AudioSource[] _voices;
         private AudioSource _rumbleVoice;
         private float _rumbleSize;
@@ -37,6 +39,7 @@ namespace Demolition.Run
                 };
                 _clang = Clip("Clang", SynthSound.Clang(0.45f, 310f, 4));
                 _rumble = Clip("Rumble", SynthSound.Rumble(1.6f, 5));
+                _zap = Clip("Zap", SynthSound.Noise(0.3f, 6, 0.95f, 0.6f, highPass: true, grain: 0.6f, decay: 5f));
             }
             _rumbleVoice = gameObject.AddComponent<AudioSource>();
             _rumbleVoice.playOnAwake = false;
@@ -52,13 +55,17 @@ namespace Demolition.Run
         {
             DestructionEvents.BlockDestroyed += OnBlockDestroyed;
             DestructionEvents.Collapsed += OnCollapsed;
+            Generation.BuildingLights.PowerWentOut += OnPowerWentOut;
         }
 
         private void OnDisable()
         {
             DestructionEvents.BlockDestroyed -= OnBlockDestroyed;
             DestructionEvents.Collapsed -= OnCollapsed;
+            Generation.BuildingLights.PowerWentOut -= OnPowerWentOut;
         }
+
+        private void OnPowerWentOut(Vector3 position) => Play(_zap, Random.Range(0.9f, 1.1f), 0.7f);
 
         private void OnBlockDestroyed(BlockDestroyedInfo info)
         {

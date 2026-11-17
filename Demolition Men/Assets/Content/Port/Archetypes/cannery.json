@@ -12,5 +12,9 @@
   "door": true,
   "chimneyChance": 0.8,
   "weakPoints": { "min": 1, "max": 5 },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "any": ["machine", "tank", "pipe", "tube", "board"],
+    "ground": ["pallet"]
+  }
 }

@@ -27,5 +27,12 @@
     "min": 1,
     "max": 3
   },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "ground": ["counter", "fridge", "rack", "shelf", "lamp"],
+    "upper": ["pallet", "rack", "board", "lamp"],
+    "roof": "sign_kiosk",
+    "clutter": 0.8,
+    "lights": 1.0
+  }
 }

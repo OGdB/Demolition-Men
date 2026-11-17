@@ -1,7 +1,7 @@
 {
   "id": "night-tnt",
   "level": "neon-02",
-  "building": 10,
+  "building": 13,
   "offset": -5,
   "upgrades": 5,
   "dynamite": 3,

@@ -3,6 +3,29 @@ using UnityEngine;
 
 namespace Demolition.Generation
 {
+    /// <summary>The props of an archetype's rooms, by the names in <see cref="Furnishing"/>'s
+    /// catalog: what a building is for shows in what stands in it.</summary>
+    [Serializable]
+    public sealed class FurnishPlan
+    {
+        /// <summary>Props of every storey.</summary>
+        public string[] any = new string[0];
+        /// <summary>Props of the street-level room only (the shop, the bar, the lobby).</summary>
+        public string[] ground = new string[0];
+        /// <summary>Props of the storeys above it only.</summary>
+        public string[] upper = new string[0];
+        /// <summary>The sign on the roof (<c>sign_club</c>), or none.</summary>
+        public string roof = "";
+        /// <summary>How full the rooms are: the chance a free stretch of floor gets another prop.</summary>
+        public float clutter = 0.6f;
+        /// <summary>Share of storeys with the lights on, where a theme lights its buildings.</summary>
+        public float lights = 0.75f;
+
+        public bool IsEmpty => Length(any) + Length(ground) + Length(upper) == 0 && string.IsNullOrEmpty(roof);
+
+        private static int Length(string[] list) => list != null ? list.Length : 0;
+    }
+
     /// <summary>
     /// Rules for one kind of building, read from JSON (<c>Assets/Content/&lt;theme&gt;/Archetypes</c>)
     /// so people and agents can write them without touching code. Tile names are
@@ -28,6 +51,11 @@ namespace Demolition.Generation
         public float tallBrickChance = 0.3f;
         public string floor = nameof(TileKind.Plank);
         public string roof = nameof(TileKind.Beam);
+        /// <summary>The street wall of the ground storey when it is plated ("Steel"): no door and no
+        /// window in it, the door in the far wall (nobody is locked in), and a window above it on the
+        /// first floor: the way in is up (a ladder, a scaffold; <c>LevelGrammar</c> puts them there).
+        /// Needs <see cref="columnSpacing"/> and two floors. Empty: a wall like the others.</summary>
+        public string shutter = "";
 
         /// <summary>Interior support spacing in cells; 0 = no interior supports.</summary>
         public IntRange columnSpacing = new IntRange(0, 0);
@@ -40,6 +68,9 @@ namespace Demolition.Generation
         /// <see cref="weakPointCascade"/> of the building.</summary>
         public IntRange weakPoints = new IntRange(1, 3);
         public float weakPointCascade = 0.3f;
+
+        /// <summary>What stands in its rooms and on its roof (<see cref="Furnishing"/>).</summary>
+        public FurnishPlan furnish = new FurnishPlan();
 
         public static BuildingArchetype FromJson(string json) => JsonUtility.FromJson<BuildingArchetype>(json);
 
@@ -68,6 +99,8 @@ namespace Demolition.Generation
         public int Bulk => width.max * floors.max * floorHeight.max;
 
         public bool IsTower => id.Contains("tower");
+
+        public bool Plated => !string.IsNullOrEmpty(shutter);
 
         public static TileKind ParseTile(string name, TileKind fallback) =>
             Enum.TryParse(name, true, out TileKind kind) ? kind : fallback;

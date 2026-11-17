@@ -1,7 +1,7 @@
 {
   "id": "action-hesje",
   "level": "town-02",
-  "building": 9,
+  "building": 11,
   "offset": -4,
   "players": 1,
   "upgrades": 5,
@@ -25,31 +25,36 @@
     },
     {
       "p": 1,
-      "do": "action"
-    },
-    {
-      "p": 1,
-      "do": "wait",
-      "seconds": 1.5
-    },
-    {
-      "p": 1,
       "do": "walk",
       "to": "weakpoint"
     },
     {
       "p": 1,
       "do": "hit",
+      "seconds": 2.5
+    },
+    {
+      "p": 1,
+      "do": "action"
+    },
+    {
+      "p": 1,
+      "do": "wait",
+      "seconds": 1.6
+    },
+    {
+      "p": 1,
+      "do": "hit",
       "until": "collapse",
       "cells": 12,
-      "seconds": 14
+      "seconds": 10
     },
     {
       "p": 0,
       "do": "wait",
       "until": "collapse",
       "cells": 12,
-      "seconds": 22
+      "seconds": 24
     },
     {
       "p": 0,

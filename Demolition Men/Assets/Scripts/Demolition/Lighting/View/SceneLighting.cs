@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Demolition.Generation;
 using Demolition.Levels;
 using Demolition.Meta;
 using UnityEngine;
@@ -13,7 +14,8 @@ namespace Demolition.Lighting
     /// URP 2D light and post-processing for every scene, built in code (docs/rendering.md): a
     /// global light for the ambient (the level theme's in a run, plain daylight elsewhere), a
     /// global volume with bloom, vignette and a little contrast, point lights on lamp posts and
-    /// neon signs, a flash for every blast, and headlamps where the theme is dark. The EFFECTS
+    /// neon signs, on the lamps and signs of lit buildings (<see cref="BuildingLights"/>), a
+    /// flash for every blast, and headlamps where the theme is dark. The EFFECTS
     /// setting turns everything but a plain daylight ambient off, for slow phones.
     /// </summary>
     public sealed class SceneLighting : MonoBehaviour
@@ -61,6 +63,7 @@ namespace Demolition.Lighting
             _volume.sharedProfile = PostProfile();
 
             LevelBuilder.DecorSpawned += OnDecor;
+            BuildingLights.Spawned += OnBuildingLights;
             Dynamite.Exploded += OnExploded;
             Profile.SettingsChanged += Apply;
             Apply();
@@ -69,6 +72,7 @@ namespace Demolition.Lighting
         private void OnDestroy()
         {
             LevelBuilder.DecorSpawned -= OnDecor;
+            BuildingLights.Spawned -= OnBuildingLights;
             Dynamite.Exploded -= OnExploded;
             Profile.SettingsChanged -= Apply;
         }
@@ -113,6 +117,19 @@ namespace Demolition.Lighting
                 AddPoint(decor.transform, sr.bounds.center - decor.transform.position, _theme.signColor, _theme.signLight, 3f);
         }
 
+        // Under the glow it belongs to: the building switches the glow off and the light goes with it.
+        private void OnBuildingLights(BuildingLights lights)
+        {
+            if (_theme == null || _theme.buildingLight <= 0f)
+                return;
+            foreach (BuildingLights.Socket socket in lights.Sockets)
+            {
+                Light2D light = AddPoint(socket.At, Vector3.zero, socket.Color, _theme.buildingLight, socket.Radius);
+                if (socket.Disco)
+                    light.gameObject.AddComponent<DiscoLight>();
+            }
+        }
+
         private void OnExploded(Vector3 position)
         {
             if (!Effects)
@@ -135,7 +152,7 @@ namespace Demolition.Lighting
                 Destroy(flash.gameObject);
         }
 
-        private void AddPoint(Transform parent, Vector3 local, Color color, float intensity, float radius)
+        private Light2D AddPoint(Transform parent, Vector3 local, Color color, float intensity, float radius)
         {
             var go = new GameObject("Light");
             go.transform.SetParent(parent, false);
@@ -143,6 +160,7 @@ namespace Demolition.Lighting
             Light2D light = Point(go.transform, color, intensity, radius);
             light.enabled = Effects;
             _points.Add(light);
+            return light;
         }
 
         private static Light2D Point(Transform at, Color color, float intensity, float radius)

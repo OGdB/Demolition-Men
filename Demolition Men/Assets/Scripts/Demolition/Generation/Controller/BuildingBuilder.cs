@@ -8,13 +8,16 @@ namespace Demolition.Generation
     /// <see cref="BuildingBlock"/> per spec block, its bottom-left cell corner at the origin.
     /// In play mode the cells are registered right away (no scan). In edit mode (preview,
     /// bake to prefab) nothing is registered; the building auto-scans its children at Start,
-    /// which the collider layout reproduces exactly.
+    /// which the collider layout reproduces exactly. A furnished building gets its electrics
+    /// (<see cref="BuildingLights"/>): with <c>lit</c> its windows, lamps and signs glow, and one
+    /// with speakers in it plays (<see cref="BuildingMusic"/>).
     /// </summary>
     public static class BuildingBuilder
     {
         private const string BlockLayer = "PlatformsLayer";
 
-        public static DestructibleBuilding Build(BuildingSpec spec, BuildingTileset tileset, Vector3 origin, Transform parent = null)
+        public static DestructibleBuilding Build(BuildingSpec spec, BuildingTileset tileset, Vector3 origin, Transform parent = null,
+            bool lit = false)
         {
             var root = new GameObject(spec.Name);
             root.transform.SetParent(parent, false);
@@ -22,6 +25,8 @@ namespace Demolition.Generation
             var building = root.AddComponent<DestructibleBuilding>();
             bool register = Application.isPlaying;
             int layer = LayerMask.NameToLayer(BlockLayer);
+            BuildingLights power = register && tileset != null && spec.Props.Count > 0 ? BuildingLights.On(building, spec.Seed) : null;
+            BuildingLights lights = lit ? power : null;
 
             var coords = new List<Vector2Int>();
             foreach (SpecBlock b in spec.Blocks)
@@ -32,7 +37,16 @@ namespace Demolition.Generation
                 go.transform.SetParent(root.transform, false);
                 go.transform.localPosition = new Vector3(b.Rect.center.x, b.Rect.center.y, 0f);
                 if (tileset != null)
-                    tileset.Dress(go, b, spec.EdgeOf(b));
+                {
+                    BlockEdge edge = spec.EdgeOf(b);
+                    tileset.Dress(go, b, edge);
+                    Sprite glow = lights != null && spec.Glows(b) ? tileset.LitFor(b, edge) : null;
+                    if (glow != null)
+                    {
+                        Transform visual = go.transform.GetChild(0);
+                        lights.Add(visual, glow, visual.GetComponent<SpriteRenderer>().sortingOrder + 1, b.Rect.center);
+                    }
+                }
 
                 go.AddComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Static;
                 var collider = go.AddComponent<BoxCollider2D>();
@@ -52,8 +66,14 @@ namespace Demolition.Generation
                 block.Initialise(building, coords);
                 building.RegisterBlock(block, coords, b.Anchor);
             }
+            foreach (SpecLadder ladder in spec.Ladders)
+                Ladder.Build(building, ladder, tileset != null ? tileset.Ladder : null);
             if (tileset != null && tileset.Interior != null)
-                BuildingInterior.Build(building, spec, tileset);
+                BuildingInterior.Build(building, spec, tileset, lights);
+            if (lights != null)
+                lights.Ready();
+            if (power != null && spec.Props.Exists(p => p.Name == BuildingMusic.Speaker))
+                BuildingMusic.Play(power, spec.Width);
             return building;
         }
     }

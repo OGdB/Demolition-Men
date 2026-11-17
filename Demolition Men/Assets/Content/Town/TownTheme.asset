@@ -18,6 +18,7 @@ MonoBehaviour:
   tileset: {fileID: 11400000, guid: 799172363abac054faaac92cc47b7816, type: 2}
   archetypes:
   - {fileID: 4900000, guid: 1d6e2b2be2596554caa4c30bd1994758, type: 3}
+  - {fileID: 4900000, guid: 1826a1fb4f5346ecb2dcb40a2fe225fb, type: 3}
   - {fileID: 4900000, guid: 2ab3c29ddc44e0b4fb84a6720c263fc0, type: 3}
   - {fileID: 4900000, guid: c9e97ef69e2473f4e8e1b9be3157a49e, type: 3}
   - {fileID: 4900000, guid: 98238f7ee1ff4338aa5a4200e6993454, type: 3}

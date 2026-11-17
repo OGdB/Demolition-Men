@@ -7,7 +7,10 @@ namespace Demolition
     /// input × (MaxSpeed / 2) every physics tick while below MaxSpeed (mass 3 + linear
     /// damping 1 give the old ramp-up and coast), a jump impulse with heavier
     /// "better-jump" gravity on the way down, and the same animator contract
-    /// (Speed float, InAir bool, sprite flipX).
+    /// (Speed float, InAir bool, sprite flipX). On a ladder (<see cref="Generation.Ladder"/>)
+    /// holding up takes hold of it: no gravity, up and down by the stick on the ladder's centre
+    /// line, off by jumping, at its foot, or sideways once the feet are at its top. The art has
+    /// no climbing clip: the run plays.
     ///
     /// Works with or without an Animator/SpriteRenderer/AudioSource, so the code-built
     /// demo player and the sprite prefabs share this one script.
@@ -26,6 +29,9 @@ namespace Demolition
         [SerializeField] private float fallMultiplier = 3.8f;
         [SerializeField] private float lowJumpMultiplier = 3f;
 
+        [Header("Climbing")]
+        [SerializeField] private float climbSpeed = 5f;
+
         [Header("Ground check")]
         [SerializeField] private LayerMask groundMask = ~0;
 
@@ -34,6 +40,10 @@ namespace Demolition
         [SerializeField] private AudioClip glassBreakSound;
 
         public bool IsGrounded { get; private set; }
+        /// <summary>Holding on to a ladder.</summary>
+        public bool IsClimbing { get; private set; }
+        /// <summary>The ladder in reach, or null.</summary>
+        public Generation.Ladder Ladder { get; private set; }
         public float MaxSpeed { get => maxSpeed; set => maxSpeed = Mathf.Max(0f, value); }
         public float JumpImpulse => jumpImpulse;
         /// <summary>+1 facing right, -1 facing left (same convention as directionCalc).</summary>
@@ -51,6 +61,13 @@ namespace Demolition
         private bool _launched; // jumped or thrown, and still rising
         private float _staggerUntil;
         private ContactFilter2D _groundFilter;
+        private float _gravityScale;
+        private int _ladderTouches; // the player has two colliders: one leaving the ladder isn't both
+
+        /// <summary>The stick this far up takes hold of a ladder: a run with the stick a little up doesn't.</summary>
+        private const float GrabAt = 0.6f;
+        /// <summary>How hard a climber is drawn to the ladder's centre line (speed per unit off it).</summary>
+        private const float CentreGain = 10f;
 
         /// <summary>Seconds a knockback flies uncontrolled before running and swinging take over again.</summary>
         private const float StaggerSeconds = 0.35f;
@@ -103,7 +120,9 @@ namespace Demolition
         // the same Update/FixedUpdate split (and queue/cancel rules) as the original.
         private void Update()
         {
-            if (_input.JumpDown && IsGrounded)
+            // On a keyboard up is the jump key: in reach of a ladder that press is the climb.
+            bool grabbing = Ladder != null && _input.MoveRaw.y > GrabAt;
+            if (_input.JumpDown && (IsGrounded || IsClimbing) && !grabbing)
                 _jumpQueued = true;
             else if (_input.JumpUp)
                 _jumpQueued = false;
@@ -112,15 +131,69 @@ namespace Demolition
         private void FixedUpdate()
         {
             GroundCheck();
+            Climb();
             Run();
             Jump();
+        }
+
+        private void Climb()
+        {
+            float y = _input.MoveRaw.y;
+            bool hold = IsClimbing;
+            if (Ladder == null || Staggered || _input.Suppressed) // an action's frames have the controls
+                hold = false;
+            else if (!hold)
+                hold = y > GrabAt && _rb.position.y < Ladder.Top - 0.05f;
+            else if (IsGrounded && y < -GrabAt)
+                hold = false; // down at its foot
+            Hold(hold);
+            if (!IsClimbing)
+                return;
+            // The feet stop at the floor the ladder leads to: step off sideways from there. Below
+            // it the climber is drawn to the ladder's middle, clear of the wall beside it: pressed
+            // against a wall of stacked blocks, a corner of the body catches on a seam and hangs.
+            float up = y > 0f && _rb.position.y >= Ladder.Top ? 0f : y * climbSpeed;
+            float across = OnRungs
+                ? Mathf.Clamp((Ladder.transform.position.x - _rb.position.x) * CentreGain, -climbSpeed, climbSpeed)
+                : _rb.linearVelocity.x;
+            _rb.linearVelocity = new Vector2(across, up);
+        }
+
+        /// <summary>Climbing with the feet below the ladder's top: sideways input waits.</summary>
+        private bool OnRungs => IsClimbing && Ladder != null && _rb.position.y < Ladder.Top - 0.05f;
+
+        private void Hold(bool hold)
+        {
+            if (hold == IsClimbing)
+                return;
+            IsClimbing = hold;
+            if (hold)
+                _gravityScale = _rb.gravityScale;
+            _rb.gravityScale = hold ? 0f : _gravityScale;
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (!other.TryGetComponent(out Generation.Ladder ladder))
+                return;
+            if (Ladder != ladder)
+                _ladderTouches = 0;
+            Ladder = ladder;
+            _ladderTouches++;
+        }
+
+        // Also sent when the ladder is destroyed under the player.
+        private void OnTriggerExit2D(Collider2D other)
+        {
+            if (Ladder != null && other.gameObject == Ladder.gameObject && --_ladderTouches <= 0)
+                Ladder = null;
         }
 
         private void Run()
         {
             if (Staggered)
                 return;
-            float x = _input.MoveRaw.x;
+            float x = OnRungs ? 0f : _input.MoveRaw.x;
             bool attacking = _input.AttackHeld;
             float cap = attacking ? maxSpeed * attackMoveFactor : maxSpeed;
 
@@ -137,18 +210,22 @@ namespace Demolition
                 _sr.flipX = Facing < 0;
 
             if (_anim != null)
-                _anim.SetFloat(SpeedParam, Mathf.Abs(smoothedX));
+                _anim.SetFloat(SpeedParam, IsClimbing ? Mathf.Max(Mathf.Abs(smoothedX), Mathf.Abs(_input.MoveRaw.y)) : Mathf.Abs(smoothedX));
         }
 
         private void Jump()
         {
-            if (_jumpQueued && IsGrounded)
+            if (_jumpQueued && (IsGrounded || IsClimbing))
             {
+                Hold(false);
                 _jumpQueued = false;
                 PlayClip(jumpSound);
                 _rb.AddForce(new Vector2(0f, jumpImpulse), ForceMode2D.Impulse);
                 LeaveGround();
             }
+
+            if (IsClimbing)
+                return; // the ladder holds them: no gravity to shape
 
             // "Better jump" gravity shaping, unchanged — including the original quirk
             // that the short-hop cut only applies without horizontal input, so running
@@ -171,7 +248,7 @@ namespace Demolition
                 _launched = false;
             IsGrounded = !_launched && _rb.IsTouching(_groundFilter);
             if (_anim != null)
-                _anim.SetBool(InAirParam, !IsGrounded);
+                _anim.SetBool(InAirParam, !IsGrounded && !IsClimbing);
         }
 
         // Original behaviour: glass shatters the moment the player touches it — walking

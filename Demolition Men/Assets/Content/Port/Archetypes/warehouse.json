@@ -27,5 +27,10 @@
     "min": 1,
     "max": 5
   },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "any": ["pallet", "racking", "tube", "board", "pipe"],
+    "ground": ["workbench"],
+    "clutter": 0.5
+  }
 }

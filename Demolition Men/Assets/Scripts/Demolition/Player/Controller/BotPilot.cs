@@ -12,12 +12,13 @@ namespace Demolition
     /// jump in turn). It plays safe the way a player
     /// learns to: dynamite only from outside its blast, at what fists barely dent (supports,
     /// metal) and at gas tanks; never a punch at a gas tank (it jumps them); out from under a
-    /// collapse; and never so far back that the scrolling camera leaves it behind. Once its action
+    /// collapse; up the ladder at a plated wall and in at the window; never a swing at a
+    /// scaffold's legs; and never so far back that the scrolling camera leaves it behind. Once its action
     /// meter is full it fires the action where a player would (<see cref="BotTactics"/>) and
     /// stays out of its strike (the charges' 3-2-1, the crane's pallet). Walking to a
     /// point (<see cref="StopX"/>, the Clip Lab) it only clears the way. Drives the player
     /// through a <see cref="ScriptedInputSource"/>, exactly like a real input device. It logs
-    /// what an agent tuning it needs ("Bot: " lines): every action it fires; every hit it takes,
+    /// what an agent tuning it needs ("Bot: " lines): every action it fires; every ladder it takes and leaves; every hit it takes,
     /// what dealt it and what was around; leaving the screen; its death, why, with its last
     /// six seconds; and how the run ended.
     /// </summary>
@@ -60,6 +61,8 @@ namespace Demolition
         private const float ActionReach = BotTactics.ChargeReach + 1f;
         /// <summary>The crane's pallet lands this far ahead (<see cref="ActionUser"/>'s strike point).</summary>
         private const float CraneReach = 5f;
+        /// <summary>Off the top of a ladder it presses on this long whatever falls: behind it is the drop.</summary>
+        private const float InSeconds = 2.5f;
         private const float SightEvery = 0.15f;
         /// <summary>After calling the crane or setting the charges, it watches for them this long.</summary>
         private const float StrikeWatch = 8f;
@@ -95,6 +98,9 @@ namespace Demolition
         private float _progressTime; // last progress or stuck hop
         private float _stuckSince;   // last progress
         private bool _jumpHeld;
+        private bool _climbing;
+        private float _climbedFrom;
+        private float _inUntil; // off a ladder's top: no stepping back
         private float _backUntil;
         private float _escape = -1f; // which way out from under the debris
         // Stepping back for a run at a throw: back to this x, then in again.
@@ -224,6 +230,44 @@ namespace Demolition
                 }
             }
 
+            // A plated wall: fists get nowhere in the time the camera gives. Up its ladder, then in
+            // at the window like any block in the way. A stick in hand or on its way goes first.
+            float climb = 0f;
+            Generation.Ladder ladder = _motor.Ladder;
+            bool plated = block != null && block.Material == BlockMaterial.Metal && !block.Explosive;
+            if (ladder != null && (plated || _motor.IsClimbing) && now >= _backUntil && !_combat.DynamiteOut
+                && float.IsNegativeInfinity(_runUpFrom) && float.IsPositiveInfinity(StopX))
+            {
+                move = 1f;
+                if (feet.y < ladder.Top - 0.05f)
+                {
+                    climb = 1f;
+                    attack = false;
+                }
+                else
+                {
+                    attack = block != null && !plated;
+                }
+                _progressX = feet.x; // climbing isn't being stuck
+                _progressTime = _stuckSince = now;
+            }
+
+            if (_motor.IsClimbing != _climbing)
+            {
+                _climbing = _motor.IsClimbing;
+                Debug.Log($"Bot: {name} {(_climbing ? "takes" : "leaves")} the ladder at x {feet.x:0.0} y {feet.y:0.0}");
+                if (_climbing)
+                    _climbedFrom = feet.y;
+                else if (feet.y > _climbedFrom + 2f)
+                    _inUntil = now + InSeconds;
+            }
+            if (now < _inUntil && move < 0.5f && float.IsPositiveInfinity(StopX))
+            {
+                // Just in at a window off a ladder: a step back from falling debris is a fall to the street.
+                move = 1f;
+                attack = block != null && !plated;
+            }
+
             // Standing back on purpose, or braking, isn't being stuck.
             if (move < 0.5f || feet.x > _progressX + 0.5f)
             {
@@ -264,11 +308,11 @@ namespace Demolition
             bool jump = now < _jumpUntil;
             if (move == 0f && grounded)
                 move = Brake(0f); // standing means standing: letting go coasts 7 units, over a pit's edge too
-            Status = $"move {move:0} attack {attack} jump {jump} throw {throwNow} head {headroom} pit {pit} gnd {grounded} ahead {(block != null ? $"{block.Material}{(block.Explosive ? "!" : "")} {block.HealthFraction:0.00}" : "-")}"
+            Status = $"move {move:0} climb {climb:0} attack {attack} jump {jump} throw {throwNow} head {headroom} pit {pit} gnd {grounded} ahead {(block != null ? $"{block.Material}{(block.Explosive ? "!" : "")} {block.HealthFraction:0.00}" : "-")}"
                      + $" back {Mathf.Max(0f, _backUntil - now):0.0} runUp {(float.IsNegativeInfinity(_runUpFrom) ? "-" : $"{_runUpFrom:0.0}")} out {_combat.DynamiteOut} tnt {_combat.DynamiteCount}"
                      + $" action {(_action != null ? $"{_action.Info.Id} {_action.Meter.Fraction:0.00}{(fire ? " FIRE" : "")}" : "-")}";
 
-            _source.Next.Move = new Vector2(move, 0f);
+            _source.Next.Move = new Vector2(move, climb);
             _source.Next.AttackHeld = attack;
             _source.Next.DynamitePressed = throwNow;
             _source.Next.ActionPressed = fire;
@@ -645,7 +689,8 @@ namespace Demolition
             foreach (Collider2D hit in Physics2D.OverlapBoxAll(feet + new Vector2(1.1f, 1.1f), new Vector2(0.8f, 1.6f), 0f))
             {
                 var block = hit.GetComponentInParent<BuildingBlock>();
-                if (block != null && !block.IsFalling && !block.IsRubble)
+                // Not a scaffold's leg (walked through, wood): knocked out, its deck comes down on the puncher.
+                if (block != null && !block.IsFalling && !block.IsRubble && !(hit.isTrigger && block.Material == BlockMaterial.Wood))
                     return block;
             }
             return null;

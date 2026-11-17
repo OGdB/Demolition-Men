@@ -35,5 +35,12 @@
     "min": 1,
     "max": 5
   },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "any": ["lamp", "picture"],
+    "ground": ["sofa", "table", "plant", "tv"],
+    "upper": ["bed", "sofa", "table", "tv", "shelf", "plant"],
+    "clutter": 0.6,
+    "lights": 0.6
+  }
 }

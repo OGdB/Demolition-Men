@@ -23,6 +23,11 @@ namespace Demolition.Generation
         Car,
         Barrel,
         Container,
+        // New kinds go last: tilesets and the art tools know a kind by its number.
+        /// <summary>A plated wall (an archetype's <c>shutter</c>): too much for fists in the time the camera gives.</summary>
+        Steel,
+        /// <summary>A scaffold's leg: walked through like a support, and as easily knocked out as a plank.</summary>
+        Pole,
     }
 
     public static class TileKinds
@@ -58,12 +63,14 @@ namespace Demolition.Generation
                 case TileKind.Beam:
                 case TileKind.Crate:
                 case TileKind.Barrel:
+                case TileKind.Pole:
                     return BlockMaterial.Wood;
                 case TileKind.Glass:
                     return BlockMaterial.Glass;
                 case TileKind.MetalTruss:
                 case TileKind.Car:
                 case TileKind.Container:
+                case TileKind.Steel:
                     return BlockMaterial.Metal;
                 case TileKind.Support:
                     return BlockMaterial.Support;
@@ -92,8 +99,8 @@ namespace Demolition.Generation
             }
         }
 
-        /// <summary>Interior supports are trigger colliders: players walk through, hits still land.</summary>
-        public static bool WalkThrough(TileKind kind) => kind == TileKind.Support;
+        /// <summary>Interior supports and scaffold legs are trigger colliders: players walk through, hits still land.</summary>
+        public static bool WalkThrough(TileKind kind) => kind == TileKind.Support || kind == TileKind.Pole;
 
         /// <summary>Health when it differs from the material's default (props), else -1.</summary>
         public static float Health(TileKind kind)
@@ -112,6 +119,6 @@ namespace Demolition.Generation
         /// <summary>Kinds whose sprite leaves part of the cell open (a thin column, a floor
         /// board, a lattice): the building's back wall shows through them.</summary>
         public static bool SeeThrough(TileKind kind) =>
-            kind == TileKind.Support || kind == TileKind.Plank || kind == TileKind.MetalTruss;
+            kind == TileKind.Support || kind == TileKind.Plank || kind == TileKind.MetalTruss || kind == TileKind.Pole;
     }
 }

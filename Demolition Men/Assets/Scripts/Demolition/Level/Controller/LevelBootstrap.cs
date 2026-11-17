@@ -136,7 +136,8 @@ namespace Demolition.Levels
                 var root = new GameObject("Backdrop").transform;
                 for (int i = 0; i < theme.backdrop.Length; i++)
                 {
-                    SpriteRenderer layer = SpawnBackdropLayer(theme.backdrop[i], root, x, ground, i - theme.backdrop.Length - 1);
+                    SpriteRenderer layer = SpawnBackdropLayer(theme.backdrop[i], root, x, ground, i - theme.backdrop.Length - 1,
+                        theme.ambientIntensity < 1f);
                     if (i == 0 && layer != null)
                         SpawnSkyCap(layer, theme.sky);
                 }
@@ -150,9 +151,11 @@ namespace Demolition.Levels
         }
 
         // A tiled strip four wrap periods wide: the view (up to aspect 4 at max zoom) stays
-        // covered however far it has drifted before the next wrap. A single layer (the sun)
-        // is one sprite that never wraps.
-        private static SpriteRenderer SpawnBackdropLayer(BackdropLayer layer, Transform root, float x, float ground, int order)
+        // covered however far it has drifted before the next wrap. A single layer (the sun, the
+        // moon) is one sprite that never wraps and gives its own light: no lamp lights it and the
+        // dark doesn't dim it, and at night it has a halo.
+        private static SpriteRenderer SpawnBackdropLayer(BackdropLayer layer, Transform root, float x, float ground, int order,
+            bool night)
         {
             if (layer.sprite == null)
                 return null;
@@ -177,7 +180,31 @@ namespace Demolition.Levels
             }
             go.transform.position = new Vector3(x, ground + layer.bottom + tile.y * 0.5f, 0f);
             go.AddComponent<ParallaxLayer>().Configure(layer.parallax, period);
+            if (layer.single)
+            {
+                sr.sharedMaterial = UnlitSprite.Material;
+                if (night)
+                    SpawnHalo(sr);
+            }
             return sr;
+        }
+
+        /// <summary>The moon's glow: this many times as wide as the moon, this strong in its middle.</summary>
+        private const float HaloSize = 4f, HaloStrength = 0.3f;
+        private static readonly Color Moonlight = new Color(1f, 0.93f, 0.7f);
+
+        // Behind the moon, at its sorting order: the skyline in front covers both.
+        private static void SpawnHalo(SpriteRenderer moon)
+        {
+            var halo = new GameObject("Halo", typeof(SpriteRenderer));
+            halo.transform.SetParent(moon.transform, false);
+            halo.transform.localPosition = new Vector3(0f, 0f, 0.01f);
+            halo.transform.localScale = Vector3.one * (moon.sprite.bounds.size.x * HaloSize);
+            var sr = halo.GetComponent<SpriteRenderer>();
+            sr.sprite = UnlitSprite.Halo;
+            sr.sharedMaterial = UnlitSprite.Material;
+            sr.color = new Color(Moonlight.r, Moonlight.g, Moonlight.b, HaloStrength);
+            sr.sortingOrder = moon.sortingOrder;
         }
 
         // Above the sky's gradient, in the colour it ends in: the camera's clear colour alone would show

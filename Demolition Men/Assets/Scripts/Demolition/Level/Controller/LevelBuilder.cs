@@ -228,7 +228,7 @@ namespace Demolition.Levels
                 if (placement.Segment != index)
                     continue;
                 DestructibleBuilding building = BuildingBuilder.Build(placement.Spec, _theme.tileset,
-                    transform.position + new Vector3(placement.X, placement.GroundY, 0f), root);
+                    transform.position + new Vector3(placement.X, placement.GroundY, 0f), root, _theme.buildingLight > 0f);
                 building.NetIndex = b;
                 if (placement.IsGate)
                     building.CrumbleDetached = true;

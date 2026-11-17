@@ -7,8 +7,9 @@ namespace Demolition.Generation
     /// <summary>
     /// A generated building's back wall: one sprite per open or see-through cell and behind
     /// every window (<see cref="BuildingSpec.Interior"/>), so rooms read as rooms instead of a
-    /// frame against the sky; one wallpaper per storey, a picture or a shelf on some room cells.
-    /// Cosmetic only: each piece hangs from a block cell and goes when that cell leaves the
+    /// frame against the sky; one wallpaper per storey, and the props the archetype furnishes
+    /// its rooms and its roof with (<see cref="BuildingSpec.Props"/>).
+    /// Cosmetic only: each piece goes with a block cell and goes when that cell leaves the
     /// structure (<see cref="DestructibleBuilding.CellsRemoved"/>): in dust when the block broke,
     /// dropping and fading with the collapse when it came loose.
     /// </summary>
@@ -17,8 +18,8 @@ namespace Demolition.Generation
         /// <summary>Behind the blocks (0); in front of the trench back wall at the same order.</summary>
         private const int SortingOrder = -1;
         private const float Forward = -0.01f;
-        /// <summary>A detail sits a hair before its wall piece (same sorting order).</summary>
-        private const float DetailForward = -0.004f;
+        /// <summary>A prop sits a hair before the wall pieces (same sorting order).</summary>
+        private const float PropForward = -0.004f;
         private const int MaxDustPerRemoval = 8;
         private const float DropSeconds = 0.6f;
         private static readonly Color Dust = new Color(0.45f, 0.42f, 0.4f);
@@ -26,7 +27,9 @@ namespace Demolition.Generation
         private readonly Dictionary<Vector2Int, List<GameObject>> _byHost = new Dictionary<Vector2Int, List<GameObject>>();
         private DestructibleBuilding _building;
 
-        public static void Build(DestructibleBuilding building, BuildingSpec spec, BuildingTileset tileset)
+        /// <summary><paramref name="lights"/>: the building's electrics, to give lit props their
+        /// glow; null where the theme's buildings are dark.</summary>
+        public static void Build(DestructibleBuilding building, BuildingSpec spec, BuildingTileset tileset, BuildingLights lights = null)
         {
             List<InteriorCell> cells = spec.Interior();
             if (cells.Count == 0)
@@ -43,20 +46,31 @@ namespace Demolition.Generation
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = tileset.InteriorFor(cell.Storey, cell.UnderCeiling, spec.Seed);
                 sr.sortingOrder = SortingOrder;
-                Sprite detail = cell.SeeThrough ? null : tileset.InteriorDetail(cell.Cell.x, cell.Cell.y, spec.Seed);
-                if (detail != null)
-                {
-                    var d = new GameObject("Detail", typeof(SpriteRenderer));
-                    d.transform.SetParent(go.transform, false);
-                    d.transform.localPosition = new Vector3(0f, 0f, DetailForward);
-                    d.GetComponent<SpriteRenderer>().sprite = detail;
-                    d.GetComponent<SpriteRenderer>().sortingOrder = SortingOrder;
-                }
-                if (!interior._byHost.TryGetValue(cell.Host, out List<GameObject> hung))
-                    interior._byHost[cell.Host] = hung = new List<GameObject>();
-                hung.Add(go);
+                interior.Hang(cell.Host, go);
+            }
+            foreach (SpecProp prop in spec.Props)
+            {
+                BuildingTileset.Prop look = tileset.PropFor(prop.Name);
+                if (look == null)
+                    continue; // not drawn in this theme
+                var go = new GameObject(prop.Name);
+                go.transform.SetParent(root, false);
+                go.transform.localPosition = new Vector3(prop.Rect.center.x, prop.Rect.center.y + prop.Lift, Forward + PropForward);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = look.sprite;
+                sr.sortingOrder = SortingOrder;
+                interior.Hang(prop.Host, go);
+                if (lights != null && look.lit != null && spec.Glows(prop))
+                    lights.Add(go.transform, prop, look, SortingOrder);
             }
             building.CellsRemoved += interior.OnCellsRemoved;
+        }
+
+        private void Hang(Vector2Int host, GameObject go)
+        {
+            if (!_byHost.TryGetValue(host, out List<GameObject> hung))
+                _byHost[host] = hung = new List<GameObject>();
+            hung.Add(go);
         }
 
         private void OnCellsRemoved(List<Vector2Int> cells)

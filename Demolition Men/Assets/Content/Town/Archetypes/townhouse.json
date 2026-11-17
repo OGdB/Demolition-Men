@@ -12,5 +12,10 @@
   "door": true,
   "chimneyChance": 0.6,
   "weakPoints": { "min": 1, "max": 4 },
-  "weakPointCascade": 0.3
+  "weakPointCascade": 0.3,
+  "furnish": {
+    "any": ["lamp", "picture"],
+    "ground": ["table", "sofa", "clock"],
+    "upper": ["bed", "shelf", "plant"]
+  }
 }

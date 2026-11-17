@@ -19,6 +19,7 @@ MonoBehaviour:
   archetypes:
   - {fileID: 4900000, guid: 1b16f676a6c1465f87d8c19562114662, type: 3}
   - {fileID: 4900000, guid: c2b4239b7923488b834135de58c66869, type: 3}
+  - {fileID: 4900000, guid: 0934a136979d4a118ebc44a1f813be10, type: 3}
   - {fileID: 4900000, guid: 0911c41c827348ddb02242e36c27e7e0, type: 3}
   - {fileID: 4900000, guid: f64afad17be34dffb86f39465ce91d71, type: 3}
   - {fileID: 4900000, guid: 6fd08d2eaf0d4a3cb4e2ec6bb7dfe4a7, type: 3}
@@ -62,6 +63,7 @@ MonoBehaviour:
   lampLight: 1
   signLight: 1.2
   signColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  buildingLight: 1
   headlamps: 1
   headlampRange: 8
   decor:

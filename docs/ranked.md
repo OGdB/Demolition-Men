@@ -115,7 +115,7 @@ blocks.
 | More damage per hit | Each damage against its cause's maximum: the weapon's profile for that material, the headbutt's at full speed, the blast's, the action's; times the buffs active then (coffee, the partner's lean). One hit per block per swing, blast, slam ring, intern's punch and crumble tick. |
 | Hitting faster | Swings per player against the weapon's clip (fists every 0.2 s, the axe and the ball every 0.44 s; the coffee's 1.5×); the intern on the punching clip's beat; crumble ticks 0.25 s apart. |
 | Hitting from afar or through walls | The swing's centre within reach of the player's pose at that time; the block within the swing's radius of it. |
-| Teleporting, flying, a speed hack | The pose track against the run speed (with the coffee), the jump (`JumpProfile`, as `TraversalValidator` uses it: no rising longer than a jump lasts, no higher than a jump above the tallest thing around), knockback only after a blast nearby; never inside a standing block. |
+| Teleporting, flying, a speed hack | The pose track against the run speed (with the coffee), the jump (`JumpProfile`, as `TraversalValidator` uses it: no rising longer than a jump lasts, except at climbing speed in reach of one of the level's ladders (`RunVerifier.OnLadder`, since rules version 3), no higher than a jump above the tallest thing around), knockback only after a blast nearby; never inside a standing block. |
 | Finishing too soon | The finish no sooner than running full speed from spawn to finish takes, and the pose there. |
 | A better time | The log's time is the finish's: it's what the board sorts ties by and shows. |
 | A log made up on the spot | A run can't be longer than the time since its attempt began (the game's clock only runs behind the real one). |

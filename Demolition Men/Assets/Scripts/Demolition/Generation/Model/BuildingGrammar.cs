@@ -6,7 +6,7 @@ namespace Demolition.Generation
     /// <summary>
     /// Archetype + seed → <see cref="BuildingSpec"/>. A building is a stack of storeys:
     /// two walls (windows, a door at street level), a floor slab between storeys with a
-    /// stairwell gap players can jump through, optional interior supports, optional
+    /// stairwell gap and a ladder up it, optional interior supports, optional
     /// setback (upper storeys narrower, resting on the slab), then a roof and maybe a
     /// chimney. Everything on the ground row is an anchor.
     ///
@@ -59,7 +59,8 @@ namespace Demolition.Generation
             TileKind wall = BuildingArchetype.ParseTile(a.wall, TileKind.Brick);
             TileKind floor = BuildingArchetype.ParseTile(a.floor, TileKind.Plank);
             TileKind roof = BuildingArchetype.ParseTile(a.roof, TileKind.Beam);
-            bool doorLeft = rng.Chance(0.5f);
+            bool doorLeft = rng.Chance(0.5f) && !a.Plated;
+            TileKind shutter = BuildingArchetype.ParseTile(a.shutter, wall);
 
             int prevLeft = 0, prevRight = width - 1;
             List<int> prevSupports = SupportXs(spacing, prevLeft, prevRight);
@@ -80,10 +81,26 @@ namespace Demolition.Generation
                     int from = Mathf.Min(left, prevLeft), to = Mathf.Max(right, prevRight);
                     int gap = Stairwell(prevSupports, supports, from, to, left, right, s % 2 == 1);
                     Slab(spec, floor, y0, from, to, left, right, gap);
+                    if (gap != int.MinValue)
+                    {
+                        // A ladder up the gap, fixed to the slab's edge beside it: in the gap's left
+                        // cell, or its right one when the left would stand over the stairwell below
+                        // (over the ladder that comes up there, when the two stairwells line up).
+                        int foot = s == 1 ? 0 : y0 - storey + 1;
+                        bool far = foot > 0 && spec.IsFree(gap, foot - 1)
+                            && (!spec.IsFree(gap + 1, foot - 1) || spec.Ladders[spec.Ladders.Count - 1].X == gap + 1);
+                        spec.Ladders.Add(new SpecLadder
+                        {
+                            X = far ? gap + 1 : gap, Y = foot, Top = y0 + 1, Host = new Vector2Int(far ? gap + 2 : gap - 1, y0),
+                        });
+                    }
                 }
                 bool door = s == 0 && a.door;
                 float windows = s == 0 || spacing > 0 ? a.windowChance : 0f;
-                Wall(spec, rng, wall, left, y0, storey, door && doorLeft, windows, a.tallBrickChance);
+                // A plated front: no way in at street level, and always a window over it.
+                bool front = a.Plated && s == 0;
+                Wall(spec, rng, front ? shutter : wall, left, y0, storey, door && doorLeft,
+                    front ? 0f : a.Plated && s == 1 ? 1f : windows, a.tallBrickChance);
                 Wall(spec, rng, wall, right, y0, storey, door && !doorLeft, windows, a.tallBrickChance);
                 foreach (int x in supports)
                     for (int y = s == 0 ? 0 : y0 + 1; y < y0 + storey; y++)
@@ -100,10 +117,16 @@ namespace Demolition.Generation
                 int x = rng.Range(prevLeft + 1, prevRight - 1);
                 int height = rng.Range(1, 2);
                 for (int i = 0; i < height; i++)
-                    spec.TryPlace(TileKind.Chimney, x, roofY + 1 + i);
+                    spec.TryPlace(TileKind.Chimney, x, roofY + 1 + i, Look(seed, x, roofY) % 3);
             }
+            Furnishing.Furnish(spec, a.furnish);
             return spec;
         }
+
+        // A sprite variant for a block the random stream has no number for: one more draw
+        // would change every building this grammar has ever made.
+        private static int Look(int seed, int x, int y) =>
+            (int)(unchecked((uint)(seed * 31 + x * 17 + y) * 2654435761u) >> 24);
 
         private static void Wall(BuildingSpec spec, Pcg32 rng, TileKind kind, int x, int y0, int storey, bool door,
             float windowChance, float tallBrickChance)
@@ -112,7 +135,11 @@ namespace Demolition.Generation
             if (door)
                 spec.TryPlace(TileKind.Door, x, y0);
             else if (rng.Chance(windowChance))
-                spec.TryPlace(TileKind.Glass, x, y0 + 1);
+            {
+                // Variants in a tileset's order: a plain pane, blinds, boarded up (the rarest).
+                int look = Look(spec.Seed, x, y0) % 20;
+                spec.TryPlace(TileKind.Glass, x, y0 + 1, look < 10 ? 0 : look < 17 ? 1 : 2);
+            }
 
             for (int y = y0; y <= top; y++)
             {

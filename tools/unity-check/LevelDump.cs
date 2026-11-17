@@ -9,7 +9,9 @@ using Demolition.Levels;
 /// Assets/Content as the layout the game generates from it (ground, buildings block by
 /// block, pickups, segments), one JSON per level, for tools/artpipe/level_preview.py. Each
 /// building's `weak` is its weak point (BuildingValidator.WeakPoint): [x, y, w, h, share of the building
-/// it brings down]; `mark` is true where the game paints its X on that block (LevelLayout.WeakMark).
+/// it brings down]; `mark` is true where the game paints its X on that block (LevelLayout.WeakMark);
+/// `ladders` are [x, y, top] (SpecLadder); a block's last number and a prop's ([name, x, y, w, h, glows, lift]) say whether its lit overlay shows
+/// where the theme lights its buildings (BuildingSpec.Glows).
 /// Run from the Unity project folder, like the tests.
 /// </summary>
 public static class LevelDump
@@ -62,7 +64,7 @@ public static class LevelDump
             for (int k = 0; k < b.Spec.Blocks.Count; k++)
             {
                 SpecBlock block = b.Spec.Blocks[k];
-                s.Append(k > 0 ? "," : "").Append($"[\"{block.Kind}\",{block.Rect.x},{block.Rect.y},{block.Rect.width},{block.Rect.height},{block.Variant},{(TileKinds.WalkThrough(block.Kind) ? 1 : 0)},{(int)b.Spec.EdgeOf(block)}]");
+                s.Append(k > 0 ? "," : "").Append($"[\"{block.Kind}\",{block.Rect.x},{block.Rect.y},{block.Rect.width},{block.Rect.height},{block.Variant},{(TileKinds.WalkThrough(block.Kind) ? 1 : 0)},{(int)b.Spec.EdgeOf(block)},{(b.Spec.Glows(block) ? 1 : 0)}]");
             }
             s.Append("],\"interior\":[");
             List<InteriorCell> interior = b.Spec.Interior();
@@ -73,6 +75,16 @@ public static class LevelDump
             s.Append("],\"weak\":").Append(weak == null ? "null"
                 : $"[{weak.Rect.x},{weak.Rect.y},{weak.Rect.width},{weak.Rect.height},{F(cascade)}]");
             s.Append(",\"mark\":").Append(layout.WeakMark(i) != null ? "true" : "false");
+            s.Append(",\"ladders\":[");
+            for (int k = 0; k < b.Spec.Ladders.Count; k++)
+                s.Append(k > 0 ? "," : "").Append($"[{b.Spec.Ladders[k].X},{b.Spec.Ladders[k].Y},{b.Spec.Ladders[k].Top}]");
+            s.Append("],\"props\":[");
+            for (int k = 0; k < b.Spec.Props.Count; k++)
+            {
+                SpecProp prop = b.Spec.Props[k];
+                s.Append(k > 0 ? "," : "").Append($"[\"{prop.Name}\",{prop.Rect.x},{prop.Rect.y},{prop.Rect.width},{prop.Rect.height},{(b.Spec.Glows(prop) ? 1 : 0)},{F(prop.Lift)}]");
+            }
+            s.Append("]");
             s.Append("}");
         }
         s.Append("],\"decor\":[");

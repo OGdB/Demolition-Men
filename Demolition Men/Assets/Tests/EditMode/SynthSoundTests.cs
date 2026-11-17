@@ -35,6 +35,17 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void ClubLoop_IsOneBar_AndStaysInRange()
+        {
+            float[] loop = SynthSound.ClubLoop();
+            Assert.AreEqual((int)(60f / SynthSound.ClubBpm * SynthSound.SampleRate) * 4, loop.Length, "four beats");
+            float peak = 0f;
+            foreach (float v in loop)
+                peak = System.Math.Max(peak, System.Math.Abs(v));
+            Assert.That(peak, Is.InRange(0.5f, 1f));
+        }
+
+        [Test]
         public void SameSeed_SameSound() =>
             Assert.AreEqual(SynthSound.Crunch(0.1f, 0.5f, 7), SynthSound.Crunch(0.1f, 0.5f, 7));
     }
