@@ -289,7 +289,13 @@ namespace Demolition
                 unstickJump = phase >= 1.8f && phase < 1.9f;
             }
             if (attack && move >= 0f && _motor.Facing < 0)
-                attack = false; // a swing locks the facing: turn round first, or it punches the air behind
+            {
+                // A swing locks the facing: turn round first, or it punches the air behind. Standing
+                // (a support it stands to finish) the turn needs the stick: still, it would face back
+                // after its burp's step back for good, wait there and never swing.
+                attack = false;
+                move = Mathf.Max(move, Face);
+            }
 
             bool grounded = _motor.IsGrounded;
             bool pit = PitAhead(feet);

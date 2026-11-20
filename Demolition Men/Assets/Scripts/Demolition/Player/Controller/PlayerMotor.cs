@@ -51,6 +51,9 @@ namespace Demolition
 
         private static readonly int SpeedParam = Animator.StringToHash("Speed");
         private static readonly int InAirParam = Animator.StringToHash("InAir");
+        /// <summary>Slower than this (units/s) the legs don't run, whatever the stick says: pushing
+        /// against a wall or rubble, or a nudge that only turns the player (a bot's facing).</summary>
+        private const float RunsFrom = 0.5f;
 
         private PlayerInputReader _input;
         private Rigidbody2D _rb;
@@ -192,7 +195,13 @@ namespace Demolition
         private void Run()
         {
             if (Staggered)
+            {
+                Animate(0f, 0f); // thrown: no running, and the legs don't keep the last input's run
                 return;
+            }
+            // What the last physics step moved: an impulse shows in the velocity at once, so read
+            // after it a player pushing against a wall would seem to run.
+            float moving = Mathf.Abs(_rb.linearVelocity.x);
             float x = OnRungs ? 0f : _input.MoveRaw.x;
             bool attacking = _input.AttackHeld;
             float cap = attacking ? maxSpeed * attackMoveFactor : maxSpeed;
@@ -209,8 +218,16 @@ namespace Demolition
             if (_sr != null)
                 _sr.flipX = Facing < 0;
 
-            if (_anim != null)
-                _anim.SetFloat(SpeedParam, IsClimbing ? Mathf.Max(Mathf.Abs(smoothedX), Mathf.Abs(_input.MoveRaw.y)) : Mathf.Abs(smoothedX));
+            Animate(smoothedX, moving);
+        }
+
+        // The run cycle plays while the player runs: the stick's push, but only once the body moves.
+        private void Animate(float smoothedX, float moving)
+        {
+            if (_anim == null)
+                return;
+            float run = moving < RunsFrom ? 0f : Mathf.Abs(smoothedX);
+            _anim.SetFloat(SpeedParam, IsClimbing ? Mathf.Max(Mathf.Abs(smoothedX), Mathf.Abs(_input.MoveRaw.y)) : run);
         }
 
         private void Jump()
