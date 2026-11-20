@@ -433,6 +433,61 @@ made for it); Neon reads dark (§4.1); the takes of §2.5 (phone, online pair, g
 hooks of `hit-plan.md` §4.3; a run within par for rainbow stars; the headbutt no longer brings the
 wall down on the player.
 
+### 4.5 Re-recorded by the agent (2026-11-20)
+
+Everything again, for the game as it is now: lit Neon buildings (Neon reads well now), furnished
+rooms, the crew's looks, the ladders and plated buildings. The takes of 11-17 are in
+`media/archive-2026-10-23/`, takes turned down in `media/rejected/`.
+- **The stick in the blast.** A gas tank or a demolition charge showed a dynamite stick for a few
+  frames before its explosion: `Explosion.controller` blended out of the stick's state on exit
+  time. The transition now has no exit time and no blend. Every take with a blast came after it.
+- **Shots changed:** co-op and screenshot 3 moved to `port-04` #7 (offset -5, P1 walks to 11):
+  the cannery start had the players inside the next building. `action-sloop` jumps right before
+  firing (the charges went on a crate behind the player). `climb-bank` is new: the bot up the
+  ladder of the plated bank on `town-02` (#8) and in at the window, as b-roll. The painted X stays
+  out of every shot (`LevelBuilder` skips it in the Clip Lab: footage shows the buildings bare),
+  so there is no shot of it. The headbutt Short and GIF are gone (a headbutt no longer brings
+  anything down); the gas chain is GIF 3 now.
+- **Cut lists:** `trailer.json` (35 s); `apple-preview-iphone.json` and `apple-preview-ipad.json`
+  (28 s, 30 fps, 1920×886 and 1600×1200, AAC stereo: what App Store Connect takes); the ads videos
+  `ad-16x9`, `ad-9x16` and `ad-1x1` (15 s). `trailer-draft.json` is gone.
+- **Stills:** the menus from a temporary profile (Town cleared, two of it within par, Port begun,
+  $2,450, a few looks owned and worn). Screenshot 6 shows the job sheets, the rainbow stars and
+  RANKED; 7 is the bot's finish on Main Street (three gold stars, 95%, first clear, the job
+  sheet, SHARE); 8 is now the looks shop, DRESS UP YOUR CREW (`stills/shop.png`, the skill shop,
+  and `stills/actions.png` are there if you prefer one of them).
+- **App Store screenshots:** `"apple": true` in `store.json` makes `store/apple-iphone/`
+  (2868×1320, the 6.9" iPhone) and `store/apple-ipad/` (2752×2064, the 13" iPad) beside the
+  Play ones: the same caption and frame, the margins the shape leaves filled with the frame
+  blurred and dark.
+- **Python:** `media.py` draws its text through `tools/artpipe/brand.py`, which needs numpy;
+  Fedora's system Python has none, so run it from a venv with Pillow and numpy.
+
+**On disk:** 22 Shorts, 3 GIFs, the trailer, both Apple previews, the three ads videos, 8
+screenshots with their ads images and both Apple sets, 12 `broll-*` runs.
+
+**Still open:** `short-4-online` (a new phone + PC pair) and `short-8-dev-weak-point` (a new
+Building Lab still, `stills/lab-rowhouse-marked.png`); the other takes of §2.5; a run within
+par; the butt slam.
+
+**Running on the spot, fixed.** The bot often ran on the spot after its action or a stick of
+dynamite: it only turns to face the building (a stick push too small to move it) or pushes
+against a wall, and the animator's `Speed` followed the stick. `PlayerMotor` now runs the legs
+only while the body moves (0.5 units/s, read before the step's push, since an impulse shows in
+the velocity at once), and not while a blast throws the player. Measured in bot runs of
+`town-01`, `town-05` and `port-01`: the run cycle on a standing player went from 1.6–7.0 s per
+level (3.2 s at a stretch) to under 0.8 s, never more than 0.15 s at a time. All 12 `broll-*`
+were recorded again after it; the old takes are in `media/rejected/broll-running-in-place/`.
+The first new take of `town-01` hung: after its burp's step back the bot faced left in front of a
+support it stood to finish, and `BotPilot` holds a swing until it faces ahead but gave it no
+stick to turn with, so it stood there (`media/rejected/broll-bot-stuck/`). It now turns with the
+`Face` nudge. The first new take of `neon-04` failed after 32 s: below the street, a pit ahead
+and a ceiling too low to jump under, the bot waits for headroom (`PitAhead` && !`Headroom`
+brakes), nothing gave it any, and the camera's edge took it out
+(`media/rejected/broll-bot-died/`; the take after it finished, 95 s). That wait is still in
+`BotPilot`. The 36 highlights (`raw/broll-*/take1-hl1..3.mp4`, the three biggest collapses of
+each run) are cut again from the new takes.
+
 ## 5. Decisions for the start of the session
 
 | # | Question | Recommendation |

@@ -20,7 +20,8 @@ A cut list (edit) has "out", "size", "fps", optional "music", "musicStart", "mus
                                                   (a leg with "x", "y", "zoom" is cropped to fill its half)
   {"image": png, "seconds": d}                    a card (the logo at the end)
 and any of them may carry "text"; a stretch of a take may carry "zoom" (above 1: closer) with "x" and
-"y" (the crop's centre, shares of the width and height). Store screenshots (store) take "out", "ads" and "screenshots":
+"y" (the crop's centre, shares of the width and height). Store screenshots (store) take "out", "ads" (the ads
+images too), "apple" (App Store sizes too, in apple-iphone/ and apple-ipad/) and "screenshots":
 [{"image", "name", "caption", "alt"}].
 """
 import argparse
@@ -31,7 +32,7 @@ import subprocess
 import sys
 import tempfile
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 sys.dont_write_bytecode = True  # no __pycache__ next to the tools
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
@@ -40,6 +41,8 @@ from brand import FONT, INK, hazard_tape, wordmark  # noqa: E402
 
 ASPECTS = {"9x16": (1080, 1920), "16x9": (1920, 1080), "1x1": (1080, 1080)}
 ADS = {"1x1": (1200, 1200), "191x100": (1200, 628), "4x5": (1200, 1500)}
+# App Store screenshots in landscape: the 6.9" iPhone and the 13" iPad (the sizes that cover the rest).
+APPLE = {"iphone": (2868, 1320), "ipad": (2752, 2064)}
 # H.264 encoders in the order tried: x264, else the GPU's (Fedora's ffmpeg leaves x264 out).
 H264 = [["-c:v", "libx264", "-crf", "17", "-preset", "slow"],
         ["-c:v", "h264_nvenc", "-preset", "p7", "-tune", "hq", "-rc", "vbr", "-cq", "19", "-b:v", "0", "-profile:v", "high"],
@@ -305,20 +308,8 @@ def cmd_store(a):
         if not os.path.exists(path(shot["image"])):  # a still that comes later (a run of yours, a menu)
             print(f"{shot['name']}: no {shot['image']} yet, skipped")
             continue
-        src = Image.open(path(shot["image"])).convert("RGB")
-        src = crop_image(src, 16 / 9)
-        w, h = src.size
-        # Caption on an ink nameplate across the top (14%: Play allows 20%), hazard tape under
-        # it, and the whole game frame below, HUD included.
-        band = int(h * 0.14)
-        tape = max(4, int(h * 0.012))
-        sheet = Image.new("RGB", (w, h), BACKGROUND)
-        game_h = h - band - tape
-        game = src.resize((int(w * game_h / h), game_h), Image.LANCZOS)
-        sheet.paste(game, ((w - game.width) // 2, band + tape))
-        sheet.paste(hazard_tape(w, tape).convert("RGB"), (0, band))
-        text = caption(shot["caption"], int(w * 0.9), int(band * 0.7))
-        sheet.paste(text, ((w - text.width) // 2, (band - text.height) // 2), text)
+        src = crop_image(Image.open(path(shot["image"])).convert("RGB"), 16 / 9)
+        sheet = store_sheet(src, shot["caption"], *src.size)
         out = os.path.join(out_dir, shot["name"] + ".png")
         sheet.save(out)
         print(out)
@@ -328,8 +319,36 @@ def cmd_store(a):
             for name, (aw, ah) in ADS.items():
                 ad = crop_image(Image.open(path(shot["image"])).convert("RGB"), aw / ah).resize((aw, ah), Image.LANCZOS)
                 ad.save(os.path.join(out_dir, f"{shot['name']}-ad-{name}.png"))
+        if spec.get("apple"):
+            for name, (aw, ah) in APPLE.items():
+                os.makedirs(os.path.join(out_dir, "apple-" + name), exist_ok=True)
+                store_sheet(src, shot["caption"], aw, ah, fill=True).save(os.path.join(out_dir, "apple-" + name, shot["name"] + ".png"))
     if alt:
         open(os.path.join(out_dir, "alt.txt"), "w").write("\n".join(alt) + "\n")
+
+
+def store_sheet(src, text, w, h, fill=False):
+    """Caption on an ink nameplate across the top (14%: Play allows 20%), hazard tape under it,
+    and the whole game frame below, HUD included, on ink; with fill (Apple's sizes, whose shape
+    leaves wide margins) the frame itself fills the margins, blurred and dark."""
+    band = int(h * 0.14)
+    tape = max(4, int(h * 0.012))
+    sheet = Image.new("RGB", (w, h), BACKGROUND)
+    area_h = h - band - tape
+    scale = min(w / src.width, area_h / src.height)
+    game = src.resize((int(src.width * scale), int(src.height * scale)), Image.LANCZOS)
+    if fill:
+        cover = max(w / src.width, area_h / src.height)
+        fill = src.resize((int(src.width * cover) + 1, int(src.height * cover) + 1), Image.LANCZOS)
+        fill = fill.crop(((fill.width - w) // 2, (fill.height - area_h) // 2,
+                          (fill.width - w) // 2 + w, (fill.height - area_h) // 2 + area_h))
+        fill = fill.filter(ImageFilter.GaussianBlur(h * 0.02)).point(lambda v: int(v * 0.35))
+        sheet.paste(fill, (0, band + tape))
+    sheet.paste(game, ((w - game.width) // 2, band + tape + (area_h - game.height) // 2))
+    sheet.paste(hazard_tape(w, tape).convert("RGB"), (0, band))
+    label = caption(text, int(w * 0.9), int(band * 0.7))
+    sheet.paste(label, ((w - label.width) // 2, (band - label.height) // 2), label)
+    return sheet
 
 
 def crop_image(im, aspect):

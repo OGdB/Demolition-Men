@@ -1,0 +1,26 @@
+{
+  "id": "climb-bank",
+  "level": "town-02",
+  "building": 8,
+  "offset": -5,
+  "upgrades": 5,
+  "camera": {
+    "mode": "frame",
+    "pad": 2
+  },
+  "width": 1920,
+  "height": 1920,
+  "length": 12,
+  "steps": [
+    {
+      "p": 1,
+      "do": "bot",
+      "seconds": 8
+    },
+    {
+      "p": 0,
+      "do": "wait",
+      "seconds": 9
+    }
+  ]
+}

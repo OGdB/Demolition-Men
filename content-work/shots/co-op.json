@@ -1,8 +1,8 @@
 {
   "id": "co-op",
-  "level": "port-01",
+  "level": "port-04",
   "players": 2,
-  "building": 8,
+  "building": 7,
   "offset": -5,
   "upgrades": 5,
   "camera": {

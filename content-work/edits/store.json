@@ -1,12 +1,13 @@
 {
   "out": "content-work/media/store",
   "ads": true,
+  "apple": true,
   "screenshots": [
     {
-      "image": "content-work/media/raw/store-1-one-hit/take1-a.png",
+      "image": "content-work/media/raw/store-1-one-hit/take2-c.png",
       "name": "01-weak-point",
       "caption": "FIND THE WEAK POINT",
-      "alt": "A muscled demolition man punches a support column and a red brick row house collapses into dust."
+      "alt": "A muscled demolition man knocks out a support column and a furnished row house flies apart into bricks and beams."
     },
     {
       "image": "content-work/media/raw/store-4-tower/take1-a.png",
@@ -15,10 +16,10 @@
       "alt": "A tall dockside crane tower collapses onto the street."
     },
     {
-      "image": "content-work/media/raw/store-2-co-op/take1-a.png",
+      "image": "content-work/media/raw/store-2-co-op/take2-c.png",
       "name": "03-co-op",
       "caption": "WRECK IT WITH A FRIEND",
-      "alt": "Two demolition men smash a building from both sides while bricks and glass rain down."
+      "alt": "Two demolition men wreck a dockside cannery together while its walls and floors come down around them."
     },
     {
       "image": "content-work/media/raw/store-3-night-tnt/take1-a.png",
@@ -27,7 +28,7 @@
       "alt": "A stick of dynamite explodes against a neon-lit building at night and the floors above start to fall."
     },
     {
-      "image": "content-work/media/raw/store-5-wrecking-ball/take1-a.png",
+      "image": "content-work/media/raw/store-5-wrecking-ball/take1-b.png",
       "name": "05-wrecking-ball",
       "caption": "SWING THE WRECKING BALL",
       "alt": "A wrecking ball swings through the glass front of a neon arcade."
@@ -36,19 +37,19 @@
       "image": "content-work/media/stills/level-select.png",
       "name": "06-cities",
       "caption": "3 CITIES + A DAILY STREET",
-      "alt": "The level select with three cities, Town, Port and Neon, each with four streets and a daily street."
+      "alt": "The level select with three cities, Town, Port and Neon City, four streets each, plus a daily street and a ranked board."
     },
     {
       "image": "content-work/media/stills/results.png",
       "name": "07-three-stars",
       "caption": "WRECK IT ALL FOR 3 STARS",
-      "alt": "The results screen after a street: three gold stars for 97% demolition, the score, cash earned and the job sheet."
+      "alt": "The results screen after a street: three gold stars for 95% demolition, a first clear, the score, cash earned and the job sheet."
     },
     {
-      "image": "content-work/media/stills/shop.png",
-      "name": "08-shop",
-      "caption": "UPGRADE YOUR CREW",
-      "alt": "The skill shop: upgrades for power, health, speed, dynamite and tools."
+      "image": "content-work/media/stills/looks.png",
+      "name": "08-looks",
+      "caption": "DRESS UP YOUR CREW",
+      "alt": "The crew looks shop: traffic signs for heads, outfits, chains, bracelets and tattoos, shown on both demolition men."
     }
   ]
 }

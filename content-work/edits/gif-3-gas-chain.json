@@ -1,0 +1,16 @@
+{
+  "out": "content-work/media/edits/gif-3-gas-chain.mp4",
+  "size": [
+    1280,
+    720
+  ],
+  "fps": 60,
+  "segments": [
+    {
+      "file": "content-work/media/raw/gas-chain/take1.mp4",
+      "at": "blast",
+      "before": 0.6,
+      "after": 4.0
+    }
+  ]
+}

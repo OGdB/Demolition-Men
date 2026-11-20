@@ -35,13 +35,14 @@
     },
     {
       "p": 1,
-      "do": "walk",
-      "x": -5.5
+      "do": "jump",
+      "x": 1,
+      "seconds": 0.15
     },
     {
       "p": 1,
       "do": "wait",
-      "seconds": 0.4
+      "seconds": 0.8
     },
     {
       "p": 1,
