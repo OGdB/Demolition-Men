@@ -111,13 +111,18 @@ namespace Demolition.Generation
             }
 
             int roofY = floors * storey;
-            Roof(spec, roof, prevLeft, prevRight, roofY);
+            Roof(spec, roof, wall, prevLeft, prevRight, roofY);
             if (rng.Chance(a.chimneyChance))
             {
                 int x = rng.Range(prevLeft + 1, prevRight - 1);
                 int height = rng.Range(1, 2);
+                // The tilesets' first look is the stack, which grows; the others (a water tank, an
+                // AC unit, a vent, a sign box) are things that stand on a roof once.
+                int look = Look(seed, x, roofY) % 3;
+                if (look != 0)
+                    height = 1;
                 for (int i = 0; i < height; i++)
-                    spec.TryPlace(TileKind.Chimney, x, roofY + 1 + i, Look(seed, x, roofY) % 3);
+                    spec.TryPlace(TileKind.Chimney, x, roofY + 1 + i, look);
             }
             Furnishing.Furnish(spec, a.furnish);
             return spec;
@@ -216,23 +221,27 @@ namespace Demolition.Generation
             }
         }
 
-        private static void Roof(BuildingSpec spec, TileKind kind, int left, int right, int y)
+        // Where the roof can't cover a wall's top cleanly, the wall rises through the roof row
+        // instead, as it does through every slab: at both ends under a floor board (a see-through
+        // kind leaves the lower half of its cell open, a gap over the wall), and at the right end
+        // when two-cell pieces don't fit the width.
+        private static void Roof(BuildingSpec spec, TileKind kind, TileKind wall, int left, int right, int y)
         {
-            TileKind filler = kind == TileKind.Beam ? TileKind.Wood
-                : kind == TileKind.BrickCap ? TileKind.Brick
-                : kind;
-            for (int x = left; x <= right; x++)
+            int wide = TileKinds.Size(kind).x;
+            if (TileKinds.SeeThrough(kind))
             {
-                if (TileKinds.Size(kind).x == 2 && x + 1 <= right)
-                {
-                    spec.TryPlace(kind, x, y);
-                    x++;
-                }
-                else
-                {
-                    spec.TryPlace(filler, x, y);
-                }
+                spec.TryPlace(wall, left, y, Look(spec.Seed, left, y));
+                left++;
+                spec.TryPlace(wall, right, y, Look(spec.Seed, right, y));
+                right--;
             }
+            if ((right - left + 1) % wide != 0)
+            {
+                spec.TryPlace(wall, right, y, Look(spec.Seed, right, y));
+                right--;
+            }
+            for (int x = left; x <= right; x += wide)
+                spec.TryPlace(kind, x, y);
         }
     }
 }

@@ -278,6 +278,30 @@ namespace Demolition.Tests
         }
 
         [Test]
+        public void Roof_ClosesOverTheWalls_AndOnlyTheStackGrowsTall([ValueSource(nameof(Archetypes))] string path)
+        {
+            BuildingArchetype archetype = Load(path);
+            TileKind roof = BuildingArchetype.ParseTile(archetype.roof, TileKind.Beam);
+            TileKind wall = BuildingArchetype.ParseTile(archetype.wall, TileKind.Brick);
+            for (int seed = 0; seed < 40; seed++)
+            {
+                BuildingSpec spec = BuildingGrammar.GenerateValid(archetype, seed, out _);
+                int roofY = spec.Blocks.Where(b => b.Kind != TileKind.Chimney).Max(b => b.Rect.yMax) - 1;
+                List<SpecBlock> row = spec.Blocks.Where(b => b.Rect.y == roofY && b.Kind != TileKind.Chimney)
+                    .OrderBy(b => b.Rect.x).ToList();
+                foreach (SpecBlock b in row)
+                    Assert.IsTrue(b.Kind == roof || b.Kind == wall, $"{spec.Name}: a {b.Kind} at x {b.Rect.x} in the roof (neither roof nor wall)");
+                // A floor board leaves the lower half of its cell open: over a wall that is a gap.
+                Assert.IsFalse(TileKinds.SeeThrough(row[0].Kind), $"{spec.Name}: the roof doesn't close over the left wall");
+                Assert.IsFalse(TileKinds.SeeThrough(row[row.Count - 1].Kind), $"{spec.Name}: the roof doesn't close over the right wall");
+
+                foreach (SpecBlock b in spec.Blocks.Where(b => b.Kind == TileKind.Chimney))
+                    if (spec.At(new Vector2Int(b.Rect.x, b.Rect.y - 1))?.Kind == TileKind.Chimney)
+                        Assert.AreEqual(0, b.Variant, $"{spec.Name}: a tank, vent, AC unit or sign box stacked on another");
+            }
+        }
+
+        [Test]
         public void EveryTheme_HasAPlatedArchetype()
         {
             foreach (string theme in Archetypes().Select(p => Path.GetDirectoryName(Path.GetDirectoryName(p))).Distinct())
