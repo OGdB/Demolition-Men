@@ -58,13 +58,19 @@ namespace Demolition.Meta
         public static void Apply()
         {
             GameSettings s = Profile.Data.settings;
-            AudioListener.volume = Mathf.Clamp01(s.masterVolume) * Headroom;
             Platform.TouchMode = (TouchControlsMode)s.touchControls;
             TouchControls.Scale = Mathf.Clamp(s.touchScale, 0.6f, 1.6f);
             TouchControls.Opacity = Mathf.Clamp(s.touchOpacity, 0.15f, 1f);
             CameraShake.Enabled = s.screenShake;
             Quality.Apply(s);
+            ApplyVolume();
+        }
 
+        /// <summary>Only the volumes: what a slider calls while it's dragged (saving waits until it's let go).</summary>
+        public static void ApplyVolume()
+        {
+            GameSettings s = Profile.Data.settings;
+            AudioListener.volume = Mathf.Clamp01(s.masterVolume) * Headroom;
             GameObject music = GameObject.Find(MusicObjectName);
             if (music != null && music.TryGetComponent(out AudioSource source))
                 source.volume = Mathf.Clamp01(s.musicVolume);

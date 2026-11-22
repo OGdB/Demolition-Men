@@ -13,8 +13,9 @@ namespace Demolition.Meta
     /// Settings overlay built in code, usable from the menu and the pause screen: volumes,
     /// screen shake, vibration (<see cref="RunHaptics"/>; a row only where a gamepad or the phone's
     /// motor can buzz), effects (lights and post-processing), quality (<see cref="Quality"/>: AUTO, LOW,
-    /// HIGH), touch controls (mode, size, opacity). Every row is a pair of − / +
-    /// buttons (or one toggle), so it works the same with a mouse, a gamepad and a thumb.
+    /// HIGH), touch controls (mode, size, opacity). The volumes are sliders (drag, or left / right),
+    /// every other row a pair of − / + buttons or one toggle, so it works the same with a mouse, a
+    /// gamepad and a thumb.
     /// CREDITS opens <see cref="CreditsView"/>; PRIVACY (EEA/UK phones) reopens the ad consent form.
     /// Back (Esc / B) closes it; changes save immediately.
     /// </summary>
@@ -87,8 +88,8 @@ namespace Demolition.Meta
             }
 
             float y = 300f;
-            Button first = Stepper(root, ref y, "VOLUME", () => Percent(s.masterVolume), d => s.masterVolume = Step(s.masterVolume, d, 0.1f, 0f, 1f));
-            Stepper(root, ref y, "MUSIC", () => Percent(s.musicVolume), d => s.musicVolume = Step(s.musicVolume, d, 0.1f, 0f, 1f));
+            Selectable first = Volume(root, ref y, "VOLUME", () => s.masterVolume, v => s.masterVolume = v);
+            Volume(root, ref y, "MUSIC", () => s.musicVolume, v => s.musicVolume = v);
             Toggle(root, ref y, "SCREEN SHAKE", () => s.screenShake ? "ON" : "OFF", () => s.screenShake = !s.screenShake);
             if (vibration)
                 Toggle(root, ref y, "VIBRATION", () => s.vibration ? "ON" : "OFF", () => s.vibration = !s.vibration);
@@ -123,6 +124,28 @@ namespace Demolition.Meta
             _refresh += () => shown.text = value();
             y -= _rowStep;
             return minus;
+        }
+
+        // A volume as a slider with its percentage: heard while it moves, saved once it stops.
+        private Selectable Volume(RectTransform root, ref float y, string label, Func<float> value, Action<float> set)
+        {
+            Row(root, y, label);
+            var centre = new Vector2(0.5f, 0.5f);
+            // In the buttons' column (85 to 495): the slider, then its value.
+            TextMeshProUGUI shown = UiFactory.Text(root, label + " Value", centre, new Vector2(437f, y), 40f, TextAlignmentOptions.Center, new Vector2(116f, _rowHeight));
+            Slider slider = UiFactory.Slider(root, label, centre, new Vector2(230f, y), new Vector2(290f, _rowHeight), value(), v =>
+            {
+                set(v);
+                shown.text = Percent(v);
+                AppBootstrap.ApplyVolume();
+            }, Profile.NotifySettingsChanged);
+            _refresh += () =>
+            {
+                slider.SetValueWithoutNotify(value());
+                shown.text = Percent(value());
+            };
+            y -= _rowStep;
+            return slider;
         }
 
         private void Toggle(RectTransform root, ref float y, string label, Func<string> value, Action toggle)

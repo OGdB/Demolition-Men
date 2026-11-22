@@ -332,6 +332,76 @@ namespace Demolition
             return button;
         }
 
+        /// <summary>A slider in the buttons' look: a dark track that fills gold, a steel handle that turns
+        /// gold when selected or hovered (<see cref="UiSliderFeel"/>). Dragged (mouse, touch) or moved
+        /// with left / right (keys, gamepad) a tenth a step, from 0 to 1. <paramref name="changed"/> hears
+        /// every value while it moves, <paramref name="settled"/> once it stops.</summary>
+        public static Slider Slider(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, float value,
+            System.Action<float> changed, System.Action settled)
+        {
+            RectTransform root = Rect(parent, name, anchor, position, size);
+            float knob = Mathf.Round(size.y * 0.6f), track = Mathf.Round(size.y * 0.42f);
+
+            // The plate's 7-pixel border, thinner, so a thin track still shows it.
+            Image bar = Image(root, "Track", Vector2.zero, Vector2.zero, Vector2.zero, Ink);
+            Plate(bar, 2.5f);
+            Band(bar.rectTransform, 0f, track);
+            bar.raycastTarget = true; // a press on the track jumps there
+
+            // The slider stretches the fill over its area's height and the handle over its slide area's.
+            RectTransform fillArea = Rect(root, "Fill Area", Vector2.zero, Vector2.zero, Vector2.zero);
+            Band(fillArea, knob * 0.5f, track);
+            Image fill = Image(fillArea, "Fill", Vector2.zero, Vector2.zero, Vector2.zero, Gold);
+            Plate(fill, 2.5f);
+            fill.rectTransform.sizeDelta = new Vector2(knob, 0f); // from the track's left end to under the handle
+
+            RectTransform slide = Rect(root, "Handle Slide Area", Vector2.zero, Vector2.zero, Vector2.zero);
+            Band(slide, knob * 0.5f, 0f);
+            Image handle = Image(slide, "Handle", Vector2.zero, Vector2.zero, Vector2.zero, Color.white);
+            Plate(handle, 2f);
+            handle.rectTransform.sizeDelta = new Vector2(knob, 0f);
+            handle.raycastTarget = true;
+
+            var slider = root.gameObject.AddComponent<Slider>();
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            slider.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.SetValueWithoutNotify(Mathf.Clamp01(value));
+            ColorBlock colors = slider.colors;
+            colors.normalColor = Steel;
+            colors.highlightedColor = Highlight;
+            colors.selectedColor = Highlight;
+            colors.pressedColor = new Color(0.8f, 0.55f, 0.1f);
+            colors.disabledColor = new Color(0.25f, 0.26f, 0.29f, 0.9f);
+            colors.fadeDuration = 0.06f;
+            slider.colors = colors;
+            slider.onValueChanged.AddListener(v => changed?.Invoke(v));
+            root.gameObject.AddComponent<UiSliderFeel>().Settled = settled;
+            return slider;
+        }
+
+        // The riveted plate, sliced, its border shrunk by multiplier; pivoted in its middle.
+        private static void Plate(Image image, float multiplier)
+        {
+            image.sprite = PlateSprite;
+            image.type = UnityEngine.UI.Image.Type.Sliced;
+            image.pixelsPerUnitMultiplier = multiplier;
+            image.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        }
+
+        // Across its parent, inset from both ends; height 0: the parent's full height, else that height in its middle.
+        private static void Band(RectTransform rt, float inset, float height)
+        {
+            rt.anchorMin = new Vector2(0f, height > 0f ? 0.5f : 0f);
+            rt.anchorMax = new Vector2(1f, height > 0f ? 0.5f : 1f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(-2f * inset, height);
+        }
+
         /// <summary>A one-line text field on a dark plate: gold text, steel when selected. Mouse, touch
         /// (the phone's keyboard) and keyboards type in it; a gamepad selects it like a button.</summary>
         public static TMP_InputField InputField(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size,

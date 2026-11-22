@@ -12,8 +12,9 @@ using UnityEngine.UI;
 /// and START / ONLINE buttons for mouse and touch. An empty slot names the keys that join it:
 /// once a player is on the keyboard, the other half's key. With the touchscreen joined (a phone) it
 /// is a play menu instead: big PLAY and PLAY ONLINE buttons, and a player row only while a
-/// gamepad is there to join as P2. Both have SETTINGS, so the volume can be set before the
-/// first run, and the NAME this device goes by on the ranked boards (<see cref="PlayerIdentity"/>).
+/// gamepad is there to join as P2. Both have the NAME this device goes by on the ranked boards
+/// (<see cref="PlayerIdentity"/>), a MUSIC slider (too loud is the first thing anyone wants to fix)
+/// and SETTINGS for the rest.
 /// Fades in. Reads <see cref="Session"/>.</summary>
 public class JoinView : MonoBehaviour
 {
@@ -34,8 +35,10 @@ public class JoinView : MonoBehaviour
     private Button _playOnline;
     private TextMeshProUGUI _onlineNote;
 
-    // The name, on both panels.
+    // The name and the music's volume, on both panels.
     private readonly TMP_InputField[] _names = new TMP_InputField[2];
+    private readonly Slider[] _music = new Slider[2];
+    private readonly TextMeshProUGUI[] _musicShown = new TextMeshProUGUI[2];
     private int _typedFrame = -1;
 
     /// <summary>A name is being typed (or was, this frame or last): its keys are the field's, not the lobby's.</summary>
@@ -78,10 +81,11 @@ public class JoinView : MonoBehaviour
         UiFactory.TitledPanel(lobby, new Vector2(0f, -120f), new Vector2(1200f, 700f), "WHO'S DEMOLISHING?", 64f, 1100f);
 
         _names[0] = NameRow(lobby, 85f);
+        MusicRow(lobby, 5f, 0);
         for (int i = 0; i < _slots.Length; i++)
-            _slots[i] = UiFactory.Text(lobby, $"P{i + 1}", centre, new Vector2(0f, -10f - i * 90f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);
+            _slots[i] = UiFactory.Text(lobby, $"P{i + 1}", centre, new Vector2(0f, -80f - i * 80f), 56f, TextAlignmentOptions.Center, new Vector2(1100f, 80f), outlined: true);
 
-        TextMeshProUGUI hint = UiFactory.Text(lobby, "Hint", centre, new Vector2(0f, -225f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 80f));
+        TextMeshProUGUI hint = UiFactory.Text(lobby, "Hint", centre, new Vector2(0f, -250f), 30f, TextAlignmentOptions.Center, new Vector2(1100f, 80f));
         hint.text = "JOIN: A / SPACE     LEAVE: B / ESC\nPLAY: START / ENTER     SETTINGS: SELECT / TAB";
         hint.color = new Color(0.8f, 0.8f, 0.82f);
 
@@ -92,26 +96,61 @@ public class JoinView : MonoBehaviour
 
         RectTransform touch = UiFactory.Stretch(root, "Touch");
         _touch = touch.gameObject;
-        UiFactory.TitledPanel(touch, new Vector2(0f, -110f), new Vector2(1200f, 600f), "READY TO DEMOLISH?", 64f, 1100f);
+        UiFactory.TitledPanel(touch, new Vector2(0f, -125f), new Vector2(1200f, 670f), "READY TO DEMOLISH?", 64f, 1100f);
 
-        _names[1] = NameRow(touch, 45f);
-        _pads = UiFactory.Text(touch, "Players", centre, new Vector2(0f, -30f), 40f, TextAlignmentOptions.Center, new Vector2(1100f, 60f), outlined: true);
+        _names[1] = NameRow(touch, 65f);
+        MusicRow(touch, -15f, 1);
+        _pads = UiFactory.Text(touch, "Players", centre, new Vector2(0f, -90f), 40f, TextAlignmentOptions.Center, new Vector2(1100f, 60f), outlined: true);
 
-        Button play = UiFactory.Button(touch, "PLAY", centre, new Vector2(-270f, -150f), new Vector2(480f, 150f), () => _continue?.Invoke());
+        Button play = UiFactory.Button(touch, "PLAY", centre, new Vector2(-270f, -195f), new Vector2(480f, 150f), () => _continue?.Invoke());
         UiFactory.Label(play, "PLAY", 60f);
-        _playOnline = UiFactory.Button(touch, "PLAY ONLINE", centre, new Vector2(270f, -150f), new Vector2(480f, 150f), () => _goOnline?.Invoke());
+        _playOnline = UiFactory.Button(touch, "PLAY ONLINE", centre, new Vector2(270f, -195f), new Vector2(480f, 150f), () => _goOnline?.Invoke());
         UiFactory.Label(_playOnline, "PLAY ONLINE", 56f);
 
-        _onlineNote = UiFactory.Text(touch, "OnlineNote", centre, new Vector2(270f, -285f), 28f, TextAlignmentOptions.Center, new Vector2(600f, 80f));
+        _onlineNote = UiFactory.Text(touch, "OnlineNote", centre, new Vector2(270f, -330f), 28f, TextAlignmentOptions.Center, new Vector2(600f, 80f));
         _onlineNote.text = "CO-OP WITH A FRIEND ON\nANOTHER PHONE, PC OR BROWSER";
 
-        UiFactory.Button(touch, "SETTINGS", centre, new Vector2(-270f, -295f), new Vector2(360f, 90f), () => SettingsView.Open(null));
+        UiFactory.Button(touch, "SETTINGS", centre, new Vector2(-270f, -340f), new Vector2(360f, 90f), () => SettingsView.Open(null));
 
         // The lobby's keys are JoinScreen's, and the up arrow joins: it mustn't also walk a
         // clicked button's selection up onto the name field, which would start typing.
         foreach (Selectable selectable in _root.GetComponentsInChildren<Selectable>(true))
             selectable.navigation = new Navigation { mode = Navigation.Mode.None };
+        Profile.SettingsChanged += ShowMusic;
     }
+
+    private void OnDestroy() => Profile.SettingsChanged -= ShowMusic;
+
+    // MUSIC and its slider: heard while it moves, saved once it stops. Once clicked, left / right move it too.
+    private void MusicRow(RectTransform panel, float y, int index)
+    {
+        var centre = new Vector2(0.5f, 0.5f);
+        TextMeshProUGUI label = UiFactory.Text(panel, "MusicLabel", centre, new Vector2(-330f, y), 40f, TextAlignmentOptions.Right,
+            new Vector2(220f, 70f), outlined: true);
+        label.text = "MUSIC";
+        _musicShown[index] = UiFactory.Text(panel, "MusicValue", centre, new Vector2(400f, y), 40f, TextAlignmentOptions.Center,
+            new Vector2(120f, 70f), outlined: true);
+        _music[index] = UiFactory.Slider(panel, "Music", centre, new Vector2(65f, y), new Vector2(530f, 72f), Profile.Data.settings.musicVolume, v =>
+        {
+            Profile.Data.settings.musicVolume = v;
+            _musicShown[index].text = Percent(v);
+            AppBootstrap.ApplyVolume();
+        }, Profile.NotifySettingsChanged);
+        _musicShown[index].text = Percent(Profile.Data.settings.musicVolume);
+    }
+
+    // Both panels' sliders, after a change here or in the settings.
+    private void ShowMusic()
+    {
+        float volume = Profile.Data.settings.musicVolume;
+        for (int i = 0; i < _music.Length; i++)
+        {
+            _music[i].SetValueWithoutNotify(volume);
+            _musicShown[i].text = Percent(volume);
+        }
+    }
+
+    private static string Percent(float value) => $"{Mathf.RoundToInt(value * 100f)}%";
 
     // NAME and its field: what this device is called on the ranked boards. A name that isn't
     // allowed (too short, or on PlayerName's list) goes back to the one it had.
