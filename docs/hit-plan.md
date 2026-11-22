@@ -4,6 +4,11 @@
 is decided. Market facts were looked up on 2026-11-12 and carry their source. Anything marked
 *estimate* is a judgement, not a measured number.
 
+**Amended 2026-11-21:** no browser release for now, so §4.1 is off and every browser link in
+§4.2–4.3 and the calendar waits (roadmap D28). Play comes from an organization account, which
+likely skips the closed test but needs a D-U-N-S number first (roadmap D20). The name check
+is done and found no conflict (roadmap D25).
+
 ## 1. Verdict
 
 **The game can be a hit. The launch plan as written cannot make it one.**

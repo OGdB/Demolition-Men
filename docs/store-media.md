@@ -47,7 +47,8 @@ Pitch: **"Find the weak point. Bring the whole building down, with a friend."**
 The hooks, strongest first:
 1. A whole building falls from one well-placed hit (the support graph).
 2. Blasts: dynamite at the supports, a row of gas tanks setting each other off.
-3. Co-op, and online co-op between a phone and a PC or browser, which few phone games offer.
+3. Co-op, and online co-op from phone to phone, which few phone games offer. (Not a PC or a
+   browser for now: no release there, roadmap D28.)
 4. Big set pieces: a tower dropping, a gate turning to dust, a wrecking ball through glass.
 5. Three cities that look different (Town by day, Port in rust, Neon at night with lights),
    plus a fresh street every day.
@@ -112,7 +113,7 @@ played by you, or by the bot with the upgrades maxed, on a level it can finish w
 |---|---|---|
 | 0:00–0:03 | `one-hit` | FIND THE WEAK POINT |
 | 0:03–0:09 | `night-tnt`, `gas-chain` | — |
-| 0:09–0:15 | `co-op`, then the online pair side by side (phone + PC, section 2.5) | WRECK IT WITH A FRIEND · ONLINE CO-OP |
+| 0:09–0:15 | `co-op`, then the online pair side by side (two phones, section 2.5; the cut on disk has no online pair yet) | WRECK IT WITH A FRIEND · ONLINE CO-OP |
 | 0:15–0:20 | `wrecking-ball`, `headbutt`, `gate`, about 1.5 s each | — |
 | 0:20–0:24 | `keep-up` | KEEP UP |
 | 0:24–0:28 | `tower`, in slow motion (the biggest moment comes late) | — |
@@ -130,7 +131,7 @@ on top.
 | 1 | `one-hit` | ONE HIT. WHOLE BUILDING. |
 | 2 | `gas-chain` | GAS TANKS WERE A MISTAKE |
 | 3 | `tower` | TOWER VS ONE STICK OF DYNAMITE |
-| 4 | The real online pair, phone above PC (`short-4-online`) | PHONE + PC. ONE WRECKING CREW. |
+| 4 | The real online pair, two phones (`short-4-online`; its take is phone above PC, so hold it back until two phones are recorded: D28) | TWO PHONES. ONE WRECKING CREW. |
 | 5 | `gate` | THE GATE TURNED TO DUST |
 | 6 | `headbutt` | NO HELMET, NO PROBLEM |
 | 7 | `night-tnt` | NIGHT SHIFT |
@@ -466,7 +467,8 @@ rooms, the crew's looks, the ladders and plated buildings. The takes of 11-17 ar
 **On disk:** 22 Shorts, 3 GIFs, the trailer, both Apple previews, the three ads videos, 8
 screenshots with their ads images and both Apple sets, 12 `broll-*` runs.
 
-**Still open:** `short-4-online` (a new phone + PC pair) and `short-8-dev-weak-point` (a new
+**Still open:** `short-4-online` (a new pair, two phones: with no PC or browser release
+(roadmap D28) the phone + PC take and its PHONE + PC caption must not go out) and `short-8-dev-weak-point` (a new
 Building Lab still, `stills/lab-rowhouse-marked.png`); the other takes of §2.5; a run within
 par; the butt slam.
 
@@ -508,17 +510,18 @@ Besides the media, the release needs the following. The status of items marked
 
 | Item | Who | Status | When |
 |---|---|---|---|
-| Name check (D25) | You | Open | First, before handles and the listing |
-| Play Console account, identity verification ($25) | You | *check* | R1 |
+| Name check (D25) | Agent | Done 21 Nov: no live mark, no app with the name (roadmap D25) | — |
+| D-U-N-S number of the organization (D20) | You | Found 21 Nov (through Apple's lookup: D&B's own lookup is for the US only) | — |
+| Play Console account as an organization, identity verification ($25). It asks for the organization's website and phone number, a contact person, a developer e-mail and phone number (each confirmed with a code); the payments profile's name and address must match D&B's letter for letter. Play shows the legal name, the D-U-N-S number, the address, the developer e-mail and phone number on the store page | You | Open | Now |
 | Upload keystore, with two backups | You | Open (roadmap §2.2) | R1 |
 | First AAB on the internal testing track | You | *check* | R1 |
 | Listing text: title (30), short description (80), full description (4000), screenshot alt texts | Agent drafts, you paste | Drafts below | With the screenshots |
 | Category (Game ▸ Action or Arcade), tags, contact e-mail `OGpriv@proton.me` | You | Open | Basic listing |
 | App content: privacy policy URL (done), contains ads (yes), app access (everything without login), content rating (IARC questionnaire: cartoon violence, no blood), target audience 13+, Data safety (AdMob: advertising ID, approximate location, app interactions, diagnostics; the relay sees IP addresses), advertising ID declaration (the AdMob SDK adds `AD_ID`) | Agent drafts the answers, you submit | Open | Week of 9 Nov, before the closed test |
-| EU trader status and which address is public (D24) | You | Open | R4 |
-| Closed test, 12+ testers × 14 days | You | Open | From 16 Nov |
+| EU trader status and which address is public (D24) | You | Trader (21 Nov): an organization earning from ads and REMOVE ADS. The address, phone and e-mail of the organization's account are shown in the EEA | Account creation |
+| Closed test, 12+ testers × 14 days | You | Likely not needed: an organization account (D20) | Only if the console asks for it |
 | Tester call: a post with 1 GIF and 1 screenshot | Agent drafts, you post | Draft below | Mid-November |
-| Accounts: YouTube (needed anyway for the preview video), TikTok, Instagram, Bluesky, itch.io, Discord, with one handle across them | You | Open | After the name check |
+| Accounts: YouTube (needed anyway for the preview video), TikTok, Instagram, Bluesky, Discord, with one handle across them (itch.io waits: no browser release, D28) | You | Open | Now: the name check is done |
 | Paid ads | — | Not yet | See below |
 
 **Advertising starts organic.** The app must be on Play before money can buy anything.
@@ -534,11 +537,11 @@ only once the listing converts, and use the clips that did best for free as the 
 - **Short description** (80 at most): *Find the weak point. Bring the whole building down,
   with a friend.* (66)
 - **Ads headlines** (5, 30 characters at most): *One hit. Whole building.* (24) · *Find the
-  weak point.* (20) · *Phone + PC. One wrecking crew.* (30) · *Wreck streets with a friend* (27)
+  weak point.* (20) · *Two phones. One wrecking crew.* (30) · *Wreck streets with a friend* (27)
   · *Dynamite, gas tanks, rubble* (27).
 - **Ads descriptions** (5, 90 at most):
   - *Find the weak point and bring the whole building down with one well-placed hit.* (79)
-  - *Co-op demolition: wreck a street together on one screen or online, phone and PC.* (80)
+  - *Co-op demolition: wreck a street with a friend, on one screen or online.* (72)
   - *Dynamite, gas tanks and a wrecking ball. Three cities to level, a fresh street daily.* (85)
   - *Beat par for rainbow stars, then upgrade your crew's power, boots and dynamite.* (79)
   - *Join a friend online with a six-letter room code. No account needed.* (68)
