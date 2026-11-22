@@ -8,13 +8,13 @@ namespace Demolition.Actions
     public sealed class CraneCall : MonoBehaviour
     {
         // The same on every screen, as it decides when the pallet lands; above the top of the view at the usual zooms.
-        private const float DropHeight = 28f;
+        private const float DropHeight = Ranked.RankedRules.CraneDrop;
 
         public void Run(Vector2 pointedAt, Vector2 target, int who, bool authoritative, float delay) =>
             StartCoroutine(Calling(pointedAt, target, who, authoritative, delay));
 
         /// <summary>Where the pallet lands below the spot the player pointed at.</summary>
-        public static Vector2 Pick(Vector2 pointedAt) => ActionStrikes.GroundBelow(pointedAt + Vector2.up * 20f);
+        public static Vector2 Pick(Vector2 pointedAt) => ActionStrikes.GroundBelow(pointedAt + Vector2.up * Ranked.RankedRules.CraneLook);
 
         private IEnumerator Calling(Vector2 pointedAt, Vector2 target, int who, bool authoritative, float delay)
         {

@@ -39,10 +39,10 @@ JSON, field names as in `Ranked/Model/RankedApi.cs` (shared with the game). Erro
 
 | Request | Answer |
 |---|---|
-| `POST /start {player, name, mode, partner, partnerName, rules}` | `{attempt, key, day, template, seed, mode}`: the day's level (UTC), and the attempt's sealing key. 400 bad ids or mode, 426 another `rules`, 429 limits. A name that `PlayerName` doesn't allow is stored as the player's generated one. |
+| `POST /start {player, key, name, mode, partner, partnerName, rules}` | `{attempt, key, day, template, seed, mode}`: the day's level (UTC), and the attempt's sealing key. 400 bad ids or mode, 403 a `key` whose hash (`RankedApi.IdOf`) isn't `player`, 426 another `rules`, 429 limits. A name that `PlayerName` doesn't allow is stored as the player's generated one. `partnerName` names a partner only the first time the server sees it; after that only the partner's own device renames it. |
 | `POST /submit {attempt, log}` | `{rank, of, score, best}`. The log is base64, sealed with the attempt's key (`Seal`). 400 not sealed with that key, changed, or unreadable; 404 no such attempt; 409 already sent; 410 older than `AttemptLifetime`. A run the replay turns down is answered as if it passed (docs/ranked.md K-D5). |
 | `GET /board?mode=solo&day=&player=` | `{day, template, seed, mode, players, entries[], you}`: each player's best run, best first (score, then time), the top `BoardSize`; `you` is the asking player's (rank 0: none). |
-| `GET /ghost?mode=solo&day=` | `{run, name, score, log}`: the best verified run's log (unsealed), or 204. |
+| `GET /ghost?mode=solo&day=` | `{run, name, score, log}`: the best verified run's log (unsealed) without what each hit did (block, amount, broke: `RankedService.GhostOf`), or 204. |
 | `POST /report {player, run}` | 204. One report per player and run. |
 | `GET /health` | `ok` |
 

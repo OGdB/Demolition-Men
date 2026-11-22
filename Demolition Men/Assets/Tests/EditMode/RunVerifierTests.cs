@@ -648,6 +648,140 @@ namespace Demolition.Tests
             Assert.IsTrue(verdict.Ok, verdict.Reason);
         }
 
+        // Street() and a roof on two pillars past the finish: x 64 to 68, the roof's top at 6.
+        private static LevelLayout Shelter()
+        {
+            LevelLayout layout = Street();
+            var shelter = new BuildingSpec("test.shelter", 4);
+            for (int y = 0; y < 5; y++)
+            {
+                shelter.TryPlace(TileKind.Brick, 0, y);
+                shelter.TryPlace(TileKind.Brick, 4, y);
+            }
+            for (int x = 0; x < 5; x++)
+                shelter.TryPlace(TileKind.Brick, x, 5);
+            layout.Buildings.Add(new BuildingPlacement { X = 64, GroundY = 0, Spec = shelter });
+            return layout;
+        }
+
+        // A full meter, then the crane called onto the shelter's roof: the spot and where the pallet lands.
+        private static Script Crane(float spotY, float landY, int cx, int cy)
+        {
+            var script = new Script(Shelter()).PunchOutColumn();
+            script.Log.Actions[0] = ActionKind.CraneDrop;
+            script.Walk(38.5f).Jump(42.5f).Walk(61.5f);
+            script.Add(new LogEvent { Kind = LogKind.ActionStart, Player = 0, Action = ActionKind.CraneDrop });
+            script.Add(new LogEvent { Kind = LogKind.ActionStrike, Player = 0, Action = ActionKind.CraneDrop, X = 66.5f, Y = 0f, Picks = new[] { 66.5f, spotY } });
+            script.Wait(RankedRules.CraneDelay + 0.5f);
+            script.Hit(2, cx, cy, RankedRules.Wreck, HitCause.Crane, 66.5f, landY);
+            script.Finish();
+            script.Log.Score = Verify(script).Score;
+            return script;
+        }
+
+        [Test]
+        public void ThePallet_FallsFromTheSky_OntoWhatIsThere()
+        {
+            Verdict verdict = Verify(Crane(6f, 6f, 2, 5));
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+            // Its spot in the street, under the roof; or landing there, on a pillar's foot.
+            AssertFails(Crane(0f, 6f, 2, 5), "a spot under something standing");
+            AssertFails(Crane(6f, 0.05f, 0, 0), "a pallet landing under something standing");
+        }
+
+        // A full meter, then charges on the little wall at x 40 (its footing is the block at (0, 0)).
+        private static Script Implosion(float[] picks, int blasts = 1)
+        {
+            var script = new Script().PunchOutColumn().Walk(37f);
+            script.Log.Actions[0] = ActionKind.Implosion;
+            script.Add(new LogEvent { Kind = LogKind.ActionStart, Player = 0, Action = ActionKind.Implosion });
+            script.Add(new LogEvent { Kind = LogKind.ActionStrike, Player = 0, Action = ActionKind.Implosion, X = 37f, Y = 0f, Picks = picks });
+            script.Wait(RankedRules.ChargeCountdown);
+            script.Hit(1, 0, 0, RankedRules.Wreck, HitCause.Charge, 40.5f, 0.5f);
+            for (int i = 0; i < blasts; i++)
+            {
+                script.Add(new LogEvent { Kind = LogKind.Blast, Player = 0, Cause = HitCause.Charge, X = 40.5f, Y = 0.5f });
+                script.Wait(RankedRules.ChargeRipple);
+            }
+            script.WallDown = true;
+            script.Finish();
+            script.Log.Score = Verify(script).Score;
+            return script;
+        }
+
+        [Test]
+        public void Charges_AsTheGamePlacesThem()
+        {
+            Verdict verdict = Verify(Implosion(new[] { 40.5f, 0.5f }));
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+            AssertFails(Implosion(new[] { 40.5f, 0.5f, 50f, 0.5f, 52f, 0.5f, 54f, 0.5f }), "more charges than the game places");
+            AssertFails(Implosion(new[] { 40.5f, 0.5f, 40.5f, 1.5f }), "charges too close together");
+            AssertFails(Implosion(new[] { 40.5f, 1.5f }), "a charge above the footing");
+            AssertFails(Implosion(new[] { 40.5f, 0.5f }, blasts: 3), "going off twice");
+        }
+
+        // LongStreet() and at x 20 a canopy: a slab two up (x 20 to 23) on a pillar three high at its right
+        // end. The finish is at 15: under the canopy and back.
+        private static LevelLayout Canopy()
+        {
+            LevelLayout layout = LongStreet();
+            layout.FinishX = 15;
+            var spec = new BuildingSpec("test.canopy", 5);
+            for (int y = 0; y < 3; y++)
+                spec.TryPlace(TileKind.Brick, 3, y);
+            for (int x = 0; x < 3; x++)
+                spec.TryPlace(TileKind.Brick, x, 2);
+            layout.Buildings.Add(new BuildingPlacement { X = 20, GroundY = 0, Spec = spec });
+            return layout;
+        }
+
+        [Test]
+        public void Headbutts_HitWhatIsOverTheHead()
+        {
+            // Under the slab: its underside is over the head.
+            var script = new Script(Canopy()).Walk(21.5f).Wait(0.4f);
+            script.Hit(0, 1, 2, 24f, HitCause.Headbutt, 21.5f, 2f);
+            script.Finish();
+            Verdict verdict = Verify(script);
+            Assert.IsTrue(verdict.Ok, verdict.Reason);
+
+            // The pillar's foot, beside the player: a wall at the side, never a headbutt.
+            script = new Script(Canopy()).Walk(22.6f).Wait(0.4f);
+            script.Hit(0, 3, 0, 24f, HitCause.Headbutt, 23f, 1f);
+            script.Finish();
+            AssertFails(script, "a headbutt out of reach");
+
+            // Online the partner's arrive in bunches, but not a jump's worth every twentieth of a second.
+            script = new Script(Canopy(), players: 2).Walk(23f).Wait(0.4f);
+            script.Log.Online = true;
+            for (int i = 0; i < 12; i++)
+            {
+                script.Wait(0.05f);
+                script.Hit(0, i % 3, 2, 24f, HitCause.Headbutt, 21.5f, 2f, player: 1);
+            }
+            script.Finish();
+            AssertFails(script, "headbutts too fast");
+        }
+
+        [Test]
+        public void WalkingThroughAWall_BetweenTwoSamples_Fails()
+        {
+            // The pillar is one thick: 17.75 at 7.1 a second takes 2.5 s, then samples at 23.25 and 23.95,
+            // either side of its middle.
+            var script = new Script(Canopy()).Walk(20.25f, speed: 7.1f).Walk(23.25f, speed: 10f).Wait(0.1f).Walk(23.95f, speed: 7f);
+            script.Finish();
+            AssertFails(script, "inside a wall");
+        }
+
+        [Test]
+        public void StandingInTheStreet_Fails()
+        {
+            var script = new Script(LongStreet()).Walk(15f).Wait(4f);
+            script.Finish();
+            Lift(script, 30, 10, k => -1.2f);
+            AssertFails(script, "inside the ground");
+        }
+
         private static void Lift(Script script, int from, int samples, Func<int, float> height)
         {
             List<LogPose> poses = script.Log.Poses[0];

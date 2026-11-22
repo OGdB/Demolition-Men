@@ -4,6 +4,11 @@
 level), `RealLogTests` replays those logs on the server's runtime and every cheat on them is turned
 down; the server runs at `ranked.oeds.space`, where a run from the editor over HTTPS and every cheat
 sent to it were judged the same. Never tested: online co-op's logs, a phone, a browser.
+**2026-11-22:** a second round of cheats, closed in rules version 4 (§4): "online" only with a
+partner, the device's key on `/start`, charges, the crane's and radio's spots, headbutts, walls
+between samples, the ground, the slam's column, and a ghost without what each hit did. The 24 bot
+logs of that day pass on the server's runtime and every cheat on them is turned down. The live
+server still ran version 1 then: deploy it with the build that carries version 4.
 - **Models** (`Ranked/Model/`, EditMode tests): the run log (`RunLog`), its seal (`Seal`), the
   numbers it's checked with (`RankedRules`), the referee (`RunVerifier`), the day's pick
   (`RankedDay.Pick`), names (`PlayerName`), the server's messages (`RankedApi`).
@@ -49,7 +54,7 @@ can't do is make the server believe a run that the game's own rules don't allow.
 | K-D5 | A rejected run isn't told so: its player sees it on the board, nobody else does. | A cheater can't learn which fake gets through. Off for the first weeks (§5). |
 | K-D6 | The log is binary and sealed with a key per attempt (§5). | Not the lock (§1), but it makes the format hard to learn and old or captured logs useless. |
 | K-D7 | The server is its own service next to the relay, not part of it. | The relay stays a forwarder with no game code; a verifier bug can't take co-op down. |
-| K-D8 | A player is a device: NAME is typed on the first screen, and a device has one name and one entry per board (its best run of the day counts). | Asked for (2026-10-28). The id is a hash of the device's identifier (`PlayerIdentity`); WebGL has none, so a browser keeps a random one. Two phones or a cleared browser make two players: their runs still have to pass §4, and new players per IP are limited. |
+| K-D8 | A player is a device: NAME is typed on the first screen, and a device has one name and one entry per board (its best run of the day counts). | Asked for (2026-10-28). The device's key is a hash of its identifier (`PlayerIdentity`), the id is the key's hash (`RankedApi.IdOf`), and `/start` wants the key: an online partner learns the id, never the key, so it can't play, rename or use up attempts as that player (2026-11-22). WebGL has no identifier, so a browser keeps a random one. Two phones or a cleared browser make two players: their runs still have to pass §4, and new players per IP are limited. |
 | K-D9 | Names are held to `PlayerName` on both sides: A–Z, 0–9, spaces and dashes, 3 to 16, nothing on its list (English and Dutch, look-alikes undone). | Names are public. The list is a start; REPORT (K5) catches the rest, and Play wants a way to report what players write anyway. |
 | K-D10 | The server has its own name (`ranked.oeds.space`), not a path under the relay's. | Its Caddy block is added like the relay's and the relay's stays untouched; one DNS record. |
 | K-D11 | Runs, attempts, reports and players with no run left are forgotten after 180 days; backups are kept 7 days. | A retention the privacy policy can state; a board older than half a year is history. |
@@ -113,18 +118,21 @@ blocks.
 | A made-up score (a script, an edited memory value) | Ignored: the server's own `RunScore` over the replay. |
 | Collapses that can't happen | `BuildingStructure` decides what detaches; the device's word isn't asked. |
 | More damage per hit | Each damage against its cause's maximum: the weapon's profile for that material, the headbutt's at full speed, the blast's, the action's; times the buffs active then (coffee, the partner's lean). One hit per block per swing, blast, slam ring, intern's punch and crumble tick. |
-| Hitting faster | Swings per player against the weapon's clip (fists every 0.2 s, the axe and the ball every 0.44 s; the coffee's 1.5×); the intern on the punching clip's beat; crumble ticks 0.25 s apart. |
-| Hitting from afar or through walls | The swing's centre within reach of the player's pose at that time; the block within the swing's radius of it. |
-| Teleporting, flying, a speed hack | The pose track against the run speed (with the coffee), the jump (`JumpProfile`, as `TraversalValidator` uses it: no rising longer than a jump lasts, except at climbing speed in reach of one of the level's ladders (`RunVerifier.OnLadder`, since rules version 3), no higher than a jump above the tallest thing around), knockback only after a blast nearby; never inside a standing block. |
+| Hitting faster | Swings per player against the weapon's clip (fists every 0.2 s, the axe and the ball every 0.44 s; the coffee's 1.5×); the intern on the punching clip's beat; crumble ticks 0.25 s apart; one headbutt per jump (0.3 s apart, and an online partner's, which arrive in bunches, no more in any 2 s than that allows). |
+| Hitting from afar or through walls | The swing's centre within reach of the player's pose at that time; the block within the swing's radius of it. A headbutt only on a block whose underside is over the head (`PlayerCombat`'s own rule), never the wall's foot beside the player. |
+| Teleporting, flying, a speed hack | The pose track against the run speed (with the coffee), the jump (`JumpProfile`, as `TraversalValidator` uses it: no rising longer than a jump lasts, except at climbing speed in reach of one of the level's ladders (`RunVerifier.OnLadder`, since rules version 3), no higher than a jump above the tallest thing around), knockback only after a blast nearby; never inside a standing block, also not between two samples (a wall is one block thick: the body is checked every `SweepStep` along the way); the feet never inside the street. |
 | Finishing too soon | The finish no sooner than running full speed from spawn to finish takes, and the pose there. |
 | A better time | The log's time is the finish's: it's what the board sorts ties by and shows. |
 | A log made up on the spot | A run can't be longer than the time since its attempt began (the game's clock only runs behind the real one). |
 | Dodging a penalty | A pose behind the camera past the out-of-bounds grace, or down a pit, without an **out** event. The edge is the game's own `ScrollEdge`, run from the log's poses: it doesn't depend on the device's screen or zoom, so every player is held to the same line, and a wider screen has no more room behind it (roadmap D27). |
 | Extra dynamite | Throws only after dynamite pickups (positions in the layout; they fall straight down from there) were taken within reach; one stick out at a time. |
 | Free actions | The server keeps each player's `ActionMeter` from its own replay; an action starts only on a full meter, once at a time, and strikes within reach. |
+| Actions that pick a better spot | What a strike chooses in the world is held to the game's own choice (`ActionStrikes.Pick`), from the replay's standing blocks: at most `ActionCall.MaxSpots` charges, on the footing of the nearest building ahead and not close together, each wrecking one block and going off once; the crane's and the radio's spot the first solid thing under the strike; the pallet, which falls straight down its spot's column, landing on the first thing there, never under something standing. |
+| Claiming an online partner's slack | Online, the partner's hits and pose get a network's slack. A run is only online with a partner on its attempt (the host names it at `/start`). A made-up partner is a new player, and new players per IP are limited; the partner's rates stay held to the clips. |
+| Playing, renaming or using up attempts as someone else | `/start` wants the device's key; the id, which a partner online learns, is only its hash (K-D8). A host names its partner only the first time the server sees the partner. |
 | Edited upgrades or actions | K-D2: the kit is the same for everyone. |
 | Replaying or editing a captured log | §5: sealed with this attempt's key. |
-| Sending someone's ghost as your own | The same log, to the byte, already on the board is turned down. An edited copy is in §6. |
+| Sending someone's ghost as your own | The ghost comes without what each hit did (the block, the amount, whether it broke: `RankedService.GhostOf`), so it isn't a log the server takes; the same log, to the byte, already on the board is turned down. |
 | Endless tries, many accounts | Attempts per player and per IP, per day. |
 
 Tolerances: a pose is sampled 10 times a second while hits land between samples, an online
@@ -149,8 +157,9 @@ None of these is the lock (§1), they make the first step harder:
 1. **Binary.** No text, no field names.
 2. **Sealed per attempt.** The server gives each attempt a fresh key. The log is encrypted and
    signed with it (HMAC-SHA256 in counter mode, written in the model so it works the same in
-   WebGL, tested against .NET's). A captured log can't be read, changed or sent again, and a
-   script without the game can't make one.
+   WebGL, tested against .NET's). A captured log can't be read, changed or sent again. The key
+   comes with the attempt to whoever asks for one, so a script that has learned the format can
+   seal a log of its own: what stops it is §4.
 3. **Machine code.** Android builds with IL2CPP (and code stripping), WebGL always does: there
    are no C# assemblies to decompile.
 4. **The checks live only on the server**, with their tolerances. Nobody can test a fake at home.
@@ -178,7 +187,7 @@ decides, which the server doesn't replay:
   take no damage writes a log that passes; pits and the camera's edge are checked, the rest isn't.
 - **Hovering low.** Standing on rubble can't be told from standing on air, so the track is only
   held to the height of the level as it started.
-- **An edited copy of the day's ghost** (one pose moved) is a true log of a run someone played.
+- **A copy rebuilt from the day's ghost.** The ghost has the poses and when each swing landed, not what it hit (§4): a cheater who works out every hit again from those has a true log of a run someone played.
 - **Slow motion.** The attempt may last 40 minutes, so a run can be played slower than it says.
 
 Against all of these:

@@ -7,16 +7,21 @@ namespace Demolition.Ranked
 {
     /// <summary>
     /// Who this device is to the ranked server (docs/ranked.md §8): one player, one name and one
-    /// board entry per device. The id is a hash of the device's own identifier, so the server never
-    /// sees that; where a platform has none (WebGL), a random one kept in this browser's storage.
+    /// board entry per device. The key is a hash of the device's own identifier, so the server never
+    /// sees that; where a platform has none (WebGL), a random one kept in this browser's storage. The
+    /// id is the key's hash (RankedApi.IdOf): an online partner learns the id, and only the key
+    /// starts a ranked run as this player.
     /// </summary>
     public static class PlayerIdentity
     {
         private const string FallbackKey = "Demolition.PlayerDevice";
-        private static string _id;
+        private static string _key, _id;
+
+        /// <summary>64 hex characters, the same on every run of this device; sent only to the ranked server.</summary>
+        public static string Key => _key ??= Compute();
 
         /// <summary>32 hex characters, the same on every run of this device.</summary>
-        public static string Id => _id ??= Compute();
+        public static string Id => _id ??= RankedApi.IdOf(Key);
 
         /// <summary>The name on the boards: the one typed, else the generated one.</summary>
         public static string Name
@@ -52,10 +57,10 @@ namespace Demolition.Ranked
                     PlayerPrefs.Save();
                 }
             }
-            byte[] hash = Seal.Sha256(Encoding.UTF8.GetBytes("demolition-men/player/" + device));
-            var hex = new StringBuilder(32);
-            for (int i = 0; i < 16; i++)
-                hex.Append(hash[i].ToString("x2"));
+            byte[] hash = Seal.Sha256(Encoding.UTF8.GetBytes("demolition-men/key/" + device));
+            var hex = new StringBuilder(64);
+            foreach (byte b in hash)
+                hex.Append(b.ToString("x2"));
             return hex.ToString();
         }
     }

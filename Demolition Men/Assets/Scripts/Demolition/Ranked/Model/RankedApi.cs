@@ -13,6 +13,9 @@ namespace Demolition.Ranked
         /// <summary>The device's id (PlayerIdentity) and the name it goes by.</summary>
         public string player;
         public string name;
+        /// <summary>The device's key: the id is its hash (<see cref="RankedApi.IdOf"/>), so only the device
+        /// can start as itself. A partner online knows the id, never the key.</summary>
+        public string key;
         /// <summary>"solo" or "coop".</summary>
         public string mode;
         /// <summary>Online co-op: the other device's id and name; empty otherwise.</summary>
@@ -114,11 +117,26 @@ namespace Demolition.Ranked
         }
 
         /// <summary>A player id as PlayerIdentity makes it: 32 lower-case hex characters.</summary>
-        public static bool IsPlayerId(string id)
+        public static bool IsPlayerId(string id) => IsHex(id, 32);
+
+        /// <summary>A device's key: 64 lower-case hex characters.</summary>
+        public static bool IsKey(string key) => IsHex(key, 64);
+
+        /// <summary>The player id that goes with a key: the first half of its SHA-256, in hex.</summary>
+        public static string IdOf(string key)
         {
-            if (id == null || id.Length != 32)
+            byte[] hash = Seal.Sha256(System.Text.Encoding.ASCII.GetBytes(key ?? string.Empty));
+            var hex = new System.Text.StringBuilder(32);
+            for (int i = 0; i < 16; i++)
+                hex.Append(hash[i].ToString("x2"));
+            return hex.ToString();
+        }
+
+        private static bool IsHex(string s, int length)
+        {
+            if (s == null || s.Length != length)
                 return false;
-            foreach (char c in id)
+            foreach (char c in s)
                 if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
                     return false;
             return true;

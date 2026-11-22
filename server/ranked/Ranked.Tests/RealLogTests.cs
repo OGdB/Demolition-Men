@@ -196,6 +196,15 @@ public sealed class RealLogTests
         ("punches four times as fast", true, (l, level) => Repeat(l, HitCause.Fist, 4, 50)),
         ("axe swings twice as fast", true, (l, level) => Repeat(l, HitCause.Axe, 2, 60)),
         ("headbutts ten times as fast", true, (l, level) => Repeat(l, HitCause.Headbutt, 3, 30)),
+        ("every charge goes off thrice", true, (l, level) =>
+        {
+            List<LogEvent> blasts = l.Events.Where(e => e.Kind == LogKind.Blast && e.Cause == HitCause.Charge).ToList();
+            foreach (LogEvent b in blasts)
+                for (int i = 1; i < 3; i++)
+                    l.Events.Add(Copy(b));
+            Sort(l);
+            return blasts.Count > 0 && Repeat(l, HitCause.Charge, 3, 0);
+        }),
         ("three times the damage per blast", true, (l, level) => Repeat(l, HitCause.Dynamite, 3, 0)),
         ("a gas tank's blast thrice", true, (l, level) => Repeat(l, HitCause.GasTank, 3, 0)),
         ("the crumble ticks thrice", true, (l, level) => Repeat(l, HitCause.Crumble, 3, 0)),

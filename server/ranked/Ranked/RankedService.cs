@@ -76,6 +76,9 @@ public sealed class RankedService
             return Error(400, "bad request");
         if (request.rules != RankedRules.Version)
             return Error(426, "update"); // another build's rules: the game says to update
+        // Only the device has its key: whoever knows an id (a partner online does) can't start as it.
+        if (!RankedApi.IsKey(request.key) || RankedApi.IdOf(request.key) != request.player)
+            return Error(403, "not this player");
         bool partner = mode == RankedMode.Coop && !string.IsNullOrEmpty(request.partner);
         if (partner && (!RankedApi.IsPlayerId(request.partner) || request.partner == request.player))
             return Error(400, "bad request");
@@ -90,9 +93,11 @@ public sealed class RankedService
             string name = PlayerName.Clean(typed);
             if (!PlayerName.Allowed(name))
                 name = PlayerName.Default(id); // the game checks too: only a changed one sends these
-            if (_store.Player(id) == null && !_limits.Allow("new", ip, _options.NewPlayersPerDayPerIp, TimeSpan.FromDays(1), Now))
+            bool known = _store.Player(id) != null;
+            if (!known && !_limits.Allow("new", ip, _options.NewPlayersPerDayPerIp, TimeSpan.FromDays(1), Now))
                 return Error(429, "too many new players");
-            _store.SavePlayer(id, name, now);
+            if (id == request.player || !known) // a host names its partner once: after that only the partner's own device renames it
+                _store.SavePlayer(id, name, now);
         }
 
         RankedDay day = Today(mode);
@@ -158,6 +163,9 @@ public sealed class RankedService
         Verdict verdict;
         if (log.Day != day.Day || log.Template != day.Template || log.Seed != day.Seed || log.Mode != mode)
             verdict = new Verdict { Reason = "another day, level or mode than the attempt's" };
+        else if (log.Online != (attempt.Partner != null))
+            // Online, the partner's hits and pose get a network's slack: only a run with a partner (RankedSession) is online.
+            verdict = new Verdict { Reason = log.Online ? "online with no partner" : "a partner, not online" };
         else if (log.TimeMs > now - attempt.Created + WallClockSlackMs)
             verdict = new Verdict { Reason = "a run longer than the time since its attempt began" };
         else if (_store.HasLog(day.Day, attempt.Mode, plain))
@@ -280,7 +288,9 @@ public sealed class RankedService
         partner = run.Partner == null ? string.Empty : players.TryGetValue(run.Partner, out PlayerRow q) ? q.Name : PlayerName.Default(run.Partner),
     };
 
-    /// <summary>The best verified run of the day, to race: its log, unsealed.</summary>
+    /// <summary>The best verified run of the day, to race: its log, unsealed, with what each hit did left
+    /// out (GhostRunner only plays the poses and when the swings and actions came), so it can't be sent
+    /// again as someone's own run with a few changes.</summary>
     public IResult Ghost(int day, string modeName)
     {
         if (!RankedApi.TryMode(modeName, out RankedMode mode))
@@ -294,10 +304,23 @@ public sealed class RankedService
                 return Results.Json(new Ghost
                 {
                     run = (int)run.Id, name = player != null ? player.Name : PlayerName.Default(run.Player), score = run.Score,
-                    log = Convert.ToBase64String(_store.Log(run.Id)),
+                    log = Convert.ToBase64String(GhostOf(_store.Log(run.Id))),
                 });
             }
         return Results.NoContent();
+    }
+
+    public static byte[] GhostOf(byte[] stored)
+    {
+        RunLog log = RunLog.Decode(stored);
+        foreach (LogEvent e in log.Events)
+            if (e.Kind == LogKind.Damage)
+            {
+                e.Building = e.CellX = e.CellY = 0;
+                e.Amount = 1f;
+                e.Broke = false;
+            }
+        return log.Encode();
     }
 
     public IResult Report(ReportRequest request, string ip)

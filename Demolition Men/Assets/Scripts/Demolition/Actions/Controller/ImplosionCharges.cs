@@ -15,7 +15,7 @@ namespace Demolition.Actions
     /// </summary>
     public sealed class ImplosionCharges : MonoBehaviour
     {
-        private const float Reach = 14f; // how far ahead a building counts
+        private const float Reach = RankedRules.ChargeReach; // how far ahead a building counts
         private const float Count = RankedRules.ChargeCountdown / 3f; // seconds per beep of the 3-2-1: ActionCatalog's frames hold the plunger up as long
         private const float Ripple = RankedRules.ChargeRipple;
 
@@ -61,11 +61,11 @@ namespace Demolition.Actions
                 float floor = float.MaxValue;
                 foreach (BuildingBlock b in blocks)
                     floor = Mathf.Min(floor, b.transform.position.y);
-                var footing = blocks.FindAll(b => b.transform.position.y < floor + 0.6f && b.Material != BlockMaterial.Glass);
+                var footing = blocks.FindAll(b => b.transform.position.y < floor + RankedRules.ChargeFooting && b.Material != BlockMaterial.Glass);
                 // Supports carry the building: charge them first, then whatever is at the ends.
                 footing.Sort((a, b) => Strength(b).CompareTo(Strength(a)));
                 foreach (BuildingBlock b in footing)
-                    if (spots.Count < ActionCall.MaxSpots && spots.TrueForAll(s => Mathf.Abs(s.x - b.transform.position.x) > 1.5f))
+                    if (spots.Count < ActionCall.MaxSpots && spots.TrueForAll(s => Mathf.Abs(s.x - b.transform.position.x) > RankedRules.ChargeSpacing))
                         spots.Add(b.transform.position);
             }
             if (spots.Count == 0) // nothing standing ahead: one charge in front, for the bang

@@ -48,7 +48,7 @@ namespace Demolition.Ranked
             bool partner = mode == RankedMode.Coop && NetRole.IsHost && RankedApi.IsPlayerId(NetRole.PartnerId);
             var request = new StartRequest
             {
-                player = PlayerIdentity.Id, name = PlayerIdentity.Name, mode = RankedApi.ModeName(mode),
+                player = PlayerIdentity.Id, key = PlayerIdentity.Key, name = PlayerIdentity.Name, mode = RankedApi.ModeName(mode),
                 partner = partner ? NetRole.PartnerId : string.Empty, partnerName = partner ? NetRole.PartnerName : string.Empty,
                 rules = RankedRules.Version,
             };

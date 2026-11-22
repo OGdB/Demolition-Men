@@ -79,7 +79,8 @@ namespace Demolition.Ranked
             public float StartedAt, BusyUntil = float.NegativeInfinity;
             public readonly List<LogEvent> Strikes = new List<LogEvent>();
             public readonly Dictionary<LogEvent, HashSet<int>> CraneImpacts = new Dictionary<LogEvent, HashSet<int>>();
-            public readonly Dictionary<LogEvent, HashSet<Block>> SlamRing = new Dictionary<LogEvent, HashSet<Block>>();
+            public readonly Dictionary<LogEvent, HashSet<Block>> SlamRing = new Dictionary<LogEvent, HashSet<Block>>(),
+                SlamColumn = new Dictionary<LogEvent, HashSet<Block>>();
             public int Dynamite;
             public LogEvent Thrown;
             public int ToolUses, BallUses, ToolSwings, BallSwings;
@@ -90,6 +91,7 @@ namespace Demolition.Ranked
             public int LastInternMs = int.MinValue;
             public readonly HashSet<Block> InternBlocks = new HashSet<Block>();
             public float LastHeadbutt = float.NegativeInfinity;
+            public readonly List<float> Headbutts = new List<float>();
             public float CoffeeUntil = float.NegativeInfinity, BoostUntil = float.NegativeInfinity;
             public readonly List<float> CoffeeFrom = new List<float>();
             public bool Out;
@@ -123,6 +125,9 @@ namespace Demolition.Ranked
         private readonly bool[] _taken;
         private readonly List<LogEvent> _blasts = new List<LogEvent>();
         private readonly Dictionary<LogEvent, HashSet<Block>> _blasted = new Dictionary<LogEvent, HashSet<Block>>();
+        /// <summary>Per implosion strike, the charges (by their index in its picks) that wrecked their block, and that went off.</summary>
+        private readonly Dictionary<LogEvent, HashSet<int>> _chargeWrecks = new Dictionary<LogEvent, HashSet<int>>(),
+            _chargeBlasts = new Dictionary<LogEvent, HashSet<int>>();
         private readonly List<Knock> _knocks = new List<Knock>();
         private readonly List<Barrel> _barrels = new List<Barrel>();
         private int _totalCells, _removedCells, _sampled;
@@ -315,15 +320,29 @@ namespace Demolition.Ranked
         {
             foreach (Crew c in _crew)
                 Drain(c, _now, time);
-            // Every pose up to now against the blocks standing now: nobody walks through a wall.
+            // Every pose up to now against the blocks standing now: nobody walks through a wall, also not
+            // between two samples (a wall is one block thick). Not across a rejoin, which puts a player back
+            // by the partner, nor for an online partner, whose pose the host only follows.
             for (; _sampled * RunLog.PoseInterval <= time; _sampled++)
                 for (int p = 0; p < _crew.Length; p++)
                 {
                     if (_crew[p].Out || _sampled >= _log.Poses[p].Count)
                         continue;
                     LogPose pose = _log.Poses[p][_sampled];
-                    if (InsideWall(pose.X, pose.Y + 0.5f) || InsideWall(pose.X, pose.Y + 1.5f)) // the legs, the chest
-                        return No($"player {p + 1} inside a wall at {_sampled * RunLog.PoseInterval:0.0}s");
+                    float t = _sampled * RunLog.PoseInterval;
+                    int steps = 1;
+                    LogPose from = pose;
+                    if (_sampled > 0 && !OnlinePartner(p) && !OutBetween(_crew[p], t - RunLog.PoseInterval - 0.05f, t + 0.05f))
+                    {
+                        from = _log.Poses[p][_sampled - 1];
+                        steps = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(Mathf.Abs(pose.X - from.X), Mathf.Abs(pose.Y - from.Y)) / RankedRules.SweepStep));
+                    }
+                    for (int k = 1; k <= steps; k++)
+                    {
+                        float x = Mathf.Lerp(from.X, pose.X, k / (float)steps), y = Mathf.Lerp(from.Y, pose.Y, k / (float)steps);
+                        if (InsideWall(x, y + 0.5f) || InsideWall(x, y + 1.5f)) // the legs, the chest
+                            return No($"player {p + 1} inside a wall at {t:0.0}s");
+                    }
                 }
             _now = time;
             return true;
@@ -506,15 +525,22 @@ namespace Demolition.Ranked
             if (!Who(e, out Crew c))
                 return false;
             LogPose pose = PoseAt(e.Player, e.Time);
+            // PlayerCombat: a block met from below, its underside over the head (never the wall at the side).
             if (block.Spec.Material == BlockMaterial.Glass
-                || Distance(pose.X, pose.Y + RankedRules.HeadHeight + 0.6f, block) > 1f + Slack(e.Player))
+                || Distance(pose.X, pose.Y + RankedRules.HeadHeight + 0.6f, block) > 1f + Slack(e.Player)
+                || block.Solid.yMin < pose.Y + RankedRules.HeadHeight - RankedRules.HeadSlack - (Slack(e.Player) - RankedRules.PoseSlack))
                 return No("a headbutt out of reach");
             if (e.Amount > RankedRules.Fist[(int)block.Spec.Material] * RankedRules.HeadbuttFactor * Buffs(c, e.Time) * Epsilon)
                 return No("a headbutt too hard");
-            if (e.Time - c.LastHeadbutt < 0.3f && !OnlinePartner(e.Player))
+            if (e.Time - c.LastHeadbutt < RankedRules.HeadbuttInterval && !OnlinePartner(e.Player))
                 return No("headbutts too fast");
             c.LastHeadbutt = e.Time;
-            return true;
+            // An online partner's arrive in bunches, but no more of them in a while than jumps allow.
+            c.Headbutts.Add(e.Time);
+            int recent = 0;
+            for (int i = c.Headbutts.Count - 1; i >= 0 && c.Headbutts[i] > e.Time - RateWindow; i--)
+                recent++;
+            return recent <= Mathf.FloorToInt(RateWindow / RankedRules.HeadbuttInterval) + 2 || No("headbutts too fast");
         }
 
         private bool Touch(LogEvent e, Block block)
@@ -552,18 +578,19 @@ namespace Demolition.Ranked
                 if (strike.Action != ActionKind.Implosion || strike.Picks == null || e.Time < strike.Time
                     || e.Time > strike.Time + ChargesEnd(strike) + RankedRules.ActionSlack)
                     continue;
+                // ImplosionCharges wrecks the block under each charge: one per charge.
                 for (int i = 0; i < strike.Picks.Length; i += 2)
-                    if (Distance(strike.Picks[i], strike.Picks[i + 1], block) <= 0.1f)
+                    if (Distance(strike.Picks[i], strike.Picks[i + 1], block) <= 0.1f && Once(_chargeWrecks, strike).Add(i))
                         return e.Amount <= RankedRules.Wreck * Epsilon || No("a charge too hard");
             }
             return Blasted(e, block);
         }
 
-        private static HashSet<Block> Once(Dictionary<LogEvent, HashSet<Block>> hits, LogEvent by)
+        private static HashSet<T> Once<T>(Dictionary<LogEvent, HashSet<T>> hits, LogEvent by)
         {
-            if (!hits.TryGetValue(by, out HashSet<Block> blocks))
-                hits[by] = blocks = new HashSet<Block>();
-            return blocks;
+            if (!hits.TryGetValue(by, out HashSet<T> done))
+                hits[by] = done = new HashSet<T>();
+            return done;
         }
 
         private static float ChargesEnd(LogEvent strike) =>
@@ -599,15 +626,19 @@ namespace Demolition.Ranked
                     case ActionKind.ButtSlam:
                         if (since < 0f || since > slack)
                             continue;
-                        if (Overlaps(block, s.X - RankedRules.SlamHalfWidth, s.Y - RankedRules.SlamDrop - RankedRules.SlamDepth,
-                                s.X + RankedRules.SlamHalfWidth, s.Y - RankedRules.SlamDrop))
-                            return e.Amount <= RankedRules.Wreck * Epsilon || No("a slam too hard");
-                        if (Distance(s.X, s.Y + RankedRules.SlamRingRise, block) <= RankedRules.SlamRingRadius + 0.05f)
+                        // ActionStrikes.Slam: the column under the player is wrecked, then the ring hits what's
+                        // left, each block once. A hit more than the ring's can only be the column's.
+                        if (e.Amount > RankedRules.SlamRingDamage * Epsilon)
                         {
-                            if (!Once(c.SlamRing, s).Add(block))
-                                return No("a slam's ring that hit a block twice");
-                            return e.Amount <= RankedRules.SlamRingDamage * Epsilon || No("a slam's ring too hard");
+                            if (!Overlaps(block, s.X - RankedRules.SlamHalfWidth, s.Y - RankedRules.SlamDrop - RankedRules.SlamDepth,
+                                    s.X + RankedRules.SlamHalfWidth, s.Y - RankedRules.SlamDrop))
+                                continue;
+                            if (!Once(c.SlamColumn, s).Add(block))
+                                return No("a slam that hit a block twice");
+                            return e.Amount <= RankedRules.Wreck * Epsilon || No("a slam too hard");
                         }
+                        if (Distance(s.X, s.Y + RankedRules.SlamRingRise, block) <= RankedRules.SlamRingRadius + 0.05f)
+                            return Once(c.SlamRing, s).Add(block) || No("a slam's ring that hit a block twice");
                         continue;
                     case ActionKind.CraneDrop:
                     {
@@ -618,6 +649,10 @@ namespace Demolition.Ranked
                         if (Mathf.Abs(e.X - s.Picks[0]) > RankedRules.CraneRadius + 3f
                             || Distance(e.X, e.Y, block) > RankedRules.CraneRadius + 0.05f)
                             continue;
+                        // It falls straight down the spot's column from high over the spot (CranePallet keeps no
+                        // sideways speed): it lands on the first thing there, never under something still standing.
+                        if (Covered(s.Picks[0], e.Y + 0.5f, s.Picks[1] + RankedRules.CraneDrop))
+                            return No("a pallet landing under something standing");
                         if (!c.CraneImpacts.TryGetValue(s, out HashSet<int> impacts))
                             c.CraneImpacts[s] = impacts = new HashSet<int>();
                         impacts.Add(e.TimeMs);
@@ -787,10 +822,11 @@ namespace Demolition.Ranked
                             || e.Time > s.Time + ChargesEnd(s) + RankedRules.ActionSlack)
                             continue;
                         for (int i = 0; i < s.Picks.Length && !placed; i += 2)
-                            placed = Mathf.Abs(s.Picks[i] - e.X) <= 0.1f && Mathf.Abs(s.Picks[i + 1] - e.Y) <= 0.1f;
+                            placed = Mathf.Abs(s.Picks[i] - e.X) <= 0.1f && Mathf.Abs(s.Picks[i + 1] - e.Y) <= 0.1f
+                                     && Once(_chargeBlasts, s).Add(i); // each charge goes off once
                     }
                     if (!placed)
-                        return No("a charge nobody placed");
+                        return No("a charge nobody placed, or one going off twice");
                     break;
                 }
             }
@@ -869,36 +905,112 @@ namespace Demolition.Ranked
             return true;
         }
 
-        // What a strike chose in the world: the crane's spot and the radio's are on the ground under
-        // the strike, the charges on one standing building's blocks.
+        // What a strike chose in the world (ActionStrikes.Pick): the crane's spot and the radio's are the
+        // first thing solid under a point above the strike, the charges on the footing of the nearest
+        // building ahead.
         private bool Picks(LogEvent e)
         {
             switch (e.Action)
             {
                 case ActionKind.CraneDrop:
                 case ActionKind.SiteRadio:
-                    if (e.Picks == null || e.Picks.Length != 2 || Mathf.Abs(e.Picks[0] - e.X) > 0.05f || e.Picks[1] > e.Y + 21f)
+                {
+                    float look = e.Action == ActionKind.CraneDrop ? RankedRules.CraneLook : 1f;
+                    if (e.Picks == null || e.Picks.Length != 2 || Mathf.Abs(e.Picks[0] - e.X) > 0.05f || e.Picks[1] > e.Y + look + 1f)
                         return No("a spot not under the strike");
-                    return true;
+                    return !Covered(e.Picks[0], e.Picks[1], e.Y + look) || No("a spot under something standing");
+                }
                 case ActionKind.Implosion:
-                    if (e.Picks == null)
-                        return No("an implosion with no charges");
-                    // Nothing standing in reach: one charge on the ground just ahead, for the bang.
-                    if (e.Picks.Length == 2 && StandingAt(e.Picks[0], e.Picks[1]) == null)
-                        return Mathf.Abs(e.Picks[0] - (e.X + 2f * e.Facing)) <= 1f || No("a lone charge out of reach");
-                    Site on = null;
-                    for (int i = 0; i < e.Picks.Length; i += 2)
-                    {
-                        Block block = StandingAt(e.Picks[i], e.Picks[i + 1]);
-                        if (block == null || (on != null && block.Site != on))
-                            return No("a charge not on the building");
-                        on = block.Site;
-                    }
-                    float gap = Mathf.Max(0f, Mathf.Max(on.Placement.X - e.X, e.X - (on.Placement.X + on.Placement.Spec.Width)));
-                    return gap <= 14f + 1f || No("charges out of reach");
+                    return Charges(e);
                 default:
                     return e.Picks == null || No("picks for an action that picks nothing");
             }
+        }
+
+        // ImplosionCharges.Pick: the nearest building ahead with anything standing (or the one the
+        // strike is in), up to ActionCall.MaxSpots charges on its footing blocks, never two close together.
+        private bool Charges(LogEvent e)
+        {
+            if (e.Picks == null)
+                return No("an implosion with no charges");
+            int count = e.Picks.Length / 2;
+            if (count > ActionCall.MaxSpots)
+                return No("more charges than the game places");
+            // Nothing standing in reach: one charge on the ground just ahead, for the bang.
+            if (count == 1 && StandingAt(e.Picks[0], e.Picks[1]) == null)
+                return Mathf.Abs(e.Picks[0] - (e.X + 2f * e.Facing)) <= 1f || No("a lone charge out of reach");
+            Site on = null;
+            for (int i = 0; i < e.Picks.Length; i += 2)
+            {
+                Block block = StandingAt(e.Picks[i], e.Picks[i + 1]);
+                if (block == null || (on != null && block.Site != on) || block.Spec.Material == BlockMaterial.Glass)
+                    return No("a charge not on the building");
+                on = block.Site;
+                for (int j = 0; j < i; j += 2)
+                    if (Mathf.Abs(e.Picks[j] - e.Picks[i]) <= RankedRules.ChargeSpacing - 0.05f)
+                        return No("charges too close together");
+            }
+            // The game measures by the blocks' centres; a little either way is the log's rounding.
+            float best = RankedRules.ChargeReach;
+            foreach (Site site in _sites)
+            {
+                float d = Ahead(site, e.X, e.Facing);
+                if (d >= -0.1f && d < best)
+                    best = Mathf.Max(0f, d);
+            }
+            float chosen = Ahead(on, e.X, e.Facing);
+            if (chosen < -0.6f || chosen > best + 0.5f)
+                return No("charges on a building past the nearest");
+            float floor = float.PositiveInfinity;
+            foreach (Block b in on.Cells.Values)
+                floor = Mathf.Min(floor, (b.Y0 + b.Y1) * 0.5f);
+            for (int i = 0; i < e.Picks.Length; i += 2)
+            {
+                Block block = StandingAt(e.Picks[i], e.Picks[i + 1]);
+                if ((block.Y0 + block.Y1) * 0.5f >= floor + RankedRules.ChargeFooting + 0.05f)
+                    return No("a charge above the footing");
+            }
+            return true;
+        }
+
+        // ImplosionCharges.Pick's distance to a building: 0 from within it, else how far ahead its
+        // nearest block's centre is (negative: behind); +inf with nothing of it standing.
+        private static float Ahead(Site site, float x, int facing)
+        {
+            float min = float.PositiveInfinity, max = float.NegativeInfinity;
+            foreach (Block b in site.Cells.Values)
+            {
+                min = Mathf.Min(min, (b.X0 + b.X1) * 0.5f);
+                max = Mathf.Max(max, (b.X0 + b.X1) * 0.5f);
+            }
+            if (float.IsInfinity(min))
+                return float.PositiveInfinity;
+            return x >= min - 0.5f && x <= max + 0.5f ? 0f : facing > 0 ? min - x : x - max;
+        }
+
+        // The top of something standing and solid over x between from and to, in the level as it is now:
+        // a pallet falling from to, or a look down from to for the ground, stops there first. A block around
+        // to itself doesn't count (the look starts inside it and gives to back: ActionStrikes.GroundBelow).
+        // Glass is left out (it shatters at a touch).
+        private bool Covered(float x, float from, float to)
+        {
+            foreach (Site site in _sites)
+            {
+                BuildingPlacement b = site.Placement;
+                if (x <= b.X || x >= b.X + b.Spec.Width)
+                    continue;
+                int cx = Mathf.FloorToInt(x - b.X);
+                for (int cy = Mathf.FloorToInt(from - b.GroundY); cy <= Mathf.FloorToInt(to - b.GroundY); cy++)
+                {
+                    if (!site.Cells.TryGetValue(new Vector2Int(cx, cy), out Block block) || TileKinds.WalkThrough(block.Spec.Kind)
+                        || block.Spec.Material == BlockMaterial.Glass)
+                        continue;
+                    Rect solid = block.Solid;
+                    if (x > solid.xMin + 0.05f && x < solid.xMax - 0.05f && solid.yMax > from + 0.05f && solid.yMax <= to + 0.05f)
+                        return true;
+                }
+            }
+            return false;
         }
 
         private Block StandingAt(float x, float y)
@@ -997,6 +1109,12 @@ namespace Demolition.Ranked
                     }
                     if (b.Y < lowest && !OutBetween(c, t, t + 3.5f)) // the out-of-bounds grace is 3 s
                         return No($"player {p + 1} fell out of the level and stayed in play");
+                    // The ground is solid from the street down to its bottom (LevelBuilder); under that, down a pit, is nothing.
+                    int col = Mathf.FloorToInt(b.X);
+                    if (col >= 0 && col < _layout.Ground.Count && _layout.Ground[col] != LevelLayout.NoGround
+                        && b.Y < _layout.Ground[col] - RankedRules.GroundSlack - (Slack(p) - RankedRules.PoseSlack)
+                        && b.Y > _layout.LowestGround - LevelLayout.GroundDepth)
+                        return No($"player {p + 1} inside the ground at {t:0.0}s");
                     bool knocked = Knocked(b, t);
                     float speed = RankedRules.RunSpeed * (CoffeeIn(c, t - RunLog.PoseInterval, t) ? RankedRules.CoffeeSpeed : 1f);
                     float step = speed * RunLog.PoseInterval * RankedRules.SpeedSlack + RankedRules.MoveMargin + (knocked ? 2f : 0f)

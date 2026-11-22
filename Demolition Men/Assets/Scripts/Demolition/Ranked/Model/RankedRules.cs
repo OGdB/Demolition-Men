@@ -9,7 +9,8 @@ namespace Demolition.Ranked
     /// </summary>
     public static class RankedRules
     {
-        public const int Version = 3;
+        /// <summary>4: the device's key on /start, and the stricter replay (charges, headbutts, the crane, the ground).</summary>
+        public const int Version = 4;
 
         // ---------------- Players (Player_1.prefab: PlayerMotor, PlayerCombat; Run.prefab) ----------------
 
@@ -21,6 +22,8 @@ namespace Demolition.Ranked
         public const float Gravity = 9.81f * 2.2f;
         public const float AttackOffsetX = 1.25f, AttackOffsetY = 1.3f, AttackRadius = 1f;
         public const float HeadbuttFactor = 2f, HeadHeight = 1.2f;
+        /// <summary>One headbutt per jump: never closer than this.</summary>
+        public const float HeadbuttInterval = 0.3f;
         public const int MaxDynamite = 9;
         /// <summary>Where a stick leaves the hand, in front of the feet.</summary>
         public const float ThrowOffsetX = 1f, ThrowOffsetY = 1.3f;
@@ -54,6 +57,10 @@ namespace Demolition.Ranked
         public const float BurpRange = 7f, BurpSpeed = 16f, BurpHalfHeight = 1f, BurpSpread = 0.12f, BurpDrop = 0.35f;
         public const float SlamDepth = 12f, SlamHalfWidth = 0.7f, SlamDrop = 0.05f, SlamRingRadius = 2.2f, SlamRingRise = 0.4f, SlamRingDamage = 150f;
         public const float CraneDelay = 0.9f, CraneRadius = 2.3f;
+        /// <summary>CraneCall: the spot is the ground below a point this far over the strike, the pallet drops from this far over the spot.</summary>
+        public const float CraneLook = 20f, CraneDrop = 28f;
+        /// <summary>ImplosionCharges: how far ahead a building counts, its footing, how far apart the charges are.</summary>
+        public const float ChargeReach = 14f, ChargeFooting = 0.6f, ChargeSpacing = 1.5f;
         public const int CraneImpacts = 3;
         /// <summary>The implosion's 3-2-1 and the ripple between its charges.</summary>
         public const float ChargeCountdown = 1.5f, ChargeRipple = 0.12f;
@@ -91,6 +98,13 @@ namespace Demolition.Ranked
         /// <summary>Seconds an action's damage may come after its strike beyond its own timing.</summary>
         public const float ActionSlack = 0.6f;
         public const float PickupReach = 2.5f;
+        /// <summary>How far below head height a headbutted block's underside may seem (PlayerCombat wants it above):
+        /// the pose between samples.</summary>
+        public const float HeadSlack = 0.3f;
+        /// <summary>How far below the street a sampled pose's feet may be (standing, the pivot is 0.12 under the capsule's bottom).</summary>
+        public const float GroundSlack = 0.5f;
+        /// <summary>Between two samples the body is checked against the walls every this many units.</summary>
+        public const float SweepStep = 0.25f;
         /// <summary>Crumble ticks are at least <see cref="CrumbleTick"/> apart; the log's clock rounds.</summary>
         public const float CrumbleTickSlack = 0.02f;
         /// <summary>How far behind the scroll edge a sampled pose may be: the log has every tenth of a second, the game every frame.</summary>

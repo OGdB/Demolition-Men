@@ -79,7 +79,9 @@ public sealed class RankedServerTests : IDisposable
         return dir ?? throw new DirectoryNotFoundException("the repository");
     }
 
-    private static string Player(int n) => n.ToString("x32");
+    private static string Key(int n) => n.ToString("x64");
+
+    private static string Player(int n) => RankedApi.IdOf(Key(n));
 
     private async Task<HttpResponseMessage> Post(string path, object body) =>
         await _http.PostAsync(path, JsonContent.Create(body, body.GetType(), options: Json));
@@ -89,7 +91,7 @@ public sealed class RankedServerTests : IDisposable
 
     private async Task<StartResponse> Start(int player, string name = "ODB", string mode = RankedApi.Solo)
     {
-        HttpResponseMessage response = await Post("/start", new StartRequest { player = Player(player), name = name, mode = mode, rules = RankedRules.Version });
+        HttpResponseMessage response = await Post("/start", new StartRequest { player = Player(player), key = Key(player), name = name, mode = mode, rules = RankedRules.Version });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await Read<StartResponse>(response);
     }
@@ -148,12 +150,45 @@ public sealed class RankedServerTests : IDisposable
     [Fact]
     public async Task Start_TurnsDownOldBuildsAndBadIds()
     {
-        HttpResponseMessage old = await Post("/start", new StartRequest { player = Player(1), name = "ODB", mode = "solo", rules = RankedRules.Version - 1 });
+        HttpResponseMessage old = await Post("/start", new StartRequest { player = Player(1), key = Key(1), name = "ODB", mode = "solo", rules = RankedRules.Version - 1 });
         Assert.Equal((HttpStatusCode)426, old.StatusCode);
         HttpResponseMessage bad = await Post("/start", new StartRequest { player = "not-an-id", name = "ODB", mode = "solo", rules = RankedRules.Version });
         Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
-        HttpResponseMessage mode = await Post("/start", new StartRequest { player = Player(1), name = "ODB", mode = "duo", rules = RankedRules.Version });
+        HttpResponseMessage mode = await Post("/start", new StartRequest { player = Player(1), key = Key(1), name = "ODB", mode = "duo", rules = RankedRules.Version });
         Assert.Equal(HttpStatusCode.BadRequest, mode.StatusCode);
+    }
+
+    [Fact]
+    public async Task Start_OnlyWithThePlayersOwnKey()
+    {
+        // A partner online learns the id: without the key it can't start, rename or burn attempts as that player.
+        HttpResponseMessage none = await Post("/start", new StartRequest { player = Player(1), name = "IMPOSTOR", mode = "solo", rules = RankedRules.Version });
+        Assert.Equal(HttpStatusCode.Forbidden, none.StatusCode);
+        HttpResponseMessage other = await Post("/start", new StartRequest { player = Player(1), key = Key(2), name = "IMPOSTOR", mode = "solo", rules = RankedRules.Version });
+        Assert.Equal(HttpStatusCode.Forbidden, other.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Post("/start", new StartRequest { player = Player(1), key = Key(1), name = "ODB", mode = "solo", rules = RankedRules.Version })).StatusCode);
+    }
+
+    [Fact]
+    public async Task OnlineWithoutAPartner_IsTurnedDown()
+    {
+        // Online, the partner gets a network's slack: a solo crew can't claim it.
+        StartResponse start = await Start(1);
+        RunLog log = Walk(start);
+        log.Online = true;
+        await Submit(start, log);
+        Assert.Contains("online with no partner", await (await AdminGet("/admin/runs")).Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public void TheGhost_LeavesOutWhatEachHitDid()
+    {
+        RunLog log = RunLog.For(1);
+        log.Poses[0].Add(new LogPose(2f, 0f, false));
+        log.Events.Add(new LogEvent { TimeMs = 500, Kind = LogKind.Damage, Player = 0, Building = 3, CellX = 1, CellY = 2, Amount = 12f, Cause = HitCause.Fist, Broke = true, X = 3.25f, Y = 1.3f });
+        LogEvent hit = RunLog.Decode(RankedService.GhostOf(log.Encode())).Events[0];
+        Assert.Equal((0, 0, 0, 1f, false), (hit.Building, hit.CellX, hit.CellY, hit.Amount, hit.Broke));
+        Assert.Equal((500, HitCause.Fist, 0, 3.25f), (hit.TimeMs, hit.Cause, hit.Player, hit.X)); // what GhostRunner plays
     }
 
     [Fact]
@@ -290,7 +325,7 @@ public sealed class RankedServerTests : IDisposable
     {
         HttpResponseMessage response = await Post("/start", new StartRequest
         {
-            player = Player(1), name = "HOST", mode = RankedApi.Coop, partner = Player(2), partnerName = "GUEST", rules = RankedRules.Version,
+            player = Player(1), key = Key(1), name = "HOST", mode = RankedApi.Coop, partner = Player(2), partnerName = "GUEST", rules = RankedRules.Version,
         });
         StartResponse start = await Read<StartResponse>(response);
         Assert.Equal(RankedApi.Coop, start.mode);
@@ -302,6 +337,7 @@ public sealed class RankedServerTests : IDisposable
         coop.Template = log.Template;
         coop.Seed = log.Seed;
         coop.LayoutHash = log.LayoutHash;
+        coop.Online = true; // a partner: online co-op
         coop.Poses[0].AddRange(log.Poses[0]);
         foreach (LogPose p in log.Poses[0])
             coop.Poses[1].Add(new LogPose(p.X - 1.5f, p.Y, false));
@@ -312,6 +348,16 @@ public sealed class RankedServerTests : IDisposable
         Assert.Equal("HOST", board.entries[0].name);
         Assert.Equal("GUEST", board.entries[0].partner);
         Assert.Empty((await Board()).entries);
+        Assert.DoesNotContain("not online", await (await AdminGet("/admin/runs")).Content.ReadAsStringAsync());
+
+        // Another host knows the guest's id now: it can't rename the guest. The guest's own device can.
+        await Post("/start", new StartRequest
+        {
+            player = Player(3), key = Key(3), name = "OTHER HOST", mode = RankedApi.Coop, partner = Player(2), partnerName = "RENAMED", rules = RankedRules.Version,
+        });
+        Assert.Equal("GUEST", (await Board(mode: RankedApi.Coop)).entries[0].partner);
+        await Start(2, "GUEST TOO");
+        Assert.Equal("GUEST TOO", (await Board(mode: RankedApi.Coop)).entries[0].partner);
     }
 
     [Fact]
@@ -348,7 +394,7 @@ public sealed class RankedServerTests : IDisposable
     [Fact]
     public async Task Limits_StopEndlessTries_AndNewPlayers()
     {
-        var request = new StartRequest { player = Player(1), name = "BUSY", mode = RankedApi.Solo, rules = RankedRules.Version };
+        var request = new StartRequest { player = Player(1), key = Key(1), name = "BUSY", mode = RankedApi.Solo, rules = RankedRules.Version };
         HttpStatusCode last = HttpStatusCode.OK;
         for (int i = 0; i < 31; i++)
             last = (await Post("/start", request)).StatusCode;
@@ -366,7 +412,7 @@ public sealed class RankedServerTests : IDisposable
         for (int i = 2; i < 60 && last != HttpStatusCode.TooManyRequests; i++)
         {
             _clock.Now = _clock.Now.AddSeconds(3);
-            last = (await Post("/start", new StartRequest { player = Player(i), name = "NEW", mode = RankedApi.Solo, rules = RankedRules.Version })).StatusCode;
+            last = (await Post("/start", new StartRequest { player = Player(i), key = Key(i), name = "NEW", mode = RankedApi.Solo, rules = RankedRules.Version })).StatusCode;
         }
         Assert.Equal(HttpStatusCode.TooManyRequests, last); // the tests' 50 new players a day per IP
     }
