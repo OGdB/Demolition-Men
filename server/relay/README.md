@@ -2,11 +2,12 @@
 
 Pairs two players by a join code and forwards their bytes over WebSockets. It runs no game
 code and never reads game data. Design: `docs/multiplayer.md` §8. It also keeps the game's
-anonymous counters (below).
+anonymous counters and the game's error reports (below).
 
 ```
 Relay/            ASP.NET Core app (RelayServer.cs holds rooms, limits and forwarding;
                   Counters.cs the anonymous counters and their SQLite file;
+                  Errors.cs   the game's error reports and theirs;
                   wwwroot/privacy.html is the game's privacy policy at /privacy)
 Relay.Tests/      xUnit tests against the app in memory
 Dockerfile        the image: built on the VPS, runs on the chiseled ASP.NET image as non-root
@@ -40,6 +41,7 @@ so old builds get a clear `4003` instead of garbage.
 | Health | `GET /health` answers `ok`. |
 | Privacy policy | `GET /privacy`: the game's privacy policy, `Relay/wwwroot/privacy.html`, read at startup (edit it, then deploy). |
 | Counters | `POST /count`, `GET /admin/counts`: see Counters below. |
+| Error reports | `POST /error`, `GET /admin/errors`: see Error reports below. |
 
 Errors come as WebSocket close codes after the accept, because browsers can't read HTTP
 error bodies:
@@ -86,6 +88,10 @@ it), one per line, then `cd /opt/demolition-relay && sudo docker compose up -d`.
 | `CountersDatabase` | empty (no counters) | The counters' SQLite file. The first deploy writes `Relay__CountersDatabase=/data/counters.db` into `relay.env`; empty it there to turn them off. If the file can't be opened the relay logs an error and runs without counters. |
 | `CountsPerMinute` | 60 | Posts to `/count` per client IP. A school behind one address can pass it; its counts are then lost, nothing else. |
 | `CountRowsPerDay` | 2000 | Different counters one day may hold. The game's own make a few hundred at most. |
+| `ErrorsDatabase` | empty (no error reports) | The error reports' SQLite file. The deploy writes `Relay__ErrorsDatabase=/data/errors.db` into `relay.env` once; empty it there to turn them off. |
+| `ErrorsPerMinute` | 10 | Reports one address may post in a minute. |
+| `ErrorRows` | 2000 | Different errors the file may hold; past it, only those it has go up. |
+| `ErrorDays` | 90 | Days an error is kept after it was last reported. |
 | `AdminToken` | empty (no /admin) | Reads `/admin/counts`. The first deploy writes a random one into `relay.env`. |
 
 The client IP comes from `X-Forwarded-For` only when the request comes from loopback or a
@@ -222,6 +228,55 @@ Anyone can post to `/count`, so the numbers are for deciding what to build and n
 The limits keep junk small: the fixed list above, the body cap, `CountsPerMinute` per address,
 and `CountRowsPerDay` (past it, a day takes no new counters; those it has still go up).
 
+## Error reports
+
+C# exceptions in the game: Unity logs them and plays on, so Android vitals (native crashes and
+freezes only) never sees them. The game's side is `Meta/Model/ErrorReports.cs` (what goes out)
+and `Meta/Controller/ErrorReporter.cs`; it sends nothing until `GameConfig.errorsUrl` is
+`https://<domain>/error`, and never from the editor. Here they are on when `ErrorsDatabase`
+names a SQLite file, which the deploy sets.
+
+`POST /error` takes one exception as JSON, 8 KB at most:
+`{"v":"1.0.3","p":"android","device":"samsung SM-A515F","msg":"NullReferenceException: ...","stack":"Demolition.Run.RunHud.LateUpdate ()\n"}`.
+`v` is the game's version (`0-9 A-Z a-z . _ + -`, 32 at most), `p` as for the counters, `device`
+the model (64, one line), `msg` 1–500 and `stack` up to 4000 characters, no control characters
+but line breaks and tabs. The game cuts longer text, takes the device's own folders out of it
+(`<path>`), and sends each kind once per session, five kinds at most.
+
+It answers 204, 400 (not one of these), 413 (over 8 KB), 429 (more than `ErrorsPerMinute` from
+this address), 503 (a full disk) or 404 (error reports off). One row per kind: the exception's
+type (the message up to its first colon) with its stack trace, in one version on one platform.
+A row keeps its count, the first and last UTC day, and the latest message and device model as a
+sample. Rows not seen for `ErrorDays` go; past `ErrorRows`, new kinds are dropped.
+
+**Read them**, the most frequent first (`from` defaults to 30 days ago):
+
+```
+curl -s -H "Authorization: Bearer $TOKEN" "https://relay.oeds.space/admin/errors?from=2027-01-15" \
+  | jq -r '.[] | "\(.n)x  \(.version) \(.platform)  \(.lastDay)  \(.device)\n\(.message)\n\(.stack)"'
+```
+
+Release builds strip line numbers, so a stack names methods only. Anyone can post here too, so a
+row is a lead to look at, never proof.
+
+### DRAFT, not live: the policy's wording for the error reports
+
+As for the counters, leave `GameConfig.errorsUrl` empty until the owner has put this (or their
+own wording) into `Relay/wwwroot/privacy.html`. Not legal advice.
+
+- **In short:** "When the game hits an error, it sends our server a short technical report
+  (the game's version, your device's model, and where in the code it went wrong). It carries no
+  ID and no name."
+- **Section 7**, where it says Unity's crash reporting is off: "The game sends its own error
+  reports instead: when the game hits a programming error, the error's text and where in the
+  game's code it happened, the game's version, the platform and the device model (for example
+  "samsung SM-A515F"). Folder names on your device are removed first. The report carries no ID,
+  and we store no IP address with it: the server keeps one row per kind of error, with how often
+  it happened and the latest example, for 90 days after it was last seen."
+- **Retention (section 9):** "Error reports: 90 days after that kind of error was last reported."
+- **Data safety** in the Play Console: Crash logs and Diagnostics, collected, not shared, not
+  linked to the user, for app functionality / analytics.
+
 ## Privacy
 
 The relay sees players' IP addresses: it has to, to talk to them, and it keys the rate limits
@@ -231,7 +286,8 @@ policy should still say that the relay sees IP addresses (`docs/monetization.md`
 
 The counters' database is one table, `counts`: the UTC day, the event, its fields and how many.
 No address, no user agent, no id, no time of day, nothing from a refused post
-(`CountersTests.NothingButCountersIsStored` reads back every file the relay wrote).
+(`CountersTests.NothingButCountersIsStored` reads back every file the relay wrote). The error
+reports' table likewise (`ErrorsTests.NothingButTheReportIsStored`).
 
 ### DRAFT, not live: the policy's wording for the counters
 

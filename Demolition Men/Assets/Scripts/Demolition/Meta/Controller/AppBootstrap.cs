@@ -20,6 +20,7 @@ namespace Demolition.Meta
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Init()
         {
+            ErrorReporter.Install(); // first, so an exception in what follows is reported too
             if (Platform.IsMobile)
             {
                 Application.targetFrameRate = 60;

@@ -46,7 +46,8 @@ namespace Demolition.Meta
                 Counters.Invited(PlatformName, Post);
         }
 
-        private static string PlatformName
+        /// <summary>web, android, pc or other: the platform as the relay's /count and /error name it.</summary>
+        internal static string PlatformName
         {
             get
             {
@@ -62,19 +63,22 @@ namespace Demolition.Meta
             }
         }
 
-        private static void Post(CountEvent count)
+        private static void Post(CountEvent count) => Send(Url, JsonUtility.ToJson(count));
+
+        /// <summary>Posts <paramref name="json"/> to <paramref name="url"/>, fire and forget (the counters, <see cref="ErrorReporter"/>).</summary>
+        internal static void Send(string url, string json)
         {
             try
             {
-                var request = new UnityWebRequest(Url, UnityWebRequest.kHttpVerbPOST)
+                var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
                 {
-                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(JsonUtility.ToJson(count))),
+                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
                     timeout = TimeoutSeconds,
                 };
                 request.SetRequestHeader("Content-Type", "application/json");
                 request.SendWebRequest().completed += _ => request.Dispose();
             }
-            catch (Exception) // a bad address: a count is never worth an error in the game
+            catch (Exception) // a bad address: a count or a report is never worth an error in the game
             {
             }
         }

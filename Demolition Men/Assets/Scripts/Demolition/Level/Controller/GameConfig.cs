@@ -56,6 +56,8 @@ namespace Demolition.Levels
         public string storeUrl = "";
         [Tooltip("Where the anonymous counters go (docs/hit-plan.md F0): the relay's /count, https://<relay>/count. Empty = nothing is counted and nothing is sent.")]
         public string countersUrl = "";
+        [Tooltip("Where C# exceptions are reported (Meta/Controller/ErrorReporter): the relay's /error, https://<relay>/error. Empty = nothing is reported.")]
+        public string errorsUrl = "";
 
         [Header("Online")]
         [Tooltip("The co-op relay (server/relay). ws://localhost:5080/ws for one run with dotnet run.")]

@@ -22,6 +22,16 @@ if (options.CountersDatabase.Length > 0)
     catch (Exception e) { app.Logger.LogError(e, "Counters are off: their database didn't open"); }
 var relay = new RelayServer(options, app.Logger, counters);
 
+// The game's error reports (Errors.cs): off with no database, and when it doesn't open, as the counters.
+Errors? errors = null;
+if (options.ErrorsDatabase.Length > 0)
+    try
+    {
+        errors = new Errors(options);
+        app.Lifetime.ApplicationStopped.Register(errors.Dispose);
+    }
+    catch (Exception e) { app.Logger.LogError(e, "Error reports are off: their database didn't open"); }
+
 // X-Forwarded-For is trusted from loopback (a proxy on the same box) and from the networks
 // configured: a Caddy container's Docker network. Without it every player shares the
 // proxy's address, and the per-IP limits turn into global ones.
@@ -34,7 +44,7 @@ app.UseWebSockets(new WebSocketOptions
     KeepAliveInterval = options.KeepAliveInterval,
     KeepAliveTimeout = options.KeepAliveTimeout,
 });
-app.UseCors(); // only /count asks for it
+app.UseCors(); // only /count and /error ask for it
 app.MapGet("/health", () => "ok");
 app.Map("/ws", relay.Handle);
 
@@ -42,23 +52,40 @@ if (counters != null)
 {
     // The browser build posts from another site: nothing here rides on cookies. Any header, as the
     // ranked server allows: Unity may add its own (X-Unity-Version) to the request.
-    app.MapPost("/count", counters.Post).RequireCors(cors =>
-        (options.AllowedOrigins.Length > 0 ? cors.WithOrigins(options.AllowedOrigins) : cors.AllowAnyOrigin())
-            .AllowAnyHeader().WithMethods("POST"));
+    app.MapPost("/count", counters.Post).RequireCors(GamePosts);
     // The owner's read, as the ranked server's /admin: curl -H "Authorization: Bearer ..."
     app.MapGet("/admin/counts", (string? from, string? to) =>
     {
         from ??= DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
         to ??= "9999-12-31";
         return Day(from) && Day(to) ? Results.Ok(counters.Read(from, to)) : Results.BadRequest();
-    }).AddEndpointFilter(async (context, next) =>
+    }).AddEndpointFilter(Admin);
+}
+
+if (errors != null)
+{
+    app.MapPost("/error", errors.Post).RequireCors(GamePosts);
+    // curl -H "Authorization: Bearer ..." /admin/errors?from=yyyy-MM-dd (default: the last 30 days)
+    app.MapGet("/admin/errors", (string? from) =>
     {
-        byte[] a = Encoding.UTF8.GetBytes("Bearer " + options.AdminToken);
-        byte[] b = Encoding.UTF8.GetBytes(context.HttpContext.Request.Headers.Authorization.ToString());
-        if (options.AdminToken.Length < 16 || !CryptographicOperations.FixedTimeEquals(a, b))
-            return Results.NotFound(); // no token configured, or the wrong one: there is nothing here
-        return await next(context);
-    });
+        from ??= DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
+        return Day(from) ? Results.Ok(errors.Read(from)) : Results.BadRequest();
+    }).AddEndpointFilter(Admin);
+}
+
+// What the game posts to, from the browser build too.
+void GamePosts(Microsoft.AspNetCore.Cors.Infrastructure.CorsPolicyBuilder cors) =>
+    (options.AllowedOrigins.Length > 0 ? cors.WithOrigins(options.AllowedOrigins) : cors.AllowAnyOrigin())
+        .AllowAnyHeader().WithMethods("POST");
+
+// The owner's reads, as the ranked server's /admin.
+async ValueTask<object?> Admin(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+{
+    byte[] a = Encoding.UTF8.GetBytes("Bearer " + options.AdminToken);
+    byte[] b = Encoding.UTF8.GetBytes(context.HttpContext.Request.Headers.Authorization.ToString());
+    if (options.AdminToken.Length < 16 || !CryptographicOperations.FixedTimeEquals(a, b))
+        return Results.NotFound(); // no token configured, or the wrong one: there is nothing here
+    return await next(context);
 }
 
 static bool Day(string text) => DateOnly.TryParseExact(text, "yyyy-MM-dd", out _);
@@ -101,6 +128,14 @@ public sealed class RelayOptions
     public int CountsPerMinute { get; set; } = 60;
     /// Different counters one day may hold; past it only counters that exist go up.
     public int CountRowsPerDay { get; set; } = 2000;
-    /// Reads /admin/counts as "Authorization: Bearer ..."; under 16 characters: no /admin.
+    /// The error reports' SQLite file; empty: no /error.
+    public string ErrorsDatabase { get; set; } = "";
+    /// Reports one address may post in a minute.
+    public int ErrorsPerMinute { get; set; } = 10;
+    /// Different errors the file may hold; past it only errors it has go up.
+    public int ErrorRows { get; set; } = 2000;
+    /// Days an error is kept after it was last reported.
+    public int ErrorDays { get; set; } = 90;
+    /// Reads /admin/counts and /admin/errors as "Authorization: Bearer ..."; under 16 characters: no /admin.
     public string AdminToken { get; set; } = "";
 }

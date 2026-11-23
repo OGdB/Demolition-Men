@@ -36,9 +36,10 @@ touch "$app/relay.env"
 chmod 600 "$app/relay.env"
 # Added once; relay.env is yours after that (an empty Relay__CountersDatabase= turns the counters off).
 grep -q '^Relay__CountersDatabase=' "$app/relay.env" || echo "Relay__CountersDatabase=/data/counters.db" >> "$app/relay.env"
+grep -q '^Relay__ErrorsDatabase=' "$app/relay.env" || echo "Relay__ErrorsDatabase=/data/errors.db" >> "$app/relay.env"
 if ! grep -q '^Relay__AdminToken=' "$app/relay.env"; then
   echo "Relay__AdminToken=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')" >> "$app/relay.env"
-  echo "    a token for /admin/counts is now in $app/relay.env"
+  echo "    a token for /admin/counts and /admin/errors is now in $app/relay.env"
 fi
 # The image running now becomes :previous, for rollback.sh.
 if docker image inspect demolition-relay:latest >/dev/null 2>&1; then
